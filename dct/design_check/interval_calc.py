@@ -212,7 +212,7 @@ def _calc_interval_2(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     """
     Mode 2 Modulation (interval II) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad.
 
-        :param n: transformer ratio
+    :param n: transformer ratio
     :type n: float
     :param l_s: series inductance
     :type l_s: float
@@ -260,7 +260,7 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     """
     Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad.
 
-        :param n: transformer ratio
+    :param n: transformer ratio
     :type n: float
     :param l_s: series inductance
     :type l_s: float

@@ -2,3 +2,5 @@ dct/__pycache__/
 dct/results/
 dct/design_check/__pycache__/
 .idea/
+docs/build/
+results/
