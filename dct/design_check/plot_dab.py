@@ -242,13 +242,13 @@ class Plot_DAB:
         axs[2].clear()
         # Plot the contourf maps
         axs[0].contourf(x, y, z1, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=pz_min, vmax=pz_max)
-        if not mask1 is None:
+        if mask1 is not None:
             axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None:
+        if mask2 is not None:
             axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None:
+        if mask3 is not None:
             axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None:
+        if maskZVS is not None:
             axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
 
         # Apply the limits to the colorbar. That way the colorbar does not depend on one plot.
@@ -265,22 +265,22 @@ class Plot_DAB:
             cbar.ax.set_yticklabels(['-π/4', '-π/8', '0', 'π/8', 'π/4'])
 
         axs[1].contourf(x, y, z2, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None:
+        if mask1 is not None:
             axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None:
+        if mask2 is not None:
             axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None:
+        if mask3 is not None:
             axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None:
+        if maskZVS is not None:
             axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         axs[2].contourf(x, y, z3, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None:
+        if mask1 is not None:
             axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None:
+        if mask2 is not None:
             axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None:
+        if mask3 is not None:
             axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None:
+        if maskZVS is not None:
             axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         # Set the labels
         if title:
@@ -349,31 +349,31 @@ class Plot_DAB:
         axs[2].clear()
         # Plot the contourf maps
         axs[0].contourf(x, y, z1, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None:
+        if mask1 is not None:
             axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None:
+        if mask2 is not None:
             axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None:
+        if mask3 is not None:
             axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None:
+        if maskZVS is not None:
             axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         axs[1].contourf(x, y, z2, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None:
+        if mask1 is not None:
             axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None:
+        if mask2 is not None:
             axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None:
+        if mask3 is not None:
             axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None:
+        if maskZVS is not None:
             axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         axs[2].contourf(x, y, z3, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None:
+        if mask1 is not None:
             axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None:
+        if mask2 is not None:
             axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None:
+        if mask3 is not None:
             axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None:
+        if maskZVS is not None:
             axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         # Set the labels
         if title:
@@ -507,11 +507,11 @@ class Plot_DAB:
         if nan_matrix is None:
             cs_full = ax.contourf(x, y, np.clip(z, z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None:
+            if mask1 is not None:
                 ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None:
+            if mask2 is not None:
                 ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None:
+            if mask3 is not None:
                 ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
         # in case of nan_matrix is set
         else:
@@ -528,11 +528,11 @@ class Plot_DAB:
             #                       vmin=z_min, vmax=z_max, levels=cs_background.levels)
             cs_full = ax.contourf(x, y, z_nan.clip(z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None:
+            if mask1 is not None:
                 ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None:
+            if mask2 is not None:
                 ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None:
+            if mask3 is not None:
                 ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
 
         ax.set_xlabel(xlabel, fontsize=fontsize_axis)
@@ -632,11 +632,11 @@ class Plot_DAB:
         if nan_matrix is None:
             cs_full = ax.contourf(x, y, np.clip(z, z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None:
+            if mask1 is not None:
                 ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None:
+            if mask2 is not None:
                 ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None:
+            if mask3 is not None:
                 ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
         # in case of nan_matrix is set
         else:
@@ -651,11 +651,11 @@ class Plot_DAB:
             # Note: levels taken from first plot
             cs_full = ax.contourf(x, y, z_nan.clip(z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None:
+            if mask1 is not None:
                 ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None:
+            if mask2 is not None:
                 ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None:
+            if mask3 is not None:
                 ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
 
         ax.set_xlabel(xlabel, fontsize=fontsize_axis)
@@ -867,13 +867,13 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
     axs[2].clear()
     # Plot the contourf maps
     axs[0].contourf(x, y, z1, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=pz_min, vmax=pz_max)
-    if not mask1 is None:
+    if mask1 is not None:
         axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-    if not mask2 is None:
+    if mask2 is not None:
         axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-    if not mask3 is None:
+    if mask3 is not None:
         axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-    if not maskZVS is None:
+    if maskZVS is not None:
         axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
 
     # Apply the limits to the colorbar. That way the colorbar does not depend on one plot.
@@ -888,22 +888,22 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
         cbar.ax.set_yticklabels(['-π/4', '-π/8', '0', 'π/8', 'π/4'])
 
     axs[1].contourf(x, y, z2, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-    if not mask1 is None:
+    if mask1 is not None:
         axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-    if not mask2 is None:
+    if mask2 is not None:
         axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-    if not mask3 is None:
+    if mask3 is not None:
         axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-    if not maskZVS is None:
+    if maskZVS is not None:
         axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
     axs[2].contourf(x, y, z3, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-    if not mask1 is None:
+    if mask1 is not None:
         axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-    if not mask2 is None:
+    if mask2 is not None:
         axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-    if not mask3 is None:
+    if mask3 is not None:
         axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-    if not maskZVS is None:
+    if maskZVS is not None:
         axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
     # Set the labels
     if title:
