@@ -1,3 +1,4 @@
+"""Interval calculation to the phi, tau_1 and tau_2 in radiant for the ZVS switching pattern."""
 import numpy as np
 from dct.debug_tools import warning
 
@@ -9,7 +10,7 @@ MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
 def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.ndarray, Coss2: np.ndarray,
                     V1: np.ndarray, V2: np.ndarray, P: np.ndarray) -> dict:
     """
-    OptZVS (Optimal ZVS) Modulation calculation, which will return phi, tau1 and tau2
+    OptZVS (Optimal ZVS) Modulation calculation, which will return phi, tau1 and tau2.
 
     :param n: Transformer turns ratio n1/n2.
     :param Ls: DAB converter series inductance. (Must not be zero!)
@@ -23,7 +24,6 @@ def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.nda
     :param P: DAB input power meshgrid (P=V1*I1).
     :return: dict with phi, tau1, tau2, masks (phi has First-Falling-Edge alignment!)
     """
-
     # Create empty meshes
     phi = np.full_like(V1, np.nan)
     tau1 = np.full_like(V1, np.nan)
@@ -33,7 +33,7 @@ def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.nda
     _IIm2_mask = np.full_like(V1, False)
     _IIIm1_mask = np.full_like(V1, False)
 
-    ## Precalculate all required values
+    # Precalculate all required values
     # Transform Lc2 to side 1
     Lc2_ = Lc2 * n ** 2
     # Transform V2 to side 1
@@ -53,7 +53,7 @@ def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.nda
     # V1 = V2_
     # V2_ = V1
 
-    ## Calculate the Modulations
+    # Calculate the Modulations
     # ***** Change in contrast to paper *****
     # Instead of fist checking the limits for each modulation and only calculate each mod. partly,
     # all the modulations are calculated first even for useless areas, and we decide later which part is useful.
@@ -68,7 +68,7 @@ def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.nda
     # Int. III (mode 1): calculate phi, tau1 and tau2
     phi_III, tau1_III, tau2_III = _calc_interval_3(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
 
-    ## Decision Logic
+    # Decision Logic
     # Int. I (mode 2):
     # if phi <= 0:
     _phi_I_leq_zero_mask = np.less_equal(phi_I, 0)
@@ -129,7 +129,7 @@ def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.nda
     # zvs = np.bitwise_not(np.bitwise_and(_phi_leq_zero_mask, np.bitwise_not(_tau1_leq_pi_mask)))
     # debug('zvs bitwise not', zvs)
 
-    ## Recalculate phi for negative power
+    # Recalculate phi for negative power
     phi_nP = - (tau1 + phi - tau2)
     phi[_negative_power_mask] = phi_nP[_negative_power_mask]
 
@@ -146,15 +146,13 @@ def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.nda
     da_mod_results[MOD_KEYS[5]] = _IIm2_mask
     da_mod_results[MOD_KEYS[6]] = _IIIm1_mask
 
-    ## ZVS coverage based on calculation
+    # ZVS coverage based on calculation
     da_mod_results[MOD_KEYS[7]] = np.count_nonzero(zvs) / np.size(zvs)
-    ## ZVS coverage based on calculation
+    # ZVS coverage based on calculation
     da_mod_results[MOD_KEYS[8]] = np.count_nonzero(zvs[~np.isnan(tau1)]) / np.size(zvs[~np.isnan(tau1)])
 
     # debug(da_mod_results)
     return da_mod_results
-
-
 
 def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
                      v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
@@ -212,7 +210,28 @@ def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_
 def _calc_interval_2(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
                      v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
     """
-    Mode 2 Modulation (interval II) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad
+    Mode 2 Modulation (interval II) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad.
+
+        :param n: transformer ratio
+    :type n: float
+    :param l_s: series inductance
+    :type l_s: float
+    :param l_c_b1: commutation inductance L_1
+    :type l_c_b1: float
+    :param l_c_b2_: primary side reflected commutation inductance L_2
+    :type l_c_b2_: float
+    :param omega_s: omega_s = 2 * pi * f
+    :type omega_s: float
+    :param q_ab_req_b1: required coss charge for A/B-interval of bridge 1 semiconductors
+    :type q_ab_req_b1: float
+    :param q_ab_req_b2: required coss charge for A/B-interval of bridge 2 semiconductors
+    :type q_ab_req_b2: float
+    :param v_b1: DC voltage of bridge 1
+    :type v_b1: float
+    :param v_b2_: DC voltage of bridge 2
+    :type v_b2_: float
+    :param i_b1: current out of bridge 1 at the time of transistor turn-off
+    :type i_b1: float
     """
     # Predefined Terms
     e1 = v_b2_ * q_ab_req_b2 * omega_s
@@ -239,7 +258,28 @@ def _calc_interval_2(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
 def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
                      v_b1: np.ndarray, v_b2: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
     """
-    Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad
+    Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad.
+
+        :param n: transformer ratio
+    :type n: float
+    :param l_s: series inductance
+    :type l_s: float
+    :param l_c_b1: commutation inductance L_1
+    :type l_c_b1: float
+    :param l_c_b2_: primary side reflected commutation inductance L_2
+    :type l_c_b2_: float
+    :param omega_s: omega_s = 2 * pi * f
+    :type omega_s: float
+    :param q_ab_req_b1: required coss charge for A/B-interval of bridge 1 semiconductors
+    :type q_ab_req_b1: float
+    :param q_ab_req_b2: required coss charge for A/B-interval of bridge 2 semiconductors
+    :type q_ab_req_b2: float
+    :param v_b1: DC voltage of bridge 1
+    :type v_b1: float
+    :param v_b2_: DC voltage of bridge 2
+    :type v_b2_: float
+    :param i_b1: current out of bridge 1 at the time of transistor turn-off
+    :type i_b1: float
     """
     # Predefined Terms
     e1 = v_b2 * q_ab_req_b2 * omega_s
@@ -276,11 +316,11 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
 
 def _integrate_Coss(coss: np.ndarray, V: np.ndarray) -> np.ndarray:
     """
-    Integrate Coss for each voltage from 0 to V_max
+    Integrate Coss for each voltage from 0 to V_max.
+
     :param coss: MOSFET Coss(Vds) curve from Vds=0V to >= V1_max. Just one row with Coss data and index = Vds.
     :return: Qoss(Vds) as one row of data and index = Vds.
     """
-
     # Integrate from 0 to v
     def integrate(v):
         v_interp = np.arange(v + 1)
@@ -303,4 +343,3 @@ def _integrate_Coss(coss: np.ndarray, V: np.ndarray) -> np.ndarray:
     qoss_mesh = q_meshgrid(V)
 
     return qoss_mesh
-

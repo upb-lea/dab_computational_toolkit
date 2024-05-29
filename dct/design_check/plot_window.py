@@ -1,10 +1,8 @@
+"""GUI application."""
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
-import numpy as np
-from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QTabWidget, QVBoxLayout
 import sys
 
 import matplotlib
@@ -16,7 +14,10 @@ matplotlib.use('qt5agg')
 
 
 class PlotWindow:
+    """Class to initialize the GUI."""
+
     def __init__(self, parent=None, window_title: str = 'plot window', figsize=(12.8, 8)):
+        """Initialize PlotWindow instance."""
         self.app = QApplication(sys.argv)
         self.MainWindow = QMainWindow()
         self.MainWindow.__init__()
@@ -33,6 +34,7 @@ class PlotWindow:
         self.MainWindow.show()
 
     def addPlot(self, title, figure):
+        """Add plot to the GUI instance."""
         new_tab = QWidget()
         layout = QVBoxLayout()
         new_tab.setLayout(layout)
@@ -72,9 +74,11 @@ class PlotWindow:
         self.tab_handles.append(new_tab)
 
     def show(self):
+        """Show the GUI application."""
         self.app.exec_()
 
     def close(self):
+        """Close the GUI application."""
         self.app.exit()
 
 

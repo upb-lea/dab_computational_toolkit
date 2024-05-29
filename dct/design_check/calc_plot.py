@@ -1,9 +1,10 @@
-
+"""Calculate the DAB operating points and show the results."""
 import dct
 import numpy as np
 import os
 
 def calculate_and_plot_dab_results(dab_design_config, mosfet1, mosfet2):
+    """Calculate the DAB operating points and show the results."""
     da_mod = dct.calc_modulation(dab_design_config.n,
                                  dab_design_config.Ls,
                                  dab_design_config.Lc1,
@@ -22,7 +23,7 @@ def calculate_and_plot_dab_results(dab_design_config, mosfet1, mosfet2):
     zvs_coverage = np.count_nonzero(dab_design_config.mod_zvs_mask_zvs) / np.size(dab_design_config.mod_zvs_mask_zvs)
     dct.debug('zvs coverage:', zvs_coverage)
 
-    ## Plotting
+    # Plotting
     dct.info("\nStart Plotting\n")
 
     directory = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))

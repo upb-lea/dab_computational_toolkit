@@ -1,3 +1,4 @@
+"""Describe the dataclasses how to store the input parameters and results."""
 import os
 import pprint
 import numpy as np
@@ -10,6 +11,7 @@ import transistordatabase as tdb
 class DabData(DotMap):
     """
     Class to store the DAB specification, modulation and simulation results and some more data.
+
     It contains only numpy arrays, you can only add those.
     In fact everything is a numpy array even single int or float values!
     It inherits from DotMap to provide dot-notation usage instead of regular dict access.
@@ -26,7 +28,10 @@ class DabData(DotMap):
 
     def __init__(self, *args, **kwargs):
         """
-        Initialisation with another Dict is not handled and type converted yet!
+        Init the DabData class.
+
+        Initialisation with another Dict is not handled and type converted yet.
+
         :param args:
         :param kwargs:
         """
@@ -37,7 +42,11 @@ class DabData(DotMap):
         super().__init__(*args, **kwargs)
 
     def __setitem__(self, k, v):
-        # Only np.ndarray is allowed
+        """
+        Set elements to this class.
+
+        Only np.ndarray is allowed
+        """
         if isinstance(v, np.ndarray):
             # Check for allowed key names
             if any(k.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
@@ -54,7 +63,8 @@ class DabData(DotMap):
 
     def pprint_to_file(self, filename):
         """
-        Prints the DAB in nice human-readable form into a text file.
+        Print the DAB in nice human-readable form into a text file.
+
         WARNING: This file can not be loaded again! It is only for documentation.
         :param filename:
         """
@@ -70,6 +80,7 @@ class DabData(DotMap):
     def save_to_file(self, directory=str(), name=str(), timestamp=True, comment=str()):
         """
         Save everything (except plots) in one file.
+
         WARNING: Existing files will be overwritten!
 
         File is ZIP compressed and contains several named np.ndarray objects:
@@ -86,7 +97,6 @@ class DabData(DotMap):
         :param timestamp: If the datetime should prepend the final name. default True
         :param comment:
         """
-
         # Add some descriptive data to the file
         # Adding a timestamp, it may be useful
         self['_timestamp'] = np.asarray(datetime.now().isoformat())
@@ -124,7 +134,8 @@ class DabData(DotMap):
 
     def gen_meshes(self):
         """
-        Generates the default meshgrids for V1, V2 and P.
+        Generate the default meshgrids for V1, V2 and P.
+
         Values for:
         'V1_nom', 'V1_min', 'V1_max', 'V1_step',
         'V2_nom', 'V2_min', 'V2_max', 'V2_step',
@@ -137,13 +148,14 @@ class DabData(DotMap):
                                                               sparse=False)
 
     def append_result_dict(self, result: dict, name_pre: str = '', name_post: str = ''):
-        # Unpack the results
+        """Unpack the results and append it to the result dictionary."""
         for k, v in result.items():
             self[name_pre + k + name_post] = v
 
     def import_c_oss_from_file(self, file: str, name: str):
         """
         Import a csv file containing the Coss(Vds) capacitance from the MOSFET datasheet.
+
         This may be generated with: https://apps.automeris.io/wpd/
 
         Note we assume V_ds in Volt and C_oss in F. If this is not the case, scale your data accordingly!
@@ -168,8 +180,6 @@ class DabData(DotMap):
 
         # Read csv file
         csv_data = np.genfromtxt((conv(x) for x in open(file)), delimiter=';', dtype=float)
-
-        print(f"{csv_data = }")
 
         # Maybe check if data is monotonically
         # Check if voltage is monotonically rising
@@ -205,14 +215,7 @@ class DabData(DotMap):
         :param name: transistor name
         :type name: str
         """
-
-        print(np.shape(transistor.c_oss[0].graph_v_c))
-
         csv_data = transistor.c_oss[0].graph_v_c.T
-
-        print(f"{type(csv_data) = }")
-
-
 
         # Maybe check if data is monotonically
         # Check if voltage is monotonically rising
@@ -237,10 +240,10 @@ class DabData(DotMap):
         self['coss_' + transistor.name] = coss_interp
         self['qoss_' + transistor.name] = self._integrate_c_oss(coss_interp)
 
-
     def _integrate_c_oss(self, coss):
         """
-        Integrate Coss for each voltage from 0 to V_max
+        Integrate Coss for each voltage from 0 to V_max.
+
         :param coss: MOSFET Coss(Vds) curve from Vds=0V to >= V1_max. Just one row with Coss data and index = Vds.
         :return: Qoss(Vds) as one row of data and index = Vds.
         """
@@ -267,6 +270,7 @@ class DabData(DotMap):
 def save_to_file(dab: DabData, directory=str(), name=str(), timestamp=True, comment=str()):
     """
     Save everything (except plots) in one file.
+
     WARNING: Existing files will be overwritten!
 
     File is ZIP compressed and contains several named np.ndarray objects:
@@ -284,7 +288,6 @@ def save_to_file(dab: DabData, directory=str(), name=str(), timestamp=True, comm
     :param name: String added to the filename. Without file extension. Datetime may prepend the final name.
     :param timestamp: If the datetime should prepend the final name. default True
     """
-
     # Add some descriptive data to the file
     # Adding a timestamp, it may be useful
     dab['_timestamp'] = np.asarray(datetime.now().isoformat())
@@ -324,6 +327,7 @@ def save_to_file(dab: DabData, directory=str(), name=str(), timestamp=True, comm
 def load_from_file(file: str) -> DabData:
     """
     Load everything from the given .npz file.
+
     :param file: a .nps filename or file-like object, string, or pathlib.Path
     :return: two objects with type DAB_Specification and DAB_Results
     """
@@ -344,7 +348,8 @@ def load_from_file(file: str) -> DabData:
 
 def save_to_csv(dab: DabData, key=str(), directory=str(), name=str(), timestamp=True):
     """
-    Save one array with name 'key' out of dab_results to a csv file
+    Save one array with name 'key' out of dab_results to a csv file.
+
     :param dab:
     :param key: name of the array in dab_results
     :param directory:

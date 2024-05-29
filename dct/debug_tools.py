@@ -1,3 +1,4 @@
+"""Different methods to debug this toolbox."""
 import os
 from datetime import datetime
 # Decorator to print function args
@@ -12,12 +13,12 @@ DEBUG = False
 
 
 class log:
-    """
-    Class to print logging text to stdout and to a log file.
-    """
+    """Class to print logging text to stdout and to a log file."""
+
     logfile = None
 
     def __init__(self, filename=str()):
+        """Init the log file."""
         if filename:
             filename = os.path.expanduser(filename)
             filename = os.path.expandvars(filename)
@@ -25,15 +26,19 @@ class log:
             self.logfile = open(filename, 'a', buffering=1)
 
     def __del__(self):
+        """Close the log file."""
         self.close()
 
     def close(self):
+        """Close the log file."""
         if self.logfile:
             self.logfile.close()
 
     def error(self, *args, sep='\n', **kwargs):
-        """
+        r"""
         Log error output like print does.
+
+        :param sep: separator definition. Default to '\n'
         """
         # print(*args, **kwargs)
         print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(
@@ -43,8 +48,10 @@ class log:
                 inspect.stack()[1][0]).__name__ + ' ' + sep.join(map(str, args)), **kwargs, file=self.logfile)
 
     def warning(self, *args, sep='\n', **kwargs):
-        """
+        r"""
         Log warning output like print does.
+
+        :param sep: separator definition. Default to '\n'
         """
         # print(*args, **kwargs)
         print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(
@@ -54,33 +61,38 @@ class log:
                 inspect.stack()[1][0]).__name__ + ' ' + sep.join(map(str, args)), **kwargs, file=self.logfile)
 
     def info(self, *args, sep='\n', **kwargs):
-        """
+        r"""
         Log normal info output like print does.
+
+        :param sep: separator definition. Default to '\n'
         """
         print(*args, **kwargs, sep=sep)
         if self.logfile:
             print(*args, **kwargs, sep=sep, file=self.logfile)
 
     def debug(self, *args, sep='\n', **kwargs):
-        """
+        r"""
         Log debug output like print does.
+
+        :param sep: separator definition. Default to '\n'
         """
         if DEBUG or __debug__:
             # highly detailed output
-            print(datetime.now().isoformat(timespec='milliseconds') + ' '
-                  + inspect.getmodule(inspect.stack()[1][0]).__name__ + ' '
-                  + inspect.currentframe().f_back.f_code.co_name + '\n'
-                  + sep.join(map(str, args)), **kwargs)
+            print(datetime.now().isoformat(timespec='milliseconds') + ' ' + \
+                  inspect.getmodule(inspect.stack()[1][0]).__name__ + ' ' + \
+                  inspect.currentframe().f_back.f_code.co_name + '\n' + \
+                  sep.join(map(str, args)), **kwargs)
             if self.logfile:
-                print(datetime.now().isoformat(timespec='milliseconds') + ' '
-                      + inspect.getmodule(inspect.stack()[1][0]).__name__ + ' '
-                      + inspect.currentframe().f_back.f_code.co_name + '\n'
-                      + sep.join(map(str, args)), **kwargs, file=self.logfile)
+                print(datetime.now().isoformat(timespec='milliseconds') + ' ' + \
+                      inspect.getmodule(inspect.stack()[1][0]).__name__ + ' ' + \
+                      inspect.currentframe().f_back.f_code.co_name + '\n' + \
+                      sep.join(map(str, args)), **kwargs, file=self.logfile)
 
 
 def dump_args(func):
     """
-    Decorator to print function call details.
+    Print function call details by the use of an oparator.
+
     This includes parameters names and effective values.
     """
 
@@ -98,9 +110,7 @@ def dump_args(func):
 
 
 def timeit(func):
-    """
-    Decorator to measure execution time of a function
-    """
+    """Measure execution time of a function by the use of a decorator."""
 
     @wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -123,30 +133,33 @@ def timeit(func):
 def error(*args, sep='\n', **kwargs):
     """
     Log error output like print does.
+
     :param args:
     :param sep:
     :param kwargs:
     """
     # print(*args, **kwargs)
-    print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ +
+    print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ + \
           ' ' + sep.join(map(str, args)), **kwargs)
 
 
 def warning(*args, sep='\n', **kwargs):
     """
     Log warning output like print does.
+
     :param args:
     :param sep:
     :param kwargs:
     """
     # print(*args, **kwargs)
-    print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ +
+    print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ + \
           ' ' + sep.join(map(str, args)), **kwargs)
 
 
 def info(*args, sep='\n', **kwargs):
     """
     Log normal info output like print does.
+
     :param args:
     :param sep:
     :param kwargs:
@@ -158,10 +171,11 @@ def info(*args, sep='\n', **kwargs):
 
 
 def debug(*args, sep='\n', **kwargs):
-    """
+    r"""
     Log debug output like print does.
-    :param args:
-    :param sep:
+
+    :param args: arguments
+    :param sep: separator, default is '\n'
     :param kwargs:
     """
     if DEBUG or __debug__:
@@ -171,9 +185,9 @@ def debug(*args, sep='\n', **kwargs):
         # print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ +
         #       ' ' + sep.join(map(str, args)), **kwargs)
         # highly detailed output
-        print(datetime.now().isoformat(timespec='milliseconds') + ' ' +
-              inspect.getmodule(inspect.stack()[1][0]).__name__ + ' ' +
-              inspect.currentframe().f_back.f_code.co_name + '\n' +
+        print(datetime.now().isoformat(timespec='milliseconds') + ' ' + \
+              inspect.getmodule(inspect.stack()[1][0]).__name__ + ' ' + \
+              inspect.currentframe().f_back.f_code.co_name + '\n' + \
               sep.join(map(str, args)), **kwargs)
 
 

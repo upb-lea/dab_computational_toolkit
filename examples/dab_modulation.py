@@ -1,9 +1,7 @@
 """Example how to use the design_check for the DAB converter."""
 
 import dct
-import os
 import transistordatabase as tdb
-from matplotlib import pyplot as plt
 
 print("Start of Module ZVS ...")
 db = tdb.DatabaseManager()

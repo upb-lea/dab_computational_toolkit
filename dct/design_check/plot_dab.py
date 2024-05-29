@@ -1,10 +1,10 @@
+"""Plot the DAB calculations."""
 import os
 import sys
 
 import math
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib import cm
 import matplotlib.ticker as ticker
 
 from dct.debug_tools import *
@@ -12,15 +12,14 @@ from dct.design_check.plot_window import *
 
 
 class Plot_DAB:
-    """
-    Class storing and managing the plotwindow, figs and axes.
-    """
+    """Class storing and managing the plot window, figs and axes."""
+
     pw: PlotWindow
     figs_axes: list
 
     def __init__(self, latex=False, window_title: str = 'DAB Plots', figsize=(12, 5), fontsize=16, show=True):
         """
-        Create the object with default settings for all further plots
+        Create the object with default settings for all further plots.
 
         :param latex: Use Latex fonts (if available) for labels
         :param window_title:
@@ -44,11 +43,11 @@ class Plot_DAB:
         self.latex = latex
         if latex:
             plt.rcParams.update({
-                "text.usetex":      True,
-                "font.family":      "STIXGeneral",
+                "text.usetex": True,
+                "font.family": "STIXGeneral",
                 "mathtext.fontset": "cm",
                 # "font.size":        12
-                "font.size":        fontsize
+                "font.size": fontsize
             })
             plt.rcParams['figure.constrained_layout.use'] = False
             plt.rcParams["figure.autolayout"] = False
@@ -57,8 +56,7 @@ class Plot_DAB:
             plt.rcParams["figure.autolayout"] = False
 
     def apply_spacings(self, fig):
-
-        # Set some default spacings
+        """Set default spacings for the plots."""
         if self.fontsize < 14:
             fig.subplots_adjust(left=0.05, right=0.98, bottom=0.08, top=0.91, wspace=0.06, hspace=0.2)
             if self.figsize == (16, 8):
@@ -85,7 +83,7 @@ class Plot_DAB:
     def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: str = True, sharey: str = True,
                 tab_title='add Plot title'):
         """
-        Create a new fig in a new tab with the amount of subplots specified
+        Create a new fig in a new tab with the amount of subplots specified.
 
         :param nrows:
         :param ncols:
@@ -109,7 +107,8 @@ class Plot_DAB:
     def save_fig(self, fig, directory=None, name='', comment='',
                  timestamp=True):
         """
-        Saves the given fig as PNG and PDF
+        Save the given fig as PNG and PDF.
+
         :param fig:
         :param directory:
         :param name:
@@ -152,8 +151,8 @@ class Plot_DAB:
             sys.exit(1)
 
         # Save plots
-        metadata = {'Title':    filename,
-                    'Author':   'Felix Langemeier',
+        metadata = {'Title': filename,
+                    'Author': 'Felix Langemeier',
                     'Keywords': 'python, matplotlib, dab'}
         # Save as PNG
         fname = os.path.join(directory, filename + '.png')
@@ -166,7 +165,7 @@ class Plot_DAB:
     def plot_3by1(self, fig_axes: tuple, x, y, z1, z2, z3, xl: str = 'x', yl: str = 'y', t1: str = 'z1', t2: str = 'z2',
                   t3: str = 'z3'):
         """
-        Plots three contourf plots with a shared colorbar.
+        Plot three contourf plots with a shared colorbar.
 
         :param fig_axes: Provide the tuple (fig, axs)
         :param x:
@@ -204,7 +203,7 @@ class Plot_DAB:
     def plot_modulation(self, x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, mask3=None,
                         maskZVS=None, Vnum=2, tab_title='add Plot title'):
         """
-        Plots three contourf plots with a shared colorbar.
+        Plot three contourf plots with a shared colorbar.
 
         :param fig_axes: Provide the tuple (fig, axs)
         :param x: x mesh, e.g. P
@@ -243,11 +242,14 @@ class Plot_DAB:
         axs[2].clear()
         # Plot the contourf maps
         axs[0].contourf(x, y, z1, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=pz_min, vmax=pz_max)
-        if not mask1 is None: axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None: axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None: axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None: axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                                antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+        if not mask1 is None:
+            axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+        if not mask2 is None:
+            axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+        if not mask3 is None:
+            axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+        if not maskZVS is None:
+            axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
 
         # Apply the limits to the colorbar. That way the colorbar does not depend on one plot.
         mappable = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=pz_min, vmax=pz_max), cmap=cmap)
@@ -263,19 +265,26 @@ class Plot_DAB:
             cbar.ax.set_yticklabels(['-π/4', '-π/8', '0', 'π/8', 'π/4'])
 
         axs[1].contourf(x, y, z2, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None: axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None: axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None: axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None: axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                                antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+        if not mask1 is None:
+            axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+        if not mask2 is None:
+            axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+        if not mask3 is None:
+            axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+        if not maskZVS is None:
+            axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         axs[2].contourf(x, y, z3, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None: axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None: axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None: axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None: axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                                antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+        if not mask1 is None:
+            axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+        if not mask2 is None:
+            axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+        if not mask3 is None:
+            axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+        if not maskZVS is None:
+            axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         # Set the labels
-        if title: fig.suptitle(title)
+        if title:
+            fig.suptitle(title)
         axs[0].set_title(r"$\varphi \:/\: \mathrm{rad}$" if self.latex else "phi in rad")
         axs[1].set_title(r"$\tau_1 \:/\: \mathrm{rad}$" if self.latex else "tau1 in rad")
         axs[2].set_title(r"$\tau_2 \:/\: \mathrm{rad}$" if self.latex else "tau2 in rad")
@@ -313,10 +322,9 @@ class Plot_DAB:
         fig.canvas.flush_events()
 
     def plot_modulation_classic(self, fig_axes: tuple, x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None,
-                                mask3=None,
-                                maskZVS=None):
+                                mask3=None, maskZVS=None):
         """
-        Plots three contourf plots with a shared colorbar.
+        Plot three contourf plots with a shared colorbar.
 
         :param fig_axes: Provide the tuple (fig, axs)
         :param x: x mesh, e.g. P
@@ -341,25 +349,35 @@ class Plot_DAB:
         axs[2].clear()
         # Plot the contourf maps
         axs[0].contourf(x, y, z1, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None: axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None: axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None: axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None: axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                                antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+        if not mask1 is None:
+            axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+        if not mask2 is None:
+            axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+        if not mask3 is None:
+            axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+        if not maskZVS is None:
+            axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         axs[1].contourf(x, y, z2, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None: axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None: axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None: axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None: axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                                antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+        if not mask1 is None:
+            axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+        if not mask2 is None:
+            axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+        if not mask3 is None:
+            axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+        if not maskZVS is None:
+            axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         axs[2].contourf(x, y, z3, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-        if not mask1 is None: axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-        if not mask2 is None: axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-        if not mask3 is None: axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-        if not maskZVS is None: axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                                antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+        if not mask1 is None:
+            axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+        if not mask2 is None:
+            axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+        if not mask3 is None:
+            axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+        if not maskZVS is None:
+            axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
         # Set the labels
-        if title: fig.suptitle(title)
+        if title:
+            fig.suptitle(title)
         axs[0].set_title(r"$\varphi / \mathrm{rad}$" if self.latex else "phi in rad")
         axs[1].set_title(r"$\tau_1 / \mathrm{rad}$" if self.latex else "tau1 in rad")
         axs[2].set_title(r"$\tau_2 / \mathrm{rad}$" if self.latex else "tau2 in rad")
@@ -394,6 +412,7 @@ class Plot_DAB:
 
     @timeit
     def plot_rms_current(self, mesh_V2, mesh_P, mvvp_iLs):
+        """Plot RMS currents."""
         # plot
         fig, axs = plt.subplots(1, 3, sharey=True)
         fig.suptitle("DAB RMS Currents")
@@ -422,6 +441,7 @@ class Plot_DAB:
                          square=False, same_xy_ticks=False) -> None:
         """
         Draw a subplot contourf.
+
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
@@ -487,9 +507,12 @@ class Plot_DAB:
         if nan_matrix is None:
             cs_full = ax.contourf(x, y, np.clip(z, z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None: ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None: ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None: ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+            if not mask1 is None:
+                ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+            if not mask2 is None:
+                ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+            if not mask3 is None:
+                ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
         # in case of nan_matrix is set
         else:
             # plot background 50% visible
@@ -505,9 +528,12 @@ class Plot_DAB:
             #                       vmin=z_min, vmax=z_max, levels=cs_background.levels)
             cs_full = ax.contourf(x, y, z_nan.clip(z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None: ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None: ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None: ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+            if not mask1 is None:
+                ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+            if not mask2 is None:
+                ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+            if not mask3 is None:
+                ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
 
         ax.set_xlabel(xlabel, fontsize=fontsize_axis)
         ax.set_ylabel(ylabel, fontsize=fontsize_axis)
@@ -529,7 +555,7 @@ class Plot_DAB:
         # Should make the colorbar discrete but does it?
         # cb.ax.locator_params(nbins=num_cont_lines)
         ax.grid()
-        if clabel == True:
+        if clabel:
             ax.clabel(cs_full, inline=1, inline_spacing=inlinespacing, fontsize=10, fmt='%1.1f', colors='k')
         if wp_x is not None and markerstyle.lower() == 'line':
             ax.axvline(wp_x, linewidth=axlinewidth, color=axlinecolor)
@@ -551,6 +577,7 @@ class Plot_DAB:
                                 z_min: float = None, z_max: float = None) -> None:
         """
         Draw a subplot contourf.
+
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
@@ -605,9 +632,12 @@ class Plot_DAB:
         if nan_matrix is None:
             cs_full = ax.contourf(x, y, np.clip(z, z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None: ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None: ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None: ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+            if not mask1 is None:
+                ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+            if not mask2 is None:
+                ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+            if not mask3 is None:
+                ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
         # in case of nan_matrix is set
         else:
             # plot background 50% visible
@@ -621,9 +651,12 @@ class Plot_DAB:
             # Note: levels taken from first plot
             cs_full = ax.contourf(x, y, z_nan.clip(z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
-            if not mask1 is None: ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-            if not mask2 is None: ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-            if not mask3 is None: ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+            if not mask1 is None:
+                ax.contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+            if not mask2 is None:
+                ax.contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+            if not mask3 is None:
+                ax.contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
 
         ax.set_xlabel(xlabel, fontsize=fontsize_axis)
         ax.set_ylabel(ylabel, fontsize=fontsize_axis)
@@ -635,7 +668,7 @@ class Plot_DAB:
         # cb = plt.colorbar(cs_full)
         cb.ax.locator_params(nbins=num_cont_lines)
         ax.grid()
-        if clabel == True:
+        if clabel:
             ax.clabel(cs_full, inline=1, inline_spacing=inlinespacing, fontsize=10, fmt='%1.1f', colors='k')
         if wp_x is not None and markerstyle.lower() == 'line':
             ax.axvline(wp_x, linewidth=axlinewidth, color=axlinecolor)
@@ -653,6 +686,7 @@ class Plot_DAB:
                              z_min: float = None, z_max: float = None) -> None:
         """
         Draw a subplot contourf.
+
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
@@ -716,7 +750,7 @@ class Plot_DAB:
         ax.set_title(title, fontsize=fontsize_title)
         plt.colorbar(cs_full, ax=ax)
         ax.grid()
-        if clabel == True:
+        if clabel:
             ax.clabel(cs_full, inline=1, inline_spacing=inlinespacing, fontsize=10, fmt='%1.1f', colors='k')
         if wp_x is not None and markerstyle.lower() == 'line':
             ax.axvline(wp_x, linewidth=axlinewidth, color=axlinecolor)
@@ -729,7 +763,8 @@ class Plot_DAB:
                 xlabel='x', ylabel: str = 'y', title: str = '',
                 xscale='linear', yscale='linear') -> None:
         """
-        Plot a simple line plot in a subplot
+        Plot a simple line plot in a subplot.
+
         :param x:
         :param y:
         :param ax:
@@ -759,13 +794,15 @@ class Plot_DAB:
         # fig.tight_layout()
 
     def show(self):
+        """Show the plots all at once."""
         if self.show_pw:
-            # just to show the plots all at once
+
             self.pw.show()
         else:
             plt.close('all')
 
     def close(self):
+        """Close plot window."""
         if self.show_pw:
             # Close figures
             # FIXME It seems that this does not close nicely
@@ -778,7 +815,7 @@ class Plot_DAB:
 def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, mask3=None,
                     maskZVS=None, Vnum=2, filename='Plot_title', latex=False):
     """
-    Plots three contourf plots with a shared colorbar.
+    Plot three contourf plots with a shared colorbar.
 
     :param fig_axes: Provide the tuple (fig, axs)
     :param x: x mesh, e.g. P
@@ -794,10 +831,10 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
     figsize = (10, 5)
     if latex:
         plt.rcParams.update({
-            "text.usetex":      True,
-            "font.family":      "STIXGeneral",
+            "text.usetex": True,
+            "font.family": "STIXGeneral",
             "mathtext.fontset": "cm",
-            "font.size":        12
+            "font.size": 12
         })
         plt.rcParams['figure.constrained_layout.use'] = False
         plt.rcParams["figure.autolayout"] = False
@@ -805,10 +842,14 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
         plt.rcParams['figure.constrained_layout.use'] = False
         plt.rcParams["figure.autolayout"] = False
 
-    if np.all(mask1 == mask1[0]): mask1 = None
-    if np.all(mask2 == mask2[0]): mask2 = None
-    if np.all(mask3 == mask3[0]): mask3 = None
-    if np.all(maskZVS == maskZVS[0]): maskZVS = None
+    if np.all(mask1 == mask1[0]):
+        mask1 = None
+    if np.all(mask2 == mask2[0]):
+        mask2 = None
+    if np.all(mask3 == mask3[0]):
+        mask3 = None
+    if np.all(maskZVS == maskZVS[0]):
+        maskZVS = None
 
     # Add a new tab with subplot
     fig, axs = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=figsize,
@@ -826,11 +867,14 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
     axs[2].clear()
     # Plot the contourf maps
     axs[0].contourf(x, y, z1, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=pz_min, vmax=pz_max)
-    if not mask1 is None: axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-    if not mask2 is None: axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-    if not mask3 is None: axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-    if not maskZVS is None: axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                            antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+    if not mask1 is None:
+        axs[0].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+    if not mask2 is None:
+        axs[0].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+    if not mask3 is None:
+        axs[0].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+    if not maskZVS is None:
+        axs[0].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
 
     # Apply the limits to the colorbar. That way the colorbar does not depend on one plot.
     mappable = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=pz_min, vmax=pz_max), cmap=cmap)
@@ -844,19 +888,26 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
         cbar.ax.set_yticklabels(['-π/4', '-π/8', '0', 'π/8', 'π/4'])
 
     axs[1].contourf(x, y, z2, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-    if not mask1 is None: axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-    if not mask2 is None: axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-    if not mask3 is None: axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-    if not maskZVS is None: axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                            antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+    if not mask1 is None:
+        axs[1].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+    if not mask2 is None:
+        axs[1].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+    if not mask3 is None:
+        axs[1].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+    if not maskZVS is None:
+        axs[1].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
     axs[2].contourf(x, y, z3, num_cont_lines, alpha=1, antialiased=True, cmap=cmap, vmin=z_min, vmax=z_max)
-    if not mask1 is None: axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
-    if not mask2 is None: axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
-    if not mask3 is None: axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
-    if not maskZVS is None: axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5,
-                                            antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
+    if not mask1 is None:
+        axs[2].contour(x, y, mask1, levels=[0.5], colors=['red'], alpha=1)
+    if not mask2 is None:
+        axs[2].contour(x, y, mask2, levels=[0.5], colors=['blue'], alpha=1)
+    if not mask3 is None:
+        axs[2].contour(x, y, mask3, levels=[0.5], colors=['black'], alpha=1)
+    if not maskZVS is None:
+        axs[2].contourf(x, y, np.ma.masked_where(maskZVS == 1, maskZVS), 1, alpha=0.5, antialiased=True, cmap='Greys_r', vmin=0, vmax=1)
     # Set the labels
-    if title: fig.suptitle(title)
+    if title:
+        fig.suptitle(title)
     axs[0].set_title(r"$\varphi \:/\: \mathrm{rad}$" if latex else "phi in rad")
     axs[1].set_title(r"$\tau_1 \:/\: \mathrm{rad}$" if latex else "tau1 in rad")
     axs[2].set_title(r"$\tau_2 \:/\: \mathrm{rad}$" if latex else "tau2 in rad")
@@ -879,8 +930,8 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
         cbar.ax.set_yticklabels(['-π', '-π3/4', '-π/2', '-π/4', '0', 'π/4', 'π/2', 'π3/4', 'π'])
 
     # Save plots
-    metadata = {'Title':    filename,
-                'Author':   'Felix Langemeier',
+    metadata = {'Title': filename,
+                'Author': 'Felix Langemeier',
                 'Keywords': 'python, matplotlib, dab'}
     # Save as PNG
     filename = os.path.expanduser(filename)
@@ -895,6 +946,7 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
 
 @timeit
 def plot_rms_current(mesh_V2, mesh_P, mvvp_iLs):
+    """Plot the RMS currents."""
     # plot
     fig, axs = plt.subplots(1, 3, sharey=True)
     fig.suptitle("DAB RMS Currents")
@@ -915,5 +967,5 @@ def plot_rms_current(mesh_V2, mesh_P, mvvp_iLs):
 
 
 def show_plot():
-    # just to show the plots all at once
+    """Show the plots all at once."""
     plt.show()
