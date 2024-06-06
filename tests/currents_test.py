@@ -12,7 +12,8 @@ def test_rms_1d():
     """
     Test RMS current calculation with a 1D-array.
 
-    All results have been verified using GeckoCIRCUITS."""
+    All results have been verified using GeckoCIRCUITS.
+    """
     alpha_rad = np.array([1.5])
     beta_rad = np.array([2.0])
     gamma_rad = np.array([3.0])
