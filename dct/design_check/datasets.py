@@ -22,9 +22,7 @@ class DabData(DotMap):
     _allowed_keys = ['_timestamp', '_comment', 'spec_', 'mesh_', 'mod_', 'sim_', 'meas_', 'coss_', 'qoss_', 'iter_']
     _allowed_spec_keys = ['V1_nom', 'V1_min', 'V1_max', 'V1_step', 'V2_nom', 'V2_min', 'V2_max', 'V2_step', 'P_min',
                           'P_max', 'P_nom', 'P_step', 'n', 'Ls', 'Lm', 'Lc1', 'Lc2', 'Lc2_', 'fs', 't_dead1', 't_dead2',
-                          'temp', 'C_HB11', 'C_HB12', 'C_HB21', 'C_HB22',
-                          # deprecated:
-                          'C_PCB_leg', 'L_s', 'L_m', 'fs_nom']
+                          'temp', 'C_HB11', 'C_HB12', 'C_HB21', 'C_HB22']
 
     def __init__(self, *args, **kwargs):
         """
@@ -41,25 +39,25 @@ class DabData(DotMap):
         #     d.update((k, float(v)) for k,v in self.__call_items(kwargs)
         super().__init__(*args, **kwargs)
 
-    def __setitem__(self, k, v):
+    def __setitem__(self, key, value):
         """
         Set elements to this class.
 
         Only np.ndarray is allowed
         """
-        if isinstance(v, np.ndarray):
+        if isinstance(value, np.ndarray):
             # Check for allowed key names
-            if any(k.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
-                super().__setitem__(k, v)
+            if any(key.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
+                super().__setitem__(key, value)
             else:
-                warning('None of the _allowed_keys are used! Nothing added! Used key: ' + str(k))
+                warning('None of the _allowed_keys are used! Nothing added! Used key: ' + str(key))
         else:
             # Value will be converted to a ndarray
             # Check for allowed key names
-            if any(k.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
-                super().__setitem__(k, np.asarray(v))
+            if any(key.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
+                super().__setitem__(key, np.asarray(value))
             else:
-                warning('None of the _allowed_keys are used! Nothing added! Used key: ' + str(k))
+                warning('None of the _allowed_keys are used! Nothing added! Used key: ' + str(key))
 
     def pprint_to_file(self, filename):
         """
@@ -149,8 +147,8 @@ class DabData(DotMap):
 
     def append_result_dict(self, result: dict, name_pre: str = '', name_post: str = ''):
         """Unpack the results and append it to the result dictionary."""
-        for k, v in result.items():
-            self[name_pre + k + name_post] = v
+        for key, value in result.items():
+            self[name_pre + key + name_post] = value
 
     def import_c_oss_from_file(self, file: str, name: str):
         """

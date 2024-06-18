@@ -20,7 +20,7 @@ import multiprocessing as mp
 from tqdm import tqdm
 import pygeckocircuits2 as pgc
 
-class Sim_Gecko:
+class GeckoSimulation:
     """
     This class is intended to run multiple Gecko instances in threads oder multiple processes.
 
@@ -40,8 +40,6 @@ class Sim_Gecko:
         self.thread_count = 3
         # Init dict to store simulation result arrays
         self.da_sim_results = dict()
-        # self.td_mutex = td.Lock()
-        # self.mp_mutex = mp.Lock()
 
     @timeit
     def start_sim_threads(self, mesh_V1: np.ndarray, mesh_V2: np.ndarray,
@@ -179,9 +177,6 @@ class Sim_Gecko:
                     'phi': mod_phi[vec_vvp].item() / np.pi * 180,
                     'tau1': mod_tau1[vec_vvp].item() / np.pi * 180,
                     'tau2': mod_tau2[vec_vvp].item() / np.pi * 180
-                    # Old v1 Model needed inverse tau
-                    # 'tau1_inv': (np.pi - mod_tau1[vec_vvp].item()) / np.pi * 180,
-                    # 'tau2_inv': (np.pi - mod_tau2[vec_vvp].item()) / np.pi * 180
                 }
                 # debug(sim_params)
 
@@ -507,8 +502,3 @@ def next_free_port(port=1024, max_port=65535) -> int:
         except OSError:
             port += 1
     raise IOError('no free ports')
-
-
-# ---------- MAIN ----------
-if __name__ == '__main__':
-    print("Start of Module SIM ...")
