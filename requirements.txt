@@ -2,3 +2,7 @@ pandas
 dotmap
 matplotlib
 pyqt5
+tqdm
+# libraries provided by LEA
+pygeckocircuits2
+transistordatabase
