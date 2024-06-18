@@ -328,7 +328,7 @@ def _integrate_Coss(coss: np.ndarray, V: np.ndarray) -> np.ndarray:
         return np.trapz(coss_v)
 
     coss_int = np.vectorize(integrate)
-    # get an qoss vector that has the resolution 1V from 0 to V_max
+    # get a qoss vector that has the resolution 1V from 0 to V_max
     v_vec = np.arange(coss.shape[0])
     # get an qoss vector that fits the mesh_V scale
     # v_vec = np.linspace(V_min, V_max, int(V_step))

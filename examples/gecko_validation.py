@@ -74,7 +74,7 @@ def gecko_simulate_zvs_modulation(design_specification: str,
     if not os.path.exists(directory):
         os.mkdir(directory)
 
-    directory = directory + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + name_pre + name
+    directory = os.path.join(directory, datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + name_pre + name)
     directory = os.path.abspath(directory)
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -145,12 +145,12 @@ def gecko_simulate_zvs_modulation(design_specification: str,
         ds.save_to_csv(dab2, key, directory, 'degree_' + name, timestamp=False)
 
     # Plotting
-    plot_mod_sim(dab, name, comment, directory, ['zvs'])
+    plot_gecko_simulation_results(dab, name, comment, directory, ['zvs'])
 
 
 @timeit
-def plot_mod_sim(dab_config, simulation_name: str, comment: str, directory: str, mod_keys: list[str],
-                 show_plot: bool = True, logfile=str()):
+def plot_gecko_simulation_results(dab_config, simulation_name: str, comment: str, directory: str, mod_keys: list[str],
+                                  show_plot: bool = True, logfile=str()):
     """
     Plot the results from the GeckoCIRCUITS simulation.
 
@@ -437,10 +437,8 @@ if __name__ == '__main__':
     dbm = tdb.DatabaseManager()
     dbm.set_operation_mode_json()
 
-    mosfet1 = 'CREE_C3M0065100J'
-    mosfet2 = 'CREE_C3M0060065J'
-    transistor_1 = dbm.load_transistor(mosfet1)
-    transistor_2 = dbm.load_transistor(mosfet2)
+    transistor_1 = dbm.load_transistor('CREE_C3M0065100J')
+    transistor_2 = dbm.load_transistor('CREE_C3M0060065J')
 
     transistor_1.quickstart_wp()
     transistor_2.quickstart_wp()
@@ -449,3 +447,14 @@ if __name__ == '__main__':
     design_specification = 'initial'
 
     gecko_simulate_zvs_modulation(design_specification, transistor_1, transistor_2)
+
+    # loaded_gecko_simulation = dct.load_from_file('../dab_modulation_output/2024-06-18_19-14-45_debug_mod_zvs_sim_Gv8_n3_tdead1_100_Coss2_Ls_83uH__Lc1_611uH__Lc2_611uH_v3-v5-p5/dab_sim_Gv8_n3_tdead1_100_Coss2_Ls_83uH__Lc1_611uH__Lc2_611uH_v3-v5-p5.npz')
+    # loaded_calculation = dct.calculate_and_plot_dab_results(design_specification, transistor_1, transistor_2)
+    #
+    # dct.show_keys(loaded_calculation)
+    # i_l_s_rms, i_l_1_rms, i_l_2_rms = dct.calc_rms_currents(loaded_calculation)
+    # print(f"{i_l_s_rms=}")
+    # print("--------------------------------------")
+    # dct.show_keys(loaded_gecko_simulation)
+    # print(f"{loaded_gecko_simulation.sim_zvs_i_Ls=}")
+    # print(f"{loaded_gecko_simulation.mod_zvs_phi=}")

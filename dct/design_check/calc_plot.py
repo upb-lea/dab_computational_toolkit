@@ -1,17 +1,31 @@
 """Calculate the DAB operating points and show the results."""
-import dct
-import numpy as np
+
+# python libraries
 import os
 
-def calculate_and_plot_dab_results(dab_design_config, mosfet1, mosfet2):
+# own libraries
+import dct
+
+# 3rd party libraries
+import numpy as np
+import transistordatabase as tdb
+
+
+def calculate_and_plot_dab_results(dab_design_config: str, transistor_1: tdb.Transistor, transistor_2: tdb.Transistor):
     """Calculate the DAB operating points and show the results."""
+
+    dab_design_config = dct.load_dab_specification(dab_design_config)
+
+    dab_design_config.import_c_oss_from_tdb(transistor_1)
+    dab_design_config.import_c_oss_from_tdb(transistor_2)
+
     da_mod = dct.calc_modulation(dab_design_config.n,
                                  dab_design_config.Ls,
                                  dab_design_config.Lc1,
                                  dab_design_config.Lc2,
                                  dab_design_config.fs,
-                                 dab_design_config['coss_' + mosfet1],
-                                 dab_design_config['coss_' + mosfet2],
+                                 dab_design_config['coss_' + transistor_1.name],
+                                 dab_design_config['coss_' + transistor_2.name],
                                  dab_design_config.mesh_V1,
                                  dab_design_config.mesh_V2,
                                  dab_design_config.mesh_P)
@@ -107,27 +121,29 @@ def calculate_and_plot_dab_results(dab_design_config, mosfet1, mosfet2):
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot Coss
-    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + mosfet1, sharex=False, sharey=False)
-    plt.subplot(np.arange(dab_design_config['coss_' + mosfet1].shape[0]),
-                dab_design_config['coss_' + mosfet1],
+    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + transistor_1.name, sharex=False, sharey=False)
+    plt.subplot(np.arange(dab_design_config['coss_' + transistor_1.name].shape[0]),
+                dab_design_config['coss_' + transistor_1.name],
                 ax=plt.figs_axes[-1][1][0],
-                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + mosfet1,
+                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + transistor_1.name,
                 yscale='log')
-    plt.subplot(np.arange(dab_design_config['qoss_' + mosfet1].shape[0]),
-                dab_design_config['qoss_' + mosfet1],
+    plt.subplot(np.arange(dab_design_config['qoss_' + transistor_1.name].shape[0]),
+                dab_design_config['qoss_' + transistor_1.name],
                 ax=plt.figs_axes[-1][1][1],
-                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + mosfet1)
+                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + transistor_1.name)
 
     # Plot Coss
-    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + mosfet2, sharex=False, sharey=False)
-    plt.subplot(np.arange(dab_design_config['coss_' + mosfet2].shape[0]),
-                dab_design_config['coss_' + mosfet2],
+    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + transistor_2.name, sharex=False, sharey=False)
+    plt.subplot(np.arange(dab_design_config['coss_' + transistor_2.name].shape[0]),
+                dab_design_config['coss_' + transistor_2.name],
                 ax=plt.figs_axes[-1][1][0],
-                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + mosfet2,
+                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + transistor_2.name,
                 yscale='log')
-    plt.subplot(np.arange(dab_design_config['qoss_' + mosfet2].shape[0]),
-                dab_design_config['qoss_' + mosfet2],
+    plt.subplot(np.arange(dab_design_config['qoss_' + transistor_2.name].shape[0]),
+                dab_design_config['qoss_' + transistor_2.name],
                 ax=plt.figs_axes[-1][1][1],
-                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + mosfet2)
+                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + transistor_2.name)
 
     plt.show()
+
+    return dab_design_config

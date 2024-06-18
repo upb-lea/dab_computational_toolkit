@@ -409,3 +409,13 @@ def save_to_csv(dab: DabData, key=str(), directory=str(), name=str(), timestamp=
             # np.savetxt(outfile, array_slice, fmt='%-7.2f')
             np.savetxt(outfile, array_slice, delimiter=';')
             i += 1
+
+def show_keys(dab: DabData) -> None:
+    """
+    Show the keys, stored in the given DabData structure.
+
+    :param dab: DabData object
+    :return: None
+    """
+    for key, value in dab.items():
+        print(f"{key=}")

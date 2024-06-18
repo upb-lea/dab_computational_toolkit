@@ -10,228 +10,8 @@ from dct.debug_tools import *
 # 3rd party libraries
 import numpy as np
 from collections import defaultdict
-# For threads: run parallel in single process
-# from threading import Thread, Lock
-import threading as td
-# For processes: run parallel on multiple cpu's
-# from multiprocessing import Process, Lock
-import multiprocessing as mp
-# Status bar
 from tqdm import tqdm
 import pygeckocircuits2 as pgc
-
-class GeckoSimulation:
-    """
-    This class is intended to run multiple Gecko instances in threads oder multiple processes.
-
-    As of now the concept kind of works and is very promising but there are some Java errors
-    that prevent running the Java process in parallel.
-    """
-
-    # mean values we want to get from the simulation
-    l_means_keys = ['p_dc1', 'p_dc2', 'S11_p_sw', 'S11_p_cond', 'S12_p_sw', 'S12_p_cond', 'S21_p_sw', 'S21_p_cond',
-                    'S22_p_sw', 'S22_p_cond']
-    l_rms_keys = ['i_Ls', 'i_Lm', 'v_dc1', 'i_dc1', 'v_dc2', 'i_dc2', 'i_C11', 'i_C12', 'i_C21', 'i_C22']
-    mutex: td.Lock = None
-    pbar: tqdm = None
-
-    def __init__(self):
-        # Number of threads or processes in parallel
-        self.thread_count = 3
-        # Init dict to store simulation result arrays
-        self.da_sim_results = dict()
-
-    @timeit
-    def start_sim_threads(self, mesh_V1: np.ndarray, mesh_V2: np.ndarray,
-                          mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
-                          simfilepath: str, timestep: float = None, simtime: float = None,
-                          timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036,
-                          gdebug: bool = False) -> dict:
-        """Start threads for parallel GeckoCIRCUITS simulations."""
-        # Init arrays to store simulation results
-        for k in self.l_means_keys:
-            self.da_sim_results[k] = np.full_like(mod_phi, np.nan)
-        for k in self.l_rms_keys:
-            self.da_sim_results[k] = np.full_like(mod_phi, np.nan)
-
-        # Progressbar init
-        # Calc total number of iterations to simulate
-        it_total = mod_phi.size
-        self.pbar = tqdm(total=it_total)
-
-        # ************ Gecko Start **********
-
-        self.mutex = td.Lock()
-        threads = []
-        # Start the worker threads
-        for i in range(self.thread_count):
-            kwargs = {'mesh_V1': mesh_V1, 'mesh_V2': mesh_V2, 'mod_phi': mod_phi, 'mod_tau1': mod_tau1,
-                      'mod_tau2': mod_tau2, 'simfilepath': simfilepath, 'timestep': timestep,
-                      'simtime': simtime, 'timestep_pre': timestep_pre, 'simtime_pre': simtime_pre,
-                      'geckoport': geckoport + i, 'gdebug': gdebug}
-            t = td.Thread(target=self._start_sim_single, kwargs=kwargs, name=str(i))
-            t.start()
-            threads.append(t)
-
-        # Wait for the threads to complete
-        for t in threads:
-            t.join()
-
-        # ************ Gecko End **********
-
-        # Progressbar end
-        self.pbar.close()
-
-        # Rename the keys according to convention
-        # da_sim_results_temp = dict()
-        # for k, v in self.da_sim_results.items():
-        #     da_sim_results_temp['sim_' + k] = v
-        # self.da_sim_results = da_sim_results_temp
-
-        debug(self.da_sim_results)
-        return self.da_sim_results
-
-    @timeit
-    def start_sim_multi(self, mesh_V1: np.ndarray, mesh_V2: np.ndarray,
-                        mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
-                        simfilepath: str, timestep: float = None, simtime: float = None,
-                        timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036,
-                        gdebug: bool = False) -> dict:
-        """Start multiple GeckoCIRCUITS simulations in parallel."""
-        # Init arrays to store simulation results
-        for k in self.l_means_keys:
-            self.da_sim_results[k] = np.full_like(mod_phi, np.nan)
-        for k in self.l_rms_keys:
-            self.da_sim_results[k] = np.full_like(mod_phi, np.nan)
-
-        # Progressbar init
-        # Calc total number of iterations to simulate
-        it_total = mod_phi.size
-        self.pbar = tqdm(total=it_total)
-
-        # ************ Gecko Start **********
-
-        self.mutex = mp.Lock()
-        processes = []
-        # Start the worker threads
-        for i in range(self.thread_count):
-            kwargs = {'mesh_V1': mesh_V1, 'mesh_V2': mesh_V2, 'mod_phi': mod_phi, 'mod_tau1': mod_tau1,
-                      'mod_tau2': mod_tau2, 'simfilepath': simfilepath, 'timestep': timestep,
-                      'simtime': simtime, 'timestep_pre': timestep_pre, 'simtime_pre': simtime_pre,
-                      'geckoport': geckoport + i, 'gdebug': gdebug}
-            t = mp.Process(target=self._start_sim_single, kwargs=kwargs)
-            t.start()
-            processes.append(t)
-
-        # Wait for the threads to complete
-        for t in processes:
-            t.join()
-
-        # kwargs = {'mesh_V1':   mesh_V1, 'mesh_V2': mesh_V2, 'mod_phi': mod_phi, 'mod_tau1': mod_tau1,
-        #           'mod_tau2':  mod_tau2, 'simfilepath': simfilepath, 'timestep': timestep,
-        #           'simtime':   simtime, 'timestep_pre': timestep_pre, 'simtime_pre': simtime_pre,
-        #           'geckoport': geckoport + 1, 'gdebug': gdebug}
-        # self._start_sim_single(**kwargs)
-
-        # self._start_sim_single(mesh_V1, mesh_V2, mod_phi, mod_tau1, mod_tau2, simfilepath, timestep, simtime, timestep_pre, simtime_pre, geckoport)
-
-        # ************ Gecko End **********
-
-        # Progressbar end
-        self.pbar.close()
-
-        # Rename the keys according to convention
-        # da_sim_results_temp = dict()
-        # for k, v in self.da_sim_results.items():
-        #     da_sim_results_temp['sim_' + k] = v
-        # self.da_sim_results = da_sim_results_temp
-
-        debug(self.da_sim_results)
-        return self.da_sim_results
-
-    def _start_sim_single(self, mesh_V1: np.ndarray, mesh_V2: np.ndarray,
-                          mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
-                          simfilepath: str, timestep: float = None, simtime: float = None,
-                          timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036,
-                          gdebug: bool = False):
-
-        info(geckoport, simfilepath)
-
-        # ************ Gecko Start **********
-
-        try:
-            # use pyjnius here
-
-            if not __debug__:
-                # Gecko Basics
-                dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, debug=gdebug)
-
-            for vec_vvp in np.ndindex(mod_phi.shape):
-                # debug(vec_vvp, mod_phi[vec_vvp], mod_tau1[vec_vvp], mod_tau2[vec_vvp], sep='\n')
-
-                # set simulation parameters and convert tau to inverse-tau for Gecko
-                sim_params = {
-                    # TODO find a way to do this with sparse arrays
-                    'v_dc1': mesh_V1[vec_vvp].item(),
-                    'v_dc2': mesh_V2[vec_vvp].item(),
-                    'phi': mod_phi[vec_vvp].item() / np.pi * 180,
-                    'tau1': mod_tau1[vec_vvp].item() / np.pi * 180,
-                    'tau2': mod_tau2[vec_vvp].item() / np.pi * 180
-                }
-                # debug(sim_params)
-
-                # start simulation for this operation point
-                # TODO optimize for multithreading, maybe multiple Gecko instances needed
-                if not __debug__:
-                    dab_converter.set_global_parameters(sim_params)
-                if not __debug__:
-                    # TODO time settings should be variable
-                    # dab_converter.run_simulation(timestep=100e-12, simtime=15e-6, timestep_pre=50e-9, simtime_pre=10e-3)
-                    # TODO Bug in LPT with _pre settings! Does this still run a pre-simulation like in the model?
-                    # Start the simulation and get the results
-                    dab_converter.run_simulation(timestep=timestep, simtime=simtime)
-                    values_mean = dab_converter.get_values(
-                        nodes=self.l_means_keys,
-                        operations=['mean']
-                    )
-                    values_rms = dab_converter.get_values(
-                        nodes=self.l_rms_keys,
-                        operations=['rms']
-                    )
-                else:
-                    # generate some fake data for debugging
-                    # values_mean = {'mean': {'p_dc1':      np.random.uniform(0.0, 1000),
-                    #                         'S11_p_sw':   np.random.uniform(0.0, 10),
-                    #                         'S11_p_cond': np.random.uniform(0.0, 10),
-                    #                         'S12_p_sw':   np.random.uniform(0.0, 1000),
-                    #                         'S12_p_cond': np.random.uniform(0.0, 100)}}
-                    # values_rms = {'rms': {'i_Ls': np.random.uniform(0.0, 10)}}
-                    values_mean = defaultdict(dict)
-                    values_rms = defaultdict(dict)
-                    for k in self.l_means_keys:
-                        values_mean['mean'][k] = np.random.uniform(0.0, 1)
-                    for k in self.l_rms_keys:
-                        values_rms['rms'][k] = np.random.uniform(0.0, 1)
-
-                # ***** LOCK Start *****
-                self.mutex.acquire()
-                # save simulation results in arrays
-                for k in self.l_means_keys:
-                    self.da_sim_results[k][vec_vvp] = values_mean['mean'][k]
-                for k in self.l_rms_keys:
-                    self.da_sim_results[k][vec_vvp] = values_rms['rms'][k]
-
-                # Progressbar update, default increment +1
-                self.pbar.update()
-                self.mutex.release()
-                # ***** LOCK End *****
-
-            # dab_converter.__del__()
-
-        finally:
-            # jnius.detach()
-            pass
-        # ************ Gecko End **********
 
 def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
               mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
@@ -301,26 +81,18 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
     for k in l_min_keys:
         da_sim_results[k] = np.full_like(mod_phi, np.nan)
 
-    # Progressbar init
-    # Calc total number of iterations to simulate
-    it_total = mod_phi.size
-    pbar = tqdm(total=it_total)
+    # Progressbar init, calc total number of iterations to simulate
+    pbar = tqdm(total=mod_phi.size)
 
-    # ************ Gecko Start **********
-    # TODO optimize for multithreading, maybe multiple Gecko instances needed
     if not __debug__:
         # Find a free port if zero is given as port
         if geckoport == 0:
             geckoport = get_free_port()
         # Gecko Basics
-        print(f"{simfilepath=}")
-        dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, debug=gdebug,
-                                            timestep=timestep, simtime=simtime,
-                                            timestep_pre=timestep_pre, simtime_pre=simtime_pre)
+        gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, debug=gdebug,
+            timestep=timestep, simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
     for vec_vvp in np.ndindex(mod_phi.shape):
-        # debug(vec_vvp, mod_phi[vec_vvp], mod_tau1[vec_vvp], mod_tau2[vec_vvp], sep='\n')
-
         # set simulation parameters and convert tau to degree for Gecko
         sim_params = {
             'v_dc1': mesh_V1[vec_vvp].item(),
@@ -332,9 +104,7 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
             't_dead2': mesh_t_dead2[vec_vvp].item(),
             'fs': mesh_fs[vec_vvp].item(),
             'Ls': float(Ls),
-            # to disable set this to very high value not to zero or inf
             'Lc1': float(Lc1),
-            # to disable set this to very high value not to zero or inf
             'Lc2_': float(Lc2_),
             'n': float(n),
             'temp': float(temp)
@@ -345,16 +115,15 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
         if C_HB2 is not None:
             sim_params['C_HB21'] = C_HB2
             sim_params['C_HB22'] = C_HB2
-        # info(sim_params)
 
         # Only run simulation if all params are valid
         if not np.any(np.isnan(list(sim_params.values()))):
             # start simulation for this operation point
             if not __debug__:
-                dab_converter.set_global_parameters(sim_params)
+                gecko_dab_converter.set_global_parameters(sim_params)
                 # Start the simulation and get the results. Do not set times here because it is set while init Gecko.
-                dab_converter.run_simulation()
-                values_mean = dab_converter.get_values(
+                gecko_dab_converter.run_simulation()
+                values_mean = gecko_dab_converter.get_values(
                     nodes=l_means_keys,
                     operations=['mean'],
                     # Just use the last part, because the beginning is garbage
@@ -363,7 +132,7 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
                     range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
                                       'end']
                 )
-                values_rms = dab_converter.get_values(
+                values_rms = gecko_dab_converter.get_values(
                     nodes=l_rms_keys,
                     operations=['rms'],
                     # Just use the last part, because the beginning is garbage
@@ -372,7 +141,7 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
                     range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
                                       'end']
                 )
-                values_min = dab_converter.get_values(
+                values_min = gecko_dab_converter.get_values(
                     nodes=l_min_keys,
                     operations=['min'],
                     # Just use the last part, because the beginning is garbage
@@ -416,8 +185,7 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
 
     if not __debug__:
         # Gecko Basics
-        dab_converter.__del__()
-    # ************ Gecko End **********
+        gecko_dab_converter.__del__()
 
     # Calculate results for the entire Simulation
 
@@ -485,20 +253,4 @@ def get_free_port(start=43047, stop=50000) -> int:
         sock.close()
         if port_in_use == 0:
             port = random.randint(start, stop)
-        #     print('Port {} is open, used'.format(port))
-        # else:
-        #     print('Port {} is closed, free to use'.format(port))
     return port
-
-
-def next_free_port(port=1024, max_port=65535) -> int:
-    """Get next free port of GeckoCIRCUITS."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    while port <= max_port:
-        try:
-            sock.bind(('', port))
-            sock.close()
-            return port
-        except OSError:
-            port += 1
-    raise IOError('no free ports')
