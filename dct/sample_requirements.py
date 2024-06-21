@@ -3,7 +3,7 @@
 import math
 
 # own libraries
-from dct.design_check.datasets import DabDTO, HandleDabDto
+from dct.datasets import DabDTO, HandleDabDto
 
 def load_dab_specification(dab_configuration_name: str) -> DabDTO:
     """

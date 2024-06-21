@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
 from dct.debug_tools import *
-from dct.design_check.plot_window import *
+from dct.plot_window import *
 
 
 class Plot_DAB:

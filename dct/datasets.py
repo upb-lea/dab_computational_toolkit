@@ -270,8 +270,8 @@ class HandleDabDto:
         gecko_additional_params = GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
             simtime=50e-6, timestep_pre=50e-9, simtime_pre=5e-3,
-            simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
-            lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..', 'circuits')))
+            simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
+            lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
 
         dab_dto = DabDTO(timestamp=None,
                          metadata=None,
@@ -341,7 +341,7 @@ class HandleDabDto:
         c_oss_2, q_oss_2 = HandleDabDto.get_c_oss_from_tdb(transistor_2)
 
         # export c_oss files for GeckoCIRCUITS
-        path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'circuits')
+        path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
         transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
         transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
 

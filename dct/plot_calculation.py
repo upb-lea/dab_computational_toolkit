@@ -5,7 +5,7 @@ import os
 
 # own libraries
 import dct
-from dct.design_check.datasets import DabDTO
+from dct import DabDTO
 
 # 3rd party libraries
 import numpy as np

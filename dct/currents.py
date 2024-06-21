@@ -1,7 +1,7 @@
 """Current calculations, like RMS currents and currents for certain angles."""
 
 # own libraries
-from dct.design_check.datasets import Config, CalcFromConfig, CalcModulation
+from dct.datasets import Config, CalcFromConfig, CalcModulation
 
 # 3rd party libraries
 import numpy as np

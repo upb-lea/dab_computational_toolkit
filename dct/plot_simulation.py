@@ -4,8 +4,8 @@ import os
 
 # own libraries
 from dct.debug_tools import Log, timeit, info
-from dct.design_check.datasets import DabDTO
-from dct.design_check.plot_dab import Plot_DAB
+from dct import DabDTO
+from dct import Plot_DAB
 
 # 3rd party libraries
 import numpy as np
