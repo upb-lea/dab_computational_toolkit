@@ -1,5 +1,8 @@
 """Current calculations, like RMS currents and currents for certain angles."""
 
+# own libraries
+from dct.design_check.datasets import Config, CalcFromConfig, CalcModulation
+
 # 3rd party libraries
 import numpy as np
 
@@ -193,94 +196,94 @@ def calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma
 
     return rms
 
-def calc_rms_currents(design_config):
+def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_modulation: CalcModulation):
     """
     Calculate the RMS currents in l_s, l_1 and l_2 for the given input values.
 
     Works with 2- and 3-dimensional input arrays (2D e.g. v_2 and power, 3D e.g. v_1, v_2 and power)
     everything must be numpy!
 
-    :param design_config: design configuration
+    :param config: design configuration DTO
     :return: i_l_s_rms, i_l_1_rms, i_l_2_rms
     """
-    alpha_rad = design_config.mod_zvs_phi - design_config.mod_zvs_tau1
-    beta_rad = np.pi + design_config.mod_zvs_phi - design_config.mod_zvs_tau2
+    alpha_rad = calc_modulation.phi - calc_modulation.tau1
+    beta_rad = np.pi + calc_modulation.phi - calc_modulation.tau2
     gamma_rad = np.full_like(alpha_rad, np.pi)
-    delta_rad = np.pi + design_config.mod_zvs_phi
+    delta_rad = np.pi + calc_modulation.phi
 
     # define the full mask for mode 2, made of interval 1 and interval 2
-    mode_2_mask = np.bitwise_or(design_config.mod_zvs_mask_Im2, design_config.mod_zvs_mask_IIm2)
+    mode_2_mask = np.bitwise_or(calc_modulation.mask_Im2, calc_modulation.mask_IIm2)
 
     # calculate current values for l_s depend on angles. Modulation modes are taken into account
-    d = design_config.n * design_config.mesh_V2 / design_config.mesh_V1
+    d = config.n * calc_from_config.mesh_V2 / calc_from_config.mesh_V1
 
     # currents in l_s for mode 1 and mode 2+
     m1_i_l_s_alpha_rad, m1_i_l_s_beta_rad, m1_i_l_s_gamma_rad, m1_i_l_s_delta_rad = calc_l_s_mode_1_angles_rad(
-        design_config.mod_zvs_phi, design_config.mod_zvs_tau1, design_config.mod_zvs_tau2, design_config.mesh_V1, d, design_config.fs, design_config.Ls)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, d, config.fs, config.Ls)
     m2_i_l_s_alpha_rad, m2_i_l_s_beta_rad, m2_i_l_s_gamma_rad, m2_i_l_s_delta_rad = calc_l_s_mode_2_plus_angles_rad(
-        design_config.mod_zvs_phi, design_config.mod_zvs_tau1, design_config.mod_zvs_tau2, d, design_config.mesh_V1, design_config.fs, design_config.Ls)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_V1, config.fs, config.Ls)
 
     # currents in l_1 for mode 1 and mode 2+
     m1_i_l_1_alpha_rad, m1_i_l_1_beta_rad, m1_i_l_1_gamma_rad, m1_i_l_1_delta_rad = calc_l_1_mode_1_angles_rad(
-        design_config.mod_zvs_phi, design_config.mod_zvs_tau1, design_config.mod_zvs_tau2, design_config.mesh_V1, design_config.fs, design_config.Lc1)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
     m2_i_l_1_alpha_rad, m2_i_l_1_beta_rad, m2_i_l_1_gamma_rad, m2_i_l_1_delta_rad = calc_l_1_mode_2_plus_angles_rad(
-        design_config.mod_zvs_phi, design_config.mod_zvs_tau1, design_config.mod_zvs_tau2, design_config.mesh_V1, design_config.fs, design_config.Lc1)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
 
     # currents in l_2 for mode 1 and mode 2+
     m1_i_l_2_alpha_rad, m1_i_l_2_beta_rad, m1_i_l_2_gamma_rad, m1_i_l_2_delta_rad = calc_l_2_mode_1_angles_rad(
-        design_config.mod_zvs_tau2, design_config.mesh_V2, design_config.fs, design_config.Lc2)
+        calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
     m2_i_l_2_alpha_rad, m2_i_l_2_beta_rad, m2_i_l_2_gamma_rad, m2_i_l_2_delta_rad = calc_l_2_mode_2_plus_angles_rad(
-        design_config.mod_zvs_phi, design_config.mod_zvs_tau1, design_config.mod_zvs_tau2, design_config.mesh_V2, design_config.fs, design_config.Lc2)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
 
     # generate the output current for l_s, distinguish between mode 1 and mode 2+
     i_l_s_alpha_rad = np.full_like(m1_i_l_s_alpha_rad, np.nan)
-    i_l_s_alpha_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_s_alpha_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_s_alpha_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_alpha_rad[calc_modulation.mask_IIIm1]
     i_l_s_alpha_rad[mode_2_mask] = m2_i_l_s_alpha_rad[mode_2_mask]
 
     i_l_s_beta_rad = np.full_like(m1_i_l_s_beta_rad, np.nan)
-    i_l_s_beta_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_s_beta_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_s_beta_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_beta_rad[calc_modulation.mask_IIIm1]
     i_l_s_beta_rad[mode_2_mask] = m2_i_l_s_beta_rad[mode_2_mask]
 
     i_l_s_gamma_rad = np.full_like(m1_i_l_s_gamma_rad, np.nan)
-    i_l_s_gamma_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_s_gamma_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_s_gamma_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_gamma_rad[calc_modulation.mask_IIIm1]
     i_l_s_gamma_rad[mode_2_mask] = m2_i_l_s_gamma_rad[mode_2_mask]
 
     i_l_s_delta_rad = np.full_like(m1_i_l_s_delta_rad, np.nan)
-    i_l_s_delta_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_s_delta_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_s_delta_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_delta_rad[calc_modulation.mask_IIIm1]
     i_l_s_delta_rad[mode_2_mask] = m2_i_l_s_delta_rad[mode_2_mask]
 
     # generate the output current for l_1, distinguish between mode 1 and mode 2+
     i_l_1_alpha_rad = np.full_like(m1_i_l_1_alpha_rad, np.nan)
-    i_l_1_alpha_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_1_alpha_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_1_alpha_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_alpha_rad[calc_modulation.mask_IIIm1]
     i_l_1_alpha_rad[mode_2_mask] = m2_i_l_1_alpha_rad[mode_2_mask]
 
     i_l_1_beta_rad = np.full_like(m1_i_l_1_beta_rad, np.nan)
-    i_l_1_beta_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_1_beta_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_1_beta_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_beta_rad[calc_modulation.mask_IIIm1]
     i_l_1_beta_rad[mode_2_mask] = m2_i_l_1_beta_rad[mode_2_mask]
 
     i_l_1_gamma_rad = np.full_like(m1_i_l_1_gamma_rad, np.nan)
-    i_l_1_gamma_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_1_gamma_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_1_gamma_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_gamma_rad[calc_modulation.mask_IIIm1]
     i_l_1_gamma_rad[mode_2_mask] = m2_i_l_1_gamma_rad[mode_2_mask]
 
     i_l_1_delta_rad = np.full_like(m1_i_l_1_delta_rad, np.nan)
-    i_l_1_delta_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_1_delta_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_1_delta_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_delta_rad[calc_modulation.mask_IIIm1]
     i_l_1_delta_rad[mode_2_mask] = m2_i_l_1_delta_rad[mode_2_mask]
 
     # generate the output current for l_2, distinguish between mode 1 and mode 2+
     i_l_2_alpha_rad = np.full_like(m1_i_l_2_alpha_rad, np.nan)
-    i_l_2_alpha_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_2_alpha_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_2_alpha_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_alpha_rad[calc_modulation.mask_IIIm1]
     i_l_2_alpha_rad[mode_2_mask] = m2_i_l_2_alpha_rad[mode_2_mask]
 
     i_l_2_beta_rad = np.full_like(m1_i_l_2_beta_rad, np.nan)
-    i_l_2_beta_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_2_beta_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_2_beta_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_beta_rad[calc_modulation.mask_IIIm1]
     i_l_2_beta_rad[mode_2_mask] = m2_i_l_2_beta_rad[mode_2_mask]
 
     i_l_2_gamma_rad = np.full_like(m1_i_l_2_gamma_rad, np.nan)
-    i_l_2_gamma_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_2_gamma_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_2_gamma_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_gamma_rad[calc_modulation.mask_IIIm1]
     i_l_2_gamma_rad[mode_2_mask] = m2_i_l_2_gamma_rad[mode_2_mask]
 
     i_l_2_delta_rad = np.full_like(m1_i_l_2_delta_rad, np.nan)
-    i_l_2_delta_rad[design_config.mod_zvs_mask_IIIm1] = m1_i_l_2_delta_rad[design_config.mod_zvs_mask_IIIm1]
+    i_l_2_delta_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_delta_rad[calc_modulation.mask_IIIm1]
     i_l_2_delta_rad[mode_2_mask] = m2_i_l_2_delta_rad[mode_2_mask]
 
     # calculate rms currents for l_s, l_1, l_2

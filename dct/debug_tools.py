@@ -12,7 +12,7 @@ import time
 DEBUG = False
 
 
-class log:
+class Log:
     """Class to print logging text to stdout and to a log file."""
 
     logfile = None

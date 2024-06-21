@@ -1,6 +1,7 @@
 """Validate the results using GeckoCIRCUITS."""
 # python libraries
 import math
+import os.path
 import socket
 import random
 
@@ -13,14 +14,15 @@ from collections import defaultdict
 from tqdm import tqdm
 import pygeckocircuits2 as pgc
 
-def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
-              mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
-              t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray,
-              Ls: float, Lc1: float, Lc2: float, n: float,
-              temp: float,
-              simfilepath: str, timestep: float, simtime: float,
-              timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036, gdebug: bool = False,
-              C_HB1: float = None, C_HB2: float = None) -> dict:
+def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
+                           mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
+                           t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray,
+                           Ls: float, Lc1: float, Lc2: float, n: float,
+                           temp: float,
+                           simfilepath: str, timestep: float, simtime: float,
+                           timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036, gdebug: bool = False,
+                           c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
+                           lossfilepath: str = None) -> dict:
     """
     Start the GeckoCIRCUITS simulation.
 
@@ -45,8 +47,8 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
     :param simtime_pre:
     :param geckoport:
     :param gdebug:
-    :param C_HB1:
-    :param C_HB2:
+    :param c_par_1:
+    :param c_par_2:
     :return:
     """
     # Broadcast possible scalar values to mesh size
@@ -90,7 +92,7 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
             geckoport = get_free_port()
         # Gecko Basics
         gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, debug=gdebug,
-            timestep=timestep, simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
+                                                  timestep=timestep, simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
     for vec_vvp in np.ndindex(mod_phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
@@ -107,20 +109,22 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
             'Lc1': float(Lc1),
             'Lc2_': float(Lc2_),
             'n': float(n),
-            'temp': float(temp)
+            'temp': float(temp),
+            'C_par_1': c_par_1,
+            'C_par_2': c_par_2,
         }
-        if C_HB1 is not None:
-            sim_params['C_HB11'] = C_HB1
-            sim_params['C_HB12'] = C_HB1
-        if C_HB2 is not None:
-            sim_params['C_HB21'] = C_HB2
-            sim_params['C_HB22'] = C_HB2
 
         # Only run simulation if all params are valid
         if not np.any(np.isnan(list(sim_params.values()))):
             # start simulation for this operation point
+            c_oss_1_file = os.path.join(lossfilepath, f'{transistor_1_name}_c_oss.nlc')
+            c_oss_2_file = os.path.join(lossfilepath, f'{transistor_2_name}_c_oss.nlc')
+
             if not __debug__:
                 gecko_dab_converter.set_global_parameters(sim_params)
+                gecko_dab_converter.set_nonlinear_file(['C11', 'C12', 'C13', 'C14'], c_oss_1_file)
+                gecko_dab_converter.set_nonlinear_file(['C21', 'C22', 'C23', 'C24'], c_oss_2_file)
+
                 # Start the simulation and get the results. Do not set times here because it is set while init Gecko.
                 gecko_dab_converter.run_simulation()
                 values_mean = gecko_dab_converter.get_values(
@@ -222,13 +226,6 @@ def start_sim(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
     # Progressbar end
     pbar.close()
 
-    # Rename the keys according to convention
-    # da_sim_results_temp = dict()
-    # for k, v in da_sim_results.items():
-    #     da_sim_results_temp['sim_' + k] = v
-    # da_sim_results = da_sim_results_temp
-
-    # info(da_sim_results)
     return da_sim_results
 
 

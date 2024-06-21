@@ -1,244 +1,417 @@
 """Describe the dataclasses how to store the input parameters and results."""
-import os
-import pprint
-import numpy as np
-from dotmap import DotMap
 
-from dct.debug_tools import *
+# python libraries
+import os
+import dataclasses
+import datetime
+import warnings
+
+# 3rd party libraries
+import numpy as np
 import transistordatabase as tdb
 
+# own libraries
+import dct
 
-class DabData(DotMap):
-    """
-    Class to store the DAB specification, modulation and simulation results and some more data.
 
-    It contains only numpy arrays, you can only add those.
-    In fact everything is a numpy array even single int or float values!
-    It inherits from DotMap to provide dot-notation usage instead of regular dict access.
-    Make sure your key names start with one of the "_allowed_keys", if not you can not add the key.
-    Add a useful name string after the prefix from "_allowed_keys" to identify your results later.
-    """
+@dataclasses.dataclass(init=False)
+class Config:
+    """Input configuration DTO for the DAB converter."""
 
-    _allowed_keys = ['_timestamp', '_comment', 'spec_', 'mesh_', 'mod_', 'sim_', 'meas_', 'coss_', 'qoss_', 'iter_']
-    _allowed_spec_keys = ['V1_nom', 'V1_min', 'V1_max', 'V1_step', 'V2_nom', 'V2_min', 'V2_max', 'V2_step', 'P_min',
-                          'P_max', 'P_nom', 'P_step', 'n', 'Ls', 'Lm', 'Lc1', 'Lc2', 'Lc2_', 'fs', 't_dead1', 't_dead2',
-                          'temp', 'C_HB11', 'C_HB12', 'C_HB21', 'C_HB22']
+    V1_nom: np.array
+    V1_min: np.array
+    V1_max: np.array
+    V1_step: np.array
+    V2_nom: np.array
+    V2_min: np.array
+    V2_max: np.array
+    V2_step: np.array
+    P_min: np.array
+    P_max: np.array
+    P_nom: np.array
+    P_step: np.array
+    n: np.array
+    Ls: np.array
+    Lm: np.array
+    Lc1: np.array
+    Lc2: np.array
+    fs: np.array
+    transistor_name_1: np.array
+    transistor_name_2: np.array
+    c_par_1: np.array
+    c_par_2: np.array
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+
+@dataclasses.dataclass(init=False)
+class GeckoAdditionalParameters:
+    """Additional parameters for the GeckoCIRCUITs simulation, like simulation time or some file paths."""
+
+    t_dead1: np.array
+    t_dead2: np.array
+    timestep: np.array
+    simtime: np.array
+    timestep_pre: np.array
+    simtime_pre: np.array
+    simfilepath: np.array
+    lossfilepath: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+
+@dataclasses.dataclass(init=False)
+class CalcFromConfig:
+    """DTO calculates parameters for the next simulations, which can be derived from the input values."""
+
+    mesh_V1: np.array
+    mesh_V2: np.array
+    mesh_P: np.array
+    Lc2_: np.array
+    t_j_1: np.array
+    t_j_2: np.array
+    c_oss_par_1: np.array
+    c_oss_par_2: np.array
+    c_oss_1: np.array
+    c_oss_2: np.array
+    q_oss_1: np.array
+    q_oss_2: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+@dataclasses.dataclass(init=False)
+class CalcModulation:
+    """DTO contains calculated modulation parameters."""
+
+    phi: np.array
+    tau1: np.array
+    tau2: np.array
+    mask_zvs: np.array
+    mask_Im2: np.array
+    mask_IIm2: np.array
+    mask_IIIm1: np.array
+    mask_zvs_coverage: np.array
+    mask_zvs_coverage_notnan: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+
+@dataclasses.dataclass(init=False)
+class CalcCurrents:
+    """DTO contains calculated RMS currents."""
+
+    i_l_s_rms: np.array
+    i_l_1_rms: np.array
+    i_l_2_rms: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+@dataclasses.dataclass(init=False)
+class CalcLosses:
+    """DTO contains te calculated losses."""
+
+    p_1_tbd: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+@dataclasses.dataclass(init=False)
+class GeckoResults:
+    """DTO contains the result of the GeckoCIRCUITS simulation."""
+
+    p_dc1: np.array
+    p_dc2: np.array
+    S11_p_sw: np.array
+    S11_p_cond: np.array
+    S12_p_sw: np.array
+    S12_p_cond: np.array
+    S23_p_sw: np.array
+    S23_p_cond: np.array
+    S24_p_sw: np.array
+    S24_p_cond: np.array
+    v_dc1: np.array
+    i_dc1: np.array
+    v_dc2: np.array
+    i_dc2: np.array
+    p_sw1: np.array
+    p_cond1: np.array
+    p_sw2: np.array
+    p_cond2: np.array
+    i_HF1: np.array
+    i_Ls: np.array
+    i_Lc1: np.array
+    i_Lc2: np.array
+    i_C11: np.array
+    i_C12: np.array
+    i_C23: np.array
+    i_C24: np.array
+    v_ds_S11_sw_on: np.array
+    v_ds_S23_sw_on: np.array
+    i_HF1_S11_sw_on: np.array
+    i_HF2_S23_sw_on: np.array
+    power_deviation: np.array
+    zvs_coverage: np.array
+    zvs_coverage1: np.array
+    zvs_coverage2: np.array
+    zvs_coverage_notnan: np.array
+    zvs_coverage1_notnan: np.array
+    zvs_coverage2_notnan: np.array
+    i_HF1_total_mean: np.array
+    I1_squared_total_mean: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+@dataclasses.dataclass
+class DabDTO:
+    """Main DabDTO containing all input parameters, calculations and simulation results."""
+
+    timestamp: np.array
+    metadata: np.array
+    input_config: Config
+    calc_config: CalcFromConfig
+    calc_modulation: CalcModulation
+    calc_currents: CalcCurrents
+    calc_losses: CalcLosses | None
+    gecko_additional_params: GeckoAdditionalParameters
+    gecko_results: GeckoResults | None
+
+class HandleDabDto:
+    """Class to handle the DabDTO, e.g. save and load the files."""
+
+    @staticmethod
+    def init_config(V1_nom, V1_min, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
+                    V2_max: np.array, V2_step: np.array, P_min: np.array, P_max: np.array, P_nom: np.array, P_step: np.array,
+                    n: np.array, Ls: np.array, Lm: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
+                    transistor_name_1: str, transistor_name_2: str, c_par_1, c_par_2):
         """
-        Init the DabData class.
+        Initialize the DAB structure.
 
-        Initialisation with another Dict is not handled and type converted yet.
-
-        :param args:
-        :param kwargs:
+        :param V1_nom: V1 nominal voltage
+        :param V1_min: V1 minimum voltage
+        :param V1_max: V1 maximum voltage
+        :param V1_step: V1 voltage steps
+        :param V2_nom: V2 nominal voltage
+        :param V2_min: V2 minimum voltage
+        :param V2_max: V2 maximum voltage
+        :param V2_step: V2 voltage steps
+        :param P_min: P minimum power
+        :param P_max: P maximum power
+        :param P_nom: P nominal power
+        :param P_step: P power steps
+        :param n: transformer transfer ratio
+        :param Ls: series inductance
+        :param Lm: Transformer mutal inductance
+        :param Lc1: Commutation inductance Lc1
+        :param Lc2: Commutation inductance Lc2
+        :param fs: Switching frequency
+        :param transistor_name_1: Transistor name for transistor bridge 1. Must match with transistordatbase available transistors.
+        :param transistor_name_2: Transistor name for transistor bridge 2. Must match with transistordatbase available transistors.
+        :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
+        :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
+        :return:
         """
-        if args or kwargs:
-            warning("Don't use this type of initialisation!")
-        # if kwargs:
-        #     d.update((k, float(v)) for k,v in self.__call_items(kwargs)
-        super().__init__(*args, **kwargs)
+        input_configuration = Config(V1_nom=np.array(V1_nom),
+                                     V1_min=np.array(V1_min),
+                                     V1_max=np.array(V1_max),
+                                     V1_step=np.array(V1_step),
+                                     V2_nom=np.array(V2_nom),
+                                     V2_min=np.array(V2_min),
+                                     V2_max=np.array(V2_max),
+                                     V2_step=np.array(V2_step),
+                                     P_min=np.array(P_min),
+                                     P_max=np.array(P_max),
+                                     P_nom=np.array(P_nom),
+                                     P_step=np.array(P_step),
+                                     n=np.array(n),
+                                     Ls=np.array(Ls),
+                                     Lm=np.array(Lm),
+                                     Lc1=np.array(Lc1),
+                                     Lc2=np.array(Lc2),
+                                     fs=np.array(fs),
+                                     transistor_name_1=np.asarray(transistor_name_1),
+                                     transistor_name_2=np.asarray(transistor_name_2),
+                                     c_par_1=c_par_1,
+                                     c_par_2=c_par_2,
+                                     )
+        calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
+        modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
 
-    def __setitem__(self, key, value):
+        i_l_s_rms, i_l_1_rms, i_l_2_rms = dct.calc_rms_currents(input_configuration, calc_config, modulation_parameters)
+
+        calc_currents = CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms})
+
+        gecko_additional_params = GeckoAdditionalParameters(
+            t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
+            simtime=50e-6, timestep_pre=50e-9, simtime_pre=5e-3,
+            simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
+            lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', '..', 'circuits')))
+
+        dab_dto = DabDTO(timestamp=None,
+                         metadata=None,
+                         input_config=input_configuration,
+                         calc_config=calc_config,
+                         calc_modulation=modulation_parameters,
+                         calc_currents=calc_currents,
+                         calc_losses=None,
+                         gecko_additional_params=gecko_additional_params,
+                         gecko_results=None)
+        return dab_dto
+
+    @staticmethod
+    def add_gecko_simulation_results(dab_dto: DabDTO):
         """
-        Set elements to this class.
+        Add GeckoCIRCUITS simulation results to the given DTO.
 
-        Only np.ndarray is allowed
+        :param dab_dto: DabDTO
+        :return: DabDTO
         """
-        if isinstance(value, np.ndarray):
-            # Check for allowed key names
-            if any(key.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
-                super().__setitem__(key, value)
-            else:
-                warning('None of the _allowed_keys are used! Nothing added! Used key: ' + str(key))
-        else:
-            # Value will be converted to a ndarray
-            # Check for allowed key names
-            if any(key.startswith(allowed_key) for allowed_key in (self._allowed_keys + self._allowed_spec_keys)):
-                super().__setitem__(key, np.asarray(value))
-            else:
-                warning('None of the _allowed_keys are used! Nothing added! Used key: ' + str(key))
+        gecko_results = dct.start_gecko_simulation(mesh_V1=dab_dto.calc_config.mesh_V1, mesh_V2=dab_dto.calc_config.mesh_V2,
+                                                   mesh_P=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
+                                                   mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
+                                                   t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
+                                                   fs=dab_dto.input_config.fs, Ls=dab_dto.input_config.Ls, Lc1=dab_dto.input_config.Lc1,
+                                                   Lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
+                                                   temp=dab_dto.calc_config.t_j_1,
+                                                   simfilepath=dab_dto.gecko_additional_params.simfilepath,
+                                                   lossfilepath=dab_dto.gecko_additional_params.lossfilepath,
+                                                   timestep=dab_dto.gecko_additional_params.timestep,
+                                                   simtime=dab_dto.gecko_additional_params.simtime,
+                                                   timestep_pre=dab_dto.gecko_additional_params.timestep_pre,
+                                                   simtime_pre=dab_dto.gecko_additional_params.simtime_pre, geckoport=43036, gdebug=False,
+                                                   c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
+                                                   transistor_1_name=dab_dto.input_config.transistor_name_1,
+                                                   transistor_2_name=dab_dto.input_config.transistor_name_2)
 
-    def pprint_to_file(self, filename):
+        # add GeckoCIRCUITS simulation results to the result DTO.
+        dab_dto.gecko_results = GeckoResults(**gecko_results)
+        return dab_dto
+
+    @staticmethod
+    def calculate_from_configuration(config: Config) -> CalcFromConfig:
         """
-        Print the DAB in nice human-readable form into a text file.
+        Calculate logical parameters which can be calculated from the input parameters.
 
-        WARNING: This file can not be loaded again! It is only for documentation.
-        :param filename:
+        :param config: DAB configuration
+        :return: CalcFromConfig
         """
-        filename = os.path.expanduser(filename)
-        filename = os.path.expandvars(filename)
-        filename = os.path.abspath(filename)
-        if os.path.isfile(filename):
-            warning("File already exists!")
-        else:
-            with open(filename, 'w') as file:
-                pprint.pprint(self.toDict(), file)
+        mesh_V1, mesh_V2, mesh_P = np.meshgrid(
+            np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
+            np.linspace(config.V2_min, config.V2_max, int(config.V2_step)), np.linspace(config.P_min, config.P_max, int(config.P_step)),
+            sparse=False)
 
-    def save_to_file(self, directory=str(), name=str(), timestamp=True, comment=str()):
+        Lc2_ = config.Lc2 * config.n ** 2
+
+        db = tdb.DatabaseManager()
+        db.set_operation_mode_json()
+
+        transistor_1 = db.load_transistor(config.transistor_name_1)
+        transistor_2 = db.load_transistor(config.transistor_name_2)
+
+        t_j_1 = transistor_1.switch.t_j_max - 25
+        t_j_2 = transistor_2.switch.t_j_max - 25
+
+        c_oss_1, q_oss_1 = HandleDabDto.get_c_oss_from_tdb(transistor_1)
+        c_oss_2, q_oss_2 = HandleDabDto.get_c_oss_from_tdb(transistor_2)
+
+        # export c_oss files for GeckoCIRCUITS
+        path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'circuits')
+        transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
+        transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
+
+        calc_from_config = CalcFromConfig(
+            mesh_V1=mesh_V1,
+            mesh_V2=mesh_V2,
+            mesh_P=mesh_P,
+            Lc2_=Lc2_,
+            t_j_1=t_j_1,
+            t_j_2=t_j_2,
+            c_oss_par_1=c_oss_1 + config.c_par_1,
+            c_oss_par_2=c_oss_2 + config.c_par_2,
+            c_oss_1=c_oss_1,
+            c_oss_2=c_oss_2,
+            q_oss_1=q_oss_1,
+            q_oss_2=q_oss_2
+        )
+
+        return calc_from_config
+
+    @staticmethod
+    def calculate_modulation(config: Config, calc_config: CalcFromConfig) -> CalcModulation:
         """
-        Save everything (except plots) in one file.
+        Calculate the modulation parameters like phi, tau1, tau, ...
 
-        WARNING: Existing files will be overwritten!
-
-        File is ZIP compressed and contains several named np.ndarray objects:
-            # String is constructed as follows:
-            # used module (e.g. "mod_sps_") + value name (e.g. "phi")
-            mod_sps_phi: mod_sps calculated values for phi
-            mod_sps_tau1: mod_sps calculated values for tau1
-            mod_sps_tau2: mod_sps calculated values for tau1
-            sim_sps_iLs: simulation results with mod_sps for iLs
-            sim_sps_S11_p_sw:
-
-        :param directory: Folder where to save the files
-        :param name: String added to the filename. Without file extension. Datetime may prepend the final name.
-        :param timestamp: If the datetime should prepend the final name. default True
-        :param comment:
+        :param config: DAB input configuration
+        :param calc_config: calculated parameters from the input configuration
+        :return: Modulation parameters.
         """
-        # Add some descriptive data to the file
-        # Adding a timestamp, it may be useful
-        self['_timestamp'] = np.asarray(datetime.now().isoformat())
-        # Adding a comment to the file, hopefully a descriptive one
-        if comment:
-            self['_comment'] = np.asarray(comment)
+        result_dict = dct.calc_modulation(config.n, config.Ls, config.Lc1, config.Lc2, config.fs, Coss1=calc_config.c_oss_par_1, Coss2=calc_config.c_oss_par_2,
+                                          V1=calc_config.mesh_V1, V2=calc_config.mesh_V2, P=calc_config.mesh_P)
 
-        # Adding a timestamp to the filename if requested
-        if timestamp:
-            if name:
-                filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "_" + name
-            else:
-                filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        else:
-            if name:
-                filename = name
-            else:
-                # set some default non-empty filename
-                filename = "dab_dataset"
+        return CalcModulation(**result_dict)
 
-        if directory:
-            directory = os.path.expanduser(directory)
-            directory = os.path.expandvars(directory)
-            directory = os.path.abspath(directory)
-            if os.path.isdir(directory):
-                file = os.path.join(directory, filename)
-            else:
-                warning("Directory does not exist!")
-                file = os.path.join(filename)
-        else:
-            file = os.path.join(filename)
-
-        # numpy saves everything for us in a handy zip file
-        np.savez_compressed(file=file, **self)
-
-    def gen_meshes(self):
-        """
-        Generate the default meshgrids for V1, V2 and P.
-
-        Values for:
-        'V1_nom', 'V1_min', 'V1_max', 'V1_step',
-        'V2_nom', 'V2_min', 'V2_max', 'V2_step',
-        'P_min', 'P_max', 'P_nom', 'P_step'
-        must be set first!
-        """
-        self.mesh_V1, self.mesh_V2, self.mesh_P = np.meshgrid(np.linspace(self.V1_min, self.V1_max, int(self.V1_step)),
-                                                              np.linspace(self.V2_min, self.V2_max, int(self.V2_step)),
-                                                              np.linspace(self.P_min, self.P_max, int(self.P_step)),
-                                                              sparse=False)
-
-    def append_result_dict(self, result: dict, name_pre: str = '', name_post: str = ''):
-        """Unpack the results and append it to the result dictionary."""
-        for key, value in result.items():
-            self[name_pre + key + name_post] = value
-
-    def import_c_oss_from_file(self, file: str, name: str):
-        """
-        Import a csv file containing the Coss(Vds) capacitance from the MOSFET datasheet.
-
-        This may be generated with: https://apps.automeris.io/wpd/
-
-        Note we assume V_ds in Volt and C_oss in F. If this is not the case, scale your data accordingly!
-
-        CSV File should look like this:
-        # V_ds / V; C_oss / F
-        1,00; 900,00e-12
-        2,00; 800,00e-12
-        :param file: csv file path
-        :type file: str
-        :param name: transistor name
-        :type name: str
-        """
-        file = os.path.expanduser(file)
-        file = os.path.expandvars(file)
-        file = os.path.abspath(file)
-
-        # Conversion from decimal separator comma to point so that np can read floats
-        # Be careful if your csv is actually comma separated! ;)
-        def conv(x):
-            return x.replace(',', '.').encode()
-
-        # Read csv file
-        csv_data = np.genfromtxt((conv(x) for x in open(file)), delimiter=';', dtype=float)
-
-        # Maybe check if data is monotonically
-        # Check if voltage is monotonically rising
-        if not np.all(csv_data[1:, 0] >= csv_data[:-1, 0], axis=0):
-            warning("The voltage in csv file is not monotonically rising!")
-        # Check if Coss is monotonically falling
-        if not np.all(csv_data[1:, 1] <= csv_data[:-1, 1], axis=0):
-            warning("The C_oss in csv file is not monotonically falling!")
-
-        # Rescale and interpolate the csv data to have a nice 1V step size from 0V to v_max
-        # A first value with zero volt will be added
-        v_max = int(np.round(csv_data[-1, 0]))
-        v_interp = np.arange(v_max + 1)
-        coss_interp = np.interp(v_interp, csv_data[:, 0], csv_data[:, 1])
-        # Since we now have a evenly spaced vector where x corespond to the element-number of the vector
-        # we don't have to store x (v_interp) with it.
-        # To get Coss(V) just get the array element coss_interp[V]
-
-        # np.savetxt('coss_' + name + '.csv', coss_interp, delimiter=';')
-
-        # return coss_interp
-        self['coss_' + name] = coss_interp
-        self['qoss_' + name] = self._integrate_c_oss(coss_interp)
-
-    def import_c_oss_from_tdb(self, transistor: tdb.Transistor):
+    @staticmethod
+    def get_c_oss_from_tdb(transistor: tdb.Transistor):
         """
         Import the transistor Coss(Vds) capacitance from the transistor database (TDB).
 
         Note we assume V_ds in Volt and C_oss in F. If this is not the case, scale your data accordingly!
 
-        :param file: csv file path
-        :type file: str
-        :param name: transistor name
-        :type name: str
+        :param transistor: transistor database object
+        :type transistor: transistordatabase.Transistor
         """
         csv_data = transistor.c_oss[0].graph_v_c.T
 
         # Maybe check if data is monotonically
         # Check if voltage is monotonically rising
         if not np.all(csv_data[1:, 0] >= csv_data[:-1, 0], axis=0):
-            warning("The voltage in csv file is not monotonically rising!")
+            dct.warning("The voltage in csv file is not monotonically rising!")
         # Check if Coss is monotonically falling
         if not np.all(csv_data[1:, 1] <= csv_data[:-1, 1], axis=0):
-            warning("The C_oss in csv file is not monotonically falling!")
+            dct.warning("The C_oss in csv file is not monotonically falling!")
 
         # Rescale and interpolate the csv data to have a nice 1V step size from 0V to v_max
         # A first value with zero volt will be added
         v_max = int(np.round(csv_data[-1, 0]))
         v_interp = np.arange(v_max + 1)
         coss_interp = np.interp(v_interp, csv_data[:, 0], csv_data[:, 1])
-        # Since we now have a evenly spaced vector where x corespond to the element-number of the vector
+        # Since we now have an evenly spaced vector where x corespond to the element-number of the vector
         # we don't have to store x (v_interp) with it.
         # To get Coss(V) just get the array element coss_interp[V]
 
-        # np.savetxt('coss_' + name + '.csv', coss_interp, delimiter=';')
-
         # return coss_interp
-        self['coss_' + transistor.name] = coss_interp
-        self['qoss_' + transistor.name] = self._integrate_c_oss(coss_interp)
+        c_oss = coss_interp
+        q_oss = HandleDabDto._integrate_c_oss(coss_interp)
+        return c_oss, q_oss
 
-    def _integrate_c_oss(self, coss):
+    @staticmethod
+    def _integrate_c_oss(coss):
         """
         Integrate Coss for each voltage from 0 to V_max.
 
@@ -258,164 +431,110 @@ class DabData(DotMap):
         # get an qoss vector that fits the mesh_V scale
         # v_vec = np.linspace(V_min, V_max, int(V_step))
         qoss = coss_int(v_vec)
-        # Scale from pC to nC
-        # qoss = qoss / 1000
 
-        # np.savetxt('qoss.csv', qoss, delimiter=';')
         return qoss
 
+    @staticmethod
+    def save(dab_dto: DabDTO, name: str, comment: str, directory: str, timestamp: bool = True):
+        """
+        Save the DabDTO-class to a npz file.
 
-def save_to_file(dab: DabData, directory=str(), name=str(), timestamp=True, comment=str()):
-    """
-    Save everything (except plots) in one file.
+        :param dab_dto: Class to store
+        :param name: Filename
+        :param comment: Comment
+        :param directory: Directory to store the results
+        :param timestamp: [True] to add a timestamp to the file name.
+        :return:
+        """
+        # Add some descriptive data to the file
+        # Adding a timestamp, it may be useful
+        dab_dto.timestamp = np.asarray(datetime.datetime.now().isoformat())
+        # Adding a comment to the file, hopefully a descriptive one
+        if comment:
+            dab_dto.comment = np.asarray(comment)
 
-    WARNING: Existing files will be overwritten!
-
-    File is ZIP compressed and contains several named np.ndarray objects:
-        # String is constructed as follows:
-        # used module (e.g. "mod_sps_") + value name (e.g. "phi")
-        mod_sps_phi: mod_sps calculated values for phi
-        mod_sps_tau1: mod_sps calculated values for tau1
-        mod_sps_tau2: mod_sps calculated values for tau1
-        sim_sps_iLs: simulation results with mod_sps for iLs
-        sim_sps_S11_p_sw:
-
-    :param comment:
-    :param dab:
-    :param directory: Folder where to save the files
-    :param name: String added to the filename. Without file extension. Datetime may prepend the final name.
-    :param timestamp: If the datetime should prepend the final name. default True
-    """
-    # Add some descriptive data to the file
-    # Adding a timestamp, it may be useful
-    dab['_timestamp'] = np.asarray(datetime.now().isoformat())
-    # Adding a comment to the file, hopefully a descriptive one
-    if comment:
-        dab['_comment'] = np.asarray(comment)
-
-    # Adding a timestamp to the filename if requested
-    if timestamp:
-        if name:
-            filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "_" + name
+        # Adding a timestamp to the filename if requested
+        if timestamp:
+            if name:
+                filename = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "_" + name
+            else:
+                filename = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         else:
-            filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    else:
-        if name:
-            filename = name
-        else:
-            # set some default non-empty filename
-            filename = "dab_dataset"
+            if name:
+                filename = name
+            else:
+                # set some default non-empty filename
+                filename = "dab_dataset"
 
-    if directory:
-        directory = os.path.expanduser(directory)
-        directory = os.path.expandvars(directory)
-        directory = os.path.abspath(directory)
-        if os.path.isdir(directory):
-            file = os.path.join(directory, filename)
+        if directory:
+            directory = os.path.expanduser(directory)
+            directory = os.path.expandvars(directory)
+            directory = os.path.abspath(directory)
+            if os.path.isdir(directory):
+                file = os.path.join(directory, filename)
+            else:
+                warnings.warn("Directory does not exist!", stacklevel=2)
+                file = os.path.join(filename)
         else:
-            warning("Directory does not exist!")
             file = os.path.join(filename)
-    else:
-        file = os.path.join(filename)
 
-    # numpy saves everything for us in a handy zip file
-    np.savez_compressed(file=file, **dab)
+        # prepare a all-in-one parallel file
+        input_dict_to_store = dataclasses.asdict(dab_dto.input_config)
+        calc_config_dict_to_store = dataclasses.asdict(dab_dto.calc_config)
+        calc_modulation_dict_to_store = dataclasses.asdict(dab_dto.calc_modulation)
+        calc_currents_dict_to_store = dataclasses.asdict(dab_dto.calc_currents)
+        calc_losses_dict_to_store = dataclasses.asdict(dab_dto.calc_losses) if isinstance(dab_dto.calc_losses, CalcLosses) else None
+        gecko_additional_params_dict_to_store = dataclasses.asdict(dab_dto.gecko_additional_params)
+        gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
 
+        dict_to_store = {}
+        dict_to_store.update(input_dict_to_store)
+        dict_to_store.update(calc_config_dict_to_store)
+        dict_to_store.update(calc_modulation_dict_to_store)
+        dict_to_store.update(calc_currents_dict_to_store)
+        if isinstance(dab_dto.calc_losses, CalcLosses):
+            dict_to_store.update(calc_losses_dict_to_store)
+        dict_to_store.update(gecko_additional_params_dict_to_store)
+        if isinstance(dab_dto.gecko_results, GeckoResults):
+            dict_to_store.update(gecko_results_dict_to_store)
 
-def load_from_file(file: str) -> DabData:
-    """
-    Load everything from the given .npz file.
+        np.savez_compressed(**dict_to_store, file=file)
 
-    :param file: a .nps filename or file-like object, string, or pathlib.Path
-    :return: two objects with type DAB_Specification and DAB_Results
-    """
-    dab = DabData()
-    # Check for filename extension
-    file_name, file_extension = os.path.splitext(file)
-    if not file_extension:
-        file += '.npz'
-    file = os.path.expanduser(file)
-    file = os.path.expandvars(file)
-    file = os.path.abspath(file)
-    # Open the file and parse the data
-    with np.load(file) as data:
-        for k, v in data.items():
-            dab[k] = v
-    return dab
+    @staticmethod
+    def load_from_file(file: str) -> DabDTO:
+        """
+        Load everything from the given .npz file.
 
+        :param file: a .nps filename or file-like object, string, or pathlib.Path
+        :return: two objects with type DAB_Specification and DAB_Results
+        """
+        # Check for filename extension
+        file_name, file_extension = os.path.splitext(file)
+        if not file_extension:
+            file += '.npz'
+        file = os.path.expanduser(file)
+        file = os.path.expandvars(file)
+        file = os.path.abspath(file)
+        # Open the file and parse the data
+        # with np.load(file) as data:
 
-def save_to_csv(dab: DabData, key=str(), directory=str(), name=str(), timestamp=True):
-    """
-    Save one array with name 'key' out of dab_results to a csv file.
+        decoded_data = np.load(file, allow_pickle=True)
+        keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
 
-    :param dab:
-    :param key: name of the array in dab_results
-    :param directory:
-    :param name: filename without extension
-    :param timestamp: if the filename should prepended with a timestamp
-    """
-    if timestamp:
-        name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + "_" + name
-    filename = key + '_' + name + '.csv'
-
-    if directory:
-        directory = os.path.expanduser(directory)
-        directory = os.path.expandvars(directory)
-        directory = os.path.abspath(directory)
-        if os.path.isdir(directory):
-            file = os.path.join(directory, filename)
+        # if loaded results have all keys that are mandatory for the GeckoResults-Class:
+        if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
+            gecko_results = GeckoResults(**decoded_data)
         else:
-            warning("Directory does not exist!")
-            file = os.path.join(filename)
-    else:
-        file = os.path.join(filename)
+            gecko_results = None
 
-    comment = key + ' with P: {}, V1: {} and V2: {} steps.'.format(
-        int(dab.P_step),
-        int(dab.V1_step),
-        int(dab.V2_step)
-    )
+        dab_dto = DabDTO(timestamp=None,
+                         metadata=None,
+                         input_config=Config(**decoded_data),
+                         calc_config=CalcFromConfig(**decoded_data),
+                         calc_modulation=CalcModulation(**decoded_data),
+                         calc_currents=CalcCurrents(**decoded_data),
+                         calc_losses=None,
+                         gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
+                         gecko_results=gecko_results)
 
-    # Write the array to disk
-    with open(file, 'w') as outfile:
-        # I'm writing a header here just for the sake of readability
-        # Any line starting with "#" will be ignored by numpy.loadtxt
-        outfile.write('# ' + comment + '\n')
-        outfile.write('# Array shape: {0}\n'.format(dab[key].shape))
-        # x: P, y: V1, z(slices): V2
-        outfile.write('# x: P ({}-{}), y: V1 ({}-{}), z(slices): V2 ({}-{})\n'.format(
-            int(dab.P_min),
-            int(dab.P_max),
-            int(dab.V1_min),
-            int(dab.V1_max),
-            int(dab.V2_min),
-            int(dab.V2_max)
-        ))
-        outfile.write('# z: V2 ' + np.array_str(dab.mesh_V2[:, 0, 0], max_line_width=10000) + '\n')
-        outfile.write('# y: V1 ' + np.array_str(dab.mesh_V1[0, :, 0], max_line_width=10000) + '\n')
-        outfile.write('# x: P ' + np.array_str(dab.mesh_P[0, 0, :], max_line_width=10000) + '\n')
-
-        # Iterating through a ndimensional array produces slices along
-        # the last axis. This is equivalent to data[i,:,:] in this case
-        i = 0
-        for array_slice in dab[key]:
-            # Writing out a break to indicate different slices...
-            outfile.write('# V2 slice {}V\n'.format(
-                (dab.V2_min + i * (dab.V2_max - dab.V2_min) / (dab.V2_step - 1))
-            ))
-            # The formatting string indicates that I'm writing out
-            # the values in left-justified columns 7 characters in width
-            # with 2 decimal places.
-            # np.savetxt(outfile, array_slice, fmt='%-7.2f')
-            np.savetxt(outfile, array_slice, delimiter=';')
-            i += 1
-
-def show_keys(dab: DabData) -> None:
-    """
-    Show the keys, stored in the given DabData structure.
-
-    :param dab: DabData object
-    :return: None
-    """
-    for key, value in dab.items():
-        print(f"{key=}")
+        return dab_dto

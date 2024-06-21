@@ -1,7 +1,9 @@
-dct/__pycache__/
 dct/results/
-dct/design_check/__pycache__/
 .idea/
 docs/build/
 results/
 dab_modulation_output*
+*.nlc
+*.npz
+*/__pycache__/
+dct/design_check/__pycache__/

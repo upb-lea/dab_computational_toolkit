@@ -4,7 +4,7 @@ from dct.debug_tools import warning
 
 # The dict keys this modulation will return
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
-            'mask_IIIm1', 'zvs_coverage', 'zvs_coverage_notnan']
+            'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan']
 
 
 def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.ndarray, Coss2: np.ndarray,
