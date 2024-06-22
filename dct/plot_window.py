@@ -5,12 +5,11 @@ import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QTabWidget, QVBoxLayout
 import sys
 
-import matplotlib
 
 # prevent NoneType error for versions of matplotlib 3.1.0rc1+ by calling matplotlib.use()
 # For more on why it's necessary, see
 # https://stackoverflow.com/questions/59656632/using-qt5agg-backend-with-matplotlib-3-1-2-get-backend-changes-behavior
-matplotlib.use('qt5agg')
+# matplotlib.use('qt5agg')
 
 
 class PlotWindow:
