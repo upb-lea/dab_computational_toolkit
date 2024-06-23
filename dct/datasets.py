@@ -298,7 +298,7 @@ class HandleDabDto:
                                                    t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
                                                    fs=dab_dto.input_config.fs, Ls=dab_dto.input_config.Ls, Lc1=dab_dto.input_config.Lc1,
                                                    Lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
-                                                   temp=dab_dto.calc_config.t_j_1,
+                                                   t_j_1=dab_dto.calc_config.t_j_1, t_j_2=dab_dto.calc_config.t_j_2,
                                                    simfilepath=dab_dto.gecko_additional_params.simfilepath,
                                                    lossfilepath=dab_dto.gecko_additional_params.lossfilepath,
                                                    timestep=dab_dto.gecko_additional_params.timestep,

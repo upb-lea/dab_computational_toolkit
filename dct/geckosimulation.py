@@ -18,7 +18,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                            mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
                            t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray,
                            Ls: float, Lc1: float, Lc2: float, n: float,
-                           temp: float,
+                           t_j_1: float, t_j_2: float,
                            simfilepath: str, timestep: float, simtime: float,
                            timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036, gdebug: bool = False,
                            c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
@@ -39,7 +39,8 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :param Lc1:
     :param Lc2:
     :param n:
-    :param temp:
+    :param t_j_1:
+    :param t_j_2:
     :param simfilepath:
     :param timestep:
     :param simtime:
@@ -109,7 +110,8 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             'Lc1': float(Lc1),
             'Lc2_': float(Lc2_),
             'n': float(n),
-            'temp': float(temp),
+            't_j_1': float(t_j_1),
+            't_j_2': float(t_j_2),
             'C_par_1': c_par_1,
             'C_par_2': c_par_2,
         }
