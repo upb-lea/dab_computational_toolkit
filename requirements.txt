@@ -1,5 +1,4 @@
 pandas
-dotmap
 matplotlib
 pyqt5
 tqdm

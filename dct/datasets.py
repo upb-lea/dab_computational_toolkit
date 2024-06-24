@@ -32,7 +32,6 @@ class Config:
     P_step: np.array
     n: np.array
     Ls: np.array
-    Lm: np.array
     Lc1: np.array
     Lc2: np.array
     fs: np.array
@@ -208,7 +207,7 @@ class HandleDabDto:
     @staticmethod
     def init_config(V1_nom, V1_min, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
                     V2_max: np.array, V2_step: np.array, P_min: np.array, P_max: np.array, P_nom: np.array, P_step: np.array,
-                    n: np.array, Ls: np.array, Lm: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
+                    n: np.array, Ls: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
                     transistor_name_1: str, transistor_name_2: str, c_par_1, c_par_2):
         """
         Initialize the DAB structure.
@@ -251,7 +250,6 @@ class HandleDabDto:
                                      P_step=np.array(P_step),
                                      n=np.array(n),
                                      Ls=np.array(Ls),
-                                     Lm=np.array(Lm),
                                      Lc1=np.array(Lc1),
                                      Lc2=np.array(Lc2),
                                      fs=np.array(fs),
