@@ -243,7 +243,6 @@ def get_free_port(start=43047, stop=50000) -> int:
     # tcp   LISTEN   0  50    *:43036   *:*   users:(("java",pid=1532749,fd=57))
 
     random.seed()
-    # port = random.randint(start, stop)
     port = random.randrange(start, stop)
     port_in_use = 0
     while not port_in_use:
