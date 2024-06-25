@@ -6,7 +6,7 @@ from dct.datasets import Config, CalcFromConfig, CalcModulation
 # 3rd party libraries
 import numpy as np
 
-def calc_l_s_mode_1_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
+def calc_l_s_mode_1_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
     """
     Calculate currents in l_s for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -27,7 +27,7 @@ def calc_l_s_mode_1_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
 
     return i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
 
-def calc_l_1_mode_1_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
+def calc_l_1_mode_1_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     """
     Calculate currents in l_1 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -47,7 +47,7 @@ def calc_l_1_mode_1_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
 
     return i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
 
-def calc_l_2_mode_1_angles_rad(tau_2_rad, v_2, f_s, l_2):
+def calc_l_2_mode_1_currents(tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -58,14 +58,14 @@ def calc_l_2_mode_1_angles_rad(tau_2_rad, v_2, f_s, l_2):
     :return: i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
     """
     denominator = 2 * np.pi * f_s * l_2
-    alpha_rad = -v_2 * tau_2_rad / 2 / denominator
-    beta_rad = -v_2 * tau_2_rad / 2 / denominator
-    gamma_rad = v_2 * tau_2_rad / 2 / denominator
-    delta_rad = v_2 * tau_2_rad / 2 / denominator
+    i_l_s_alpha_rad = -v_2 * tau_2_rad / 2 / denominator
+    i_l_2_beta_rad = -v_2 * tau_2_rad / 2 / denominator
+    i_l_2_gamma_rad = v_2 * tau_2_rad / 2 / denominator
+    i_l_2_delta_rad = v_2 * tau_2_rad / 2 / denominator
 
-    return alpha_rad, beta_rad, gamma_rad, delta_rad
+    return i_l_s_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
 
-def calc_l_s_mode_2_plus_angles_rad(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_s):
+def calc_l_s_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_s):
     """
     Calculate currents in l_s for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -79,14 +79,14 @@ def calc_l_s_mode_2_plus_angles_rad(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, 
     :return: i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
     """
     denominator = 2 * np.pi * f_s * l_s
-    alpha_rad = v_1 * (d * (-tau_1_rad + tau_2_rad / 2 - phi_rad + np.pi) - tau_1_rad / 2) / denominator
-    beta_rad = v_1 * (d * tau_2_rad / 2 + tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
-    gamma_rad = v_1 * (d * (-tau_2_rad / 2 + phi_rad) + tau_1_rad / 2) / denominator
-    delta_rad = v_1 * (-d * tau_2_rad / 2 - tau_1_rad / 2 - phi_rad + np.pi) / denominator
+    i_l_s_alpha_rad = v_1 * (d * (-tau_1_rad + tau_2_rad / 2 - phi_rad + np.pi) - tau_1_rad / 2) / denominator
+    i_l_s_beta_rad = v_1 * (d * tau_2_rad / 2 + tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
+    i_l_s_gamma_rad = v_1 * (d * (-tau_2_rad / 2 + phi_rad) + tau_1_rad / 2) / denominator
+    i_l_s_delta_rad = v_1 * (-d * tau_2_rad / 2 - tau_1_rad / 2 - phi_rad + np.pi) / denominator
 
-    return alpha_rad, beta_rad, gamma_rad, delta_rad
+    return i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
 
-def calc_l_1_mode_2_plus_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
+def calc_l_1_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     """
     Calculate currents in l_1 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -99,14 +99,14 @@ def calc_l_1_mode_2_plus_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1
     :return: i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
     """
     denominator = 2 * np.pi * f_s * l_1
-    alpha_rad = -v_1 * tau_1_rad / 2 / denominator
-    beta_rad = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
-    gamma_rad = v_1 * tau_1_rad / 2 / denominator
-    delta_rad = v_1 * (-tau_1_rad / 2 - phi_rad + np.pi) / denominator
+    i_l_1_alpha_rad = -v_1 * tau_1_rad / 2 / denominator
+    i_l_1_beta_rad = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
+    i_l_1_gamma_rad = v_1 * tau_1_rad / 2 / denominator
+    i_l_1_delta_rad = v_1 * (-tau_1_rad / 2 - phi_rad + np.pi) / denominator
 
-    return alpha_rad, beta_rad, gamma_rad, delta_rad
+    return i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
 
-def calc_l_2_mode_2_plus_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
+def calc_l_2_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -119,12 +119,12 @@ def calc_l_2_mode_2_plus_angles_rad(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2
     :return: i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
     """
     denominator = 2 * np.pi * f_s * l_2
-    alpha_rad = v_2 * (tau_1_rad - tau_2_rad / 2 + phi_rad - np.pi) / denominator
-    beta_rad = -v_2 * tau_2_rad / 2 / denominator
-    gamma_rad = v_2 * (tau_2_rad / 2 - phi_rad) / denominator
-    delta_rad = v_2 * tau_2_rad / 2 / denominator
+    i_l_2_alpha_rad = v_2 * (tau_1_rad - tau_2_rad / 2 + phi_rad - np.pi) / denominator
+    i_l_2_beta_rad = -v_2 * tau_2_rad / 2 / denominator
+    i_l_2_gamma_rad = v_2 * (tau_2_rad / 2 - phi_rad) / denominator
+    i_l_2_delta_rad = v_2 * tau_2_rad / 2 / denominator
 
-    return alpha_rad, beta_rad, gamma_rad, delta_rad
+    return i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
 
 def int_square_line_between_angles(angle_1_rad, angle_2_rad, y_1, y_2):
     """
@@ -183,9 +183,9 @@ def calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma
 
     # sort the angles and currents according to the angle order.
     # https://stackoverflow.com/questions/52121635/looking-up-index-of-value-in-numpy-3d-arrays
-    sorted_indicies = np.argsort(angles_vec, axis=0)
-    angles_sorted = np.take_along_axis(angles_vec, sorted_indicies, axis=0)
-    currents_sorted = np.take_along_axis(currents_vec, sorted_indicies, axis=0)
+    sorted_indices = np.argsort(angles_vec, axis=0)
+    angles_sorted = np.take_along_axis(angles_vec, sorted_indices, axis=0)
+    currents_sorted = np.take_along_axis(currents_vec, sorted_indices, axis=0)
 
     int_square_part_00 = int_square_line_between_angles(angles_zeros, angles_sorted[0], -currents_sorted[3], currents_sorted[0])
     int_square_part_01 = int_square_line_between_angles(angles_sorted[0], angles_sorted[1], currents_sorted[0], currents_sorted[1])
@@ -194,7 +194,7 @@ def calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma
 
     rms = np.sqrt(2 * (int_square_part_00 + int_square_part_01 + int_square_part_12 + int_square_part_23))
 
-    return rms
+    return rms, angles_sorted, currents_sorted
 
 def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_modulation: CalcModulation):
     """
@@ -218,77 +218,82 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     d = config.n * calc_from_config.mesh_V2 / calc_from_config.mesh_V1
 
     # currents in l_s for mode 1 and mode 2+
-    m1_i_l_s_alpha_rad, m1_i_l_s_beta_rad, m1_i_l_s_gamma_rad, m1_i_l_s_delta_rad = calc_l_s_mode_1_angles_rad(
+    m1_i_l_s_alpha, m1_i_l_s_beta, m1_i_l_s_gamma, m1_i_l_s_delta = calc_l_s_mode_1_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, d, config.fs, config.Ls)
-    m2_i_l_s_alpha_rad, m2_i_l_s_beta_rad, m2_i_l_s_gamma_rad, m2_i_l_s_delta_rad = calc_l_s_mode_2_plus_angles_rad(
+    m2_i_l_s_alpha, m2_i_l_s_beta, m2_i_l_s_gamma, m2_i_l_s_delta = calc_l_s_mode_2_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_V1, config.fs, config.Ls)
 
     # currents in l_1 for mode 1 and mode 2+
-    m1_i_l_1_alpha_rad, m1_i_l_1_beta_rad, m1_i_l_1_gamma_rad, m1_i_l_1_delta_rad = calc_l_1_mode_1_angles_rad(
+    m1_i_l_1_alpha, m1_i_l_1_beta, m1_i_l_1_gamma, m1_i_l_1_delta = calc_l_1_mode_1_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
-    m2_i_l_1_alpha_rad, m2_i_l_1_beta_rad, m2_i_l_1_gamma_rad, m2_i_l_1_delta_rad = calc_l_1_mode_2_plus_angles_rad(
+    m2_i_l_1_alpha, m2_i_l_1_beta, m2_i_l_1_gamma, m2_i_l_1_delta = calc_l_1_mode_2_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
 
     # currents in l_2 for mode 1 and mode 2+
-    m1_i_l_2_alpha_rad, m1_i_l_2_beta_rad, m1_i_l_2_gamma_rad, m1_i_l_2_delta_rad = calc_l_2_mode_1_angles_rad(
+    m1_i_l_2_alpha, m1_i_l_2_beta, m1_i_l_2_gamma, m1_i_l_2_delta = calc_l_2_mode_1_currents(
         calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
-    m2_i_l_2_alpha_rad, m2_i_l_2_beta_rad, m2_i_l_2_gamma_rad, m2_i_l_2_delta_rad = calc_l_2_mode_2_plus_angles_rad(
+    m2_i_l_2_alpha, m2_i_l_2_beta, m2_i_l_2_gamma, m2_i_l_2_delta = calc_l_2_mode_2_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
 
     # generate the output current for l_s, distinguish between mode 1 and mode 2+
-    i_l_s_alpha_rad = np.full_like(m1_i_l_s_alpha_rad, np.nan)
-    i_l_s_alpha_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_alpha_rad[calc_modulation.mask_IIIm1]
-    i_l_s_alpha_rad[mode_2_mask] = m2_i_l_s_alpha_rad[mode_2_mask]
+    i_l_s_alpha = np.full_like(m1_i_l_s_alpha, np.nan)
+    i_l_s_alpha[calc_modulation.mask_IIIm1] = m1_i_l_s_alpha[calc_modulation.mask_IIIm1]
+    i_l_s_alpha[mode_2_mask] = m2_i_l_s_alpha[mode_2_mask]
 
-    i_l_s_beta_rad = np.full_like(m1_i_l_s_beta_rad, np.nan)
-    i_l_s_beta_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_beta_rad[calc_modulation.mask_IIIm1]
-    i_l_s_beta_rad[mode_2_mask] = m2_i_l_s_beta_rad[mode_2_mask]
+    i_l_s_beta = np.full_like(m1_i_l_s_beta, np.nan)
+    i_l_s_beta[calc_modulation.mask_IIIm1] = m1_i_l_s_beta[calc_modulation.mask_IIIm1]
+    i_l_s_beta[mode_2_mask] = m2_i_l_s_beta[mode_2_mask]
 
-    i_l_s_gamma_rad = np.full_like(m1_i_l_s_gamma_rad, np.nan)
-    i_l_s_gamma_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_gamma_rad[calc_modulation.mask_IIIm1]
-    i_l_s_gamma_rad[mode_2_mask] = m2_i_l_s_gamma_rad[mode_2_mask]
+    i_l_s_gamma = np.full_like(m1_i_l_s_gamma, np.nan)
+    i_l_s_gamma[calc_modulation.mask_IIIm1] = m1_i_l_s_gamma[calc_modulation.mask_IIIm1]
+    i_l_s_gamma[mode_2_mask] = m2_i_l_s_gamma[mode_2_mask]
 
-    i_l_s_delta_rad = np.full_like(m1_i_l_s_delta_rad, np.nan)
-    i_l_s_delta_rad[calc_modulation.mask_IIIm1] = m1_i_l_s_delta_rad[calc_modulation.mask_IIIm1]
-    i_l_s_delta_rad[mode_2_mask] = m2_i_l_s_delta_rad[mode_2_mask]
+    i_l_s_delta = np.full_like(m1_i_l_s_delta, np.nan)
+    i_l_s_delta[calc_modulation.mask_IIIm1] = m1_i_l_s_delta[calc_modulation.mask_IIIm1]
+    i_l_s_delta[mode_2_mask] = m2_i_l_s_delta[mode_2_mask]
 
     # generate the output current for l_1, distinguish between mode 1 and mode 2+
-    i_l_1_alpha_rad = np.full_like(m1_i_l_1_alpha_rad, np.nan)
-    i_l_1_alpha_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_alpha_rad[calc_modulation.mask_IIIm1]
-    i_l_1_alpha_rad[mode_2_mask] = m2_i_l_1_alpha_rad[mode_2_mask]
+    i_l_1_alpha = np.full_like(m1_i_l_1_alpha, np.nan)
+    i_l_1_alpha[calc_modulation.mask_IIIm1] = m1_i_l_1_alpha[calc_modulation.mask_IIIm1]
+    i_l_1_alpha[mode_2_mask] = m2_i_l_1_alpha[mode_2_mask]
 
-    i_l_1_beta_rad = np.full_like(m1_i_l_1_beta_rad, np.nan)
-    i_l_1_beta_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_beta_rad[calc_modulation.mask_IIIm1]
-    i_l_1_beta_rad[mode_2_mask] = m2_i_l_1_beta_rad[mode_2_mask]
+    i_l_1_beta = np.full_like(m1_i_l_1_beta, np.nan)
+    i_l_1_beta[calc_modulation.mask_IIIm1] = m1_i_l_1_beta[calc_modulation.mask_IIIm1]
+    i_l_1_beta[mode_2_mask] = m2_i_l_1_beta[mode_2_mask]
 
-    i_l_1_gamma_rad = np.full_like(m1_i_l_1_gamma_rad, np.nan)
-    i_l_1_gamma_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_gamma_rad[calc_modulation.mask_IIIm1]
-    i_l_1_gamma_rad[mode_2_mask] = m2_i_l_1_gamma_rad[mode_2_mask]
+    i_l_1_gamma = np.full_like(m1_i_l_1_gamma, np.nan)
+    i_l_1_gamma[calc_modulation.mask_IIIm1] = m1_i_l_1_gamma[calc_modulation.mask_IIIm1]
+    i_l_1_gamma[mode_2_mask] = m2_i_l_1_gamma[mode_2_mask]
 
-    i_l_1_delta_rad = np.full_like(m1_i_l_1_delta_rad, np.nan)
-    i_l_1_delta_rad[calc_modulation.mask_IIIm1] = m1_i_l_1_delta_rad[calc_modulation.mask_IIIm1]
-    i_l_1_delta_rad[mode_2_mask] = m2_i_l_1_delta_rad[mode_2_mask]
+    i_l_1_delta = np.full_like(m1_i_l_1_delta, np.nan)
+    i_l_1_delta[calc_modulation.mask_IIIm1] = m1_i_l_1_delta[calc_modulation.mask_IIIm1]
+    i_l_1_delta[mode_2_mask] = m2_i_l_1_delta[mode_2_mask]
 
     # generate the output current for l_2, distinguish between mode 1 and mode 2+
-    i_l_2_alpha_rad = np.full_like(m1_i_l_2_alpha_rad, np.nan)
-    i_l_2_alpha_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_alpha_rad[calc_modulation.mask_IIIm1]
-    i_l_2_alpha_rad[mode_2_mask] = m2_i_l_2_alpha_rad[mode_2_mask]
+    i_l_2_alpha = np.full_like(m1_i_l_2_alpha, np.nan)
+    i_l_2_alpha[calc_modulation.mask_IIIm1] = m1_i_l_2_alpha[calc_modulation.mask_IIIm1]
+    i_l_2_alpha[mode_2_mask] = m2_i_l_2_alpha[mode_2_mask]
 
-    i_l_2_beta_rad = np.full_like(m1_i_l_2_beta_rad, np.nan)
-    i_l_2_beta_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_beta_rad[calc_modulation.mask_IIIm1]
-    i_l_2_beta_rad[mode_2_mask] = m2_i_l_2_beta_rad[mode_2_mask]
+    i_l_2_beta = np.full_like(m1_i_l_2_beta, np.nan)
+    i_l_2_beta[calc_modulation.mask_IIIm1] = m1_i_l_2_beta[calc_modulation.mask_IIIm1]
+    i_l_2_beta[mode_2_mask] = m2_i_l_2_beta[mode_2_mask]
 
-    i_l_2_gamma_rad = np.full_like(m1_i_l_2_gamma_rad, np.nan)
-    i_l_2_gamma_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_gamma_rad[calc_modulation.mask_IIIm1]
-    i_l_2_gamma_rad[mode_2_mask] = m2_i_l_2_gamma_rad[mode_2_mask]
+    i_l_2_gamma = np.full_like(m1_i_l_2_gamma, np.nan)
+    i_l_2_gamma[calc_modulation.mask_IIIm1] = m1_i_l_2_gamma[calc_modulation.mask_IIIm1]
+    i_l_2_gamma[mode_2_mask] = m2_i_l_2_gamma[mode_2_mask]
 
-    i_l_2_delta_rad = np.full_like(m1_i_l_2_delta_rad, np.nan)
-    i_l_2_delta_rad[calc_modulation.mask_IIIm1] = m1_i_l_2_delta_rad[calc_modulation.mask_IIIm1]
-    i_l_2_delta_rad[mode_2_mask] = m2_i_l_2_delta_rad[mode_2_mask]
+    i_l_2_delta = np.full_like(m1_i_l_2_delta, np.nan)
+    i_l_2_delta[calc_modulation.mask_IIIm1] = m1_i_l_2_delta[calc_modulation.mask_IIIm1]
+    i_l_2_delta[mode_2_mask] = m2_i_l_2_delta[mode_2_mask]
 
     # calculate rms currents for l_s, l_1, l_2
-    i_l_s_rms = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad)
-    i_l_1_rms = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad)
-    i_l_2_rms = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad)
+    i_l_s_rms, angles_sorted, i_l_s_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_s_alpha, i_l_s_beta, i_l_s_gamma, i_l_s_delta)
+    i_l_1_rms, _, i_l_1_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta)
+    i_l_2_rms, _, i_l_2_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_2_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta)
 
-    return i_l_s_rms, i_l_1_rms, i_l_2_rms
+    # print(f"{np.shape(angles_sorted)=}")
+    # print(f"{np.shape(i_l_s_sorted)=}")
+    # print(f"{angles_sorted=}")
+    # print(f"{i_l_s_sorted=}")
+
+    return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted

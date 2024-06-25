@@ -9,3 +9,4 @@ from dct.plot_dab import *
 from dct.plot_window import *
 from dct.plot_calculation import *
 from dct.plot_simulation import *
+from dct.plot_waveforms import *

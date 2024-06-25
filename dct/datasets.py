@@ -115,9 +115,16 @@ class CalcModulation:
 class CalcCurrents:
     """DTO contains calculated RMS currents."""
 
+    # RMS values
     i_l_s_rms: np.array
     i_l_1_rms: np.array
     i_l_2_rms: np.array
+
+    # sorted values: angles (alpha, beta, gamma, delta) and currents.
+    angles_rad_sorted: np.array
+    i_l_s_sorted: np.array
+    i_l_1_sorted: np.array
+    i_l_2_sorted: np.array
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -261,9 +268,10 @@ class HandleDabDto:
         calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
         modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
 
-        i_l_s_rms, i_l_1_rms, i_l_2_rms = dct.calc_rms_currents(input_configuration, calc_config, modulation_parameters)
+        i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted = dct.calc_rms_currents(input_configuration, calc_config, modulation_parameters)
 
-        calc_currents = CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms})
+        calc_currents = CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
+                                        'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted, 'i_l_2_sorted': i_l_2_sorted})
 
         gecko_additional_params = GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
