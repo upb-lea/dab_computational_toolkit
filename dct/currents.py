@@ -6,9 +6,13 @@ from dct.datasets import Config, CalcFromConfig, CalcModulation
 # 3rd party libraries
 import numpy as np
 
-def calc_l_s_mode_1_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
+def calc_l_s_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
     """
     Calculate currents in l_s for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
+
+    Note: Convention for mode 1+ and mode 2 according to the following source paper.
+    Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
+    Also note, that there are multiple mode definitions of the same author in different papers.
 
     :param phi_rad: phi in rad
     :param tau_1_rad: tau_1 in rad
@@ -17,19 +21,23 @@ def calc_l_s_mode_1_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
     :param d: v_2_reflected / v_1 = (n_1 / n_2) * v_2 / v_1
     :param f_s: switching frequency
     :param l_s: series inductance
-    :return: i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
+    :return: i_l_s_alpha, i_l_s_beta, i_l_s_gamma, i_l_s_delta
     """
     denominator = (2 * np.pi * f_s * l_s)
-    i_l_s_alpha_rad = v_1 * (d * tau_2_rad / 2 - tau_1_rad / 2) / denominator
-    i_l_s_beta_rad = v_1 * (d * tau_2_rad / 2 + tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
-    i_l_s_gamma_rad = v_1 * (-d * tau_2_rad / 2 + tau_1_rad / 2) / denominator
-    i_l_s_delta_rad = v_1 * (-d * tau_2_rad / 2 + tau_1_rad + phi_rad) / denominator
+    i_l_s_alpha = v_1 * (d * tau_2_rad / 2 - tau_1_rad / 2) / denominator
+    i_l_s_beta = v_1 * (d * tau_2_rad / 2 + tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
+    i_l_s_gamma = v_1 * (-d * tau_2_rad / 2 + tau_1_rad / 2) / denominator
+    i_l_s_delta = v_1 * (-d * tau_2_rad / 2 + tau_1_rad + phi_rad) / denominator
 
-    return i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
+    return i_l_s_alpha, i_l_s_beta, i_l_s_gamma, i_l_s_delta
 
-def calc_l_1_mode_1_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
+def calc_l_1_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     """
     Calculate currents in l_1 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
+
+    Note: Convention for mode 1+ and mode 2 according to the following source paper.
+    Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
+    Also note, that there are multiple mode definitions of the same author in different papers.
 
     :param phi_rad: phi in rad
     :param tau_1_rad: tau_1 in rad
@@ -37,37 +45,49 @@ def calc_l_1_mode_1_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     :param v_1: DC voltage v_1
     :param f_s: switching frequency
     :param l_1: commutation inductance l_1
-    :return: i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
+    :return: i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
     """
     denominator = 2 * np.pi * f_s * l_1
-    i_l_1_alpha_rad = -v_1 * tau_1_rad / 2 / denominator
-    i_l_1_beta_rad = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
-    i_l_1_gamma_rad = v_1 * tau_1_rad / 2 / denominator
-    i_l_1_delta_rad = v_1 * (tau_1_rad / 2 + phi_rad) / denominator
+    i_l_1_alpha = -v_1 * tau_1_rad / 2 / denominator
+    i_l_1_beta = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
+    i_l_1_gamma = v_1 * tau_1_rad / 2 / denominator
+    i_l_1_delta = v_1 * (tau_1_rad / 2 + phi_rad) / denominator
 
-    return i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
+    return i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
 
-def calc_l_2_mode_1_currents(tau_2_rad, v_2, f_s, l_2):
+def calc_l_2_mode_2_currents(tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
+
+    This formular works for the following cases:
+     - input: l_2, v_2, returns i_l_2
+     - input: l_2_, v_2_, returns i_l_2_
+
+    Note: Convention for mode 1+ and mode 2 according to the following source paper.
+    Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
+    Also note, that there are multiple mode definitions of the same author in different papers.
 
     :param tau_2_rad: tau_2 in rad
     :param v_2: DC voltage v_2
     :param f_s: switching frequency
     :param l_2: commutation inductance l_2
-    :return: i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
+    :return: i_l_2_alpha_rad, i_l_2_beta, i_l_2_gamma, i_l_2_delta
     """
     denominator = 2 * np.pi * f_s * l_2
-    i_l_s_alpha_rad = -v_2 * tau_2_rad / 2 / denominator
-    i_l_2_beta_rad = -v_2 * tau_2_rad / 2 / denominator
-    i_l_2_gamma_rad = v_2 * tau_2_rad / 2 / denominator
-    i_l_2_delta_rad = v_2 * tau_2_rad / 2 / denominator
+    i_l_s_alpha = -v_2 * tau_2_rad / 2 / denominator
+    i_l_2_beta = -v_2 * tau_2_rad / 2 / denominator
+    i_l_2_gamma = v_2 * tau_2_rad / 2 / denominator
+    i_l_2_delta = v_2 * tau_2_rad / 2 / denominator
 
-    return i_l_s_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
+    return i_l_s_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta
 
-def calc_l_s_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_s):
+def calc_l_s_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_s):
     """
     Calculate currents in l_s for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
+
+    Note: Convention for mode 1+ and mode 2 according to the following source paper.
+    Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
+    Also note, that there are multiple mode definitions of the same author in different papers.
 
     :param phi_rad: phi in rad
     :param tau_1_rad: tau_1 in rad
@@ -86,9 +106,13 @@ def calc_l_s_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_
 
     return i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
 
-def calc_l_1_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
+def calc_l_1_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     """
     Calculate currents in l_1 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
+
+    Note: Convention for mode 1+ and mode 2 according to the following source paper.
+    Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
+    Also note, that there are multiple mode definitions of the same author in different papers.
 
     :param phi_rad: phi in rad
     :param tau_1_rad: tau_1 in rad
@@ -96,19 +120,27 @@ def calc_l_1_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     :param v_1: DC voltage v_1
     :param f_s: switching frequency
     :param l_1: commutation inductance l_1
-    :return: i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
+    :return: i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
     """
     denominator = 2 * np.pi * f_s * l_1
-    i_l_1_alpha_rad = -v_1 * tau_1_rad / 2 / denominator
-    i_l_1_beta_rad = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
-    i_l_1_gamma_rad = v_1 * tau_1_rad / 2 / denominator
-    i_l_1_delta_rad = v_1 * (-tau_1_rad / 2 - phi_rad + np.pi) / denominator
+    i_l_1_alpha = -v_1 * tau_1_rad / 2 / denominator
+    i_l_1_beta = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
+    i_l_1_gamma = v_1 * tau_1_rad / 2 / denominator
+    i_l_1_delta = v_1 * (-tau_1_rad / 2 - phi_rad + np.pi) / denominator
 
-    return i_l_1_alpha_rad, i_l_1_beta_rad, i_l_1_gamma_rad, i_l_1_delta_rad
+    return i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
 
-def calc_l_2_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
+def calc_l_2_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
+
+    This formular works for the following cases:
+     - input: l_2, v_2, returns i_l_2
+     - input: l_2_, v_2_, returns i_l_2_
+
+    Note: Convention for mode 1+ and mode 2 according to the following source paper.
+    Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
+    Also note, that there are multiple mode definitions of the same author in different papers.
 
     :param phi_rad: phi in rad
     :param tau_1_rad: tau_1 in rad
@@ -116,15 +148,15 @@ def calc_l_2_mode_2_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
     :param v_2: DC voltage v_2
     :param f_s: switching frequency
     :param l_2: commutation inductance l_2
-    :return: i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
+    :return: i_l_2_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta
     """
     denominator = 2 * np.pi * f_s * l_2
-    i_l_2_alpha_rad = v_2 * (tau_1_rad - tau_2_rad / 2 + phi_rad - np.pi) / denominator
-    i_l_2_beta_rad = -v_2 * tau_2_rad / 2 / denominator
-    i_l_2_gamma_rad = v_2 * (tau_2_rad / 2 - phi_rad) / denominator
-    i_l_2_delta_rad = v_2 * tau_2_rad / 2 / denominator
+    i_l_2_alpha = v_2 * (tau_1_rad - tau_2_rad / 2 + phi_rad - np.pi) / denominator
+    i_l_2_beta = -v_2 * tau_2_rad / 2 / denominator
+    i_l_2_gamma = v_2 * (tau_2_rad / 2 - phi_rad) / denominator
+    i_l_2_delta = v_2 * tau_2_rad / 2 / denominator
 
-    return i_l_2_alpha_rad, i_l_2_beta_rad, i_l_2_gamma_rad, i_l_2_delta_rad
+    return i_l_2_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta
 
 def int_square_line_between_angles(angle_1_rad, angle_2_rad, y_1, y_2):
     """
@@ -181,6 +213,10 @@ def calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma
     currents_vec[angles_vec > np.pi] = -currents_vec[angles_vec > np.pi]
     angles_vec[angles_vec > np.pi] = angles_vec[angles_vec > np.pi] - np.pi
 
+    # if angle < 0, add pi and invert current. Current first, as angle will be always > 0 after modification
+    currents_vec[angles_vec < 0] = -currents_vec[angles_vec < 0]
+    angles_vec[angles_vec < 0] = angles_vec[angles_vec < 0] + np.pi
+
     # sort the angles and currents according to the angle order.
     # https://stackoverflow.com/questions/52121635/looking-up-index-of-value-in-numpy-3d-arrays
     sorted_indices = np.argsort(angles_vec, axis=0)
@@ -217,25 +253,25 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     # calculate current values for l_s depend on angles. Modulation modes are taken into account
     d = config.n * calc_from_config.mesh_V2 / calc_from_config.mesh_V1
 
-    # currents in l_s for mode 1 and mode 2+
-    m1_i_l_s_alpha, m1_i_l_s_beta, m1_i_l_s_gamma, m1_i_l_s_delta = calc_l_s_mode_1_currents(
+    # currents in l_s for mode 2 and mode 1+
+    m2_i_l_s_alpha, m2_i_l_s_beta, m2_i_l_s_gamma, m2_i_l_s_delta = calc_l_s_mode_2_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, d, config.fs, config.Ls)
-    m2_i_l_s_alpha, m2_i_l_s_beta, m2_i_l_s_gamma, m2_i_l_s_delta = calc_l_s_mode_2_plus_currents(
+    m1_i_l_s_alpha, m1_i_l_s_beta, m1_i_l_s_gamma, m1_i_l_s_delta = calc_l_s_mode_1_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_V1, config.fs, config.Ls)
 
-    # currents in l_1 for mode 1 and mode 2+
-    m1_i_l_1_alpha, m1_i_l_1_beta, m1_i_l_1_gamma, m1_i_l_1_delta = calc_l_1_mode_1_currents(
+    # currents in l_1 for mode 2 and mode 1+
+    m2_i_l_1_alpha, m2_i_l_1_beta, m2_i_l_1_gamma, m2_i_l_1_delta = calc_l_1_mode_2_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
-    m2_i_l_1_alpha, m2_i_l_1_beta, m2_i_l_1_gamma, m2_i_l_1_delta = calc_l_1_mode_2_plus_currents(
+    m1_i_l_1_alpha, m1_i_l_1_beta, m1_i_l_1_gamma, m1_i_l_1_delta = calc_l_1_mode_1_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
 
-    # currents in l_2 for mode 1 and mode 2+
-    m1_i_l_2_alpha, m1_i_l_2_beta, m1_i_l_2_gamma, m1_i_l_2_delta = calc_l_2_mode_1_currents(
+    # currents in l_2 for mode 2 and mode 1+
+    m2_i_l_2_alpha, m2_i_l_2_beta, m2_i_l_2_gamma, m2_i_l_2_delta = calc_l_2_mode_2_currents(
         calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
-    m2_i_l_2_alpha, m2_i_l_2_beta, m2_i_l_2_gamma, m2_i_l_2_delta = calc_l_2_mode_2_plus_currents(
+    m1_i_l_2_alpha, m1_i_l_2_beta, m1_i_l_2_gamma, m1_i_l_2_delta = calc_l_2_mode_1_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
 
-    # generate the output current for l_s, distinguish between mode 1 and mode 2+
+    # generate the output current for l_s, distinguish between mode 2 and mode 1+
     i_l_s_alpha = np.full_like(m1_i_l_s_alpha, np.nan)
     i_l_s_alpha[calc_modulation.mask_IIIm1] = m1_i_l_s_alpha[calc_modulation.mask_IIIm1]
     i_l_s_alpha[mode_2_mask] = m2_i_l_s_alpha[mode_2_mask]
@@ -252,7 +288,7 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     i_l_s_delta[calc_modulation.mask_IIIm1] = m1_i_l_s_delta[calc_modulation.mask_IIIm1]
     i_l_s_delta[mode_2_mask] = m2_i_l_s_delta[mode_2_mask]
 
-    # generate the output current for l_1, distinguish between mode 1 and mode 2+
+    # generate the output current for l_1, distinguish between mode 2 and mode 1+
     i_l_1_alpha = np.full_like(m1_i_l_1_alpha, np.nan)
     i_l_1_alpha[calc_modulation.mask_IIIm1] = m1_i_l_1_alpha[calc_modulation.mask_IIIm1]
     i_l_1_alpha[mode_2_mask] = m2_i_l_1_alpha[mode_2_mask]
@@ -269,7 +305,7 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     i_l_1_delta[calc_modulation.mask_IIIm1] = m1_i_l_1_delta[calc_modulation.mask_IIIm1]
     i_l_1_delta[mode_2_mask] = m2_i_l_1_delta[mode_2_mask]
 
-    # generate the output current for l_2, distinguish between mode 1 and mode 2+
+    # generate the output current for l_2, distinguish between mode 2 and mode 1+
     i_l_2_alpha = np.full_like(m1_i_l_2_alpha, np.nan)
     i_l_2_alpha[calc_modulation.mask_IIIm1] = m1_i_l_2_alpha[calc_modulation.mask_IIIm1]
     i_l_2_alpha[mode_2_mask] = m2_i_l_2_alpha[mode_2_mask]
