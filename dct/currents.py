@@ -6,7 +6,7 @@ from dct.datasets import Config, CalcFromConfig, CalcModulation
 # 3rd party libraries
 import numpy as np
 
-def calc_l_s_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
+def _calc_l_s_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
     """
     Calculate currents in l_s for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -31,7 +31,7 @@ def calc_l_s_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
 
     return i_l_s_alpha, i_l_s_beta, i_l_s_gamma, i_l_s_delta
 
-def calc_l_1_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
+def _calc_l_1_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     """
     Calculate currents in l_1 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -55,7 +55,7 @@ def calc_l_1_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
 
     return i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
 
-def calc_l_2_mode_2_currents(tau_2_rad, v_2, f_s, l_2):
+def _calc_l_2_mode_2_currents(tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -81,7 +81,7 @@ def calc_l_2_mode_2_currents(tau_2_rad, v_2, f_s, l_2):
 
     return i_l_s_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta
 
-def calc_l_s_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_s):
+def _calc_l_s_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_s):
     """
     Calculate currents in l_s for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -106,7 +106,7 @@ def calc_l_s_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, l_
 
     return i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
 
-def calc_l_1_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
+def _calc_l_1_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
     """
     Calculate currents in l_1 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -130,7 +130,7 @@ def calc_l_1_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1):
 
     return i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
 
-def calc_l_2_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
+def _calc_l_2_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
@@ -158,7 +158,7 @@ def calc_l_2_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2):
 
     return i_l_2_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta
 
-def int_square_line_between_angles(angle_1_rad, angle_2_rad, y_1, y_2):
+def _int_square_line_between_angles(angle_1_rad, angle_2_rad, y_1, y_2):
     """
     Calculate the integral of the square for a simple line, described with two points.
 
@@ -217,16 +217,21 @@ def calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma
     currents_vec[angles_vec < 0] = -currents_vec[angles_vec < 0]
     angles_vec[angles_vec < 0] = angles_vec[angles_vec < 0] + np.pi
 
+    # again: if angles still below zero:
+    # if angle < 0, add pi and invert current. Current first, as angle will be always > 0 after modification
+    currents_vec[angles_vec < 0] = -currents_vec[angles_vec < 0]
+    angles_vec[angles_vec < 0] = angles_vec[angles_vec < 0] + np.pi
+
     # sort the angles and currents according to the angle order.
     # https://stackoverflow.com/questions/52121635/looking-up-index-of-value-in-numpy-3d-arrays
     sorted_indices = np.argsort(angles_vec, axis=0)
     angles_sorted = np.take_along_axis(angles_vec, sorted_indices, axis=0)
     currents_sorted = np.take_along_axis(currents_vec, sorted_indices, axis=0)
 
-    int_square_part_00 = int_square_line_between_angles(angles_zeros, angles_sorted[0], -currents_sorted[3], currents_sorted[0])
-    int_square_part_01 = int_square_line_between_angles(angles_sorted[0], angles_sorted[1], currents_sorted[0], currents_sorted[1])
-    int_square_part_12 = int_square_line_between_angles(angles_sorted[1], angles_sorted[2], currents_sorted[1], currents_sorted[2])
-    int_square_part_23 = int_square_line_between_angles(angles_sorted[2], angles_sorted[3], currents_sorted[2], currents_sorted[3])
+    int_square_part_00 = _int_square_line_between_angles(angles_zeros, angles_sorted[0], -currents_sorted[3], currents_sorted[0])
+    int_square_part_01 = _int_square_line_between_angles(angles_sorted[0], angles_sorted[1], currents_sorted[0], currents_sorted[1])
+    int_square_part_12 = _int_square_line_between_angles(angles_sorted[1], angles_sorted[2], currents_sorted[1], currents_sorted[2])
+    int_square_part_23 = _int_square_line_between_angles(angles_sorted[2], angles_sorted[3], currents_sorted[2], currents_sorted[3])
 
     rms = np.sqrt(2 * (int_square_part_00 + int_square_part_01 + int_square_part_12 + int_square_part_23))
 
@@ -242,7 +247,7 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     :param config: design configuration DTO
     :return: i_l_s_rms, i_l_1_rms, i_l_2_rms
     """
-    alpha_rad = calc_modulation.phi - calc_modulation.tau1
+    alpha_rad = np.pi - calc_modulation.tau1
     beta_rad = np.pi + calc_modulation.phi - calc_modulation.tau2
     gamma_rad = np.full_like(alpha_rad, np.pi)
     delta_rad = np.pi + calc_modulation.phi
@@ -254,21 +259,21 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     d = config.n * calc_from_config.mesh_V2 / calc_from_config.mesh_V1
 
     # currents in l_s for mode 2 and mode 1+
-    m2_i_l_s_alpha, m2_i_l_s_beta, m2_i_l_s_gamma, m2_i_l_s_delta = calc_l_s_mode_2_currents(
+    m2_i_l_s_alpha, m2_i_l_s_beta, m2_i_l_s_gamma, m2_i_l_s_delta = _calc_l_s_mode_2_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, d, config.fs, config.Ls)
-    m1_i_l_s_alpha, m1_i_l_s_beta, m1_i_l_s_gamma, m1_i_l_s_delta = calc_l_s_mode_1_plus_currents(
+    m1_i_l_s_alpha, m1_i_l_s_beta, m1_i_l_s_gamma, m1_i_l_s_delta = _calc_l_s_mode_1_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_V1, config.fs, config.Ls)
 
     # currents in l_1 for mode 2 and mode 1+
-    m2_i_l_1_alpha, m2_i_l_1_beta, m2_i_l_1_gamma, m2_i_l_1_delta = calc_l_1_mode_2_currents(
+    m2_i_l_1_alpha, m2_i_l_1_beta, m2_i_l_1_gamma, m2_i_l_1_delta = _calc_l_1_mode_2_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
-    m1_i_l_1_alpha, m1_i_l_1_beta, m1_i_l_1_gamma, m1_i_l_1_delta = calc_l_1_mode_1_plus_currents(
+    m1_i_l_1_alpha, m1_i_l_1_beta, m1_i_l_1_gamma, m1_i_l_1_delta = _calc_l_1_mode_1_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
 
     # currents in l_2 for mode 2 and mode 1+
-    m2_i_l_2_alpha, m2_i_l_2_beta, m2_i_l_2_gamma, m2_i_l_2_delta = calc_l_2_mode_2_currents(
+    m2_i_l_2_alpha, m2_i_l_2_beta, m2_i_l_2_gamma, m2_i_l_2_delta = _calc_l_2_mode_2_currents(
         calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
-    m1_i_l_2_alpha, m1_i_l_2_beta, m1_i_l_2_gamma, m1_i_l_2_delta = calc_l_2_mode_1_plus_currents(
+    m1_i_l_2_alpha, m1_i_l_2_beta, m1_i_l_2_gamma, m1_i_l_2_delta = _calc_l_2_mode_1_plus_currents(
         calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
 
     # generate the output current for l_s, distinguish between mode 2 and mode 1+
