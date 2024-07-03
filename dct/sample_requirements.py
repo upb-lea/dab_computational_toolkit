@@ -5,12 +5,14 @@ import math
 # own libraries
 from dct.datasets import DabDTO, HandleDabDto
 
-def load_dab_specification(dab_configuration_name: str) -> DabDTO:
+def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direction: int | None = None) -> DabDTO:
     """
     Load some predefined DAB specification from different lab samples or papers.
 
     :param dab_configuration_name: configuration name, which is from ["initial", "everts", "initial_reversed"]
     :type dab_configuration_name: str
+    :param steps_in_mesh_per_direction: Steps in each mesh direction (v_1, v_2, p_out), optional, e.g. 2: 2x2x2 = 8 simulations, 4: 4x4x4 = 64 simulations
+    :type steps_in_mesh_per_direction: int | None
     :return:
     """
     if dab_configuration_name.lower() == "initial":
@@ -18,15 +20,15 @@ def load_dab_specification(dab_configuration_name: str) -> DabDTO:
             V1_nom=700,
             V1_min=600,
             V1_max=800,
-            V1_step=3,
+            V1_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 3,
             V2_nom=235,
             V2_min=175,
             V2_max=295,
-            V2_step=3,
+            V2_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 3,
             P_min=-2200,
             P_max=2200,
             P_nom=2000,
-            P_step=3,
+            P_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 3,
             n=2.99,
             Ls=83e-6,
             fs=200000,
@@ -45,15 +47,15 @@ def load_dab_specification(dab_configuration_name: str) -> DabDTO:
             V1_nom=250,
             V1_min=125,
             V1_max=325,
-            V1_step=math.floor((325 - 125) / 10 + 1),  # 10V resolution gives 21 steps
+            V1_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else math.floor((325 - 125) / 10 + 1),  # 10V resolution
             V2_nom=400,
             V2_min=370,
             V2_max=470,
-            V2_step=math.floor((470 - 370) / 10 + 1),  # 5V resolution gives 25 steps
+            V2_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else math.floor((470 - 370) / 10 + 1),  # 5V resolution
             P_min=-3700,
             P_max=3700,
             P_nom=2000,
-            P_step=math.floor((3700 + 3700) / 100 + 1),  # 100W resolution gives 19 steps
+            P_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else math.floor((3700 + 3700) / 100 + 1),  # 100W resolution
             n=1,
             Ls=13e-6,
             Lc1=62.1e-6,
@@ -73,15 +75,15 @@ def load_dab_specification(dab_configuration_name: str) -> DabDTO:
             V2_nom=700,
             V2_min=600,
             V2_max=800,
-            V2_step=3,
+            V2_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 3,
             V1_nom=235,
             V1_min=175,
             V1_max=295,
-            V1_step=25 * 3,
+            V1_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 25 * 3,
             P_min=-2200,
             P_max=2200,
             P_nom=2000,
-            P_step=19 * 3,
+            P_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 19 * 3,
             n=n,
             Ls=83e-6 * n ** 2,
             # Assumption for tests
@@ -101,15 +103,15 @@ def load_dab_specification(dab_configuration_name: str) -> DabDTO:
             V1_nom=700,
             V1_min=700,
             V1_max=700,
-            V1_step=1,
+            V1_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 1,
             V2_nom=235,
             V2_min=235,
             V2_max=295,
-            V2_step=7,
+            V2_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 7,
             P_min=400,
             P_max=2200,
             P_nom=2000,
-            P_step=7,
+            P_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 7,
             n=2.99,
             Ls=85e-6,
             Lc1=25.62e-3,

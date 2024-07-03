@@ -245,6 +245,8 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     everything must be numpy!
 
     :param config: design configuration DTO
+    :param calc_from_config: Additional input parameters calculated once from the input configuration
+    :param calc_modulation: Calculated modulation parameters DTO
     :return: i_l_s_rms, i_l_1_rms, i_l_2_rms
     """
     alpha_rad = np.pi - calc_modulation.tau1
@@ -331,10 +333,5 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     i_l_s_rms, angles_sorted, i_l_s_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_s_alpha, i_l_s_beta, i_l_s_gamma, i_l_s_delta)
     i_l_1_rms, _, i_l_1_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta)
     i_l_2_rms, _, i_l_2_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_2_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta)
-
-    # print(f"{np.shape(angles_sorted)=}")
-    # print(f"{np.shape(i_l_s_sorted)=}")
-    # print(f"{angles_sorted=}")
-    # print(f"{i_l_s_sorted=}")
 
     return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted

@@ -13,6 +13,7 @@ import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
 import pygeckocircuits2 as pgc
+import pandas as pd
 
 def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
                            mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
@@ -22,7 +23,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                            simfilepath: str, timestep: float, simtime: float,
                            timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036, gdebug: bool = False,
                            c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
-                           lossfilepath: str = None) -> dict:
+                           lossfilepath: str = None, get_waveforms: bool = False) -> tuple[dict]:
     """
     Start the GeckoCIRCUITS simulation.
 
@@ -50,6 +51,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :param gdebug:
     :param c_par_1:
     :param c_par_2:
+    :param get_waveforms: True to return i_Ls, i_Lc1 and i_Lc2. Defaults to False.
     :return:
     """
     # Broadcast possible scalar values to mesh size
@@ -72,8 +74,16 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     l_calc_keys = ['power_deviation', 'zvs_coverage', 'zvs_coverage1', 'zvs_coverage2',
                    'zvs_coverage_notnan', 'zvs_coverage1_notnan', 'zvs_coverage2_notnan',
                    'i_HF1_total_mean', 'I1_squared_total_mean']
+
+    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2']
+
     # Set a reasonable low zvs voltage limit below we assume zvs operation
     zvs_vlimit = 50
+
+    # init gecko waveform simulation
+    result_df = pd.DataFrame()
+    gecko_waveforms_single_simulation = dict()
+    gecko_waveforms_multiple_simulations = defaultdict(dict)
 
     # Init arrays to store simulation results
     da_sim_results = dict()
@@ -154,6 +164,14 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                     # Use the smallest possible timerange at the end
                     range_start_stop=[2 * timestep, 'end']
                 )
+
+                if get_waveforms:
+                    result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
+
+                    for key in waveform_keys:
+                        gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()
+                    gecko_waveforms_single_simulation['time'] = result_df['time'].to_numpy()
+
             else:
                 # generate some fake data for debugging
                 values_mean = defaultdict(dict)
@@ -170,21 +188,27 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             values_mean = defaultdict(dict)
             values_rms = defaultdict(dict)
             values_min = defaultdict(dict)
+            gecko_waveforms_single_simulation = dict()
             for k in l_means_keys:
                 values_mean['mean'][k] = np.nan
             for k in l_rms_keys:
                 values_rms['rms'][k] = np.nan
             for k in l_min_keys:
                 values_min['min'][k] = np.nan
+            for k in waveform_keys:
+                gecko_waveforms_single_simulation[k] = np.nan
+            gecko_waveforms_single_simulation['time'] = np.nan
 
-        # save simulation results in arrays
+        # save single simulation results in arrays (multidimensional / 3D) for the final results.
         for k in l_means_keys:
             da_sim_results[k][vec_vvp] = values_mean['mean'][k]
         for k in l_rms_keys:
             da_sim_results[k][vec_vvp] = values_rms['rms'][k]
         for k in l_min_keys:
             da_sim_results[k][vec_vvp] = values_min['min'][k]
-        # info(values_mean)
+        for k in waveform_keys:
+            gecko_waveforms_multiple_simulations[k][vec_vvp] = gecko_waveforms_single_simulation[k]
+        gecko_waveforms_multiple_simulations['time'] = gecko_waveforms_single_simulation['time']
 
         # Progressbar update, default increment +1
         pbar.update()
@@ -228,7 +252,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     # Progressbar end
     pbar.close()
 
-    return da_sim_results
+    return da_sim_results, gecko_waveforms_multiple_simulations
 
 
 def get_free_port(start=43047, stop=50000) -> int:

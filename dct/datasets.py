@@ -194,6 +194,22 @@ class GeckoResults:
             if k in names:
                 setattr(self, k, v)
 
+
+@dataclasses.dataclass(init=False)
+class GeckoWaveforms:
+    """DTO contains the waveform result of the GeckoCIRCUITS simulation."""
+
+    time: np.array
+    i_Ls: np.array
+    i_Lc1: np.array
+    i_Lc2: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
 @dataclasses.dataclass
 class DabDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
@@ -207,6 +223,7 @@ class DabDTO:
     calc_losses: CalcLosses | None
     gecko_additional_params: GeckoAdditionalParameters
     gecko_results: GeckoResults | None
+    gecko_waveforms: GeckoWaveforms | None
 
 class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
@@ -288,36 +305,42 @@ class HandleDabDto:
                          calc_currents=calc_currents,
                          calc_losses=None,
                          gecko_additional_params=gecko_additional_params,
-                         gecko_results=None)
+                         gecko_results=None,
+                         gecko_waveforms=None)
         return dab_dto
 
     @staticmethod
-    def add_gecko_simulation_results(dab_dto: DabDTO):
+    def add_gecko_simulation_results(dab_dto: DabDTO, get_waveforms: bool = False):
         """
         Add GeckoCIRCUITS simulation results to the given DTO.
 
         :param dab_dto: DabDTO
+        :param get_waveforms: Read back GeckoCIRCUITS simulation waveforms (high memory consumption). Default to False.
+        :type get_waveforms: bool
         :return: DabDTO
         """
-        gecko_results = dct.start_gecko_simulation(mesh_V1=dab_dto.calc_config.mesh_V1, mesh_V2=dab_dto.calc_config.mesh_V2,
-                                                   mesh_P=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
-                                                   mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
-                                                   t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
-                                                   fs=dab_dto.input_config.fs, Ls=dab_dto.input_config.Ls, Lc1=dab_dto.input_config.Lc1,
-                                                   Lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
-                                                   t_j_1=dab_dto.calc_config.t_j_1, t_j_2=dab_dto.calc_config.t_j_2,
-                                                   simfilepath=dab_dto.gecko_additional_params.simfilepath,
-                                                   lossfilepath=dab_dto.gecko_additional_params.lossfilepath,
-                                                   timestep=dab_dto.gecko_additional_params.timestep,
-                                                   simtime=dab_dto.gecko_additional_params.simtime,
-                                                   timestep_pre=dab_dto.gecko_additional_params.timestep_pre,
-                                                   simtime_pre=dab_dto.gecko_additional_params.simtime_pre, geckoport=43036, gdebug=False,
-                                                   c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
-                                                   transistor_1_name=dab_dto.input_config.transistor_name_1,
-                                                   transistor_2_name=dab_dto.input_config.transistor_name_2)
+        gecko_results, gecko_waveforms = dct.start_gecko_simulation(
+            mesh_V1=dab_dto.calc_config.mesh_V1, mesh_V2=dab_dto.calc_config.mesh_V2,
+            mesh_P=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
+            mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
+            t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
+            fs=dab_dto.input_config.fs, Ls=dab_dto.input_config.Ls, Lc1=dab_dto.input_config.Lc1,
+            Lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
+            t_j_1=dab_dto.calc_config.t_j_1, t_j_2=dab_dto.calc_config.t_j_2,
+            simfilepath=dab_dto.gecko_additional_params.simfilepath,
+            lossfilepath=dab_dto.gecko_additional_params.lossfilepath,
+            timestep=dab_dto.gecko_additional_params.timestep,
+            simtime=dab_dto.gecko_additional_params.simtime,
+            timestep_pre=dab_dto.gecko_additional_params.timestep_pre,
+            simtime_pre=dab_dto.gecko_additional_params.simtime_pre, geckoport=43036, gdebug=False,
+            c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
+            transistor_1_name=dab_dto.input_config.transistor_name_1,
+            transistor_2_name=dab_dto.input_config.transistor_name_2, get_waveforms=get_waveforms)
 
         # add GeckoCIRCUITS simulation results to the result DTO.
         dab_dto.gecko_results = GeckoResults(**gecko_results)
+
+        dab_dto.gecko_waveforms = GeckoWaveforms(**gecko_waveforms)
         return dab_dto
 
     @staticmethod
@@ -527,12 +550,19 @@ class HandleDabDto:
 
         decoded_data = np.load(file, allow_pickle=True)
         keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
+        keys_of_gecko_waveform_dto = [field.name for field in dataclasses.fields(GeckoWaveforms)]
 
         # if loaded results have all keys that are mandatory for the GeckoResults-Class:
         if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
             gecko_results = GeckoResults(**decoded_data)
         else:
             gecko_results = None
+
+        # if loaded results have all keys that are mandatory for the GeckoWaveform-Class:
+        if len(set(keys_of_gecko_waveform_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_waveform_dto):
+            gecko_waveforms = GeckoWaveforms(**decoded_data)
+        else:
+            gecko_waveforms = None
 
         dab_dto = DabDTO(timestamp=None,
                          metadata=None,
@@ -542,6 +572,7 @@ class HandleDabDto:
                          calc_currents=CalcCurrents(**decoded_data),
                          calc_losses=None,
                          gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
-                         gecko_results=gecko_results)
+                         gecko_results=gecko_results,
+                         gecko_waveforms=gecko_waveforms)
 
         return dab_dto

@@ -8,8 +8,11 @@ from dct import DabDTO
 import numpy as np
 from matplotlib import pyplot as plt
 
-def plot_calc_waveforms(dab_dto: DabDTO):
+def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
     """Plot calculated current waveforms for Ls, Lc1, Lc2."""
+    print(f"{np.shape(dab_dto.gecko_waveforms.i_Ls)=}")
+    print(f"{type(dab_dto.gecko_waveforms.time)=}")
+
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
 
         # set simulation parameters and convert tau to degree for Gecko
@@ -28,14 +31,19 @@ def plot_calc_waveforms(dab_dto: DabDTO):
         sorted_i_l_2_total = np.append(sorted_i_l_2_total[-1], sorted_i_l_2_total)
 
         # plot arrays with elements only (neglect nan-arrays)
-        if np.all(~np.isnan(sorted_total_angles)):
+        if np.all(~np.isnan(sorted_i_l_s_total)):
 
-            print(f"{sorted_angles=}")
-            print(f"{i_l_s_sorted=}")
+            if compare_gecko_waveforms:
+                gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
+                              dab_dto.gecko_additional_params.simtime_pre * 2 * np.pi * dab_dto.input_config.fs)
 
             plt.subplot(311)
-            plt.plot(sorted_total_angles, sorted_i_l_s_total)
+            plt.plot(sorted_total_angles, sorted_i_l_s_total, label='calculation')
+            if compare_gecko_waveforms:
+                plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Ls[vec_vvp], label='GeckoCIRCUITS')
             plt.ylabel('i_L_s in A')
+            plt.grid()
+            plt.legend()
             if dab_dto.calc_modulation.mask_IIIm1[vec_vvp]:
                 plt.title(f"{dab_dto.calc_modulation.mask_IIIm1[vec_vvp]=}")
             if dab_dto.calc_modulation.mask_IIm2[vec_vvp]:
@@ -44,12 +52,20 @@ def plot_calc_waveforms(dab_dto: DabDTO):
                 plt.title(f"{dab_dto.calc_modulation.mask_Im2[vec_vvp]=}")
 
             plt.subplot(312)
-            plt.plot(sorted_total_angles, sorted_i_l_1_total)
+            plt.plot(sorted_total_angles, sorted_i_l_1_total, label='calculation')
+            if compare_gecko_waveforms:
+                plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Lc1[vec_vvp], label='GeckoCIRCUITS')
+            plt.legend()
+            plt.grid()
             plt.ylabel('i_L_1 in A')
 
             plt.subplot(313)
-            plt.plot(sorted_total_angles, sorted_i_l_2_total)
+            plt.plot(sorted_total_angles, sorted_i_l_2_total, label='calculation')
+            if compare_gecko_waveforms:
+                plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Lc2[vec_vvp], label='GeckoCIRCUITS')
             plt.ylabel('i_L_2 in A')
+            plt.legend()
+            plt.grid()
 
             plt.tight_layout()
             plt.show()
