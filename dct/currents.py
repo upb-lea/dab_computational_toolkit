@@ -14,6 +14,10 @@ def _calc_l_s_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
     Source Paper: Optimal ZVS Modulation of Single-Phase Single-Stage Bidirectional DAB AC–DC Converters
     Also note, that there are multiple mode definitions of the same author in different papers.
 
+    Important note: There is a significant failure in all 3 publications of Mr. Everts calculating the
+    i_l_s_delta (current in l_s for the delta angle). The tau_1_rad must be halved. Found this, re-calculating
+    the mode 5 (same as mode 2 in here) formulas (dissertation, A.9, page 274) from scratch.
+
     :param phi_rad: phi in rad
     :param tau_1_rad: tau_1 in rad
     :param tau_2_rad: tau_2 in rad
@@ -27,7 +31,7 @@ def _calc_l_s_mode_2_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, d, f_s, l_s):
     i_l_s_alpha = v_1 * (d * tau_2_rad / 2 - tau_1_rad / 2) / denominator
     i_l_s_beta = v_1 * (d * tau_2_rad / 2 + tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
     i_l_s_gamma = v_1 * (-d * tau_2_rad / 2 + tau_1_rad / 2) / denominator
-    i_l_s_delta = v_1 * (-d * tau_2_rad / 2 + tau_1_rad + phi_rad) / denominator
+    i_l_s_delta = v_1 * (-d * tau_2_rad / 2 + tau_1_rad / 2 + phi_rad) / denominator  # note the halved tau_1_rad!!
 
     return i_l_s_alpha, i_l_s_beta, i_l_s_gamma, i_l_s_delta
 
@@ -334,4 +338,6 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     i_l_1_rms, _, i_l_1_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta)
     i_l_2_rms, _, i_l_2_sorted = calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_l_2_alpha, i_l_2_beta, i_l_2_gamma, i_l_2_delta)
 
-    return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted
+    angles_unsorted = [alpha_rad, beta_rad, gamma_rad, delta_rad]
+
+    return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted

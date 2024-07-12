@@ -122,6 +122,7 @@ class CalcCurrents:
 
     # sorted values: angles (alpha, beta, gamma, delta) and currents.
     angles_rad_sorted: np.array
+    angles_rad_unsorted: np.array
     i_l_s_sorted: np.array
     i_l_1_sorted: np.array
     i_l_2_sorted: np.array
@@ -285,15 +286,16 @@ class HandleDabDto:
         calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
         modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
 
-        i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted = dct.calc_rms_currents(
+        i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct.calc_rms_currents(
             input_configuration, calc_config, modulation_parameters)
 
         calc_currents = CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
+                                        'angles_rad_unsorted': angles_rad_unsorted,
                                         'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted, 'i_l_2_sorted': i_l_2_sorted})
 
         gecko_additional_params = GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
-            simtime=50e-6, timestep_pre=50e-9, simtime_pre=5e-3,
+            simtime=50e-6, timestep_pre=25e-9, simtime_pre=5e-3,
             simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
             lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
 
