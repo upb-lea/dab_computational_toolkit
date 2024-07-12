@@ -34,10 +34,10 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
         if np.all(~np.isnan(sorted_i_l_s_total)):
 
             if compare_gecko_waveforms:
-                gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
+                gecko_time = ((dab_dto.gecko_waveforms.time - dab_dto.gecko_additional_params.t_dead1) * 2 * np.pi * dab_dto.input_config.fs - \
                               dab_dto.gecko_additional_params.simtime_pre * 2 * np.pi * dab_dto.input_config.fs)
 
-            plt.subplot(311)
+            ax1 = plt.subplot(311)
             plt.plot(sorted_total_angles, sorted_i_l_s_total, label='calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Ls[vec_vvp], label='GeckoCIRCUITS')
@@ -51,7 +51,7 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
             if dab_dto.calc_modulation.mask_Im2[vec_vvp]:
                 plt.title(f"Im2, P= {dab_dto.calc_config.mesh_P[vec_vvp]} W")
 
-            plt.subplot(312)
+            plt.subplot(312, sharex=ax1)
             plt.plot(sorted_total_angles, sorted_i_l_1_total, label='calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Lc1[vec_vvp], label='GeckoCIRCUITS')
@@ -59,11 +59,12 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
             plt.grid()
             plt.ylabel('i_L_1 in A')
 
-            plt.subplot(313)
+            plt.subplot(313, sharex=ax1)
             plt.plot(sorted_total_angles, sorted_i_l_2_total, label='calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Lc2[vec_vvp], label='GeckoCIRCUITS')
             plt.ylabel('i_L_2 in A')
+            plt.xlabel('t in rad')
             plt.legend()
             plt.grid()
 
