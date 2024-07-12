@@ -45,11 +45,11 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
             plt.grid()
             plt.legend()
             if dab_dto.calc_modulation.mask_IIIm1[vec_vvp]:
-                plt.title(f"{dab_dto.calc_modulation.mask_IIIm1[vec_vvp]=}")
+                plt.title(f"IIIm1, P= {dab_dto.calc_config.mesh_P[vec_vvp]}W")
             if dab_dto.calc_modulation.mask_IIm2[vec_vvp]:
-                plt.title(f"{dab_dto.calc_modulation.mask_IIm2[vec_vvp]=}")
+                plt.title(f"IIm2, P= {dab_dto.calc_config.mesh_P[vec_vvp]} W")
             if dab_dto.calc_modulation.mask_Im2[vec_vvp]:
-                plt.title(f"{dab_dto.calc_modulation.mask_Im2[vec_vvp]=}")
+                plt.title(f"Im2, P= {dab_dto.calc_config.mesh_P[vec_vvp]} W")
 
             plt.subplot(312)
             plt.plot(sorted_total_angles, sorted_i_l_1_total, label='calculation')
