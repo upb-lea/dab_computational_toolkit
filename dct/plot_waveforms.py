@@ -45,14 +45,15 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
             plt.ylabel('i_L_s in A')
             plt.grid()
             plt.legend()
-            plot_info = f", P= {dab_dto.calc_config.mesh_P[vec_vvp]}W, angles= {unsorted_angles}, currents= {sorted_i_l_s_total}, v1={dab_dto.calc_config.mesh_V1[vec_vvp]}, v2={dab_dto.calc_config.mesh_V2[vec_vvp]}, tau2={dab_dto.calc_modulation.tau2[vec_vvp]}"
+            plot_info = (f", P= {dab_dto.calc_config.mesh_P[vec_vvp]}W, angles= {unsorted_angles}, currents= {sorted_i_l_s_total}, "
+                         f"v1={dab_dto.calc_config.mesh_V1[vec_vvp]}, v2={dab_dto.calc_config.mesh_V2[vec_vvp]}, tau2={dab_dto.calc_modulation.tau2[vec_vvp]}")
 
             if dab_dto.calc_modulation.mask_IIIm1[vec_vvp]:
-                plt.title(f"IIIm1" + plot_info)
+                plt.title("IIIm1" + plot_info)
             if dab_dto.calc_modulation.mask_IIm2[vec_vvp]:
-                plt.title(f"IIm2" + plot_info)
+                plt.title("IIm2" + plot_info)
             if dab_dto.calc_modulation.mask_Im2[vec_vvp]:
-                plt.title(f"Im2" + plot_info)
+                plt.title("Im2" + plot_info)
 
             plt.subplot(312, sharex=ax1)
             plt.plot(sorted_total_angles, sorted_i_l_1_total, label='calculation')
