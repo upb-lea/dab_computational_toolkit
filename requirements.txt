@@ -2,6 +2,9 @@ pandas
 matplotlib
 pyqt5
 tqdm
+optuna
+plotly
+
 # libraries provided by LEA
 pygeckocircuits2
 transistordatabase

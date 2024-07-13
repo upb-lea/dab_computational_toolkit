@@ -10,3 +10,5 @@ from dct.plot_window import *
 from dct.plot_calculation import *
 from dct.plot_simulation import *
 from dct.plot_waveforms import *
+from dct.pareto_dtos import *
+from dct.pareto import *
