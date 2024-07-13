@@ -119,6 +119,8 @@ class CalcCurrents:
     i_l_s_rms: np.array
     i_l_1_rms: np.array
     i_l_2_rms: np.array
+    i_hf_1_rms: np.array
+    i_hf_2_rms: np.array
 
     # sorted values: angles (alpha, beta, gamma, delta) and currents.
     angles_rad_sorted: np.array
@@ -289,9 +291,12 @@ class HandleDabDto:
         i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct.calc_rms_currents(
             input_configuration, calc_config, modulation_parameters)
 
+        i_hf_1_rms, i_hf_2_rms = dct.calc_hf_rms_currents(angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted)
+
         calc_currents = CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
                                         'angles_rad_unsorted': angles_rad_unsorted,
-                                        'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted, 'i_l_2_sorted': i_l_2_sorted})
+                                        'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted, 'i_l_2_sorted': i_l_2_sorted,
+                                        'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms},)
 
         gecko_additional_params = GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,

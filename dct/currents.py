@@ -341,3 +341,27 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     angles_unsorted = [alpha_rad, beta_rad, gamma_rad, delta_rad]
 
     return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
+
+def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_sorted: np.array, i_l_2_sorted: np.array):
+    """
+    Calculate i_hf_1_rms and i_hf_2_rms from i_l_s, i_l_1 and i_l_2.
+
+    :param angles_sorted: sorted angles
+    :type angles_sorted: np.array
+    :param i_l_s_sorted: sorted currents i_l_s
+    :type i_l_s_sorted: np.array
+    :param i_l_1_sorted: sorted currents i_l_1
+    :type i_l_1_sorted: np.array
+    :param i_l_2_sorted: sorted currents i_l_2
+    :type i_l_2_sorted: np.array
+    :return:
+    """
+    i_hf_1_sorted = i_l_s_sorted + i_l_1_sorted
+    i_hf_2_sorted = i_l_s_sorted - i_l_2_sorted
+
+    i_hf_1_rms, _, _ = calc_rms(angles_sorted[0], angles_sorted[1], angles_sorted[2], angles_sorted[3],
+                                i_hf_1_sorted[0], i_hf_1_sorted[1], i_hf_1_sorted[2], i_hf_1_sorted[3])
+    i_hf_2_rms, _, _ = calc_rms(angles_sorted[0], angles_sorted[1], angles_sorted[2], angles_sorted[3],
+                                i_hf_2_sorted[0], i_hf_2_sorted[1], i_hf_2_sorted[2], i_hf_2_sorted[3])
+
+    return i_hf_1_rms, i_hf_2_rms
