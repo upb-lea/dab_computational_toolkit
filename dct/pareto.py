@@ -22,7 +22,7 @@ class Optimization:
         :param work_area: DAB operating area
         :return:
         """
-        f_s_suggest = trial.suggest_int('f_s_suggest_kHz', design_space.f_s_min_max_list[0]/1000, design_space.f_s_min_max_list[1]/1000) * 1000
+        f_s_suggest = trial.suggest_int('f_s_suggest', design_space.f_s_min_max_list[0], design_space.f_s_min_max_list[1])
         l_s_suggest = trial.suggest_float('l_s_suggest', design_space.l_s_min_max_list[0], design_space.l_s_min_max_list[1])
         l_1_suggest = trial.suggest_float('l_1_suggest', design_space.l_1_min_max_list[0], design_space.l_1_min_max_list[1])
         l_2_suggest = trial.suggest_float('l_2_suggest', design_space.l_2_min_max_list[0], design_space.l_2_min_max_list[1])
@@ -64,7 +64,7 @@ class Optimization:
     def start_proceed_study(study_name: str, design_space: dct.DesignSpace,
                             work_area: dct.WorkArea, number_trials: int,
                             storage: str = 'sqlite',
-                            sampler=optuna.samplers.NSGAIISampler(),
+                            sampler=optuna.samplers.NSGAIIISampler(),
                             ) -> None:
         """Proceed a study which is stored as sqlite database.
 
@@ -76,7 +76,7 @@ class Optimization:
         :type number_trials: int
         :param storage: storage database, e.g. 'sqlite' or 'mysql'
         :type storage: str
-        :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !!
+        :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
         if os.path.exists(f"{design_space.working_directory}/study_{study_name}.sqlite3"):
@@ -94,7 +94,7 @@ class Optimization:
         # .INFO: all messages (default)
         # .WARNING: fails and warnings
         # .ERROR: only errors
-        # optuna.logging.set_verbosity(optuna.logging.ERROR)
+        optuna.logging.set_verbosity(optuna.logging.ERROR)
 
         directions = ['maximize', 'minimize']
 
@@ -172,7 +172,7 @@ class Optimization:
             P_step=work_area.steps_per_direction,
             n=trials_dict["n_suggest"],
             Ls=trials_dict["l_s_suggest"],
-            fs=trials_dict["f_s_suggest_kHz"] * 1000,
+            fs=trials_dict["f_s_suggest"],
             Lc1=trials_dict["l_1_suggest"],
             Lc2=trials_dict["l_2_suggest"],
             c_par_1=16e-12,
