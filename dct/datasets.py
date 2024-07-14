@@ -379,8 +379,10 @@ class HandleDabDto:
 
         # export c_oss files for GeckoCIRCUITS
         path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
-        transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
-        transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
+        if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_1.name}_c_oss.nlc")):
+            transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
+        if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_2.name}_c_oss.nlc")):
+            transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
 
         calc_from_config = CalcFromConfig(
             mesh_V1=mesh_V1,
@@ -428,10 +430,12 @@ class HandleDabDto:
         # Maybe check if data is monotonically
         # Check if voltage is monotonically rising
         if not np.all(csv_data[1:, 0] >= csv_data[:-1, 0], axis=0):
-            dct.warning("The voltage in csv file is not monotonically rising!")
+            pass
+            # dct.warning("The voltage in csv file is not monotonically rising!")
         # Check if Coss is monotonically falling
         if not np.all(csv_data[1:, 1] <= csv_data[:-1, 1], axis=0):
-            dct.warning("The C_oss in csv file is not monotonically falling!")
+            pass
+            # dct.warning("The C_oss in csv file is not monotonically falling!")
 
         # Rescale and interpolate the csv data to have a nice 1V step size from 0V to v_max
         # A first value with zero volt will be added
