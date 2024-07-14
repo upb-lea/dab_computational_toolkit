@@ -27,11 +27,11 @@ work_area = dct.WorkArea(
     steps_per_direction=5,
 )
 
-study_name = 'a2_200khz'
+study_name = 'khz_interpolation'
 
-# dct.Optimization.start_proceed_study(study_name, design_space, work_area, 1000)
-# dct.Optimization.show_study_results(study_name, design_space)
+dct.Optimization.start_proceed_study(study_name, design_space, work_area, 3000)
+dct.Optimization.show_study_results(study_name, design_space)
 
-loaded_dto = dct.Optimization.load_dab_dto_from_study(study_name, design_space=design_space, trial_number=874, work_area=work_area)
-loaded_dto = dct.HandleDabDto.add_gecko_simulation_results(loaded_dto, get_waveforms=True)
-dct.plot_calc_waveforms(loaded_dto, compare_gecko_waveforms=True)
+# loaded_dto = dct.Optimization.load_dab_dto_from_study(study_name, design_space=design_space, trial_number=874, work_area=work_area)
+# loaded_dto = dct.HandleDabDto.add_gecko_simulation_results(loaded_dto, get_waveforms=True)
+# dct.plot_calc_waveforms(loaded_dto, compare_gecko_waveforms=True)
