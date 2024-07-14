@@ -49,7 +49,21 @@
 <li class="toctree-l2"><a class="reference internal" href="#installation"><span class="sectnum">1.1 </span>Installation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#dab-computation-toolbox-dct-function-documentation"><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="#module-dct.debug_tools"><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.Log"><code class="docutils literal notranslate"><span class="pre">Log</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dct.debug_tools.Log.close"><code class="docutils literal notranslate"><span class="pre">Log.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.debug_tools.Log.debug"><code class="docutils literal notranslate"><span class="pre">Log.debug()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.debug_tools.Log.error"><code class="docutils literal notranslate"><span class="pre">Log.error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.debug_tools.Log.info"><code class="docutils literal notranslate"><span class="pre">Log.info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.debug_tools.Log.warning"><code class="docutils literal notranslate"><span class="pre">Log.warning()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.debug"><code class="docutils literal notranslate"><span class="pre">debug()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.dump_args"><code class="docutils literal notranslate"><span class="pre">dump_args()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.error"><code class="docutils literal notranslate"><span class="pre">error()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.debug_tools.warning"><code class="docutils literal notranslate"><span class="pre">warning()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#store-specifications-modulation-and-simulation-results"><span class="sectnum">2.1 </span>Store specifications, modulation and simulation results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#calculate-dab-intervals"><span class="sectnum">2.2 </span>Calculate DAB intervals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-dct.sample_requirements"><span class="sectnum">2.3 </span>Sample requirements</a><ul>
@@ -94,8 +108,138 @@
 </div>
 </section>
 </section>
-<section id="dab-computation-toolbox-dct-function-documentation">
-<h1><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation<a class="headerlink" href="#dab-computation-toolbox-dct-function-documentation" title="Link to this heading"></a></h1>
+<section id="module-dct.debug_tools">
+<span id="dab-computation-toolbox-dct-function-documentation"></span><h1><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation<a class="headerlink" href="#module-dct.debug_tools" title="Link to this heading"></a></h1>
+<p>Different methods to debug this toolbox.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="dct.debug_tools.Log">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">Log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.Log" title="Link to this definition"></a></dt>
+<dd><p>Class to print logging text to stdout and to a log file.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dct.debug_tools.Log.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.Log.close" title="Link to this definition"></a></dt>
+<dd><p>Close the log file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dct.debug_tools.Log.debug">
+<span class="sig-name descname"><span class="pre">debug</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.Log.debug" title="Link to this definition"></a></dt>
+<dd><p>Log debug output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sep</strong> – separator definition. Default to ‘n’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dct.debug_tools.Log.error">
+<span class="sig-name descname"><span class="pre">error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.Log.error" title="Link to this definition"></a></dt>
+<dd><p>Log error output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sep</strong> – separator definition. Default to ‘n’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dct.debug_tools.Log.info">
+<span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.Log.info" title="Link to this definition"></a></dt>
+<dd><p>Log normal info output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sep</strong> – separator definition. Default to ‘n’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dct.debug_tools.Log.warning">
+<span class="sig-name descname"><span class="pre">warning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.Log.warning" title="Link to this definition"></a></dt>
+<dd><p>Log warning output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sep</strong> – separator definition. Default to ‘n’</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.debug_tools.debug">
+<span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">debug</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.debug" title="Link to this definition"></a></dt>
+<dd><p>Log debug output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – arguments</p></li>
+<li><p><strong>sep</strong> – separator, default is ‘n’</p></li>
+<li><p><strong>kwargs</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.debug_tools.dump_args">
+<span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">dump_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.dump_args" title="Link to this definition"></a></dt>
+<dd><p>Print function call details by the use of an oparator.</p>
+<p>This includes parameters names and effective values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.debug_tools.error">
+<span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.error" title="Link to this definition"></a></dt>
+<dd><p>Log error output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong></p></li>
+<li><p><strong>sep</strong></p></li>
+<li><p><strong>kwargs</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.debug_tools.info">
+<span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.info" title="Link to this definition"></a></dt>
+<dd><p>Log normal info output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong></p></li>
+<li><p><strong>sep</strong></p></li>
+<li><p><strong>kwargs</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.debug_tools.timeit">
+<span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.timeit" title="Link to this definition"></a></dt>
+<dd><p>Measure execution time of a function by the use of a decorator.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.debug_tools.warning">
+<span class="sig-prename descclassname"><span class="pre">dct.debug_tools.</span></span><span class="sig-name descname"><span class="pre">warning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'\n'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.debug_tools.warning" title="Link to this definition"></a></dt>
+<dd><p>Log warning output like print does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong></p></li>
+<li><p><strong>sep</strong></p></li>
+<li><p><strong>kwargs</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <section id="store-specifications-modulation-and-simulation-results">
 <h2><span class="sectnum">2.1 </span>Store specifications, modulation and simulation results<a class="headerlink" href="#store-specifications-modulation-and-simulation-results" title="Link to this heading"></a></h2>
 </section>
