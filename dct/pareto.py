@@ -6,6 +6,8 @@ import datetime
 # 3rd party libraries
 import optuna
 import numpy as np
+from matplotlib import pyplot as plt
+import pandas as pd
 
 # own libraries
 import dct
@@ -182,3 +184,64 @@ class Optimization:
         )
 
         return dab_dto
+
+    @staticmethod
+    def study_to_df(study_name: str, database_url: str):
+        """Create a dataframe from a study.
+
+        :param study_name: name of study
+        :type study_name: str
+        :param database_url: url of database
+        :type database_url: str
+        """
+        loaded_study = optuna.create_study(study_name=study_name, storage=database_url, load_if_exists=True)
+        df = loaded_study.trials_dataframe()
+        df.to_csv(f'{study_name}.csv')
+        return df
+
+    @staticmethod
+    def df_plot_pareto_front(df: pd.DataFrame, figure_size: tuple):
+        """Plot an interactive Pareto diagram (losses vs. volume) to select the transformers to re-simulate.
+
+        :param df: Dataframe, generated from an optuna study (exported by optuna)
+        :type df: pd.Dataframe
+        """
+        print(df.head())
+
+        names = df["number"].to_numpy()
+        # plt.figure()
+        fig, ax = plt.subplots(figsize=[x / 25.4 for x in figure_size] if figure_size is not None else None, dpi=80)
+        sc = plt.scatter(df["values_0"], df["values_1"], s=10)
+
+        annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+                            bbox=dict(boxstyle="round", fc="w"),
+                            arrowprops=dict(arrowstyle="->"))
+        annot.set_visible(False)
+
+        def update_annot(ind):
+            pos = sc.get_offsets()[ind["ind"][0]]
+            annot.xy = pos
+            text = f"{[names[n] for n in ind['ind']]}"
+            annot.set_text(text)
+            annot.get_bbox_patch().set_alpha(0.4)
+
+        def hover(event):
+            vis = annot.get_visible()
+            if event.inaxes == ax:
+                cont, ind = sc.contains(event)
+                if cont:
+                    update_annot(ind)
+                    annot.set_visible(True)
+                    fig.canvas.draw_idle()
+                else:
+                    if vis:
+                        annot.set_visible(False)
+                        fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect("motion_notify_event", hover)
+
+        plt.xlabel(r'ZVS coverage in \%')
+        plt.ylabel(r'$i_\mathrm{HF,1}^2 + i_\mathrm{HF,2}^2$ in A')
+        plt.grid()
+        plt.tight_layout()
+        plt.show()

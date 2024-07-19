@@ -39,14 +39,15 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
                               dab_dto.gecko_additional_params.simtime_pre * 2 * np.pi * dab_dto.input_config.fs)
 
             ax1 = plt.subplot(311)
-            plt.plot(sorted_total_angles, sorted_i_l_s_total, label='calculation')
+            plt.plot(sorted_total_angles, sorted_i_l_s_total, label='Calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time, dab_dto.gecko_waveforms.i_Ls[vec_vvp], label='GeckoCIRCUITS')
             plt.ylabel('i_L_s in A')
             plt.grid()
             plt.legend()
-            plot_info = (f", P= {dab_dto.calc_config.mesh_P[vec_vvp]}W, angles= {unsorted_angles}, currents= {sorted_i_l_s_total}, "
-                         f"v1={dab_dto.calc_config.mesh_V1[vec_vvp]}, v2={dab_dto.calc_config.mesh_V2[vec_vvp]}, tau2={dab_dto.calc_modulation.tau2[vec_vvp]}")
+            plot_info = (f", P= {dab_dto.calc_config.mesh_P[vec_vvp]} W "
+                         f"v1={dab_dto.calc_config.mesh_V1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_V2[vec_vvp]} V,"
+                         f"f={dab_dto.input_config.fs=}")
 
             if dab_dto.calc_modulation.mask_IIIm1[vec_vvp]:
                 plt.title("IIIm1" + plot_info)
