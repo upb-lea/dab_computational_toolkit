@@ -18,12 +18,17 @@ def plot_gecko_simulation_results(dab_config: DabDTO, simulation_name: str, comm
     Plot the results from the GeckoCIRCUITS simulation.
 
     :param dab_config: Dual-Active-Bridge (DAB) configuration file
+    :type dab_config: DabDTO
     :param simulation_name: Simulation name
+    :type simulation_name: str
     :param comment: Comment for the simulation, appears in the logs.
+    :type comment: str
     :param directory: Directory to plot
+    :type directory: str
     :param show_plot: True (default) to show the plots.
+    :type show_plot: bool
     :param logfile: Logfile name
-    :return:
+    :type logfile: str
     """
     # Logging
     log = Log(filename=os.path.join(directory, logfile) if logfile else '')

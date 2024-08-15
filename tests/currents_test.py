@@ -99,15 +99,13 @@ def test_hf_current_calculation():
     Test i_hf_1 and i_hf_2 current calculation and rms current calculation.
 
     All results have been verified using GeckoCIRCUITS.
-
-    :return:
     """
     sorted_angles_rad = np.array([[1.5], [2.0], [3.0], [3.14]])
     sorted_i_l_s = np.array([[0], [3], [1], [0]])
     sorted_i_l_1 = np.array([[2], [3], [1], [-2]])
     sorted_i_l_2 = np.array([[2], [-3], [-1], [-2]])
 
-    i_hf_1_rms, i_hf_2_rms = dct.calc_hf_rms_currents(sorted_angles_rad, sorted_i_l_s, sorted_i_l_1, sorted_i_l_2)
+    i_hf_1_rms, i_hf_2_rms = dct.calc_hf_rms_currents(sorted_angles_rad, sorted_i_l_s, sorted_i_l_1, sorted_i_l_2, n=1)
 
     assert i_hf_1_rms == approx(np.array([3.2008]), rel=1e-3)
     assert i_hf_2_rms == approx(np.array([3.0141]), rel=1e-3)

@@ -232,7 +232,7 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(V1_nom, V1_min, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
+    def init_config(V1_nom: np.array, V1_min: np.array, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
                     V2_max: np.array, V2_step: np.array, P_min: np.array, P_max: np.array, P_nom: np.array, P_step: np.array,
                     n: np.array, Ls: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
                     transistor_name_1: str, transistor_name_2: str, c_par_1, c_par_2):
@@ -240,27 +240,47 @@ class HandleDabDto:
         Initialize the DAB structure.
 
         :param V1_nom: V1 nominal voltage
+        :type V1_nom: np.array
         :param V1_min: V1 minimum voltage
+        :type V1_min: np.array
         :param V1_max: V1 maximum voltage
+        :type V1_max: np.array
         :param V1_step: V1 voltage steps
+        :type V1_step: np.array
         :param V2_nom: V2 nominal voltage
+        :type V2_nom: np.array
         :param V2_min: V2 minimum voltage
+        :type V2_min: np.array
         :param V2_max: V2 maximum voltage
+        :type V2_max: np.array
         :param V2_step: V2 voltage steps
+        :type V2_step: np.array
         :param P_min: P minimum power
+        :type P_min: np.array
         :param P_max: P maximum power
+        :type P_max: np.array
         :param P_nom: P nominal power
+        :type P_nom: np.array
         :param P_step: P power steps
+        :type P_step:
         :param n: transformer transfer ratio
+        :type n: np.array
         :param Ls: series inductance
-        :param Lm: Transformer mutal inductance
+        :type Ls: np.array
         :param Lc1: Commutation inductance Lc1
+        :type Lc1: np.array
         :param Lc2: Commutation inductance Lc2
+        :type Lc2: np.array
         :param fs: Switching frequency
+        :type fs: np.array
         :param transistor_name_1: Transistor name for transistor bridge 1. Must match with transistordatbase available transistors.
+        :type transistor_name_1: str
         :param transistor_name_2: Transistor name for transistor bridge 2. Must match with transistordatbase available transistors.
+        :type transistor_name_2: str
         :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
+        :type c_par_1: np.array
         :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
+        :type c_par_2: np.array
         :return:
         """
         input_configuration = Config(V1_nom=np.array(V1_nom),
@@ -291,7 +311,7 @@ class HandleDabDto:
         i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct.calc_rms_currents(
             input_configuration, calc_config, modulation_parameters)
 
-        i_hf_1_rms, i_hf_2_rms = dct.calc_hf_rms_currents(angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted)
+        i_hf_1_rms, i_hf_2_rms = dct.calc_hf_rms_currents(angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
 
         calc_currents = CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
                                         'angles_rad_unsorted': angles_rad_unsorted,
@@ -481,11 +501,15 @@ class HandleDabDto:
         Save the DabDTO-class to a npz file.
 
         :param dab_dto: Class to store
+        :type dab_dto: DabDTO
         :param name: Filename
+        :type name: str
         :param comment: Comment
+        :type comment: str
         :param directory: Directory to store the results
+        :type directory: str
         :param timestamp: [True] to add a timestamp to the file name.
-        :return:
+        :type timestamp: bool
         """
         # Add some descriptive data to the file
         # Adding a timestamp, it may be useful

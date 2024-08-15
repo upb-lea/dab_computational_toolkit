@@ -16,12 +16,18 @@ import dct
 class Optimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
-    def objective(trial, design_space: dct.DesignSpace, work_area: dct.WorkArea):
+    @staticmethod
+    def objective(trial: optuna.Trial, design_space: dct.DesignSpace, work_area: dct.WorkArea):
         """
         Objective function to optimize.
 
         :param design_space: Component design space
+        :type design_space: DesignSpace
         :param work_area: DAB operating area
+        :type work_area: WorkArea
+        :param trial: optuna trial
+        :type trial: optuna.Trial
+
         :return:
         """
         f_s_suggest = trial.suggest_int('f_s_suggest', design_space.f_s_min_max_list[0], design_space.f_s_min_max_list[1])
@@ -80,6 +86,8 @@ class Optimization:
         :type storage: str
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
+        :param work_area: work area
+        :type work_area: WorkArea
         """
         if os.path.exists(f"{design_space.working_directory}/study_{study_name}.sqlite3"):
             print("Existing study found. Proceeding.")
@@ -140,14 +148,18 @@ class Optimization:
         fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(study_name, design_space: dct.DesignSpace, work_area: dct.WorkArea, trial_number: int | None = None):
+    def load_dab_dto_from_study(study_name: str, design_space: dct.DesignSpace, work_area: dct.WorkArea, trial_number: int | None = None):
         """
         Load a DAB-DTO from an optuna study.
 
         :param study_name: study name to load
+        :type study_name: str
         :param design_space: design space
+        :type design_space: DesignSpace
         :param work_area: work area
+        :type work_area: WorkArea
         :param trial_number: trial number to load to the DTO
+        :type trial_number: int
         :return:
         """
         if trial_number is None:
@@ -205,6 +217,8 @@ class Optimization:
 
         :param df: Dataframe, generated from an optuna study (exported by optuna)
         :type df: pd.Dataframe
+        :param figure_size: figure size as x,y-tuple in mm, e.g. (160, 80)
+        :type figure_size: tuple
         """
         print(df.head())
 

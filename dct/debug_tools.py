@@ -38,7 +38,12 @@ class Log:
         r"""
         Log error output like print does.
 
-        :param sep: separator definition. Default to '\n'
+        :param args: arguments
+        :type args:
+        :param sep: separator, default is '\n'
+        :type sep: str
+        :param kwargs:
+        :type kwargs:
         """
         # print(*args, **kwargs)
         print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(
@@ -51,7 +56,12 @@ class Log:
         r"""
         Log warning output like print does.
 
-        :param sep: separator definition. Default to '\n'
+        :param args: arguments
+        :type args:
+        :param sep: separator, default is '\n'
+        :type sep: str
+        :param kwargs:
+        :type kwargs:
         """
         # print(*args, **kwargs)
         print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(
@@ -64,7 +74,12 @@ class Log:
         r"""
         Log normal info output like print does.
 
-        :param sep: separator definition. Default to '\n'
+        :param args: arguments
+        :type args:
+        :param sep: separator, default is '\n'
+        :type sep: str
+        :param kwargs:
+        :type kwargs:
         """
         print(*args, **kwargs, sep=sep)
         if self.logfile:
@@ -74,7 +89,12 @@ class Log:
         r"""
         Log debug output like print does.
 
-        :param sep: separator definition. Default to '\n'
+        :param args: arguments
+        :type args:
+        :param sep: separator, default is '\n'
+        :type sep: str
+        :param kwargs:
+        :type kwargs:
         """
         if DEBUG or __debug__:
             # highly detailed output
@@ -94,6 +114,9 @@ def dump_args(func):
     Print function call details by the use of an oparator.
 
     This includes parameters names and effective values.
+
+    :param func: function
+    :type func: python function
     """
 
     def wrapper(*args, **kwargs):
@@ -110,7 +133,12 @@ def dump_args(func):
 
 
 def timeit(func):
-    """Measure execution time of a function by the use of a decorator."""
+    """
+    Measure execution time of a function by the use of a decorator.
+
+    :param func: function to stop the time
+    :type func: python function
+    """
 
     @wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -131,12 +159,15 @@ def timeit(func):
 
 
 def error(*args, sep='\n', **kwargs):
-    """
+    r"""
     Log error output like print does.
 
-    :param args:
-    :param sep:
+    :param args: arguments
+    :type args:
+    :param sep: separator, default is '\n'
+    :type sep: str
     :param kwargs:
+    :type kwargs:
     """
     # print(*args, **kwargs)
     print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ + \
@@ -144,12 +175,15 @@ def error(*args, sep='\n', **kwargs):
 
 
 def warning(*args, sep='\n', **kwargs):
-    """
+    r"""
     Log warning output like print does.
 
-    :param args:
-    :param sep:
+    :param args: arguments
+    :type args:
+    :param sep: separator, default is '\n'
+    :type sep: str
     :param kwargs:
+    :type kwargs:
     """
     # print(*args, **kwargs)
     print(datetime.now().isoformat(timespec='milliseconds') + ' ' + inspect.getmodule(inspect.stack()[1][0]).__name__ + \
@@ -157,12 +191,15 @@ def warning(*args, sep='\n', **kwargs):
 
 
 def info(*args, sep='\n', **kwargs):
-    """
+    r"""
     Log normal info output like print does.
 
-    :param args:
-    :param sep:
+    :param args: arguments
+    :type args:
+    :param sep: separator, default is '\n'
+    :type sep: str
     :param kwargs:
+    :type kwargs:
     """
     print(*args, **kwargs)
     # print(datetime.now().isoformat(timespec='milliseconds') + ' ' + sep.join(map(str, args)), **kwargs)
@@ -170,13 +207,16 @@ def info(*args, sep='\n', **kwargs):
     #       ' ' + sep.join(map(str, args)), **kwargs)
 
 
-def debug(*args, sep='\n', **kwargs):
+def debug(*args, sep: str = '\n', **kwargs):
     r"""
     Log debug output like print does.
 
     :param args: arguments
+    :type args:
     :param sep: separator, default is '\n'
+    :type sep: str
     :param kwargs:
+    :type kwargs:
     """
     if DEBUG or __debug__:
         # print(*args, **kwargs)

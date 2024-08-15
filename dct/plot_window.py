@@ -32,8 +32,14 @@ class PlotWindow:
         self.figsize = figsize
         self.MainWindow.show()
 
-    def addPlot(self, title, figure):
-        """Add plot to the GUI instance."""
+    def addPlot(self, title: str, figure):
+        """Add plot to the GUI instance.
+
+        :param title: title for the plot
+        :type title: str
+        :param figure: Figure to add the plot
+        :type figure: matplotlib.Figure
+        """
         new_tab = QWidget()
         layout = QVBoxLayout()
         new_tab.setLayout(layout)

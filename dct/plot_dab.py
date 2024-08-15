@@ -56,7 +56,12 @@ class Plot_DAB:
             plt.rcParams["figure.autolayout"] = False
 
     def apply_spacings(self, fig):
-        """Set default spacings for the plots."""
+        """
+        Set default spacings for the plots.
+
+        :param fig: matplotlib figure
+        :type fig: matplotlib.plot.figure
+        """
         if self.fontsize < 14:
             fig.subplots_adjust(left=0.05, right=0.98, bottom=0.08, top=0.91, wspace=0.06, hspace=0.2)
             if self.figsize == (16, 8):
@@ -85,12 +90,16 @@ class Plot_DAB:
         """
         Create a new fig in a new tab with the amount of subplots specified.
 
-        :param nrows:
-        :param ncols:
-        :param sharex:
-        :param sharey:
-        :param figsize:
+        :param nrows: number of figures in a row
+        :type nrows: int
+        :param ncols: number of figures in a column
+        :type ncols: int
+        :param sharex: 1 to share the x-axis between the figures
+        :type sharex: int
+        :param sharey: 1 to share the y-axis between the figures
+        :type sharey: int
         :param tab_title: Set the title of the tab-selector
+        :type tab_title: str
         """
         # self.figs_axes.append(plt.subplots(nrows=nrows, ncols=ncols, sharex=sharex, sharey=sharey,
         #                                    figsize=figsize, num=num))
@@ -104,16 +113,20 @@ class Plot_DAB:
         if self.show_pw:
             self.pw.addPlot(title=tab_title, figure=fig)
 
-    def save_fig(self, fig, directory=None, name='', comment='',
-                 timestamp=True):
+    def save_fig(self, fig, directory=None, name: str = '', comment: str = '', timestamp: bool = True):
         """
         Save the given fig as PNG and PDF.
 
-        :param fig:
-        :param directory:
-        :param name:
-        :param comment:
+        :param fig: matplotlib figure
+        :type fig: matplotlib.pyplot.figure
+        :param directory: Directory to store the figure
+        :type directory: str
+        :param name: Name of the figure
+        :type name: str
+        :param comment: Comment
+        :type comment: str
         :param timestamp: If the filename should start with a timestamp
+        :type timestamp: bool
         """
         if __debug__:
             name = 'debug_' + name
@@ -168,11 +181,27 @@ class Plot_DAB:
         Plot three contourf plots with a shared colorbar.
 
         :param fig_axes: Provide the tuple (fig, axs)
-        :param x:
-        :param y:
-        :param z1:
-        :param z2:
-        :param z3:
+        :type fig_axes: tuple
+        :param x: x mesh, e.g. P
+        :type x: np.array
+        :param y: y mesh, e.g. V2
+        :type y: np.array
+        :param z1: z for subplot 1, e.g. phi
+        :type z1: np.array
+        :param z2: z for subplot 2, e.g. tau1
+        :type z2: np.array
+        :param z3: z for subplot 3, e.g. tau2
+        :type z3: np.array
+        :param t1: title for plot 1
+        :type t1: str
+        :param t2: title for plot 2
+        :type t2: str
+        :param t3: title for plot 3
+        :type t3: str
+        :param xl: x label
+        :type xl: str
+        :param yl: y label
+        :type yl: str
         """
         # plot
         fig = fig_axes[0]
@@ -205,16 +234,30 @@ class Plot_DAB:
         """
         Plot three contourf plots with a shared colorbar.
 
-        :param fig_axes: Provide the tuple (fig, axs)
         :param x: x mesh, e.g. P
+        :type x: np.array
         :param y: y mesh, e.g. V2
+        :type y: np.array
         :param z1: z for subplot 1, e.g. phi
+        :type z1: np.array
         :param z2: z for subplot 2, e.g. tau1
+        :type z2: np.array
         :param z3: z for subplot 3, e.g. tau2
+        :type z3: np.array
         :param mask1: optional mask contour line
+        :type mask1: np.array
         :param mask2: optional mask contour line
+        :type mask2: np.array
         :param mask3: optional mask contour line
+        :type mask3: np.array
         :param Vnum: Voltage number of y-axis {1, 2}
+        :type Vnum: int
+        :param tab_title: Set the title of the tab-selector
+        :type tab_title: str
+        :param maskZVS: mask for ZVS
+        :type maskZVS: np.array
+        :param title: title of plot
+        :type title: str
         """
         # Add a new tab with subplot
         fig, axs = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=self.figsize,
@@ -327,14 +370,27 @@ class Plot_DAB:
         Plot three contourf plots with a shared colorbar.
 
         :param fig_axes: Provide the tuple (fig, axs)
+        :type fig_axes: tuple
         :param x: x mesh, e.g. P
+        :type x: np.array
         :param y: y mesh, e.g. V2
+        :type y: np.array
         :param z1: z for subplot 1, e.g. phi
+        :type z1: np.array
         :param z2: z for subplot 2, e.g. tau1
+        :type z2: np.array
         :param z3: z for subplot 3, e.g. tau2
+        :type z3: np.array
         :param mask1: optional mask contour line
+        :type mask1: np.array
         :param mask2: optional mask contour line
+        :type mask2: np.array
         :param mask3: optional mask contour line
+        :type mask3: np.array
+        :param title: title of plot
+        :type title: str
+        :param maskZVS: mask for ZVS
+        :type maskZVS: np.array
         """
         # Some defaults
         fig = fig_axes[0]
@@ -411,8 +467,17 @@ class Plot_DAB:
         fig.canvas.flush_events()
 
     @timeit
-    def plot_rms_current(self, mesh_V2, mesh_P, mvvp_iLs):
-        """Plot RMS currents."""
+    def plot_rms_current(self, mesh_V2: np.array, mesh_P: np.array, mvvp_iLs: np.array):
+        """
+        Plot RMS currents.
+
+        :param mesh_V2: mesh of voltage v2 in V
+        :type mesh_V2: np.array
+        :param mesh_P: mesh of the power P in W
+        :type mesh_P: np.array
+        :param mvvp_iLs: current i_Ls in A
+        :type mvvp_iLs: np.array
+        """
         # plot
         fig, axs = plt.subplots(1, 3, sharey=True)
         fig.suptitle("DAB RMS Currents")
@@ -431,42 +496,69 @@ class Plot_DAB:
         # plt.show()
         return fig
 
-    def subplot_contourf(self, x, y, z, mask1=None, mask2=None, mask3=None,
+    def subplot_contourf(self, x: np.array, y: np.array, z: np.array, mask1=None, mask2=None, mask3=None,
                          nan_matrix=None, ax: str = None,
                          num_cont_lines: int = 12, alpha: float = 0.75, cmap: str = 'viridis',
                          axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float = None, wp_y: float = None,
                          inlinespacing: int = -10, xlabel='', ylabel: str = '', title: str = "", clabel: bool = False,
                          markerstyle: str = 'star',
                          z_min: float = None, z_max: float = None,
-                         square=False, same_xy_ticks=False) -> None:
+                         square: bool = False, same_xy_ticks: bool = False) -> None:
         """
         Draw a subplot contourf.
 
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
+        :type x: np.array
         :param y: y-coordinate
+        :type y: np.array
         :param z: z-coordinate
+        :type z: np.array
         :param nan_matrix: [optional] z-values where a nan is in nan_matrix will be plotted shaded
+        :type nan_matrix: np.array
         :param ax: choose the axis to draw this plot
+        :type ax: str
         :param num_cont_lines: [optional] number of contour lines, default to 20
+        :type num_cont_lines: int
         :param alpha: [optional] shading 0...1. 1 = 100%, default to 0.5
-        :param cmap: [optional] cmap type, e.g. inferno [default]
+        :type alpha: float
+        :param cmap: [optional] cmap type, e.g. inferno
+        :type cmap: str
         :param axlinewidth: [optional] line width of axvline and axhline, default to 0.5
+        :type axlinewidth: float
         :param axlinecolor: [optional] color of axline and star, default to red
+        :type axlinecolor: str
         :param wp_x: [optional] working point in x (for marker line or star marker)
+        :type wp_x: float
         :param wp_y: [optional] working point in y (for marker line or star marker)
+        :type wp_y: float
         :param inlinespacing: [optional] default to -10
+        :type inlinespacing: float
         :param xlabel: [optional] x-label
+        :type xlabel: str
         :param ylabel: [optional] y-label
-        :param fontsize_axis: [optional] default to 9
-        :param fontsize_title: [optional] default to 9
+        :type ylabel: str
         :param title: [optional] subplot figure title
+        :type title: str
         :param clabel: [optional] True to write labels inside the plot, default to False
+        :type clabel: str
         :param markerstyle: [optional] marker style: 'star' or 'line'
+        :type markerstyle: str
         :param z_min: [optional] clip to minimum z-value
+        :type z_min: float
         :param z_max: [optional] clip to maximum z-value
-        :return: -
+        :type z_max: float
+        :param mask1: optional mask contour line
+        :type mask1: np.array
+        :param mask2: optional mask contour line
+        :type mask2: np.array
+        :param mask3: optional mask contour line
+        :type mask3: np.array
+        :param square:
+        :type square: bool
+        :param same_xy_ticks:
+        :type same_xy_ticks: bool
         """
         fontsize_axis = self.fontsize
         fontsize_title = self.fontsize
@@ -581,28 +673,51 @@ class Plot_DAB:
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
+        :type x: np.array
         :param y: y-coordinate
+        :type y: np.array
         :param z: z-coordinate
+        :type z: np.array
         :param nan_matrix: [optional] z-values where a nan is in nan_matrix will be plotted shaded
+        :type nan_matrix: np.array
         :param ax: choose the axis to draw this plot
+        :type ax: str
         :param num_cont_lines: [optional] number of contour lines, default to 20
+        :type num_cont_lines: int
         :param alpha: [optional] shading 0...1. 1 = 100%, default to 0.5
-        :param cmap: [optional] cmap type, e.g. inferno [default]
+        :type alpha: float
+        :param cmap: [optional] cmap type, e.g. inferno
+        :type cmap: str
         :param axlinewidth: [optional] line width of axvline and axhline, default to 0.5
+        :type axlinewidth: float
         :param axlinecolor: [optional] color of axline and star, default to red
+        :type axlinecolor: str
         :param wp_x: [optional] working point in x (for marker line or star marker)
+        :type wp_x: float
         :param wp_y: [optional] working point in y (for marker line or star marker)
+        :type wp_y: float
         :param inlinespacing: [optional] default to -10
+        :type inlinespacing: float
         :param xlabel: [optional] x-label
+        :type xlabel: str
         :param ylabel: [optional] y-label
-        :param fontsize_axis: [optional] default to 9
-        :param fontsize_title: [optional] default to 9
+        :type ylabel: str
         :param title: [optional] subplot figure title
+        :type title: str
         :param clabel: [optional] True to write labels inside the plot, default to False
+        :type clabel: str
         :param markerstyle: [optional] marker style: 'star' or 'line'
+        :type markerstyle: str
         :param z_min: [optional] clip to minimum z-value
+        :type z_min: float
         :param z_max: [optional] clip to maximum z-value
-        :return: -
+        :type z_max: float
+        :param mask1: optional mask contour line
+        :type mask1: np.array
+        :param mask2: optional mask contour line
+        :type mask2: np.array
+        :param mask3: optional mask contour line
+        :type mask3: np.array
         """
         fontsize_axis = self.fontsize
         fontsize_title = self.fontsize
@@ -690,28 +805,49 @@ class Plot_DAB:
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
+        :type x: np.array
         :param y: y-coordinate
+        :type y: np.array
         :param z: z-coordinate
+        :type z: np.array
         :param nan_matrix: [optional] z-values where a nan is in nan_matrix will be plotted shaded
+        :type nan_matrix: np.array
         :param ax: choose the axis to draw this plot
+        :type ax: str
         :param num_cont_lines: [optional] number of contour lines, default to 20
+        :type num_cont_lines: int
         :param alpha: [optional] shading 0...1. 1 = 100%, default to 0.5
-        :param cmap: [optional] cmap type, e.g. inferno [default]
+        :type alpha: float
+        :param cmap: [optional] cmap type, e.g. inferno
+        :type cmap: str
         :param axlinewidth: [optional] line width of axvline and axhline, default to 0.5
+        :type axlinewidth: float
         :param axlinecolor: [optional] color of axline and star, default to red
+        :type axlinecolor: str
         :param wp_x: [optional] working point in x (for marker line or star marker)
+        :type wp_x: float
         :param wp_y: [optional] working point in y (for marker line or star marker)
+        :type wp_y: float
         :param inlinespacing: [optional] default to -10
+        :type inlinespacing: float
         :param xlabel: [optional] x-label
+        :type xlabel: str
         :param ylabel: [optional] y-label
+        :type ylabel: str
         :param fontsize_axis: [optional] default to 9
+        :type fontsize_axis: float
         :param fontsize_title: [optional] default to 9
+        :type fontsize_title: float
         :param title: [optional] subplot figure title
+        :type title: str
         :param clabel: [optional] True to write labels inside the plot, default to False
+        :type clabel: str
         :param markerstyle: [optional] marker style: 'star' or 'line'
+        :type markerstyle: str
         :param z_min: [optional] clip to minimum z-value
+        :type z_min: float
         :param z_max: [optional] clip to maximum z-value
-        :return: -
+        :type z_max: float
         """
         # check if z input matrix is out ouf None's only. If Ture, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
@@ -759,20 +895,28 @@ class Plot_DAB:
         if wp_x is not None and wp_y is not None and markerstyle.lower() == 'star':
             ax.plot(wp_x, wp_y, marker="*", color=axlinecolor)
 
-    def subplot(self, x, y, ax: str = None,
-                xlabel='x', ylabel: str = 'y', title: str = '',
-                xscale='linear', yscale='linear') -> None:
+    def subplot(self, x: np.array, y: np.array, ax: str = None,
+                xlabel: str = 'x', ylabel: str = 'y', title: str = '',
+                xscale: str = 'linear', yscale: str = 'linear') -> None:
         """
         Plot a simple line plot in a subplot.
 
         :param x:
+        :type x: np.array
         :param y:
-        :param ax:
-        :param xlabel:
-        :param ylabel:
-        :param title:
+        :type y: np.array
+        :param ax: axis
+        :type ax: str
+        :param xlabel: x label
+        :type xlabel: str
+        :param ylabel: y label
+        :type ylabel: str
+        :param title: title
+        :type title: str
         :param xscale: {"linear", "log", "symlog", "logit", ...}
+        :type xscale: str
         :param yscale: {"linear", "log", "symlog", "logit", ...}
+        :type yscale: str
         """
         fontsize_axis = self.fontsize
         fontsize_title = self.fontsize
@@ -812,21 +956,39 @@ class Plot_DAB:
 
 
 @timeit
-def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, mask3=None,
-                    maskZVS=None, Vnum=2, filename='Plot_title', latex=False):
+def plot_modulation(x: np.array, y: np.array, z1: np.array, z2: np.array, z3: np.array, title: str = '', mask1=None, mask2=None, mask3=None,
+                    maskZVS: np.array = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
     """
     Plot three contourf plots with a shared colorbar.
 
-    :param fig_axes: Provide the tuple (fig, axs)
     :param x: x mesh, e.g. P
+    :type x: np.array
     :param y: y mesh, e.g. V2
+    :type y: np.array
     :param z1: z for subplot 1, e.g. phi
+    :type z1: np.array
     :param z2: z for subplot 2, e.g. tau1
+    :type z2: np.array
     :param z3: z for subplot 3, e.g. tau2
+    :type z3: np.array
     :param mask1: optional mask contour line
+    :type mask1: np.array
     :param mask2: optional mask contour line
+    :type mask2: np.array
     :param mask3: optional mask contour line
+    :type mask3: np.array
     :param Vnum: Voltage number of y-axis {1, 2}
+    :type Vnum: int
+    :param maskZVS: ZVS mask
+    :type maskZVS: np.array
+    :param Vnum:
+    :type Vnum: int
+    :param filename: name of the file
+    :type filename: str
+    :param latex: True to set font to LaTeX font
+    :type latex: bool
+    :param title: title of the plot
+    :type title: str
     """
     figsize = (10, 5)
     if latex:
@@ -945,8 +1107,17 @@ def plot_modulation(x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, m
 
 
 @timeit
-def plot_rms_current(mesh_V2, mesh_P, mvvp_iLs):
-    """Plot the RMS currents."""
+def plot_rms_current(mesh_V2: np.array, mesh_P: np.array, mvvp_iLs: np.array):
+    """
+    Plot the RMS currents.
+
+    :param mesh_V2: mesh of voltage v2 in V
+    :type mesh_V2: np.array
+    :param mesh_P: mesh of the power P in W
+    :type mesh_P: np.array
+    :param mvvp_iLs: current i_Ls in A
+    :type mvvp_iLs: np.array
+    """
     # plot
     fig, axs = plt.subplots(1, 3, sharey=True)
     fig.suptitle("DAB RMS Currents")

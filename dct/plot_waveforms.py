@@ -9,7 +9,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
-    """Plot calculated current waveforms for Ls, Lc1, Lc2."""
+    """
+    Plot calculated current waveforms for Ls, Lc1, Lc2.
+
+    :param dab_dto: DAB DTO
+    :type dab_dto: DabDTO
+    :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
+    :type compare_gecko_waveforms: bool
+    """
     print(f"{np.shape(dab_dto.gecko_waveforms.i_Ls)=}")
     print(f"{type(dab_dto.gecko_waveforms.time)=}")
 

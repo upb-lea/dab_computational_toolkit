@@ -25,7 +25,7 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
             V2_min=175,
             V2_max=295,
             V2_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 3,
-            P_min=-2200,
+            P_min=0,
             P_max=2200,
             P_nom=2000,
             P_step=steps_in_mesh_per_direction if isinstance(steps_in_mesh_per_direction, int) else 3,

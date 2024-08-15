@@ -11,7 +11,12 @@ from dct import DabDTO
 import numpy as np
 
 def plot_calculation_results(dab_config: DabDTO):
-    """Calculate the DAB operating points and show the results."""
+    """
+    Calculate the DAB operating points and show the results.
+
+    :param dab_config: DAB configuration file
+    :type dab_config: DabDTO
+    """
     dct.debug('phi min:', np.nanmin(dab_config.calc_modulation.phi), 'phi max:', np.nanmax(dab_config.calc_modulation.phi))
     zvs_coverage = np.count_nonzero(dab_config.calc_modulation.mask_zvs) / np.size(dab_config.calc_modulation.mask_zvs)
     dct.debug('zvs coverage:', zvs_coverage)

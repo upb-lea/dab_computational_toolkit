@@ -27,32 +27,61 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     """
     Start the GeckoCIRCUITS simulation.
 
-    :param mesh_V1:
-    :param mesh_V2:
-    :param mesh_P:
-    :param mod_phi:
-    :param mod_tau1:
-    :param mod_tau2:
-    :param t_dead1:
-    :param t_dead2:
-    :param fs:
-    :param Ls:
-    :param Lc1:
-    :param Lc2:
-    :param n:
-    :param t_j_1:
-    :param t_j_2:
-    :param simfilepath:
-    :param timestep:
-    :param simtime:
-    :param timestep_pre:
-    :param simtime_pre:
-    :param geckoport:
+    :param mesh_V1: mesh of voltage v1 in V
+    :type mesh_V1: np.array
+    :param mesh_V2: mesh of voltage v2 in V
+    :type mesh_V2: np.array
+    :param mesh_P: mesh of the power P in W
+    :type mesh_P: np.array
+    :param mod_phi: matrix with modulation parameter phi
+    :type mod_phi: np.array
+    :param mod_tau1: matrix with modulation parameter tau_1
+    :type mod_tau1: np.array
+    :param mod_tau2: matrix with modulation parameter tau_2
+    :type mod_tau2: np.array
+    :param t_dead1: dead time for bridge 1 in seconds
+    :type t_dead1: float
+    :param t_dead2: dead time for bridge 2 in seconds
+    :type t_dead2: float
+    :param fs: switching frequency in Hz
+    :type fs: float
+    :param Ls: series inductance in H
+    :type Ls: float
+    :param Lc1: Commutation inductance for bridge 1 in H
+    :type Lc1: float
+    :param Lc2: Commutation inductance for bridge 2 in H
+    :type Lc2: float
+    :param n: transfer ratio
+    :type n: float
+    :param t_j_1: MOSFET junction temperature for bridge 1 in degree celcius
+    :type t_j_1: float
+    :param t_j_2: MOSFET junction temperature for bridge 2 in degree celcius
+    :type t_j_2: float
+    :param simfilepath: simulation file filepath
+    :type simtime: str
+    :param timestep: timestep in seconds, e.g. 5e-9
+    :type timestep: float
+    :param simtime: simulation time in seconds
+    :type simfilepath: float
+    :param timestep_pre: time-steps of pre-simulation, e.g. 50e-9
+    :type timestep_pre: float
+    :param simtime_pre: pre-simulation time in seconds (not recorded)
+    :type simtime_pre: float
+    :param geckoport: port of GeckoCIRCUITS to connect
+    :type geckoport: int
     :param gdebug:
-    :param c_par_1:
-    :param c_par_2:
+    :param c_par_1: parasitic capacitance for one single MOSFET of bridge 1
+    :type c_par_1: float
+    :param c_par_2: parasitic capacitance for one single MOSFET of bridge 2
+    :type c_par_2: float
     :param get_waveforms: True to return i_Ls, i_Lc1 and i_Lc2. Defaults to False.
-    :return:
+    :type get_waveforms: bool
+    :param lossfilepath: file path of loss files for transistors
+    :type lossfilepath: str
+    :param transistor_1_name: Name of transistor 1
+    :type transistor_1_name: str
+    :param transistor_2_name: Name of transistor 2
+    :type transistor_2_name: str
     """
     # Broadcast possible scalar values to mesh size
     _ones = np.ones_like(mod_phi)
@@ -255,12 +284,14 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     return da_sim_results, gecko_waveforms_multiple_simulations
 
 
-def get_free_port(start=43047, stop=50000) -> int:
+def get_free_port(start: int = 43047, stop: int = 50000) -> int:
     """
     Get a random free port in Range start <= port < stop.
 
     :param start: start port
+    :type start: int
     :param stop: stop port
+    :type stop: int
     :return:
     """
     # ss -tulpn example for a gecko run:

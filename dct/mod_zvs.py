@@ -7,21 +7,32 @@ MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
             'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan']
 
 
-def calc_modulation(n, Ls, Lc1, Lc2, fs: np.ndarray | int | float, Coss1: np.ndarray, Coss2: np.ndarray,
+def calc_modulation(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.ndarray | int | float,
+                    Coss1: np.ndarray, Coss2: np.ndarray,
                     V1: np.ndarray, V2: np.ndarray, P: np.ndarray) -> dict:
     """
     OptZVS (Optimal ZVS) Modulation calculation, which will return phi, tau1 and tau2.
 
     :param n: Transformer turns ratio n1/n2.
+    :type n: float
     :param Ls: DAB converter series inductance. (Must not be zero!)
+    :type Ls: float
     :param Lc1: Side 1 commutation inductance. Use np.inf it not present.
+    :type Lc1: float
     :param Lc2: Side 2 commutation inductance. Use np.inf it not present. (Must not be zero!)
+    :type Lc2: float
     :param fs: Switching frequency, can be a fixed value or a meshgrid with same shape as the other meshes.
+    :type fs: float
     :param Coss1: Side 1 MOSFET Coss(Vds) curve from Vds=0V to >= V1_max. Just one row with Coss data and index = Vds.
+    :type Coss1: np.array
     :param Coss2: Side 2 MOSFET Coss(Vds) curve from Vds=0V to >= V2_max. Just one row with Coss data and index = Vds.
+    :type Coss2: np.array
     :param V1: Input voltage meshgrid (voltage on side 1).
+    :type V1: np.array
     :param V2: Output voltage meshgrid (voltage on side 2).
+    :type V2: np.array
     :param P: DAB input power meshgrid (P=V1*I1).
+    :type P: np.array
     :return: dict with phi, tau1, tau2, masks (phi has First-Falling-Edge alignment!)
     """
     # Interval I is named with I and so on

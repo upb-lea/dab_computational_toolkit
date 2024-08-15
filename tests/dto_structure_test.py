@@ -9,11 +9,7 @@ import dct
 # 3rd party libraries
 
 def test_save_load_of_dto():
-    """
-    Generate a DTO, save and load it. In the Future: Compare the results once a bug is fixed in deepdiff.
-
-    :return:
-    """
+    """Generate a DTO, save and load it. In the Future: Compare the results once a bug is fixed in deepdiff."""
     load_and_calc_dto = dct.load_dab_specification('initial')
 
     dct.HandleDabDto.save(load_and_calc_dto, 'pytest_trial_file', directory=None, timestamp=False, comment='')
