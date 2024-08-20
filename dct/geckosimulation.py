@@ -20,8 +20,8 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                            t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray,
                            Ls: float, Lc1: float, Lc2: float, n: float,
                            t_j_1: float, t_j_2: float,
-                           simfilepath: str, timestep: float, simtime: float,
-                           timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036,
+                           simfilepath: str, timestep: float, number_sim_periods: int,
+                           timestep_pre: float = 0, number_pre_sim_periods: int = 0, geckoport: int = 43036,
                            c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
                            lossfilepath: str = None, get_waveforms: bool = False) -> tuple[dict, defaultdict]:
     """
@@ -61,12 +61,13 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :type simtime: str
     :param timestep: timestep in seconds, e.g. 5e-9
     :type timestep: float
-    :param simtime: simulation time in seconds
+    :param number_sim_periods: simulation periods
+    :type number_sim_periods: int
     :type simfilepath: float
     :param timestep_pre: time-steps of pre-simulation, e.g. 50e-9
     :type timestep_pre: float
-    :param simtime_pre: pre-simulation time in seconds (not recorded)
-    :type simtime_pre: float
+    :param number_pre_sim_periods: pre-simulation periods (not recorded)
+    :type number_pre_sim_periods: int
     :param geckoport: port of GeckoCIRCUITS to connect
     :type geckoport: int
     :param c_par_1: parasitic capacitance for one single MOSFET of bridge 1
@@ -128,7 +129,10 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     # Find a free port if zero is given as port
     if geckoport == 0:
         geckoport = get_free_port()
-    # Gecko Basics
+
+    simtime_pre = number_pre_sim_periods / fs
+    simtime = number_sim_periods / fs
+
     gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, timestep=timestep,
                                               simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
