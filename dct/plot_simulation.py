@@ -3,7 +3,7 @@
 import os
 
 # own libraries
-from dct.debug_tools import Log, timeit, info
+from dct.debug_tools import timeit
 from dct import DabDTO
 from dct import Plot_DAB
 

@@ -2,6 +2,7 @@
 # Python libraries
 import os
 import datetime
+import logging
 
 # 3rd party libraries
 import optuna
@@ -168,7 +169,7 @@ class Optimization:
         loaded_study = optuna.create_study(study_name=study_name,
                                            storage=f"sqlite:///{design_space.working_directory}/study_{study_name}.sqlite3",
                                            load_if_exists=True)
-
+        logging.info(f"The study '{study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
         dab_dto = dct.HandleDabDto.init_config(

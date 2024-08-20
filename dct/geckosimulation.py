@@ -21,9 +21,9 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                            Ls: float, Lc1: float, Lc2: float, n: float,
                            t_j_1: float, t_j_2: float,
                            simfilepath: str, timestep: float, simtime: float,
-                           timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036, gdebug: bool = False,
+                           timestep_pre: float = 0, simtime_pre: float = 0, geckoport: int = 43036,
                            c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
-                           lossfilepath: str = None, get_waveforms: bool = False) -> tuple[dict]:
+                           lossfilepath: str = None, get_waveforms: bool = False) -> tuple[dict, defaultdict]:
     """
     Start the GeckoCIRCUITS simulation.
 
@@ -53,9 +53,9 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :type Lc2: float
     :param n: transfer ratio
     :type n: float
-    :param t_j_1: MOSFET junction temperature for bridge 1 in degree celcius
+    :param t_j_1: MOSFET junction temperature for bridge 1 in degree Celsius
     :type t_j_1: float
-    :param t_j_2: MOSFET junction temperature for bridge 2 in degree celcius
+    :param t_j_2: MOSFET junction temperature for bridge 2 in degree Celsius
     :type t_j_2: float
     :param simfilepath: simulation file filepath
     :type simtime: str
@@ -69,7 +69,6 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :type simtime_pre: float
     :param geckoport: port of GeckoCIRCUITS to connect
     :type geckoport: int
-    :param gdebug:
     :param c_par_1: parasitic capacitance for one single MOSFET of bridge 1
     :type c_par_1: float
     :param c_par_2: parasitic capacitance for one single MOSFET of bridge 2
@@ -126,13 +125,12 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     # Progressbar init, calc total number of iterations to simulate
     pbar = tqdm(total=mod_phi.size)
 
-    if not __debug__:
-        # Find a free port if zero is given as port
-        if geckoport == 0:
-            geckoport = get_free_port()
-        # Gecko Basics
-        gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, debug=gdebug,
-                                                  timestep=timestep, simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
+    # Find a free port if zero is given as port
+    if geckoport == 0:
+        geckoport = get_free_port()
+    # Gecko Basics
+    gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, timestep=timestep,
+                                              simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
     for vec_vvp in np.ndindex(mod_phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
@@ -161,57 +159,45 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             c_oss_1_file = os.path.join(lossfilepath, f'{transistor_1_name}_c_oss.nlc')
             c_oss_2_file = os.path.join(lossfilepath, f'{transistor_2_name}_c_oss.nlc')
 
-            if not __debug__:
-                gecko_dab_converter.set_global_parameters(sim_params)
-                gecko_dab_converter.set_nonlinear_file(['C11', 'C12', 'C13', 'C14'], c_oss_1_file)
-                gecko_dab_converter.set_nonlinear_file(['C21', 'C22', 'C23', 'C24'], c_oss_2_file)
+            gecko_dab_converter.set_global_parameters(sim_params)
+            gecko_dab_converter.set_nonlinear_file(['C11', 'C12', 'C13', 'C14'], c_oss_1_file)
+            gecko_dab_converter.set_nonlinear_file(['C21', 'C22', 'C23', 'C24'], c_oss_2_file)
 
-                # Start the simulation and get the results. Do not set times here because it is set while init Gecko.
-                gecko_dab_converter.run_simulation()
-                values_mean = gecko_dab_converter.get_values(
-                    nodes=l_means_keys,
-                    operations=['mean'],
-                    # Just use the last part, because the beginning is garbage
-                    # simtime must be greater than 2*Ts
-                    # Use only second half of simtime and make it multiple of Ts
-                    range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
-                                      'end']
-                )
-                values_rms = gecko_dab_converter.get_values(
-                    nodes=l_rms_keys,
-                    operations=['rms'],
-                    # Just use the last part, because the beginning is garbage
-                    # simtime must be greater than 2*Ts
-                    # Use only second half of simtime and make it multiple of Ts
-                    range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
-                                      'end']
-                )
-                values_min = gecko_dab_converter.get_values(
-                    nodes=l_min_keys,
-                    operations=['min'],
-                    # Just use the last part, because the beginning is garbage
-                    # Use the smallest possible timerange at the end
-                    range_start_stop=[2 * timestep, 'end']
-                )
+            # Start the simulation and get the results. Do not set times here because it is set while init Gecko.
+            gecko_dab_converter.run_simulation()
+            values_mean = gecko_dab_converter.get_values(
+                nodes=l_means_keys,
+                operations=['mean'],
+                # Just use the last part, because the beginning is garbage
+                # simtime must be greater than 2*Ts
+                # Use only second half of simtime and make it multiple of Ts
+                range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
+                                  'end']
+            )
+            values_rms = gecko_dab_converter.get_values(
+                nodes=l_rms_keys,
+                operations=['rms'],
+                # Just use the last part, because the beginning is garbage
+                # simtime must be greater than 2*Ts
+                # Use only second half of simtime and make it multiple of Ts
+                range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
+                                  'end']
+            )
+            values_min = gecko_dab_converter.get_values(
+                nodes=l_min_keys,
+                operations=['min'],
+                # Just use the last part, because the beginning is garbage
+                # Use the smallest possible timerange at the end
+                range_start_stop=[2 * timestep, 'end']
+            )
 
-                if get_waveforms:
-                    result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
+            if get_waveforms:
+                result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
 
-                    for key in waveform_keys:
-                        gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()
-                    gecko_waveforms_single_simulation['time'] = result_df['time'].to_numpy()
+                for key in waveform_keys:
+                    gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()
+                gecko_waveforms_single_simulation['time'] = result_df['time'].to_numpy()
 
-            else:
-                # generate some fake data for debugging
-                values_mean = defaultdict(dict)
-                values_rms = defaultdict(dict)
-                values_min = defaultdict(dict)
-                for k in l_means_keys:
-                    values_mean['mean'][k] = np.random.uniform(0.0, 100)
-                for k in l_rms_keys:
-                    values_rms['rms'][k] = np.random.uniform(0.0, 1)
-                for k in l_min_keys:
-                    values_min['min'][k] = np.random.uniform(-5, 50)
         else:
             # When params are not valid return NaN values
             values_mean = defaultdict(dict)

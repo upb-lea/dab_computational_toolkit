@@ -4,7 +4,7 @@
 import os
 import dataclasses
 import datetime
-import warnings
+import logging
 
 # 3rd party libraries
 import numpy as np
@@ -359,7 +359,7 @@ class HandleDabDto:
             timestep=dab_dto.gecko_additional_params.timestep,
             simtime=dab_dto.gecko_additional_params.simtime,
             timestep_pre=dab_dto.gecko_additional_params.timestep_pre,
-            simtime_pre=dab_dto.gecko_additional_params.simtime_pre, geckoport=43036, gdebug=False,
+            simtime_pre=dab_dto.gecko_additional_params.simtime_pre, geckoport=43036,
             c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
             transistor_1_name=dab_dto.input_config.transistor_name_1,
             transistor_2_name=dab_dto.input_config.transistor_name_2, get_waveforms=get_waveforms)
@@ -456,12 +456,10 @@ class HandleDabDto:
         # Maybe check if data is monotonically
         # Check if voltage is monotonically rising
         if not np.all(csv_data[1:, 0] >= csv_data[:-1, 0], axis=0):
-            pass
-            # dct.warning("The voltage in csv file is not monotonically rising!")
+            logging.warning("The voltage in csv file is not monotonically rising!")
         # Check if Coss is monotonically falling
         if not np.all(csv_data[1:, 1] <= csv_data[:-1, 1], axis=0):
-            pass
-            # dct.warning("The C_oss in csv file is not monotonically falling!")
+            logging.warning("The C_oss in csv file is not monotonically falling!")
 
         # Rescale and interpolate the csv data to have a nice 1V step size from 0V to v_max
         # A first value with zero volt will be added
@@ -546,7 +544,7 @@ class HandleDabDto:
             if os.path.isdir(directory):
                 file = os.path.join(directory, filename)
             else:
-                warnings.warn("Directory does not exist!", stacklevel=2)
+                logging.warning("Directory does not exist!", stacklevel=2)
                 file = os.path.join(filename)
         else:
             file = os.path.join(filename)
