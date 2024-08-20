@@ -396,6 +396,13 @@ class HandleDabDto:
         transistor_1 = db.load_transistor(config.transistor_name_1)
         transistor_2 = db.load_transistor(config.transistor_name_2)
 
+        if transistor_1.type != "MOSFET" and transistor_1.type != "SiC-MOSFET":
+            raise ValueError(f"Transistor 1: {transistor_1.name} is of non-allowed type {transistor_1.type}. "
+                             f"Allowed types are MOSFET, SiC-MOSFET.")
+        if transistor_2.type != "MOSFET" and transistor_2.type != "SiC-MOSFET":
+            raise ValueError(f"Transistor 2: {transistor_2.name} is of non-allowed type {transistor_2.type}. "
+                             f"Allowed types are MOSFET, SiC-MOSFET.")
+
         t_j_1 = transistor_1.switch.t_j_max - 25
         t_j_2 = transistor_2.switch.t_j_max - 25
 
