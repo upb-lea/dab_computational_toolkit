@@ -1,6 +1,6 @@
 """Plot GeckoCIRCUITS simulation results."""
 # python libraries
-import os
+import logging
 
 # own libraries
 from dct.debug_tools import timeit
@@ -30,14 +30,9 @@ def plot_gecko_simulation_results(dab_config: DabDTO, simulation_name: str, comm
     :param logfile: Logfile name
     :type logfile: str
     """
-    # Logging
-    log = Log(filename=os.path.join(directory, logfile) if logfile else '')
-    # Plotting
-    log.info("\nStart Plotting\n")
-
     # Plot a cross-section through the V1 plane
     v1_middle = int(np.shape(dab_config.calc_config.mesh_P)[1] / 2)
-    log.info('View plane: U_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0]))
+    logging.info('View plane: U_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0]))
     simulation_name += '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
     comment += ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
 
@@ -45,21 +40,21 @@ def plot_gecko_simulation_results(dab_config: DabDTO, simulation_name: str, comm
 
     modulation_name = 'zvs'
 
-    log.info('Plotting modulation: ' + modulation_name)
+    logging.info('Plotting modulation: ' + modulation_name)
     # Show ZVS coverage based on simulation:
-    log.info(modulation_name + ' Simulation ZVS coverage (Bridge 1, Bridge 2): {} ({}, {})'.format(
+    logging.info(modulation_name + ' Simulation ZVS coverage (Bridge 1, Bridge 2): {} ({}, {})'.format(
         round(np.array(dab_config.gecko_results.zvs_coverage).item(0), 3),
         round(np.array(dab_config.gecko_results.zvs_coverage1).item(0), 3),
         round(np.array(dab_config.gecko_results.zvs_coverage2).item(0), 3)))
     # Only non NaN areas:
-    log.info(modulation_name + ' Simulation ZVS coverage (Bridge 1, Bridge 2) (non NaN): {} ({}, {})'.format(
+    logging.info(modulation_name + ' Simulation ZVS coverage (Bridge 1, Bridge 2) (non NaN): {} ({}, {})'.format(
         round(np.array(dab_config.gecko_results.zvs_coverage_notnan).item(0), 3),
         round(np.array(dab_config.gecko_results.zvs_coverage1_notnan).item(0), 3),
         round(np.array(dab_config.gecko_results.zvs_coverage2_notnan).item(0), 3)))
     # Mean of I1:
-    log.info(modulation_name + ' Simulation I_1-total-mean: {}'.format(
+    logging.info(modulation_name + ' Simulation I_1-total-mean: {}'.format(
         round(np.array(dab_config.gecko_results.i_HF1_total_mean).item(0), 3)))
-    log.info(modulation_name + ' Simulation I^2_1-total-mean: {}'.format(
+    logging.info(modulation_name + ' Simulation I^2_1-total-mean: {}'.format(
         round(np.array(dab_config.gecko_results.I1_squared_total_mean).item(0), 3)))
 
     # Set masks according to mod for later usage
@@ -256,7 +251,7 @@ def plot_gecko_simulation_results(dab_config: DabDTO, simulation_name: str, comm
     if not show_plot:
         plt.close()
 
-    info('Plotting is done!')
+    logging.info('Plotting is done!')
     # Finally show everything
     if show_plot:
         plt.show()

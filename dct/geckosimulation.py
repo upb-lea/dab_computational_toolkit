@@ -23,7 +23,8 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                            simfilepath: str, timestep: float, number_sim_periods: int,
                            timestep_pre: float = 0, number_pre_sim_periods: int = 0, geckoport: int = 43036,
                            c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
-                           lossfilepath: str = None, get_waveforms: bool = False) -> tuple[dict, defaultdict]:
+                           lossfilepath: str = None, get_waveforms: bool = False,
+                           i_ls_start: np.array = 0, i_lc1_start: np.array = 0, i_lc2_start: np.array = 0) -> tuple[dict, defaultdict]:
     """
     Start the GeckoCIRCUITS simulation.
 
@@ -58,7 +59,6 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :param t_j_2: MOSFET junction temperature for bridge 2 in degree Celsius
     :type t_j_2: float
     :param simfilepath: simulation file filepath
-    :type simtime: str
     :param timestep: timestep in seconds, e.g. 5e-9
     :type timestep: float
     :param number_sim_periods: simulation periods
@@ -82,6 +82,12 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :type transistor_1_name: str
     :param transistor_2_name: Name of transistor 2
     :type transistor_2_name: str
+    :param i_ls_start: start current of L_s in A
+    :type i_ls_start: np.array
+    :param i_lc1_start: start current of L_c1 in A
+    :type i_lc1_start: np.array
+    :param i_lc2_start: start current of the L_c2 in A (on secondary side)
+    :type i_lc2_start: np.array
     """
     # Broadcast possible scalar values to mesh size
     _ones = np.ones_like(mod_phi)
@@ -155,6 +161,9 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             't_j_2': float(t_j_2),
             'C_par_1': c_par_1,
             'C_par_2': c_par_2,
+            'i_Ls_start': i_ls_start[vec_vvp].item(),
+            'i_Lc1_start': i_lc1_start[vec_vvp].item(),
+            'i_Lc2__start': i_lc2_start[vec_vvp].item() / n,
         }
 
         # Only run simulation if all params are valid
@@ -197,6 +206,8 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
 
             if get_waveforms:
                 result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
+
+                print(result_df.head())
 
                 for key in waveform_keys:
                     gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()

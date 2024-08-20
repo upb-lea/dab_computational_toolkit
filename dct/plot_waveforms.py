@@ -42,7 +42,7 @@ def plot_calc_waveforms(dab_dto: DabDTO, compare_gecko_waveforms: bool = False):
         if np.all(~np.isnan(sorted_i_l_s_total)):
 
             if compare_gecko_waveforms:
-                gecko_time = ((dab_dto.gecko_waveforms.time - dab_dto.gecko_additional_params.t_dead1) * 2 * np.pi * dab_dto.input_config.fs - \
+                gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
                               dab_dto.gecko_additional_params.number_pre_sim_periods / dab_dto.input_config.fs * 2 * np.pi * dab_dto.input_config.fs)
 
             ax1 = plt.subplot(311)

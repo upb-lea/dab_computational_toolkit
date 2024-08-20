@@ -320,7 +320,7 @@ class HandleDabDto:
 
         gecko_additional_params = GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
-            number_sim_periods=10, timestep_pre=25e-9, number_pre_sim_periods=0,
+            number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
             simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
             lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
 
@@ -362,7 +362,10 @@ class HandleDabDto:
             number_pre_sim_periods=dab_dto.gecko_additional_params.number_pre_sim_periods, geckoport=43036,
             c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
             transistor_1_name=dab_dto.input_config.transistor_name_1,
-            transistor_2_name=dab_dto.input_config.transistor_name_2, get_waveforms=get_waveforms)
+            transistor_2_name=dab_dto.input_config.transistor_name_2, get_waveforms=get_waveforms,
+            i_ls_start=dab_dto.calc_currents.i_l_s_sorted[0],
+            i_lc1_start=dab_dto.calc_currents.i_l_1_sorted[0],
+            i_lc2_start=dab_dto.calc_currents.i_l_2_sorted[0])
 
         # add GeckoCIRCUITS simulation results to the result DTO.
         dab_dto.gecko_results = GeckoResults(**gecko_results)

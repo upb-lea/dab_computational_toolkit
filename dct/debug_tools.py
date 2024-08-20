@@ -1,8 +1,5 @@
 """Different methods to debug this toolbox."""
-import os
-from datetime import datetime
 # Decorator to print function args
-import inspect
 # Decorator to measure execution time of a function
 from functools import wraps
 import time
@@ -34,4 +31,3 @@ def timeit(func):
         return result
 
     return timeit_wrapper
-
