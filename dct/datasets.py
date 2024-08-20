@@ -337,7 +337,7 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def add_gecko_simulation_results(dab_dto: DabDTO, get_waveforms: bool = False):
+    def add_gecko_simulation_results(dab_dto: DabDTO, get_waveforms: bool = False) -> DabDTO:
         """
         Add GeckoCIRCUITS simulation results to the given DTO.
 
@@ -376,7 +376,9 @@ class HandleDabDto:
         Calculate logical parameters which can be calculated from the input parameters.
 
         :param config: DAB configuration
+        :type config: Config
         :return: CalcFromConfig
+        :rtype: CalcFromConfig
         """
         mesh_V1, mesh_V2, mesh_P = np.meshgrid(
             np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
@@ -394,15 +396,15 @@ class HandleDabDto:
         t_j_1 = transistor_1.switch.t_j_max - 25
         t_j_2 = transistor_2.switch.t_j_max - 25
 
-        c_oss_1, q_oss_1 = HandleDabDto.get_c_oss_from_tdb(transistor_1)
-        c_oss_2, q_oss_2 = HandleDabDto.get_c_oss_from_tdb(transistor_2)
+        c_oss_1, q_oss_1 = HandleDabDto.get_c_oss_from_tdb(transistor_1, margin_factor=1.2)
+        c_oss_2, q_oss_2 = HandleDabDto.get_c_oss_from_tdb(transistor_2, margin_factor=1.2)
 
         # export c_oss files for GeckoCIRCUITS
         path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
         if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_1.name}_c_oss.nlc")):
-            transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
+            transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=1.2)
         if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_2.name}_c_oss.nlc")):
-            transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files)
+            transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=1.2)
 
         calc_from_config = CalcFromConfig(
             mesh_V1=mesh_V1,
@@ -436,7 +438,7 @@ class HandleDabDto:
         return CalcModulation(**result_dict)
 
     @staticmethod
-    def get_c_oss_from_tdb(transistor: tdb.Transistor):
+    def get_c_oss_from_tdb(transistor: tdb.Transistor, margin_factor: float = 1.2) -> tuple:
         """
         Import the transistor Coss(Vds) capacitance from the transistor database (TDB).
 
@@ -444,6 +446,10 @@ class HandleDabDto:
 
         :param transistor: transistor database object
         :type transistor: transistordatabase.Transistor
+        :param margin_factor: factor for margin. [1.0 = no margin], [1.2 = 20 % margin: DEFAULT]
+        :type margin_factor: float
+        :return: c_oss, q_oss (in 1 V steps)
+        :rtype: tuple
         """
         csv_data = transistor.c_oss[0].graph_v_c.T
 
@@ -461,7 +467,9 @@ class HandleDabDto:
         # A first value with zero volt will be added
         v_max = int(np.round(csv_data[-1, 0]))
         v_interp = np.arange(v_max + 1)
-        coss_interp = np.interp(v_interp, csv_data[:, 0], csv_data[:, 1])
+
+        # The margin is considered here as a factor of the original capacitance value
+        coss_interp = margin_factor * np.interp(v_interp, csv_data[:, 0], csv_data[:, 1])
         # Since we now have an evenly spaced vector where x corespond to the element-number of the vector
         # we don't have to store x (v_interp) with it.
         # To get Coss(V) just get the array element coss_interp[V]

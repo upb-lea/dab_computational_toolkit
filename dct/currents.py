@@ -250,7 +250,7 @@ def calc_rms(alpha_rad: np.array, beta_rad: np.array, gamma_rad: np.array, delta
 
     return rms, angles_sorted, currents_sorted
 
-def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_modulation: CalcModulation):
+def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_modulation: CalcModulation) -> tuple:
     """
     Calculate the RMS currents in l_s, l_1 and l_2 for the given input values.
 
@@ -261,6 +261,7 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
     :param calc_from_config: Additional input parameters calculated once from the input configuration
     :param calc_modulation: Calculated modulation parameters DTO
     :return: i_l_s_rms, i_l_1_rms, i_l_2_rms
+    :rtype: tuple
     """
     alpha_rad = np.pi - calc_modulation.tau1
     beta_rad = np.pi + calc_modulation.phi - calc_modulation.tau2
@@ -351,7 +352,7 @@ def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_mod
 
     return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
 
-def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_sorted: np.array, i_l_2_sorted: np.array, n: np.array):
+def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_sorted: np.array, i_l_2_sorted: np.array, n: np.array) -> tuple:
     """
     Calculate i_hf_1_rms and i_hf_2_rms from i_l_s, i_l_1 and i_l_2.
 
@@ -365,7 +366,8 @@ def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_
     :type i_l_2_sorted: np.array
     :param n: transfer ratio
     :type n: np.array
-    :return:
+    :return: (i_hf_1_rms, i_hf_2_rms)
+    :rtype: tuple
     """
     i_hf_1_sorted = i_l_s_sorted + i_l_1_sorted
     i_hf_2_sorted = i_l_s_sorted * n - i_l_2_sorted

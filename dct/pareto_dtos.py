@@ -15,8 +15,8 @@ class DesignSpace:
     l_1_min_max_list: np.array
     l_2_min_max_list: np.array
     n_min_max_list: np.array
-    transistor_1_list: list
-    transistor_2_list: list
+    transistor_1_list: list[str]
+    transistor_2_list: list[str]
 
     # misc
     working_directory: str

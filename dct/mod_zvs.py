@@ -1,5 +1,11 @@
 """Interval calculation to the phi, tau_1 and tau_2 in radiant for the ZVS switching pattern."""
+# python libraries
+import logging
+
+# 3rd party libraries
 import numpy as np
+
+# own libraries
 from dct.debug_tools import warning
 
 # The dict keys this modulation will return
@@ -196,9 +202,8 @@ def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_
     # TODO Maybe Ls is too small? Is that even possible? Error in Formula?
     e3 = n * (v_b2_ * (l_c_b2_ + l_s) - v_b1 * l_c_b2_)
     if np.any(np.less(e3, 0)):
-        warning('Something is wrong. Formula e3 is negative and it should not!')
-        warning('Please check your DAB Params, probably you must check n or iterate L, Lc1, Lc2.')
-        # warning(V2_, Lc2_, V1, Ls)
+        logging.info('Something is wrong. Formula e3 is negative and it should not!')
+        logging.info('Please check your DAB Params, probably you must check n or iterate L, Lc1, Lc2.')
 
     e4 = 2 * n * np.sqrt(q_ab_req_b1 * l_s * np.power(omega_s, 2) * v_b1 * l_c_b1 * (l_c_b1 + l_s))
 
@@ -304,8 +309,11 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
 
     tau_2_rad = np.sqrt((2 * e5) / (v_b2 * e3))
 
-    phi_rad = (- tau_1_rad + tau_2_rad + np.pi) / 2 - np.sqrt(
-        (- np.power((tau_2_rad - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2)
+
+    sqrt_part = (- np.power((tau_2_rad - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2
+    #sqrt_genan = np.greater_equal(sqrt_part, 0)
+    #phi_rad = np.full_like(v_b1, np.nan)
+    phi_rad = (- tau_1_rad + tau_2_rad + np.pi) / 2 - np.sqrt(sqrt_part)
 
     # Check if tau_2_rad > pi: Set tau_2_rad = pi and recalculate phi_rad for these points
 
