@@ -6,7 +6,6 @@ import logging
 import numpy as np
 
 # own libraries
-from dct.debug_tools import warning
 
 # The dict keys this modulation will return
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
@@ -309,10 +308,9 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
 
     tau_2_rad = np.sqrt((2 * e5) / (v_b2 * e3))
 
-
     sqrt_part = (- np.power((tau_2_rad - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2
-    #sqrt_genan = np.greater_equal(sqrt_part, 0)
-    #phi_rad = np.full_like(v_b1, np.nan)
+    # sqrt_genan = np.greater_equal(sqrt_part, 0)
+    # phi_rad = np.full_like(v_b1, np.nan)
     phi_rad = (- tau_1_rad + tau_2_rad + np.pi) / 2 - np.sqrt(sqrt_part)
 
     # Check if tau_2_rad > pi: Set tau_2_rad = pi and recalculate phi_rad for these points
