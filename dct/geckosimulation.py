@@ -103,7 +103,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                     'S23_p_sw', 'S23_p_cond', 'S24_p_sw', 'S24_p_cond',
                     'v_dc1', 'i_dc1', 'v_dc2', 'i_dc2',
                     'p_sw1', 'p_cond1', 'p_sw2', 'p_cond2']
-    l_rms_keys = ['i_HF1', 'i_Ls', 'i_Lc1', 'i_Lc2', 'i_C11', 'i_C12', 'i_C23', 'i_C24']
+    l_rms_keys = ['i_HF1', 'i_Ls', 'i_Lc1', 'i_Lc2', 'i_C11', 'i_C12', 'i_C23', 'i_C24', 'i_S11', 'i_S21', 'i_HF2']
     l_min_keys = ['v_ds_S11_sw_on', 'v_ds_S23_sw_on', 'i_HF1_S11_sw_on', 'i_HF2_S23_sw_on']
     # values calculated from simulation results (only for overview of return dict keys)
     l_calc_keys = ['power_deviation', 'zvs_coverage', 'zvs_coverage1', 'zvs_coverage2',
@@ -140,16 +140,16 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     simtime = number_sim_periods / fs
 
     gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, timestep=timestep,
-                                              simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
+                                              simtime=simtime + t_dead1, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
     for vec_vvp in np.ndindex(mod_phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
         sim_params = {
             'v_dc1': mesh_V1[vec_vvp].item(),
             'v_dc2': mesh_V2[vec_vvp].item(),
-            'phi': mod_phi[vec_vvp].item() / np.pi * 180,
-            'tau1': mod_tau1[vec_vvp].item() / np.pi * 180,
-            'tau2': mod_tau2[vec_vvp].item() / np.pi * 180,
+            'phi': mod_phi[vec_vvp].item() * 180 / np.pi,
+            'tau1': mod_tau1[vec_vvp].item() * 180 / np.pi,
+            'tau2': mod_tau2[vec_vvp].item() * 180 / np.pi,
             't_dead1': mesh_t_dead1[vec_vvp].item(),
             't_dead2': mesh_t_dead2[vec_vvp].item(),
             'fs': mesh_fs[vec_vvp].item(),
