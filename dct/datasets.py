@@ -630,7 +630,17 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def get_max_peak_waveform(dab_dto: DabDTO, plot: bool = False):
+    def get_max_peak_waveform(dab_dto: DabDTO, plot: bool = False) -> list[np.array]:
+        """
+        Get the waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
+
+        :param dab_dto: DAB data transfer object (DTO)
+        :type dab_dto: DabDTO
+        :param plot: True to plot the results, mostly for understanding and debugging
+        :type plot: bool
+        :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform. All as a numpy array.
+        :rtype: List[np.array]
+        """
         i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted * dab_dto.input_config.n - dab_dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
