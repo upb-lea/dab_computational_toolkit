@@ -229,6 +229,19 @@ class DabDTO:
     gecko_results: GeckoResults | None
     gecko_waveforms: GeckoWaveforms | None
 
+@dataclasses.dataclass
+class TransformerTargetParameters:
+    """Target transformer parameters for the optimization."""
+
+    l_s12_target: float
+    l_h_target: float
+    n_target: float
+
+    # operating point: current waveforms and temperature
+    time_current_1_vec: np.ndarray
+    time_current_2_vec: np.ndarray
+    temperature: float
+
 class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
@@ -630,7 +643,7 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def get_max_peak_waveform(dab_dto: DabDTO, plot: bool = False) -> list[np.array]:
+    def get_max_peak_waveform(dab_dto: DabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:
         """
         Get the waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -666,3 +679,28 @@ class HandleDabDto:
             plt.show()
 
         return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
+
+    @staticmethod
+    def export_transformer_target_parameters_dto(dab_dto: DabDTO) -> TransformerTargetParameters:
+        """
+        Export the optimization parameters for the transformer optimization (inside FEMMT).
+
+        Note: the current counting system is adapted to FEMMT! The secondary current is counted negative!
+
+        :param dab_dto: DAB DTO
+        :type dab_dto: DabDTO
+        :return: DTO for the transformer optimization using FEMMT
+        :rtype: TransformerTargetParameters
+        """
+        # calculate the full 2pi waveform from the four given DAB currents
+        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform(dab_dto, plot=False)
+        # transfer 2pi periodic time into a real time
+        time = sorted_max_angles / 2 / np.pi / dab_dto.input_config.fs
+
+        return TransformerTargetParameters(
+            l_s12_target=dab_dto.input_config.Ls,
+            l_h_target=dab_dto.input_config.Lc2,
+            n_target=dab_dto.input_config.n,
+            time_current_1_vec=np.array([time, i_l_s_max_current_waveform]),
+            time_current_2_vec=np.array([time, -i_hf_2_max_current_waveform]),
+            temperature=100)
