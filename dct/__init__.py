@@ -13,3 +13,4 @@ from dct.plot_waveforms import *
 from dct.pareto_dtos import *
 from dct.pareto import *
 from dct.generalplotsettings import *
+from dct.functions_waveforms import *

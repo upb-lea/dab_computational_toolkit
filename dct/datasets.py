@@ -9,6 +9,7 @@ import logging
 # 3rd party libraries
 import numpy as np
 import transistordatabase as tdb
+from matplotlib import pyplot as plt
 
 # own libraries
 import dct
@@ -503,9 +504,9 @@ class HandleDabDto:
             return np.trapz(coss_v)
 
         coss_int = np.vectorize(integrate)
-        # get an qoss vector that has the resolution 1V from 0 to V_max
+        # get the qoss vector that has the resolution 1V from 0 to V_max
         v_vec = np.arange(coss.shape[0])
-        # get an qoss vector that fits the mesh_V scale
+        # get the qoss vector that fits the mesh_V scale
         # v_vec = np.linspace(V_min, V_max, int(V_step))
         qoss = coss_int(v_vec)
 
@@ -627,3 +628,31 @@ class HandleDabDto:
                          gecko_waveforms=gecko_waveforms)
 
         return dab_dto
+
+    @staticmethod
+    def get_max_peak_waveform(dab_dto: DabDTO, plot: bool = False):
+        i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted * dab_dto.input_config.n - dab_dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        max_index = (0, 0, 0)
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            max_index = vec_vvp if np.max(i_hf_2_sorted[vec_vvp]) > np.max(i_hf_2_sorted[max_index]) else max_index
+            if plot:
+                plt.plot(angles_rad_sorted[vec_vvp], i_hf_2_sorted[vec_vvp], color='grey')
+
+        i_hf_2_max_current_waveform = i_hf_2_sorted[max_index]
+        i_l_s_max_current_waveform = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))[max_index]
+
+        sorted_max_angles = dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index])
+        i_l_s_max_current_waveform = dct.functions_waveforms.full_current_waveform_from_currents(i_l_s_max_current_waveform)
+        i_hf_2_max_current_waveform = dct.functions_waveforms.full_current_waveform_from_currents(i_hf_2_max_current_waveform)
+
+        if plot:
+            plt.plot(sorted_max_angles, i_hf_2_max_current_waveform, color='red', label='peak current full waveform')
+            plt.grid()
+            plt.xlabel('Angle in rad')
+            plt.ylabel('Current in A')
+            plt.legend()
+            plt.show()
+
+        return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
