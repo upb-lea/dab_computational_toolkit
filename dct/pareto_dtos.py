@@ -2,8 +2,17 @@
 # python libraries
 import dataclasses
 
+# 3rd party libraries
 import numpy as np
 
+@dataclasses.dataclass
+class FilePaths:
+    """File paths for the sub simulation optimization parts."""
+
+    circuit: str
+    transformer: str
+    inductor: str
+    heat_sink: str
 
 @dataclasses.dataclass
 class DesignSpace:
@@ -18,14 +27,21 @@ class DesignSpace:
     transistor_1_list: list[str]
     transistor_2_list: list[str]
 
-    # misc
-    working_directory: str
-
 @dataclasses.dataclass
-class WorkArea:
+class OutputRange:
     """Definition of the DAB operating area."""
 
     v_1_min_nom_max_list: list
     v_2_min_nom_max_list: list
     p_min_nom_max_list: list
     steps_per_direction: int
+
+@dataclasses.dataclass
+class DabDesign:
+    """Config to optimize the Dual-Active Bridge (DAB) converter."""
+
+    dab_study_name: str
+    project_directory: str
+
+    design_space: DesignSpace
+    output_range: OutputRange

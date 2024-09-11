@@ -3,6 +3,8 @@
 import os
 import datetime
 import logging
+import json
+import pickle
 
 # 3rd party libraries
 import optuna
@@ -18,40 +20,118 @@ class Optimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     @staticmethod
-    def objective(trial: optuna.Trial, design_space: dct.DesignSpace, work_area: dct.WorkArea):
+    def set_up_folder_structure(project_directory: str) -> None:
+        """
+        Set up the folder structure for the subprojects.
+
+        :param project_directory: project directory
+        :type project_directory: str
+        """
+        project_directory = os.path.abspath(project_directory)
+        circuit_path = os.path.join(project_directory, "01_circuit")
+        transformer_path = os.path.join(project_directory, "02_transformer")
+        inductor_path = os.path.join(project_directory, "03_inductor")
+        heat_sink_path = os.path.join(project_directory, "04_heat_sink")
+
+        path_dict = {'circuit': circuit_path,
+                     'transformer': transformer_path,
+                     'inductor': inductor_path,
+                     'heat_sink': heat_sink_path}
+
+        for _, value in path_dict.items():
+            os.makedirs(value, exist_ok=True)
+
+        json_filepath = os.path.join(project_directory, "filepath_config.json")
+
+        with open(json_filepath, 'w', encoding='utf8') as json_file:
+            json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
+
+    @staticmethod
+    def load_filepaths(project_directory: str) -> dct.FilePaths:
+        """
+        Load file path of the subdirectories of the project.
+
+        :param project_directory: project directory file path
+        :type project_directory: str
+        :return: File path in a DTO
+        :rtype: dct.FilePaths
+        """
+        with open(f"{project_directory}/filepath_config.json", 'r', encoding='utf8') as json_file:
+            loaded_file = json.load(json_file)
+
+        file_path_dto = dct.FilePaths(
+            circuit=loaded_file["circuit"],
+            transformer=loaded_file["transformer"],
+            inductor=loaded_file["inductor"],
+            heat_sink=loaded_file["heat_sink"]
+        )
+        return file_path_dto
+
+    @staticmethod
+    def save_config(config: dct.DabDesign) -> None:
+        """
+        Save the configuration file as pickle file on the disk.
+
+        :param config: configuration
+        :type config: InductorOptimizationDTO
+        """
+        filepaths = Optimization.load_filepaths(config.project_directory)
+
+        os.makedirs(config.project_directory, exist_ok=True)
+        with open(f"{filepaths.circuit}/{config.dab_study_name}/{config.dab_study_name}.pkl", 'wb') as output:
+            pickle.dump(config, output, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def load_config(project_directory: str, circuit_study_name: str) -> dct.DabDesign:
+        """
+        Load pickle configuration file from disk.
+
+        :param project_directory: project directory
+        :type project_directory: str
+        :param circuit_study_name: name of the circuit study
+        :type circuit_study_name: str
+        :return: Configuration file as dct.DabDesign
+        :rtype: dct.DabDesign
+        """
+        filepaths = Optimization.load_filepaths(project_directory)
+        config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
+
+        with open(config_pickle_filepath, 'rb') as pickle_file_data:
+            return pickle.load(pickle_file_data)
+
+    @staticmethod
+    def objective(trial: optuna.Trial, dab_config: dct.DabDesign):
         """
         Objective function to optimize.
 
-        :param design_space: Component design space
-        :type design_space: DesignSpace
-        :param work_area: DAB operating area
-        :type work_area: WorkArea
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
         :param trial: optuna trial
         :type trial: optuna.Trial
 
         :return:
         """
-        f_s_suggest = trial.suggest_int('f_s_suggest', design_space.f_s_min_max_list[0], design_space.f_s_min_max_list[1])
-        l_s_suggest = trial.suggest_float('l_s_suggest', design_space.l_s_min_max_list[0], design_space.l_s_min_max_list[1])
-        l_1_suggest = trial.suggest_float('l_1_suggest', design_space.l_1_min_max_list[0], design_space.l_1_min_max_list[1])
-        l_2_suggest = trial.suggest_float('l_2_suggest', design_space.l_2_min_max_list[0], design_space.l_2_min_max_list[1])
-        n_suggest = trial.suggest_float('n_suggest', design_space.n_min_max_list[0], design_space.n_min_max_list[1])
-        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', design_space.transistor_1_list)
-        transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', design_space.transistor_2_list)
+        f_s_suggest = trial.suggest_int('f_s_suggest', dab_config.design_space.f_s_min_max_list[0], dab_config.design_space.f_s_min_max_list[1])
+        l_s_suggest = trial.suggest_float('l_s_suggest', dab_config.design_space.l_s_min_max_list[0], dab_config.design_space.l_s_min_max_list[1])
+        l_1_suggest = trial.suggest_float('l_1_suggest', dab_config.design_space.l_1_min_max_list[0], dab_config.design_space.l_1_min_max_list[1])
+        l_2_suggest = trial.suggest_float('l_2_suggest', dab_config.design_space.l_2_min_max_list[0], dab_config.design_space.l_2_min_max_list[1])
+        n_suggest = trial.suggest_float('n_suggest', dab_config.design_space.n_min_max_list[0], dab_config.design_space.n_min_max_list[1])
+        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', dab_config.design_space.transistor_1_list)
+        transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_list)
 
         dab_config = dct.HandleDabDto.init_config(
-            V1_nom=work_area.v_1_min_nom_max_list[1],
-            V1_min=work_area.v_1_min_nom_max_list[0],
-            V1_max=work_area.v_1_min_nom_max_list[2],
-            V1_step=work_area.steps_per_direction,
-            V2_nom=work_area.v_2_min_nom_max_list[1],
-            V2_min=work_area.v_2_min_nom_max_list[0],
-            V2_max=work_area.v_2_min_nom_max_list[2],
-            V2_step=work_area.steps_per_direction,
-            P_min=work_area.p_min_nom_max_list[0],
-            P_max=work_area.p_min_nom_max_list[2],
-            P_nom=work_area.p_min_nom_max_list[1],
-            P_step=work_area.steps_per_direction,
+            V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
+            V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
+            V1_max=dab_config.output_range.v_1_min_nom_max_list[2],
+            V1_step=dab_config.output_range.steps_per_direction,
+            V2_nom=dab_config.output_range.v_2_min_nom_max_list[1],
+            V2_min=dab_config.output_range.v_2_min_nom_max_list[0],
+            V2_max=dab_config.output_range.v_2_min_nom_max_list[2],
+            V2_step=dab_config.output_range.steps_per_direction,
+            P_min=dab_config.output_range.p_min_nom_max_list[0],
+            P_max=dab_config.output_range.p_min_nom_max_list[2],
+            P_nom=dab_config.output_range.p_min_nom_max_list[1],
+            P_step=dab_config.output_range.steps_per_direction,
             n=n_suggest,
             Ls=l_s_suggest,
             fs=f_s_suggest,
@@ -70,34 +150,36 @@ class Optimization:
         return dab_config.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
-    def start_proceed_study(study_name: str, design_space: dct.DesignSpace,
-                            work_area: dct.WorkArea, number_trials: int,
+    def start_proceed_study(dab_config: dct.DabDesign, number_trials: int,
                             storage: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
                             ) -> None:
         """Proceed a study which is stored as sqlite database.
 
-        :param study_name: Name of the study
-        :type study_name: str
-        :param design_space: Simulation configuration
-        :type design_space: ItoSingleInputConfig
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
         :param number_trials: Number of trials adding to the existing study
         :type number_trials: int
         :param storage: storage database, e.g. 'sqlite' or 'mysql'
         :type storage: str
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
-        :param work_area: work area
-        :type work_area: WorkArea
         """
-        if os.path.exists(f"{design_space.working_directory}/study_{study_name}.sqlite3"):
+        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+
+        circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.dab_study_name)
+        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.dab_study_name}.sqlite3")
+
+        if os.path.exists(circuit_study_sqlite_database):
             print("Existing study found. Proceeding.")
+        else:
+            os.makedirs(f"{filepaths.circuit}/{dab_config.dab_study_name}", exist_ok=True)
 
         # introduce study in storage, e.g. sqlite or mysql
         if storage == 'sqlite':
             # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
             # Means, in total there are four slashes including the path itself '////home/.../database.sqlite3'
-            storage = f"sqlite:///{design_space.working_directory}/study_{study_name}.sqlite3"
+            storage = f"sqlite:///{circuit_study_sqlite_database}"
         elif storage == 'mysql':
             storage = "mysql://monty@localhost/mydb",
 
@@ -109,14 +191,14 @@ class Optimization:
 
         directions = ['maximize', 'minimize']
 
-        func = lambda trial: dct.pareto.Optimization.objective(trial, design_space, work_area)
+        func = lambda trial: dct.pareto.Optimization.objective(trial, dab_config)
 
-        study_in_storage = optuna.create_study(study_name=study_name,
+        study_in_storage = optuna.create_study(study_name=dab_config.dab_study_name,
                                                storage=storage,
                                                directions=directions,
                                                load_if_exists=True, sampler=sampler)
 
-        study_in_memory = optuna.create_study(directions=directions, study_name=study_name, sampler=sampler)
+        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.dab_study_name, sampler=sampler)
         print(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
         study_in_memory.add_trials(study_in_storage.trials)
         study_in_memory.optimize(func, n_trials=number_trials, show_progress_bar=True)
@@ -124,41 +206,37 @@ class Optimization:
         study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
         print(f"Finished {number_trials} trials.")
         print(f"current time: {datetime.datetime.now()}")
+        Optimization.save_config(dab_config)
 
     @staticmethod
-    def show_study_results(study_name: str, config: dct.DesignSpace,) -> None:
+    def show_study_results(dab_config: dct.DabDesign) -> None:
         """Show the results of a study.
 
         A local .html file is generated under config.working_directory to store the interactive plotly plots on disk.
 
-        :param study_name: Name of the study
-        :type study_name: str
-        :param config: Integrated transformer configuration file
-        :type config: ItoSingleInputConfig
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
         """
-        study = optuna.create_study(study_name=study_name,
-                                    storage=f"sqlite:///{config.working_directory}/study_{study_name}.sqlite3",
-                                    load_if_exists=True)
+        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+        database_url = Optimization.create_sqlite_database_url(dab_config)
+        study = optuna.create_study(study_name=dab_config.dab_study_name,
+                                    storage=database_url, load_if_exists=True)
 
         fig = optuna.visualization.plot_pareto_front(study, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
         fig.update_layout(
-            title=f"{study_name}")
+            title=f"{dab_config.dab_study_name}")
         fig.write_html(
-            f"{config.working_directory}/{study_name}"
+            f"{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}"
             f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
         fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(study_name: str, design_space: dct.DesignSpace, work_area: dct.WorkArea, trial_number: int | None = None):
+    def load_dab_dto_from_study(dab_config: dct.DabDesign, trial_number: int | None = None):
         """
         Load a DAB-DTO from an optuna study.
 
-        :param study_name: study name to load
-        :type study_name: str
-        :param design_space: design space
-        :type design_space: DesignSpace
-        :param work_area: work area
-        :type work_area: WorkArea
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
         :param trial_number: trial number to load to the DTO
         :type trial_number: int
         :return:
@@ -166,25 +244,27 @@ class Optimization:
         if trial_number is None:
             raise NotImplementedError("needs to be implemented")
 
-        loaded_study = optuna.create_study(study_name=study_name,
-                                           storage=f"sqlite:///{design_space.working_directory}/study_{study_name}.sqlite3",
-                                           load_if_exists=True)
-        logging.info(f"The study '{study_name}' contains {len(loaded_study.trials)} trials.")
+        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+        database_url = Optimization.create_sqlite_database_url(dab_config)
+
+        loaded_study = optuna.create_study(study_name=dab_config.dab_study_name,
+                                           storage=database_url, load_if_exists=True)
+        logging.info(f"The study '{dab_config.dab_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
         dab_dto = dct.HandleDabDto.init_config(
-            V1_nom=work_area.v_1_min_nom_max_list[1],
-            V1_min=work_area.v_1_min_nom_max_list[0],
-            V1_max=work_area.v_1_min_nom_max_list[2],
-            V1_step=work_area.steps_per_direction,
-            V2_nom=work_area.v_2_min_nom_max_list[1],
-            V2_min=work_area.v_2_min_nom_max_list[0],
-            V2_max=work_area.v_2_min_nom_max_list[2],
-            V2_step=work_area.steps_per_direction,
-            P_min=work_area.p_min_nom_max_list[0],
-            P_max=work_area.p_min_nom_max_list[2],
-            P_nom=work_area.p_min_nom_max_list[1],
-            P_step=work_area.steps_per_direction,
+            V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
+            V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
+            V1_max=dab_config.output_range.v_1_min_nom_max_list[2],
+            V1_step=dab_config.output_range.steps_per_direction,
+            V2_nom=dab_config.output_range.v_2_min_nom_max_list[1],
+            V2_min=dab_config.output_range.v_2_min_nom_max_list[0],
+            V2_max=dab_config.output_range.v_2_min_nom_max_list[2],
+            V2_step=dab_config.output_range.steps_per_direction,
+            P_min=dab_config.output_range.p_min_nom_max_list[0],
+            P_max=dab_config.output_range.p_min_nom_max_list[2],
+            P_nom=dab_config.output_range.p_min_nom_max_list[1],
+            P_step=dab_config.output_range.steps_per_direction,
             n=trials_dict["n_suggest"],
             Ls=trials_dict["l_s_suggest"],
             fs=trials_dict["f_s_suggest"],
@@ -199,18 +279,76 @@ class Optimization:
         return dab_dto
 
     @staticmethod
-    def study_to_df(study_name: str, database_url: str):
+    def df_to_dab_dto_list(dab_config: dct.DabDesign, df: pd.DataFrame) -> list[dct.DabDTO]:
+        """
+        Load a DAB-DTO from an optuna study.
+
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
+        :param df: Pandas dataframe to convert to the DAB-DTO list
+        :type df: pd.DataFrame
+        :return:
+        """
+        logging.info(f"The study '{dab_config.dab_study_name}' contains {len(df)} trials.")
+
+        dab_dto_list = []
+
+        for index, _ in df.iterrows():
+
+            dab_dto = dct.HandleDabDto.init_config(
+                V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
+                V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
+                V1_max=dab_config.output_range.v_1_min_nom_max_list[2],
+                V1_step=dab_config.output_range.steps_per_direction,
+                V2_nom=dab_config.output_range.v_2_min_nom_max_list[1],
+                V2_min=dab_config.output_range.v_2_min_nom_max_list[0],
+                V2_max=dab_config.output_range.v_2_min_nom_max_list[2],
+                V2_step=dab_config.output_range.steps_per_direction,
+                P_min=dab_config.output_range.p_min_nom_max_list[0],
+                P_max=dab_config.output_range.p_min_nom_max_list[2],
+                P_nom=dab_config.output_range.p_min_nom_max_list[1],
+                P_step=dab_config.output_range.steps_per_direction,
+                n=df["params_n_suggest"][index].item(),
+                Ls=df["params_l_s_suggest"][index].item(),
+                fs=df["params_f_s_suggest"][index].item(),
+                Lc1=df["params_l_1_suggest"][index].item(),
+                Lc2=df["params_l_2_suggest"][index].item(),
+                c_par_1=16e-12,
+                c_par_2=16e-12,
+                transistor_name_1=df["params_transistor_1_name_suggest"][index],
+                transistor_name_2=df["params_transistor_2_name_suggest"][index]
+            )
+            dab_dto_list.append(dab_dto)
+
+        return dab_dto_list
+
+    @staticmethod
+    def study_to_df(dab_config: dct.DabDesign):
         """Create a dataframe from a study.
 
-        :param study_name: name of study
-        :type study_name: str
-        :param database_url: url of database
-        :type database_url: str
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
         """
-        loaded_study = optuna.create_study(study_name=study_name, storage=database_url, load_if_exists=True)
+        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+        database_url = Optimization.create_sqlite_database_url(dab_config)
+        loaded_study = optuna.create_study(study_name=dab_config.dab_study_name, storage=database_url, load_if_exists=True)
         df = loaded_study.trials_dataframe()
-        df.to_csv(f'{study_name}.csv')
+        df.to_csv(f'{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}.csv')
         return df
+
+    @staticmethod
+    def create_sqlite_database_url(dab_config: dct.DabDesign) -> str:
+        """
+        Create the DAB circuit optimization sqlite URL.
+
+        :param dab_config: DAB optimization configuration file
+        :type dab_config: dct.DabDesign
+        :return: SQLite URL
+        :rtype: str
+        """
+        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+        sqlite_storage_url = f"sqlite:///{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}.sqlite3"
+        return sqlite_storage_url
 
     @staticmethod
     def df_plot_pareto_front(df: pd.DataFrame, figure_size: tuple):

@@ -8,3 +8,4 @@ plotly
 # libraries provided by LEA
 pygeckocircuits2
 transistordatabase
+femmt
