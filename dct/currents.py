@@ -1,7 +1,7 @@
 """Current calculations, like RMS currents and currents for certain angles."""
 
 # own libraries
-from dct.datasets import Config, CalcFromConfig, CalcModulation
+from dct.datasets import CircuitConfig, CalcFromCircuitConfig, CalcModulation
 
 # 3rd party libraries
 import numpy as np
@@ -250,7 +250,7 @@ def calc_rms(alpha_rad: np.array, beta_rad: np.array, gamma_rad: np.array, delta
 
     return rms, angles_sorted, currents_sorted
 
-def calc_rms_currents(config: Config, calc_from_config: CalcFromConfig, calc_modulation: CalcModulation) -> tuple:
+def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitConfig, calc_modulation: CalcModulation) -> tuple:
     """
     Calculate the RMS currents in l_s, l_1 and l_2 for the given input values.
 

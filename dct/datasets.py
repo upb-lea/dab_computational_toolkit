@@ -16,7 +16,7 @@ import dct
 
 
 @dataclasses.dataclass(init=False)
-class Config:
+class CircuitConfig:
     """Input configuration DTO for the DAB converter."""
 
     V1_nom: np.array
@@ -69,7 +69,7 @@ class GeckoAdditionalParameters:
 
 
 @dataclasses.dataclass(init=False)
-class CalcFromConfig:
+class CalcFromCircuitConfig:
     """DTO calculates parameters for the next simulations, which can be derived from the input values."""
 
     mesh_V1: np.array
@@ -215,14 +215,14 @@ class GeckoWaveforms:
                 setattr(self, k, v)
 
 @dataclasses.dataclass
-class DabDTO:
+class CircuitDabDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.array
     name: str
     metadata: np.array
-    input_config: Config
-    calc_config: CalcFromConfig
+    input_config: CircuitConfig
+    calc_config: CalcFromCircuitConfig
     calc_modulation: CalcModulation
     calc_currents: CalcCurrents
     calc_losses: CalcLosses | None
@@ -300,28 +300,28 @@ class HandleDabDto:
         :type c_par_2: np.array
         :return:
         """
-        input_configuration = Config(V1_nom=np.array(V1_nom),
-                                     V1_min=np.array(V1_min),
-                                     V1_max=np.array(V1_max),
-                                     V1_step=np.array(V1_step),
-                                     V2_nom=np.array(V2_nom),
-                                     V2_min=np.array(V2_min),
-                                     V2_max=np.array(V2_max),
-                                     V2_step=np.array(V2_step),
-                                     P_min=np.array(P_min),
-                                     P_max=np.array(P_max),
-                                     P_nom=np.array(P_nom),
-                                     P_step=np.array(P_step),
-                                     n=np.array(n),
-                                     Ls=np.array(Ls),
-                                     Lc1=np.array(Lc1),
-                                     Lc2=np.array(Lc2),
-                                     fs=np.array(fs),
-                                     transistor_name_1=np.asarray(transistor_name_1),
-                                     transistor_name_2=np.asarray(transistor_name_2),
-                                     c_par_1=c_par_1,
-                                     c_par_2=c_par_2,
-                                     )
+        input_configuration = CircuitConfig(V1_nom=np.array(V1_nom),
+                                            V1_min=np.array(V1_min),
+                                            V1_max=np.array(V1_max),
+                                            V1_step=np.array(V1_step),
+                                            V2_nom=np.array(V2_nom),
+                                            V2_min=np.array(V2_min),
+                                            V2_max=np.array(V2_max),
+                                            V2_step=np.array(V2_step),
+                                            P_min=np.array(P_min),
+                                            P_max=np.array(P_max),
+                                            P_nom=np.array(P_nom),
+                                            P_step=np.array(P_step),
+                                            n=np.array(n),
+                                            Ls=np.array(Ls),
+                                            Lc1=np.array(Lc1),
+                                            Lc2=np.array(Lc2),
+                                            fs=np.array(fs),
+                                            transistor_name_1=np.asarray(transistor_name_1),
+                                            transistor_name_2=np.asarray(transistor_name_2),
+                                            c_par_1=c_par_1,
+                                            c_par_2=c_par_2,
+                                            )
         calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
         modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
 
@@ -341,7 +341,7 @@ class HandleDabDto:
             simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
             lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
 
-        dab_dto = DabDTO(
+        dab_dto = CircuitDabDTO(
             name=name,
             timestamp=None,
             metadata=None,
@@ -356,7 +356,7 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def add_gecko_simulation_results(dab_dto: DabDTO, get_waveforms: bool = False) -> DabDTO:
+    def add_gecko_simulation_results(dab_dto: CircuitDabDTO, get_waveforms: bool = False) -> CircuitDabDTO:
         """
         Add GeckoCIRCUITS simulation results to the given DTO.
 
@@ -393,14 +393,14 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def calculate_from_configuration(config: Config) -> CalcFromConfig:
+    def calculate_from_configuration(config: CircuitConfig) -> CalcFromCircuitConfig:
         """
         Calculate logical parameters which can be calculated from the input parameters.
 
         :param config: DAB configuration
-        :type config: Config
+        :type config: CircuitConfig
         :return: CalcFromConfig
-        :rtype: CalcFromConfig
+        :rtype: CalcFromCircuitConfig
         """
         mesh_V1, mesh_V2, mesh_P = np.meshgrid(
             np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
@@ -435,7 +435,7 @@ class HandleDabDto:
         if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_2.name}_c_oss.nlc")):
             transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=1.2)
 
-        calc_from_config = CalcFromConfig(
+        calc_from_config = CalcFromCircuitConfig(
             mesh_V1=mesh_V1,
             mesh_V2=mesh_V2,
             mesh_P=mesh_P,
@@ -453,7 +453,7 @@ class HandleDabDto:
         return calc_from_config
 
     @staticmethod
-    def calculate_modulation(config: Config, calc_config: CalcFromConfig) -> CalcModulation:
+    def calculate_modulation(config: CircuitConfig, calc_config: CalcFromCircuitConfig) -> CalcModulation:
         """
         Calculate the modulation parameters like phi, tau1, tau, ...
 
@@ -531,12 +531,12 @@ class HandleDabDto:
         return qoss
 
     @staticmethod
-    def save(dab_dto: DabDTO, name: str, comment: str, directory: str, timestamp: bool = True):
+    def save(dab_dto: CircuitDabDTO, name: str, comment: str, directory: str, timestamp: bool = True):
         """
         Save the DabDTO-class to a npz file.
 
         :param dab_dto: Class to store
-        :type dab_dto: DabDTO
+        :type dab_dto: CircuitDabDTO
         :param name: Filename
         :type name: str
         :param comment: Comment
@@ -588,6 +588,9 @@ class HandleDabDto:
         gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
 
         dict_to_store = {}
+        dict_to_store["timestamp"]=dab_dto.timestamp
+        dict_to_store["name"] = dab_dto.name
+        dict_to_store["metadata"] = dab_dto.metadata
         dict_to_store.update(input_dict_to_store)
         dict_to_store.update(calc_config_dict_to_store)
         dict_to_store.update(calc_modulation_dict_to_store)
@@ -601,7 +604,7 @@ class HandleDabDto:
         np.savez_compressed(**dict_to_store, file=file)
 
     @staticmethod
-    def load_from_file(file: str) -> DabDTO:
+    def load_from_file(file: str) -> CircuitDabDTO:
         """
         Load everything from the given .npz file.
 
@@ -634,26 +637,27 @@ class HandleDabDto:
         else:
             gecko_waveforms = None
 
-        dab_dto = DabDTO(timestamp=None,
-                         metadata=None,
-                         input_config=Config(**decoded_data),
-                         calc_config=CalcFromConfig(**decoded_data),
-                         calc_modulation=CalcModulation(**decoded_data),
-                         calc_currents=CalcCurrents(**decoded_data),
-                         calc_losses=None,
-                         gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
-                         gecko_results=gecko_results,
-                         gecko_waveforms=gecko_waveforms)
+        dab_dto = CircuitDabDTO(name=decoded_data["name"],
+                                timestamp=decoded_data["timestamp"],
+                                metadata=decoded_data["metadata"],
+                                input_config=CircuitConfig(**decoded_data),
+                                calc_config=CalcFromCircuitConfig(**decoded_data),
+                                calc_modulation=CalcModulation(**decoded_data),
+                                calc_currents=CalcCurrents(**decoded_data),
+                                calc_losses=None,
+                                gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
+                                gecko_results=gecko_results,
+                                gecko_waveforms=gecko_waveforms)
 
         return dab_dto
 
     @staticmethod
-    def get_max_peak_waveform(dab_dto: DabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:
+    def get_max_peak_waveform(dab_dto: CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:
         """
         Get the waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
         :param dab_dto: DAB data transfer object (DTO)
-        :type dab_dto: DabDTO
+        :type dab_dto: CircuitDabDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform. All as a numpy array.
@@ -686,14 +690,14 @@ class HandleDabDto:
         return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
 
     @staticmethod
-    def export_transformer_target_parameters_dto(dab_dto: DabDTO) -> TransformerTargetParameters:
+    def export_transformer_target_parameters_dto(dab_dto: CircuitDabDTO) -> TransformerTargetParameters:
         """
         Export the optimization parameters for the transformer optimization (inside FEMMT).
 
         Note: the current counting system is adapted to FEMMT! The secondary current is counted negative!
 
         :param dab_dto: DAB DTO
-        :type dab_dto: DabDTO
+        :type dab_dto: CircuitDabDTO
         :return: DTO for the transformer optimization using FEMMT
         :rtype: TransformerTargetParameters
         """

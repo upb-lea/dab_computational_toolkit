@@ -6,7 +6,7 @@ import dataclasses
 import numpy as np
 
 @dataclasses.dataclass
-class FilePaths:
+class ParetoFilePaths:
     """File paths for the sub simulation optimization parts."""
 
     circuit: str
@@ -15,7 +15,7 @@ class FilePaths:
     heat_sink: str
 
 @dataclasses.dataclass
-class DesignSpace:
+class CircuitParetoDesignSpace:
     """Definition of the hardware design space for electronic components."""
 
     # DAB optimization parameters
@@ -28,7 +28,7 @@ class DesignSpace:
     transistor_2_list: list[str]
 
 @dataclasses.dataclass
-class OutputRange:
+class CircuitOutputRange:
     """Definition of the DAB operating area."""
 
     v_1_min_nom_max_list: list
@@ -37,11 +37,11 @@ class OutputRange:
     steps_per_direction: int
 
 @dataclasses.dataclass
-class DabDesign:
+class CircuitParetoDabDesign:
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
 
     dab_study_name: str
     project_directory: str
 
-    design_space: DesignSpace
-    output_range: OutputRange
+    design_space: CircuitParetoDesignSpace
+    output_range: CircuitOutputRange

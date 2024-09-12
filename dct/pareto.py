@@ -21,7 +21,7 @@ class Optimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     @staticmethod
-    def set_up_folder_structure(config: dct.DabDesign) -> None:
+    def set_up_folder_structure(config: dct.CircuitParetoDabDesign) -> None:
         """
         Set up the folder structure for the subprojects.
 
@@ -48,14 +48,14 @@ class Optimization:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
-    def load_filepaths(project_directory: str) -> dct.FilePaths:
+    def load_filepaths(project_directory: str) -> dct.ParetoFilePaths:
         """
         Load file path of the subdirectories of the project.
 
         :param project_directory: project directory file path
         :type project_directory: str
         :return: File path in a DTO
-        :rtype: dct.FilePaths
+        :rtype: dct.ParetoFilePaths
         """
         filepath_config = f"{project_directory}/filepath_config.json"
         if os.path.exists(filepath_config):
@@ -64,7 +64,7 @@ class Optimization:
         else:
             raise ValueError("Project does not exist.")
 
-        file_path_dto = dct.FilePaths(
+        file_path_dto = dct.ParetoFilePaths(
             circuit=loaded_file["circuit"],
             transformer=loaded_file["transformer"],
             inductor=loaded_file["inductor"],
@@ -73,7 +73,7 @@ class Optimization:
         return file_path_dto
 
     @staticmethod
-    def save_config(config: dct.DabDesign) -> None:
+    def save_config(config: dct.CircuitParetoDabDesign) -> None:
         """
         Save the configuration file as pickle file on the disk.
 
@@ -87,7 +87,7 @@ class Optimization:
             pickle.dump(config, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_config(project_directory: str, circuit_study_name: str) -> dct.DabDesign:
+    def load_config(project_directory: str, circuit_study_name: str) -> dct.CircuitParetoDabDesign:
         """
         Load pickle configuration file from disk.
 
@@ -96,7 +96,7 @@ class Optimization:
         :param circuit_study_name: name of the circuit study
         :type circuit_study_name: str
         :return: Configuration file as dct.DabDesign
-        :rtype: dct.DabDesign
+        :rtype: dct.CircuitParetoDabDesign
         """
         filepaths = Optimization.load_filepaths(project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
@@ -105,12 +105,12 @@ class Optimization:
             return pickle.load(pickle_file_data)
 
     @staticmethod
-    def objective(trial: optuna.Trial, dab_config: dct.DabDesign):
+    def objective(trial: optuna.Trial, dab_config: dct.CircuitParetoDabDesign):
         """
         Objective function to optimize.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         :param trial: optuna trial
         :type trial: optuna.Trial
 
@@ -156,14 +156,14 @@ class Optimization:
         return dab_config.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
-    def start_proceed_study(dab_config: dct.DabDesign, number_trials: int,
+    def start_proceed_study(dab_config: dct.CircuitParetoDabDesign, number_trials: int,
                             storage: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
                             ) -> None:
         """Proceed a study which is stored as sqlite database.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         :param number_trials: Number of trials adding to the existing study
         :type number_trials: int
         :param storage: storage database, e.g. 'sqlite' or 'mysql'
@@ -231,13 +231,13 @@ class Optimization:
         Optimization.save_config(dab_config)
 
     @staticmethod
-    def show_study_results(dab_config: dct.DabDesign) -> None:
+    def show_study_results(dab_config: dct.CircuitParetoDabDesign) -> None:
         """Show the results of a study.
 
         A local .html file is generated under config.working_directory to store the interactive plotly plots on disk.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         """
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
         database_url = Optimization.create_sqlite_database_url(dab_config)
@@ -253,12 +253,12 @@ class Optimization:
         fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(dab_config: dct.DabDesign, trial_number: int | None = None):
+    def load_dab_dto_from_study(dab_config: dct.CircuitParetoDabDesign, trial_number: int | None = None):
         """
         Load a DAB-DTO from an optuna study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         :param trial_number: trial number to load to the DTO
         :type trial_number: int
         :return:
@@ -302,12 +302,12 @@ class Optimization:
         return dab_dto
 
     @staticmethod
-    def df_to_dab_dto_list(dab_config: dct.DabDesign, df: pd.DataFrame) -> list[dct.DabDTO]:
+    def df_to_dab_dto_list(dab_config: dct.CircuitParetoDabDesign, df: pd.DataFrame) -> list[dct.CircuitDabDTO]:
         """
         Load a DAB-DTO from an optuna study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         :param df: Pandas dataframe to convert to the DAB-DTO list
         :type df: pd.DataFrame
         :return:
@@ -347,11 +347,11 @@ class Optimization:
         return dab_dto_list
 
     @staticmethod
-    def study_to_df(dab_config: dct.DabDesign):
+    def study_to_df(dab_config: dct.CircuitParetoDabDesign):
         """Create a dataframe from a study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         """
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
         database_url = Optimization.create_sqlite_database_url(dab_config)
@@ -361,12 +361,12 @@ class Optimization:
         return df
 
     @staticmethod
-    def create_sqlite_database_url(dab_config: dct.DabDesign) -> str:
+    def create_sqlite_database_url(dab_config: dct.CircuitParetoDabDesign) -> str:
         """
         Create the DAB circuit optimization sqlite URL.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: dct.DabDesign
+        :type dab_config: dct.CircuitParetoDabDesign
         :return: SQLite URL
         :rtype: str
         """

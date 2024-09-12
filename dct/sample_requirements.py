@@ -3,9 +3,9 @@
 import math
 
 # own libraries
-from dct.datasets import DabDTO, HandleDabDto
+from dct.datasets import CircuitDabDTO, HandleDabDto
 
-def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direction: int | None = None) -> DabDTO:
+def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direction: int | None = None) -> CircuitDabDTO:
     """
     Load some predefined DAB specification from different lab samples or papers.
 
