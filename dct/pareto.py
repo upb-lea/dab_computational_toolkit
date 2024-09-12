@@ -11,6 +11,7 @@ import optuna
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
+import deepdiff
 
 # own libraries
 import dct
@@ -20,22 +21,22 @@ class Optimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     @staticmethod
-    def set_up_folder_structure(project_directory: str) -> None:
+    def set_up_folder_structure(config: dct.DabDesign) -> None:
         """
         Set up the folder structure for the subprojects.
 
-        :param project_directory: project directory
-        :type project_directory: str
+        :param config: configuration
+        :type config: InductorOptimizationDTO
         """
-        project_directory = os.path.abspath(project_directory)
+        project_directory = os.path.abspath(config.project_directory)
         circuit_path = os.path.join(project_directory, "01_circuit")
-        transformer_path = os.path.join(project_directory, "02_transformer")
-        inductor_path = os.path.join(project_directory, "03_inductor")
+        inductor_path = os.path.join(project_directory, "02_inductor")
+        transformer_path = os.path.join(project_directory, "03_transformer")
         heat_sink_path = os.path.join(project_directory, "04_heat_sink")
 
         path_dict = {'circuit': circuit_path,
-                     'transformer': transformer_path,
                      'inductor': inductor_path,
+                     'transformer': transformer_path,
                      'heat_sink': heat_sink_path}
 
         for _, value in path_dict.items():
@@ -56,8 +57,12 @@ class Optimization:
         :return: File path in a DTO
         :rtype: dct.FilePaths
         """
-        with open(f"{project_directory}/filepath_config.json", 'r', encoding='utf8') as json_file:
-            loaded_file = json.load(json_file)
+        filepath_config = f"{project_directory}/filepath_config.json"
+        if os.path.exists(filepath_config):
+            with open(filepath_config, 'r', encoding='utf8') as json_file:
+                loaded_file = json.load(json_file)
+        else:
+            raise ValueError("Project does not exist.")
 
         file_path_dto = dct.FilePaths(
             circuit=loaded_file["circuit"],
@@ -120,6 +125,7 @@ class Optimization:
         transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_list)
 
         dab_config = dct.HandleDabDto.init_config(
+            name=dab_config.dab_study_name,
             V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
             V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
             V1_max=dab_config.output_range.v_1_min_nom_max_list[2],
@@ -165,6 +171,7 @@ class Optimization:
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
+        Optimization.set_up_folder_structure(dab_config)
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
 
         circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.dab_study_name)
@@ -188,6 +195,21 @@ class Optimization:
         # .WARNING: fails and warnings
         # .ERROR: only errors
         optuna.logging.set_verbosity(optuna.logging.ERROR)
+
+        # check for differences with the old configuration file
+        config_on_disk_filepath = f"{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}.pkl"
+        if os.path.exists(config_on_disk_filepath):
+            config_on_disk = Optimization.load_config(dab_config.project_directory, dab_config.dab_study_name)
+            difference = deepdiff.DeepDiff(dab_config, config_on_disk, ignore_order=True, significant_digits=10)
+            if difference:
+                print("Configuration file has changed from previous simulation. Do you want to proceed?")
+                print(f"Difference: {difference}")
+                read_text = input("'1' or Enter: proceed, 'any key': abort\nYour choice: ")
+                if read_text == str(1) or read_text == "":
+                    print("proceed...")
+                else:
+                    print("abort...")
+                    return None
 
         directions = ['maximize', 'minimize']
 
@@ -253,6 +275,7 @@ class Optimization:
         trials_dict = loaded_study.trials[trial_number].params
 
         dab_dto = dct.HandleDabDto.init_config(
+            name=str(trial_number),
             V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
             V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
             V1_max=dab_config.output_range.v_1_min_nom_max_list[2],
@@ -296,6 +319,7 @@ class Optimization:
         for index, _ in df.iterrows():
 
             dab_dto = dct.HandleDabDto.init_config(
+                name=str(df["number"][index].item()),
                 V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
                 V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
                 V1_max=dab_config.output_range.v_1_min_nom_max_list[2],

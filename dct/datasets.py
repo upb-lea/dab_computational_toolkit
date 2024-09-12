@@ -219,6 +219,7 @@ class DabDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.array
+    name: str
     metadata: np.array
     input_config: Config
     calc_config: CalcFromConfig
@@ -246,13 +247,15 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(V1_nom: np.array, V1_min: np.array, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
+    def init_config(name: str, V1_nom: np.array, V1_min: np.array, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
                     V2_max: np.array, V2_step: np.array, P_min: np.array, P_max: np.array, P_nom: np.array, P_step: np.array,
                     n: np.array, Ls: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
                     transistor_name_1: str, transistor_name_2: str, c_par_1, c_par_2):
         """
         Initialize the DAB structure.
 
+        :param name: name of the simulation
+        :type name: str
         :param V1_nom: V1 nominal voltage
         :type V1_nom: np.array
         :param V1_min: V1 minimum voltage
@@ -338,16 +341,18 @@ class HandleDabDto:
             simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
             lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
 
-        dab_dto = DabDTO(timestamp=None,
-                         metadata=None,
-                         input_config=input_configuration,
-                         calc_config=calc_config,
-                         calc_modulation=modulation_parameters,
-                         calc_currents=calc_currents,
-                         calc_losses=None,
-                         gecko_additional_params=gecko_additional_params,
-                         gecko_results=None,
-                         gecko_waveforms=None)
+        dab_dto = DabDTO(
+            name=name,
+            timestamp=None,
+            metadata=None,
+            input_config=input_configuration,
+            calc_config=calc_config,
+            calc_modulation=modulation_parameters,
+            calc_currents=calc_currents,
+            calc_losses=None,
+            gecko_additional_params=gecko_additional_params,
+            gecko_results=None,
+            gecko_waveforms=None)
         return dab_dto
 
     @staticmethod

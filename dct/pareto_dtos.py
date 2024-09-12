@@ -10,8 +10,8 @@ class FilePaths:
     """File paths for the sub simulation optimization parts."""
 
     circuit: str
-    transformer: str
     inductor: str
+    transformer: str
     heat_sink: str
 
 @dataclasses.dataclass

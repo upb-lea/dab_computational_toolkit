@@ -207,8 +207,6 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             if get_waveforms:
                 result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
 
-                print(result_df.head())
-
                 for key in waveform_keys:
                     gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()
                 gecko_waveforms_single_simulation['time'] = result_df['time'].to_numpy()
