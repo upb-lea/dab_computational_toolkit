@@ -83,7 +83,7 @@ class Optimization:
         filepaths = Optimization.load_filepaths(config.project_directory)
 
         os.makedirs(config.project_directory, exist_ok=True)
-        with open(f"{filepaths.circuit}/{config.dab_study_name}/{config.dab_study_name}.pkl", 'wb') as output:
+        with open(f"{filepaths.circuit}/{config.circuit_study_name}/{config.circuit_study_name}.pkl", 'wb') as output:
             pickle.dump(config, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
@@ -125,7 +125,7 @@ class Optimization:
         transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_list)
 
         dab_config = dct.HandleDabDto.init_config(
-            name=dab_config.dab_study_name,
+            name=dab_config.circuit_study_name,
             V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
             V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
             V1_max=dab_config.output_range.v_1_min_nom_max_list[2],
@@ -174,13 +174,13 @@ class Optimization:
         Optimization.set_up_folder_structure(dab_config)
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
 
-        circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.dab_study_name)
-        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.dab_study_name}.sqlite3")
+        circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.circuit_study_name)
+        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.circuit_study_name}.sqlite3")
 
         if os.path.exists(circuit_study_sqlite_database):
             print("Existing study found. Proceeding.")
         else:
-            os.makedirs(f"{filepaths.circuit}/{dab_config.dab_study_name}", exist_ok=True)
+            os.makedirs(f"{filepaths.circuit}/{dab_config.circuit_study_name}", exist_ok=True)
 
         # introduce study in storage, e.g. sqlite or mysql
         if storage == 'sqlite':
@@ -197,9 +197,9 @@ class Optimization:
         optuna.logging.set_verbosity(optuna.logging.ERROR)
 
         # check for differences with the old configuration file
-        config_on_disk_filepath = f"{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}.pkl"
+        config_on_disk_filepath = f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
-            config_on_disk = Optimization.load_config(dab_config.project_directory, dab_config.dab_study_name)
+            config_on_disk = Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
             difference = deepdiff.DeepDiff(dab_config, config_on_disk, ignore_order=True, significant_digits=10)
             if difference:
                 print("Configuration file has changed from previous simulation. Do you want to proceed?")
@@ -215,12 +215,12 @@ class Optimization:
 
         func = lambda trial: dct.pareto.Optimization.objective(trial, dab_config)
 
-        study_in_storage = optuna.create_study(study_name=dab_config.dab_study_name,
+        study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
                                                storage=storage,
                                                directions=directions,
                                                load_if_exists=True, sampler=sampler)
 
-        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.dab_study_name, sampler=sampler)
+        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.circuit_study_name, sampler=sampler)
         print(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
         study_in_memory.add_trials(study_in_storage.trials)
         study_in_memory.optimize(func, n_trials=number_trials, show_progress_bar=True)
@@ -241,14 +241,14 @@ class Optimization:
         """
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
         database_url = Optimization.create_sqlite_database_url(dab_config)
-        study = optuna.create_study(study_name=dab_config.dab_study_name,
+        study = optuna.create_study(study_name=dab_config.circuit_study_name,
                                     storage=database_url, load_if_exists=True)
 
         fig = optuna.visualization.plot_pareto_front(study, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
         fig.update_layout(
-            title=f"{dab_config.dab_study_name}")
+            title=f"{dab_config.circuit_study_name}")
         fig.write_html(
-            f"{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}"
+            f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}"
             f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
         fig.show()
 
@@ -269,9 +269,9 @@ class Optimization:
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
         database_url = Optimization.create_sqlite_database_url(dab_config)
 
-        loaded_study = optuna.create_study(study_name=dab_config.dab_study_name,
+        loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name,
                                            storage=database_url, load_if_exists=True)
-        logging.info(f"The study '{dab_config.dab_study_name}' contains {len(loaded_study.trials)} trials.")
+        logging.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
         dab_dto = dct.HandleDabDto.init_config(
@@ -312,7 +312,7 @@ class Optimization:
         :type df: pd.DataFrame
         :return:
         """
-        logging.info(f"The study '{dab_config.dab_study_name}' contains {len(df)} trials.")
+        logging.info(f"The study '{dab_config.circuit_study_name}' contains {len(df)} trials.")
 
         dab_dto_list = []
 
@@ -355,9 +355,9 @@ class Optimization:
         """
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
         database_url = Optimization.create_sqlite_database_url(dab_config)
-        loaded_study = optuna.create_study(study_name=dab_config.dab_study_name, storage=database_url, load_if_exists=True)
+        loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
         df = loaded_study.trials_dataframe()
-        df.to_csv(f'{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}.csv')
+        df.to_csv(f'{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.csv')
         return df
 
     @staticmethod
@@ -371,7 +371,7 @@ class Optimization:
         :rtype: str
         """
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
-        sqlite_storage_url = f"sqlite:///{filepaths.circuit}/{dab_config.dab_study_name}/{dab_config.dab_study_name}.sqlite3"
+        sqlite_storage_url = f"sqlite:///{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.sqlite3"
         return sqlite_storage_url
 
     @staticmethod

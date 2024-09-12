@@ -40,7 +40,7 @@ class CircuitOutputRange:
 class CircuitParetoDabDesign:
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
 
-    dab_study_name: str
+    circuit_study_name: str
     project_directory: str
 
     design_space: CircuitParetoDesignSpace

@@ -637,7 +637,7 @@ class HandleDabDto:
         else:
             gecko_waveforms = None
 
-        dab_dto = CircuitDabDTO(name=decoded_data["name"],
+        dab_dto = CircuitDabDTO(name=str(decoded_data["name"]),
                                 timestamp=decoded_data["timestamp"],
                                 metadata=decoded_data["metadata"],
                                 input_config=CircuitConfig(**decoded_data),
@@ -652,9 +652,9 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def get_max_peak_waveform(dab_dto: CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:
+    def get_max_peak_waveform_transformer(dab_dto: CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:
         """
-        Get the waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
+        Get the transformer waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
         :param dab_dto: DAB data transfer object (DTO)
         :type dab_dto: CircuitDabDTO
@@ -670,7 +670,8 @@ class HandleDabDto:
         for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
             max_index = vec_vvp if np.max(i_hf_2_sorted[vec_vvp]) > np.max(i_hf_2_sorted[max_index]) else max_index
             if plot:
-                plt.plot(angles_rad_sorted[vec_vvp], i_hf_2_sorted[vec_vvp], color='grey')
+                plt.plot(dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
+                         dct.functions_waveforms.full_current_waveform_from_currents(i_hf_2_sorted[vec_vvp]), color='grey')
 
         i_hf_2_max_current_waveform = i_hf_2_sorted[max_index]
         i_l_s_max_current_waveform = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))[max_index]
@@ -690,6 +691,43 @@ class HandleDabDto:
         return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
 
     @staticmethod
+    def get_max_peak_waveform_inductor(dab_dto: CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array]:
+        """
+        Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
+
+        :param dab_dto: DAB data transfer object (DTO)
+        :type dab_dto: CircuitDabDTO
+        :param plot: True to plot the results, mostly for understanding and debugging
+        :type plot: bool
+        :return: sorted_max_angles, i_l_s_max_current_waveform, i_l1_max_current_waveform. All as a numpy array.
+        :rtype: List[np.array]
+        """
+        i_l1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        max_index = (0, 0, 0)
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            max_index = vec_vvp if np.max(i_l1_sorted[vec_vvp]) > np.max(i_l1_sorted[max_index]) else max_index
+            if plot:
+                plt.plot(dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
+                         dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp]), color='grey')
+
+        i_l1_max_current_waveform = i_l1_sorted[max_index]
+
+        sorted_max_angles = dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index])
+        i_l1_max_current_waveform = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_max_current_waveform)
+
+        if plot:
+            plt.plot(sorted_max_angles, i_l1_max_current_waveform, color='red', label='peak current full waveform')
+            plt.grid()
+            plt.xlabel('Angle in rad')
+            plt.ylabel('Current in A')
+            plt.legend()
+            plt.show()
+
+        return sorted_max_angles, i_l1_max_current_waveform
+
+    @staticmethod
     def export_transformer_target_parameters_dto(dab_dto: CircuitDabDTO) -> TransformerTargetParameters:
         """
         Export the optimization parameters for the transformer optimization (inside FEMMT).
@@ -702,7 +740,7 @@ class HandleDabDto:
         :rtype: TransformerTargetParameters
         """
         # calculate the full 2pi waveform from the four given DAB currents
-        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform(dab_dto, plot=False)
+        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_transformer(dab_dto, plot=False)
         # transfer 2pi periodic time into a real time
         time = sorted_max_angles / 2 / np.pi / dab_dto.input_config.fs
 

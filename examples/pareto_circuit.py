@@ -25,7 +25,7 @@ output_range = dct.CircuitOutputRange(
 )
 
 dab_config = dct.CircuitParetoDabDesign(
-    dab_study_name='circuit_trial_1',
+    circuit_study_name='circuit_trial_1',
     project_directory=os.path.abspath(os.path.join(os.curdir, "2024-09-12_project_dab_paper")),
 
     design_space=design_space,
@@ -33,14 +33,14 @@ dab_config = dct.CircuitParetoDabDesign(
 )
 
 # action = 'run_new_study'
-action = 'show_study_results'
-# action = 'filter_study_results_and_run_gecko'
+# action = 'show_study_results'
+action = 'filter_study_results_and_run_gecko'
 
 if action == 'run_new_study':
-    dct.Optimization.start_proceed_study(dab_config, 50)
+    dct.Optimization.start_proceed_study(dab_config, 10000)
 
 elif action == 'show_study_results':
-    dab_config = dct.Optimization.load_config(dab_config.project_directory, dab_config.dab_study_name)
+    dab_config = dct.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
     dct.Optimization.show_study_results(dab_config)
 
 elif action == 'filter_study_results_and_run_gecko':
@@ -53,7 +53,7 @@ elif action == 'filter_study_results_and_run_gecko':
 
     for dto in smallest_dto_list:
         print(f"{dto.name=}")
-        dto_directory = os.path.join(folders.circuit, dab_config.dab_study_name, "filtered_results")
+        dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
         dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
         dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
