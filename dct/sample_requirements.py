@@ -17,6 +17,7 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
     """
     if dab_configuration_name.lower() == "initial":
         dab_config = HandleDabDto.init_config(
+            name=dab_configuration_name,
             V1_nom=700,
             V1_min=600,
             V1_max=800,
@@ -44,6 +45,7 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
         return dab_config
     elif dab_configuration_name.lower() == "everts":
         dab_config = HandleDabDto.init_config(
+            name=dab_configuration_name,
             V1_nom=250,
             V1_min=125,
             V1_max=325,
@@ -72,6 +74,7 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
         # Set the basic DAB Specification
         n = 1 / 2.99
         dab_config = HandleDabDto.init_config(
+            name=dab_configuration_name,
             V2_nom=700,
             V2_min=600,
             V2_max=800,
@@ -100,6 +103,7 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
     elif dab_configuration_name.lower() == "dab_ds_default_gv8_sim":
         n = 2.99
         dab_config = HandleDabDto.init_config(
+            name=dab_configuration_name,
             V1_nom=700,
             V1_min=700,
             V1_max=700,
