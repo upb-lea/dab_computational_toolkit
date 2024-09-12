@@ -588,7 +588,7 @@ class HandleDabDto:
         gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
 
         dict_to_store = {}
-        dict_to_store["timestamp"]=dab_dto.timestamp
+        dict_to_store["timestamp"] = dab_dto.timestamp
         dict_to_store["name"] = dab_dto.name
         dict_to_store["metadata"] = dab_dto.metadata
         dict_to_store.update(input_dict_to_store)
