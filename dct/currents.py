@@ -260,7 +260,7 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
     :param config: design configuration DTO
     :param calc_from_config: Additional input parameters calculated once from the input configuration
     :param calc_modulation: Calculated modulation parameters DTO
-    :return: i_l_s_rms, i_l_1_rms, i_l_2_rms
+    :return: i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
     :rtype: tuple
     """
     alpha_rad = np.pi - calc_modulation.tau1

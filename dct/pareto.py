@@ -87,18 +87,18 @@ class Optimization:
             pickle.dump(config, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_config(project_directory: str, circuit_study_name: str) -> dct.CircuitParetoDabDesign:
+    def load_config(circuit_project_directory: str, circuit_study_name: str) -> dct.CircuitParetoDabDesign:
         """
         Load pickle configuration file from disk.
 
-        :param project_directory: project directory
-        :type project_directory: str
+        :param circuit_project_directory: project directory
+        :type circuit_project_directory: str
         :param circuit_study_name: name of the circuit study
         :type circuit_study_name: str
         :return: Configuration file as dct.DabDesign
         :rtype: dct.CircuitParetoDabDesign
         """
-        filepaths = Optimization.load_filepaths(project_directory)
+        filepaths = Optimization.load_filepaths(circuit_project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
 
         with open(config_pickle_filepath, 'rb') as pickle_file_data:
@@ -153,7 +153,7 @@ class Optimization:
         i_cost_matrix = dab_config.calc_currents.i_hf_1_rms ** 2 + dab_config.calc_currents.i_hf_2_rms ** 2
         i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
 
-        return dab_config.calc_modulation.mask_zvs_coverage * 100, i_cost
+        return dab_config.calc_modulation.mask_zvs_coverage_notnan * 100, i_cost
 
     @staticmethod
     def start_proceed_study(dab_config: dct.CircuitParetoDabDesign, number_trials: int,
