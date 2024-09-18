@@ -37,6 +37,21 @@ jobs:
             pip install pylint
             pylint $(git ls-files '*.py')
 
+      - name: install transistor database develop version
+        run: |
+          pwd
+          ls
+          wget https://github.com/upb-lea/transistordatabase/archive/refs/heads/main.zip
+          unzip main.zip
+          rm main.zip
+          cd transistordatabase-main
+          pip install -e .
+          cd ..
+          echo show folder path
+          pwd
+          echo show folder structure:
+          ls 
+
       - name: install the package
         run: |
             pip install -e .

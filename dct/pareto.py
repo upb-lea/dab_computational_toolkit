@@ -149,6 +149,10 @@ class Optimization:
             transistor_name_2=transistor_2_name_suggest
         )
 
+        if (np.any(np.isnan(dab_config.calc_modulation.phi)) or np.any(np.isnan(dab_config.calc_modulation.tau1)) \
+                or np.any(np.isnan(dab_config.calc_modulation.tau2))):
+            return float('nan'), float('nan')
+
         # Calculate the cost function. Mean for not-NaN values, as there will be too many NaN results.
         i_cost_matrix = dab_config.calc_currents.i_hf_1_rms ** 2 + dab_config.calc_currents.i_hf_2_rms ** 2
         i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
