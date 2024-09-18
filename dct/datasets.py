@@ -149,6 +149,19 @@ class CalcLosses:
                 setattr(self, k, v)
 
 @dataclasses.dataclass(init=False)
+class InductorLosses:
+    """DTO contains the inductor losses."""
+
+    p_combined_losses: np.array
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+
+@dataclasses.dataclass(init=False)
 class GeckoResults:
     """DTO contains the result of the GeckoCIRCUITS simulation."""
 
@@ -229,6 +242,7 @@ class CircuitDabDTO:
     gecko_additional_params: GeckoAdditionalParameters
     gecko_results: GeckoResults | None
     gecko_waveforms: GeckoWaveforms | None
+    inductor_losses: InductorLosses | None
 
 @dataclasses.dataclass
 class TransformerTargetParameters:
@@ -586,6 +600,7 @@ class HandleDabDto:
         calc_losses_dict_to_store = dataclasses.asdict(dab_dto.calc_losses) if isinstance(dab_dto.calc_losses, CalcLosses) else None
         gecko_additional_params_dict_to_store = dataclasses.asdict(dab_dto.gecko_additional_params)
         gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
+        inductor_losses_dict_to_store = dataclasses.asdict(dab_dto.inductor_losses) if isinstance(dab_dto.inductor_losses, InductorLosses) else None
 
         dict_to_store = {}
         dict_to_store["timestamp"] = dab_dto.timestamp
@@ -600,6 +615,8 @@ class HandleDabDto:
         dict_to_store.update(gecko_additional_params_dict_to_store)
         if isinstance(dab_dto.gecko_results, GeckoResults):
             dict_to_store.update(gecko_results_dict_to_store)
+        if isinstance(dab_dto.inductor_losses, InductorLosses):
+            dict_to_store.update(inductor_losses_dict_to_store)
 
         np.savez_compressed(**dict_to_store, file=file)
 
@@ -624,6 +641,7 @@ class HandleDabDto:
         decoded_data = np.load(file, allow_pickle=True)
         keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
         keys_of_gecko_waveform_dto = [field.name for field in dataclasses.fields(GeckoWaveforms)]
+        keys_of_inductor_losses_dto = [field.name for field in dataclasses.fields(InductorLosses)]
 
         # if loaded results have all keys that are mandatory for the GeckoResults-Class:
         if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
@@ -637,6 +655,12 @@ class HandleDabDto:
         else:
             gecko_waveforms = None
 
+        # if loaded results have all keys that are mandatory for the GeckoResults-Class:
+        if len(set(keys_of_inductor_losses_dto) & set(list(decoded_data.keys()))) == len(keys_of_inductor_losses_dto):
+            inductor_losses = InductorLosses(**decoded_data)
+        else:
+            inductor_losses = None
+
         dab_dto = CircuitDabDTO(name=str(decoded_data["name"]),
                                 timestamp=decoded_data["timestamp"],
                                 metadata=decoded_data["metadata"],
@@ -647,7 +671,8 @@ class HandleDabDto:
                                 calc_losses=None,
                                 gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
                                 gecko_results=gecko_results,
-                                gecko_waveforms=gecko_waveforms)
+                                gecko_waveforms=gecko_waveforms,
+                                inductor_losses=inductor_losses)
 
         return dab_dto
 
@@ -751,3 +776,17 @@ class HandleDabDto:
             time_current_1_vec=np.array([time, i_l_s_max_current_waveform]),
             time_current_2_vec=np.array([time, -i_hf_2_max_current_waveform]),
             temperature=100)
+
+    @staticmethod
+    def add_inductor_results(dab_dto: CircuitDabDTO, inductor_losses: dict) -> CircuitDabDTO:
+        """Add inductor results to the CirucitDabDTO.
+
+        :param dab_dto: Dual-active bridge DTO
+        :type dab_dto: CircuitDabDTO
+        :param inductor_losses: inductor losses dictionary
+        :type inductor_losses: dict
+        :return: Dual-active bridge DTO including the inductor losses
+        :rtype: CircuitDabDTO
+        """
+        dab_dto.gecko_waveforms = InductorLosses(**inductor_losses)
+        return dab_dto
