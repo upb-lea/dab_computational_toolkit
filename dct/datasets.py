@@ -366,7 +366,8 @@ class HandleDabDto:
             calc_losses=None,
             gecko_additional_params=gecko_additional_params,
             gecko_results=None,
-            gecko_waveforms=None)
+            gecko_waveforms=None,
+            inductor_losses=None)
         return dab_dto
 
     @staticmethod
