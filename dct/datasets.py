@@ -184,6 +184,7 @@ class GeckoResults:
     p_sw2: np.array
     p_cond2: np.array
     i_HF1: np.array
+    i_HF2: np.array
     i_Ls: np.array
     i_Lc1: np.array
     i_Lc2: np.array

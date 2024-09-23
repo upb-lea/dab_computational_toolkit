@@ -22,7 +22,7 @@ class CircuitParetoDesignSpace:
     f_s_min_max_list: np.array
     l_s_min_max_list: np.array
     l_1_min_max_list: np.array
-    l_2_min_max_list: np.array
+    l_2__min_max_list: np.array
     n_min_max_list: np.array
     transistor_1_list: list[str]
     transistor_2_list: list[str]

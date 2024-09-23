@@ -119,7 +119,7 @@ class Optimization:
         f_s_suggest = trial.suggest_int('f_s_suggest', dab_config.design_space.f_s_min_max_list[0], dab_config.design_space.f_s_min_max_list[1])
         l_s_suggest = trial.suggest_float('l_s_suggest', dab_config.design_space.l_s_min_max_list[0], dab_config.design_space.l_s_min_max_list[1])
         l_1_suggest = trial.suggest_float('l_1_suggest', dab_config.design_space.l_1_min_max_list[0], dab_config.design_space.l_1_min_max_list[1])
-        l_2_suggest = trial.suggest_float('l_2_suggest', dab_config.design_space.l_2_min_max_list[0], dab_config.design_space.l_2_min_max_list[1])
+        l_2__suggest = trial.suggest_float('l_2__suggest', dab_config.design_space.l_2__min_max_list[0], dab_config.design_space.l_2__min_max_list[1])
         n_suggest = trial.suggest_float('n_suggest', dab_config.design_space.n_min_max_list[0], dab_config.design_space.n_min_max_list[1])
         transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', dab_config.design_space.transistor_1_list)
         transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_list)
@@ -142,7 +142,7 @@ class Optimization:
             Ls=l_s_suggest,
             fs=f_s_suggest,
             Lc1=l_1_suggest,
-            Lc2=l_2_suggest,
+            Lc2=l_2__suggest / n_suggest ** 2,
             c_par_1=16e-12,
             c_par_2=16e-12,
             transistor_name_1=transistor_1_name_suggest,
@@ -296,9 +296,9 @@ class Optimization:
             Ls=trials_dict["l_s_suggest"],
             fs=trials_dict["f_s_suggest"],
             Lc1=trials_dict["l_1_suggest"],
-            Lc2=trials_dict["l_2_suggest"],
-            c_par_1=16e-12,
-            c_par_2=16e-12,
+            Lc2=trials_dict["l_2__suggest"] / trials_dict["n_suggest"] ** 2,
+            c_par_1=6e-12,
+            c_par_2=6e-12,
             transistor_name_1=trials_dict["transistor_1_name_suggest"],
             transistor_name_2=trials_dict["transistor_2_name_suggest"]
         )
@@ -340,9 +340,9 @@ class Optimization:
                 Ls=df["params_l_s_suggest"][index].item(),
                 fs=df["params_f_s_suggest"][index].item(),
                 Lc1=df["params_l_1_suggest"][index].item(),
-                Lc2=df["params_l_2_suggest"][index].item(),
-                c_par_1=16e-12,
-                c_par_2=16e-12,
+                Lc2=df["params_l_2__suggest"][index].item() / df["params_n_suggest"][index].item() ** 2,
+                c_par_1=6e-12,
+                c_par_2=6e-12,
                 transistor_name_1=df["params_transistor_1_name_suggest"][index],
                 transistor_name_2=df["params_transistor_2_name_suggest"][index]
             )
@@ -426,3 +426,20 @@ class Optimization:
         plt.grid()
         plt.tight_layout()
         plt.show()
+
+    @staticmethod
+    def load_csv_to_df(csv_filepath: str) -> pd.DataFrame:
+        """
+        Load a csv file (previously stored from a Pandas dataframe) back to a Pandas dataframe.
+
+        :param csv_filepath: File path of .csv file
+        :type csv_filepath: str
+        :return: loaded results from the given .csv file
+        :rtype: pandas.DataFrame
+        """
+        df = pd.read_csv(csv_filepath, header=0, index_col=0)
+        # reading a pandas dataframe seems to change a global variable in the c subsystem
+        # after reading csv values, there are issues running onelab/gmsh, as gmsh writes ',' instead '.' to its own files
+        # reading the file again with setting back the delimiter to ';', is a workaround for the mentioned problem.
+        pd.read_csv(csv_filepath, header=0, index_col=0, delimiter=';')
+        return df
