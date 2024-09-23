@@ -510,7 +510,7 @@ class HandleDabDto:
 
         return d_dtos.TransformerTargetParameters(
             l_s12_target=dab_dto.input_config.Ls,
-            l_h_target=dab_dto.input_config.Lc2,
+            l_h_target=dab_dto.input_config.Lc2 * dab_dto.input_config.n ** 2,
             n_target=dab_dto.input_config.n,
             time_current_1_vec=np.array([time, i_l_s_max_current_waveform]),
             time_current_2_vec=np.array([time, -i_hf_2_max_current_waveform]),
