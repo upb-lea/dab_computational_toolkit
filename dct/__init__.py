@@ -14,3 +14,5 @@ from dct.pareto_dtos import *
 from dct.pareto import *
 from dct.generalplotsettings import *
 from dct.functions_waveforms import *
+from dct.folders import *
+from dct.datasets_dtos import *

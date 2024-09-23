@@ -12,9 +12,9 @@ MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
             'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan']
 
 
-def calc_modulation(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.ndarray | int | float,
-                    Coss1: np.ndarray, Coss2: np.ndarray,
-                    V1: np.ndarray, V2: np.ndarray, P: np.ndarray) -> dict:
+def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.ndarray | int | float,
+                           Coss1: np.ndarray, Coss2: np.ndarray,
+                           V1: np.ndarray, V2: np.ndarray, P: np.ndarray) -> dict:
     """
     OptZVS (Optimal ZVS) Modulation calculation, which will return phi, tau1 and tau2.
 

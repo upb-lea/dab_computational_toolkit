@@ -4,7 +4,8 @@ import math
 
 import dct.datasets
 # own libraries
-from dct.datasets import CircuitDabDTO, HandleDabDto
+from dct.datasets_dtos import CircuitDabDTO
+from dct.datasets import HandleDabDto
 
 def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direction: int | None = None) -> CircuitDabDTO:
     """
