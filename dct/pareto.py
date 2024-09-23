@@ -143,8 +143,8 @@ class Optimization:
             fs=f_s_suggest,
             Lc1=l_1_suggest,
             Lc2=l_2__suggest / n_suggest ** 2,
-            c_par_1=16e-12,
-            c_par_2=16e-12,
+            c_par_1=dab_config.design_space.c_par_1,
+            c_par_2=dab_config.design_space.c_par_2,
             transistor_name_1=transistor_1_name_suggest,
             transistor_name_2=transistor_2_name_suggest
         )
@@ -297,8 +297,8 @@ class Optimization:
             fs=trials_dict["f_s_suggest"],
             Lc1=trials_dict["l_1_suggest"],
             Lc2=trials_dict["l_2__suggest"] / trials_dict["n_suggest"] ** 2,
-            c_par_1=6e-12,
-            c_par_2=6e-12,
+            c_par_1=dab_config.design_space.c_par_1,
+            c_par_2=dab_config.design_space.c_par_2,
             transistor_name_1=trials_dict["transistor_1_name_suggest"],
             transistor_name_2=trials_dict["transistor_2_name_suggest"]
         )
@@ -341,8 +341,8 @@ class Optimization:
                 fs=df["params_f_s_suggest"][index].item(),
                 Lc1=df["params_l_1_suggest"][index].item(),
                 Lc2=df["params_l_2__suggest"][index].item() / df["params_n_suggest"][index].item() ** 2,
-                c_par_1=6e-12,
-                c_par_2=6e-12,
+                c_par_1=dab_config.design_space.c_par_1,
+                c_par_2=dab_config.design_space.c_par_2,
                 transistor_name_1=df["params_transistor_1_name_suggest"][index],
                 transistor_name_2=df["params_transistor_2_name_suggest"][index]
             )
