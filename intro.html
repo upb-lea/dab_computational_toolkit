@@ -52,7 +52,10 @@
 <li class="toctree-l1"><a class="reference internal" href="#dab-computation-toolbox-dct-function-documentation"><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#store-specifications-modulation-and-simulation-results"><span class="sectnum">2.1 </span>Store specifications, modulation and simulation results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#calculate-dab-intervals"><span class="sectnum">2.2 </span>Calculate DAB intervals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sample-requirements"><span class="sectnum">2.3 </span>Sample requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-dct.sample_requirements"><span class="sectnum">2.3 </span>Sample requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dct.sample_requirements.load_dab_specification"><code class="docutils literal notranslate"><span class="pre">load_dab_specification()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -99,8 +102,26 @@
 <section id="calculate-dab-intervals">
 <h2><span class="sectnum">2.2 </span>Calculate DAB intervals<a class="headerlink" href="#calculate-dab-intervals" title="Link to this heading"></a></h2>
 </section>
-<section id="sample-requirements">
-<h2><span class="sectnum">2.3 </span>Sample requirements<a class="headerlink" href="#sample-requirements" title="Link to this heading"></a></h2>
+<section id="module-dct.sample_requirements">
+<span id="sample-requirements"></span><h2><span class="sectnum">2.3 </span>Sample requirements<a class="headerlink" href="#module-dct.sample_requirements" title="Link to this heading"></a></h2>
+<p>File contains DAB converter sample specifications.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="dct.sample_requirements.load_dab_specification">
+<span class="sig-prename descclassname"><span class="pre">dct.sample_requirements.</span></span><span class="sig-name descname"><span class="pre">load_dab_specification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dab_configuration_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_in_mesh_per_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CircuitDabDTO</span></span></span><a class="headerlink" href="#dct.sample_requirements.load_dab_specification" title="Link to this definition"></a></dt>
+<dd><p>Load some predefined DAB specification from different lab samples or papers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dab_configuration_name</strong> (<em>str</em>) – configuration name, which is from [“initial”, “everts”, “initial_reversed”]</p></li>
+<li><p><strong>steps_in_mesh_per_direction</strong> (<em>int</em><em> | </em><em>None</em>) – Steps in each mesh direction (v_1, v_2, p_out), optional, e.g. 2: 2x2x2 = 8 simulations, 4: 4x4x4 = 64 simulations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 </section>
 
