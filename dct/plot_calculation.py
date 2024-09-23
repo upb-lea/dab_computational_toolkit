@@ -101,28 +101,28 @@ def plot_calculation_results(dab_config: CircuitDabDTO):
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot Coss and Qoss of transistor 1
-    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + str(dab_config.input_config.transistor_name_1), sharex=False, sharey=False)
+    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + str(dab_config.input_config.transistor_dto_1), sharex=False, sharey=False)
     plt.subplot(np.arange(dab_config.calc_config.c_oss_1.shape[0]),
                 dab_config.calc_config.c_oss_1,
                 ax=plt.figs_axes[-1][1][0],
-                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + str(dab_config.input_config.transistor_name_1),
+                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + str(dab_config.input_config.transistor_dto_1),
                 yscale='log')
 
     plt.subplot(np.arange(dab_config.calc_config.q_oss_1.shape[0]),
                 dab_config.calc_config.q_oss_1,
                 ax=plt.figs_axes[-1][1][1],
-                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + str(dab_config.input_config.transistor_name_1))
+                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + str(dab_config.input_config.transistor_dto_1))
 
     # Plot Coss and Qoss of transistor 2
-    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + str(dab_config.input_config.transistor_name_2), sharex=False, sharey=False)
+    plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + str(dab_config.input_config.transistor_dto_2), sharex=False, sharey=False)
     plt.subplot(np.arange(dab_config.calc_config.c_oss_2.shape[0]),
                 dab_config.calc_config.c_oss_2,
                 ax=plt.figs_axes[-1][1][0],
-                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + str(dab_config.input_config.transistor_name_2),
+                xlabel='U_DS / V', ylabel='C_oss / pF', title='Coss ' + str(dab_config.input_config.transistor_dto_2),
                 yscale='log')
     plt.subplot(np.arange(dab_config.calc_config.q_oss_2.shape[0]),
                 dab_config.calc_config.q_oss_2,
                 ax=plt.figs_axes[-1][1][1],
-                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + str(dab_config.input_config.transistor_name_2))
+                xlabel='U_DS / V', ylabel='Q_oss / nC', title='Qoss ' + str(dab_config.input_config.transistor_dto_2))
 
     plt.show()

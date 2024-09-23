@@ -2,6 +2,7 @@
 # python libraries
 import math
 
+import dct.datasets
 # own libraries
 from dct.datasets import CircuitDabDTO, HandleDabDto
 
@@ -16,6 +17,10 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
     :return:
     """
     if dab_configuration_name.lower() == "initial":
+
+        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
             V1_nom=700,
@@ -38,12 +43,15 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
             Lc2=595e-6,
             c_par_1=16e-12,
             c_par_2=16e-12,
-            transistor_name_1='CREE_C3M0065100J',
-            transistor_name_2='CREE_C3M0060065J'
+            transistor_dto_1=transistor_dto_1,
+            transistor_dto_2=transistor_dto_2
         )
 
         return dab_config
     elif dab_configuration_name.lower() == "everts":
+        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
             V1_nom=250,
@@ -65,14 +73,17 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
             fs=120e3,
             c_par_1=16e-12,
             c_par_2=16e-12,
-            transistor_name_1='CREE_C3M0065100J',
-            transistor_name_2='CREE_C3M0060065J'
+            transistor_dto_1=transistor_dto_1,
+            transistor_dto_2=transistor_dto_2,
         )
 
         return dab_config
     elif dab_configuration_name.lower() == "initial_reversed":
         # Set the basic DAB Specification
         n = 1 / 2.99
+        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
             V2_nom=700,
@@ -96,12 +107,14 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
             c_par_1=16e-12,
             c_par_2=16e-12,
             # Junction Temperature of MOSFETs
-            transistor_name_1='CREE_C3M0065100J',
-            transistor_name_2='CREE_C3M0060065J'
+            transistor_dto_1=transistor_dto_1,
+            transistor_dto_2=transistor_dto_2
         )
         return dab_config
     elif dab_configuration_name.lower() == "dab_ds_default_gv8_sim":
         n = 2.99
+        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
             V1_nom=700,
@@ -125,8 +138,8 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
             c_par_1=16e-12,
             c_par_2=16e-12,
             # Junction Temperature of MOSFETs
-            transistor_name_1='CREE_C3M0065100J',
-            transistor_name_2='CREE_C3M0060065J')
+            transistor_dto_1=transistor_dto_1,
+            transistor_dto_2=transistor_dto_2)
         return dab_config
     else:
         raise ValueError(f"{dab_configuration_name} not found.")

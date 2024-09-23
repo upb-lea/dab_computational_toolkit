@@ -2,6 +2,7 @@
 # python libraries
 import dataclasses
 
+import dct.datasets
 # 3rd party libraries
 import numpy as np
 
@@ -24,8 +25,8 @@ class CircuitParetoDesignSpace:
     l_1_min_max_list: np.array
     l_2__min_max_list: np.array
     n_min_max_list: np.array
-    transistor_1_list: list[str]
-    transistor_2_list: list[str]
+    transistor_1_name_list: list[str]
+    transistor_2_name_list: list[str]
     c_par_1: np.array
     c_par_2: np.array
 
@@ -47,3 +48,10 @@ class CircuitParetoDabDesign:
 
     design_space: CircuitParetoDesignSpace
     output_range: CircuitOutputRange
+
+@dataclasses.dataclass
+class FixedParameters:
+    """Fixed parameters for the circuit optimization."""
+
+    transistor_1_dto_list: list[dct.datasets.TransistorDTO]
+    transistor_2_dto_list: list[dct.datasets.TransistorDTO]

@@ -16,6 +16,16 @@ from matplotlib import pyplot as plt
 import dct
 
 
+@dataclasses.dataclass
+class TransistorDTO:
+    """Contains constant transistor information."""
+
+    name: str
+    t_j: np.array
+    c_oss: np.array
+    q_oss: np.array
+
+
 @dataclasses.dataclass(init=False)
 class CircuitConfig:
     """Input configuration DTO for the DAB converter."""
@@ -37,8 +47,8 @@ class CircuitConfig:
     Lc1: np.array
     Lc2: np.array
     fs: np.array
-    transistor_name_1: np.array
-    transistor_name_2: np.array
+    transistor_dto_1: TransistorDTO
+    transistor_dto_2: TransistorDTO
     c_par_1: np.array
     c_par_2: np.array
 
@@ -266,7 +276,7 @@ class HandleDabDto:
     def init_config(name: str, V1_nom: np.array, V1_min: np.array, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
                     V2_max: np.array, V2_step: np.array, P_min: np.array, P_max: np.array, P_nom: np.array, P_step: np.array,
                     n: np.array, Ls: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
-                    transistor_name_1: str, transistor_name_2: str, c_par_1, c_par_2):
+                    transistor_dto_1: str, transistor_dto_2: str, c_par_1, c_par_2):
         """
         Initialize the DAB structure.
 
@@ -306,10 +316,10 @@ class HandleDabDto:
         :type Lc2: np.array
         :param fs: Switching frequency
         :type fs: np.array
-        :param transistor_name_1: Transistor name for transistor bridge 1. Must match with transistordatbase available transistors.
-        :type transistor_name_1: str
-        :param transistor_name_2: Transistor name for transistor bridge 2. Must match with transistordatbase available transistors.
-        :type transistor_name_2: str
+        :param transistor_dto_1: Transistor DTO for transistor bridge 1. Must match with transistordatbase available transistors.
+        :type transistor_dto_1: TransistorDTO
+        :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatbase available transistors.
+        :type transistor_dto_2: TransistorDTO
         :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
         :type c_par_1: np.array
         :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
@@ -333,8 +343,8 @@ class HandleDabDto:
                                             Lc1=np.array(Lc1),
                                             Lc2=np.array(Lc2),
                                             fs=np.array(fs),
-                                            transistor_name_1=np.asarray(transistor_name_1),
-                                            transistor_name_2=np.asarray(transistor_name_2),
+                                            transistor_dto_1=transistor_dto_1,
+                                            transistor_dto_2=transistor_dto_2,
                                             c_par_1=c_par_1,
                                             c_par_2=c_par_2,
                                             )
@@ -397,8 +407,8 @@ class HandleDabDto:
             timestep_pre=dab_dto.gecko_additional_params.timestep_pre,
             number_pre_sim_periods=dab_dto.gecko_additional_params.number_pre_sim_periods, geckoport=43036,
             c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
-            transistor_1_name=dab_dto.input_config.transistor_name_1,
-            transistor_2_name=dab_dto.input_config.transistor_name_2, get_waveforms=get_waveforms,
+            transistor_1_name=dab_dto.input_config.transistor_dto_1,
+            transistor_2_name=dab_dto.input_config.transistor_dto_2, get_waveforms=get_waveforms,
             i_ls_start=dab_dto.calc_currents.i_l_s_sorted[0],
             i_lc1_start=dab_dto.calc_currents.i_l_1_sorted[0],
             i_lc2_start=dab_dto.calc_currents.i_l_2_sorted[0])
@@ -426,45 +436,19 @@ class HandleDabDto:
 
         Lc2_ = config.Lc2 * config.n ** 2
 
-        db = tdb.DatabaseManager()
-        db.set_operation_mode_json()
-
-        transistor_1 = db.load_transistor(config.transistor_name_1)
-        transistor_2 = db.load_transistor(config.transistor_name_2)
-
-        if transistor_1.type != "MOSFET" and transistor_1.type != "SiC-MOSFET":
-            raise ValueError(f"Transistor 1: {transistor_1.name} is of non-allowed type {transistor_1.type}. "
-                             f"Allowed types are MOSFET, SiC-MOSFET.")
-        if transistor_2.type != "MOSFET" and transistor_2.type != "SiC-MOSFET":
-            raise ValueError(f"Transistor 2: {transistor_2.name} is of non-allowed type {transistor_2.type}. "
-                             f"Allowed types are MOSFET, SiC-MOSFET.")
-
-        t_j_1 = transistor_1.switch.t_j_max - 25
-        t_j_2 = transistor_2.switch.t_j_max - 25
-
-        c_oss_1, q_oss_1 = HandleDabDto.get_c_oss_from_tdb(transistor_1, margin_factor=1.2)
-        c_oss_2, q_oss_2 = HandleDabDto.get_c_oss_from_tdb(transistor_2, margin_factor=1.2)
-
-        # export c_oss files for GeckoCIRCUITS
-        path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
-        if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_1.name}_c_oss.nlc")):
-            transistor_1.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=1.2)
-        if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor_2.name}_c_oss.nlc")):
-            transistor_2.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=1.2)
-
         calc_from_config = CalcFromCircuitConfig(
             mesh_V1=mesh_V1,
             mesh_V2=mesh_V2,
             mesh_P=mesh_P,
             Lc2_=Lc2_,
-            t_j_1=t_j_1,
-            t_j_2=t_j_2,
-            c_oss_par_1=c_oss_1 + config.c_par_1,
-            c_oss_par_2=c_oss_2 + config.c_par_2,
-            c_oss_1=c_oss_1,
-            c_oss_2=c_oss_2,
-            q_oss_1=q_oss_1,
-            q_oss_2=q_oss_2
+            t_j_1=config.transistor_dto_1.t_j,
+            t_j_2=config.transistor_dto_2.t_j,
+            c_oss_par_1=config.transistor_dto_1.c_oss + config.c_par_1,
+            c_oss_par_2=config.transistor_dto_2.c_oss + config.c_par_2,
+            c_oss_1=config.transistor_dto_1.c_oss,
+            c_oss_2=config.transistor_dto_2.c_oss,
+            q_oss_1=config.transistor_dto_1.q_oss,
+            q_oss_2=config.transistor_dto_2.q_oss
         )
 
         return calc_from_config
@@ -797,3 +781,45 @@ class HandleDabDto:
         """
         dab_dto.gecko_waveforms = InductorLosses(**inductor_losses)
         return dab_dto
+
+class HandleTransistorDto:
+    """Handle the transistor DTOs."""
+
+    @staticmethod
+    def tdb_to_transistor_dto(transistor_name: str, c_oss_margin_factor: float = 1.2) -> dct.TransistorDTO:
+        """
+        Load a transistor from the transistor database and transfer the important parameters to a TransistorDTO.
+
+        :param transistor_name: transistor name, must be same name as in the transistor database
+        :type transistor_name: str
+        :param c_oss_margin_factor: margin for c_oss
+        :type c_oss_margin_factor: float
+        :return: Transistor DTO
+        :rtype: dct.TransistorDTO
+        """
+        db = tdb.DatabaseManager()
+        db.set_operation_mode_json()
+
+        transistor = db.load_transistor(transistor_name)
+
+        if transistor.type != "MOSFET" and transistor.type != "SiC-MOSFET":
+            raise ValueError(f"Transistor 1: {transistor.name} is of non-allowed type {transistor.type}. "
+                             f"Allowed types are MOSFET, SiC-MOSFET.")
+
+        t_j_recommended = transistor.switch.t_j_max - 25
+
+        c_oss, q_oss = HandleDabDto.get_c_oss_from_tdb(transistor, margin_factor=c_oss_margin_factor)
+
+        # export c_oss files for GeckoCIRCUITS
+        path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
+        if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor.name}_c_oss.nlc")):
+            transistor.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=c_oss_margin_factor)
+
+        transistor_dto = TransistorDTO(
+            name=transistor.name,
+            t_j=t_j_recommended,
+            c_oss=c_oss,
+            q_oss=q_oss
+        )
+
+        return transistor_dto

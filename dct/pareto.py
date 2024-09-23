@@ -105,7 +105,7 @@ class Optimization:
             return pickle.load(pickle_file_data)
 
     @staticmethod
-    def objective(trial: optuna.Trial, dab_config: dct.CircuitParetoDabDesign):
+    def objective(trial: optuna.Trial, dab_config: dct.CircuitParetoDabDesign, fixed_parameters: dct.FixedParameters):
         """
         Objective function to optimize.
 
@@ -113,6 +113,8 @@ class Optimization:
         :type dab_config: dct.CircuitParetoDabDesign
         :param trial: optuna trial
         :type trial: optuna.Trial
+        :param fixed_parameters: fixed parameters (loaded transistor DTOs)
+        :type fixed_parameters: dct.FixedParameters
 
         :return:
         """
@@ -121,8 +123,16 @@ class Optimization:
         l_1_suggest = trial.suggest_float('l_1_suggest', dab_config.design_space.l_1_min_max_list[0], dab_config.design_space.l_1_min_max_list[1])
         l_2__suggest = trial.suggest_float('l_2__suggest', dab_config.design_space.l_2__min_max_list[0], dab_config.design_space.l_2__min_max_list[1])
         n_suggest = trial.suggest_float('n_suggest', dab_config.design_space.n_min_max_list[0], dab_config.design_space.n_min_max_list[1])
-        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', dab_config.design_space.transistor_1_list)
-        transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_list)
+        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', dab_config.design_space.transistor_1_name_list)
+        transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_name_list)
+
+        for _, transistor_dto in enumerate(fixed_parameters.transistor_1_dto_list):
+            if transistor_dto.name == transistor_1_name_suggest:
+                transistor_1_dto: dct.TransistorDTO = transistor_dto
+
+        for _, transistor_dto in enumerate(fixed_parameters.transistor_2_dto_list):
+            if transistor_dto.name == transistor_2_name_suggest:
+                transistor_2_dto: dct.TransistorDTO = transistor_dto
 
         dab_config = dct.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
@@ -145,8 +155,8 @@ class Optimization:
             Lc2=l_2__suggest / n_suggest ** 2,
             c_par_1=dab_config.design_space.c_par_1,
             c_par_2=dab_config.design_space.c_par_2,
-            transistor_name_1=transistor_1_name_suggest,
-            transistor_name_2=transistor_2_name_suggest
+            transistor_dto_1=transistor_1_dto,
+            transistor_dto_2=transistor_2_dto
         )
 
         if (np.any(np.isnan(dab_config.calc_modulation.phi)) or np.any(np.isnan(dab_config.calc_modulation.tau1)) \
@@ -158,6 +168,31 @@ class Optimization:
         i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
 
         return dab_config.calc_modulation.mask_zvs_coverage_notnan * 100, i_cost
+
+    @staticmethod
+    def calculate_fix_parameters(dab_config: dct.CircuitParetoDabDesign) -> dct.FixedParameters:
+        """
+        Calculate time-consuming parameters which are same for every single simulation.
+
+        :param dab_config: DAB circuit configuration
+        :type dab_config: dct.CircuitParetoDabDesign
+        :return: Fix parameters (transistor DTOs)
+        :rtype: dct.FixedParameters
+        """
+        transistor_1_dto_list = []
+        transistor_2_dto_list = []
+
+        for transistor in dab_config.design_space.transistor_1_name_list:
+            transistor_1_dto_list.append(dct.HandleTransistorDto.tdb_to_transistor_dto(transistor))
+
+        for transistor in dab_config.design_space.transistor_2_name_list:
+            transistor_2_dto_list.append(dct.HandleTransistorDto.tdb_to_transistor_dto(transistor))
+
+        fix_parameters = dct.FixedParameters(
+            transistor_1_dto_list=transistor_1_dto_list,
+            transistor_2_dto_list=transistor_2_dto_list,
+        )
+        return fix_parameters
 
     @staticmethod
     def start_proceed_study(dab_config: dct.CircuitParetoDabDesign, number_trials: int,
@@ -217,7 +252,9 @@ class Optimization:
 
         directions = ['maximize', 'minimize']
 
-        func = lambda trial: dct.pareto.Optimization.objective(trial, dab_config)
+        fixed_parameters = Optimization.calculate_fix_parameters(dab_config)
+
+        func = lambda trial: dct.pareto.Optimization.objective(trial, dab_config, fixed_parameters)
 
         study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
                                                storage=storage,
@@ -299,8 +336,8 @@ class Optimization:
             Lc2=trials_dict["l_2__suggest"] / trials_dict["n_suggest"] ** 2,
             c_par_1=dab_config.design_space.c_par_1,
             c_par_2=dab_config.design_space.c_par_2,
-            transistor_name_1=trials_dict["transistor_1_name_suggest"],
-            transistor_name_2=trials_dict["transistor_2_name_suggest"]
+            transistor_dto_1=trials_dict["transistor_1_name_suggest"],
+            transistor_dto_2=trials_dict["transistor_2_name_suggest"]
         )
 
         return dab_dto
@@ -343,8 +380,8 @@ class Optimization:
                 Lc2=df["params_l_2__suggest"][index].item() / df["params_n_suggest"][index].item() ** 2,
                 c_par_1=dab_config.design_space.c_par_1,
                 c_par_2=dab_config.design_space.c_par_2,
-                transistor_name_1=df["params_transistor_1_name_suggest"][index],
-                transistor_name_2=df["params_transistor_2_name_suggest"][index]
+                transistor_dto_1=df["params_transistor_1_name_suggest"][index],
+                transistor_dto_2=df["params_transistor_2_name_suggest"][index]
             )
             dab_dto_list.append(dab_dto)
 
