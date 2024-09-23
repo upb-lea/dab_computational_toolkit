@@ -238,6 +238,10 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             for k in waveform_keys:
                 gecko_waveforms_multiple_simulations[k][vec_vvp] = gecko_waveforms_single_simulation[k]
                 gecko_waveforms_multiple_simulations['time'] = gecko_waveforms_single_simulation['time']
+        else:
+            for k in waveform_keys:
+                gecko_waveforms_multiple_simulations[k][vec_vvp] = None
+                gecko_waveforms_multiple_simulations['time'] = None
 
         # Progressbar update, default increment +1
         pbar.update()
