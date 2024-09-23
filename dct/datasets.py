@@ -5,6 +5,7 @@ import os
 import dataclasses
 import datetime
 import logging
+import pickle
 
 # 3rd party libraries
 import numpy as np
@@ -594,33 +595,36 @@ class HandleDabDto:
         else:
             file = os.path.join(filename)
 
+        with open(f"{file}.pkl", 'wb') as output:
+            pickle.dump(dab_dto, output, pickle.HIGHEST_PROTOCOL)
+
         # prepare a all-in-one parallel file
-        input_dict_to_store = dataclasses.asdict(dab_dto.input_config)
-        calc_config_dict_to_store = dataclasses.asdict(dab_dto.calc_config)
-        calc_modulation_dict_to_store = dataclasses.asdict(dab_dto.calc_modulation)
-        calc_currents_dict_to_store = dataclasses.asdict(dab_dto.calc_currents)
-        calc_losses_dict_to_store = dataclasses.asdict(dab_dto.calc_losses) if isinstance(dab_dto.calc_losses, CalcLosses) else None
-        gecko_additional_params_dict_to_store = dataclasses.asdict(dab_dto.gecko_additional_params)
-        gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
-        inductor_losses_dict_to_store = dataclasses.asdict(dab_dto.inductor_losses) if isinstance(dab_dto.inductor_losses, InductorLosses) else None
-
-        dict_to_store = {}
-        dict_to_store["timestamp"] = dab_dto.timestamp
-        dict_to_store["name"] = dab_dto.name
-        dict_to_store["metadata"] = dab_dto.metadata
-        dict_to_store.update(input_dict_to_store)
-        dict_to_store.update(calc_config_dict_to_store)
-        dict_to_store.update(calc_modulation_dict_to_store)
-        dict_to_store.update(calc_currents_dict_to_store)
-        if isinstance(dab_dto.calc_losses, CalcLosses):
-            dict_to_store.update(calc_losses_dict_to_store)
-        dict_to_store.update(gecko_additional_params_dict_to_store)
-        if isinstance(dab_dto.gecko_results, GeckoResults):
-            dict_to_store.update(gecko_results_dict_to_store)
-        if isinstance(dab_dto.inductor_losses, InductorLosses):
-            dict_to_store.update(inductor_losses_dict_to_store)
-
-        np.savez_compressed(**dict_to_store, file=file)
+        # input_dict_to_store = dataclasses.asdict(dab_dto.input_config)
+        # calc_config_dict_to_store = dataclasses.asdict(dab_dto.calc_config)
+        # calc_modulation_dict_to_store = dataclasses.asdict(dab_dto.calc_modulation)
+        # calc_currents_dict_to_store = dataclasses.asdict(dab_dto.calc_currents)
+        # calc_losses_dict_to_store = dataclasses.asdict(dab_dto.calc_losses) if isinstance(dab_dto.calc_losses, CalcLosses) else None
+        # gecko_additional_params_dict_to_store = dataclasses.asdict(dab_dto.gecko_additional_params)
+        # gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
+        # inductor_losses_dict_to_store = dataclasses.asdict(dab_dto.inductor_losses) if isinstance(dab_dto.inductor_losses, InductorLosses) else None
+        #
+        # dict_to_store = {}
+        # dict_to_store["timestamp"] = dab_dto.timestamp
+        # dict_to_store["name"] = dab_dto.name
+        # dict_to_store["metadata"] = dab_dto.metadata
+        # dict_to_store.update(input_dict_to_store)
+        # dict_to_store.update(calc_config_dict_to_store)
+        # dict_to_store.update(calc_modulation_dict_to_store)
+        # dict_to_store.update(calc_currents_dict_to_store)
+        # if isinstance(dab_dto.calc_losses, CalcLosses):
+        #     dict_to_store.update(calc_losses_dict_to_store)
+        # dict_to_store.update(gecko_additional_params_dict_to_store)
+        # if isinstance(dab_dto.gecko_results, GeckoResults):
+        #     dict_to_store.update(gecko_results_dict_to_store)
+        # if isinstance(dab_dto.inductor_losses, InductorLosses):
+        #     dict_to_store.update(inductor_losses_dict_to_store)
+        #
+        # np.savez_compressed(**dict_to_store, file=file)
 
     @staticmethod
     def load_from_file(file: str) -> CircuitDabDTO:
@@ -633,50 +637,51 @@ class HandleDabDto:
         # Check for filename extension
         file_name, file_extension = os.path.splitext(file)
         if not file_extension:
-            file += '.npz'
+            file += '.pkl'
         file = os.path.expanduser(file)
         file = os.path.expandvars(file)
         file = os.path.abspath(file)
-        # Open the file and parse the data
-        # with np.load(file) as data:
 
-        decoded_data = np.load(file, allow_pickle=True)
-        keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
-        keys_of_gecko_waveform_dto = [field.name for field in dataclasses.fields(GeckoWaveforms)]
-        keys_of_inductor_losses_dto = [field.name for field in dataclasses.fields(InductorLosses)]
+        with open(file, 'rb') as pickle_file_data:
+            return pickle.load(pickle_file_data)
 
-        # if loaded results have all keys that are mandatory for the GeckoResults-Class:
-        if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
-            gecko_results = GeckoResults(**decoded_data)
-        else:
-            gecko_results = None
-
-        # if loaded results have all keys that are mandatory for the GeckoWaveform-Class:
-        if len(set(keys_of_gecko_waveform_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_waveform_dto):
-            gecko_waveforms = GeckoWaveforms(**decoded_data)
-        else:
-            gecko_waveforms = None
-
-        # if loaded results have all keys that are mandatory for the GeckoResults-Class:
-        if len(set(keys_of_inductor_losses_dto) & set(list(decoded_data.keys()))) == len(keys_of_inductor_losses_dto):
-            inductor_losses = InductorLosses(**decoded_data)
-        else:
-            inductor_losses = None
-
-        dab_dto = CircuitDabDTO(name=str(decoded_data["name"]),
-                                timestamp=decoded_data["timestamp"],
-                                metadata=decoded_data["metadata"],
-                                input_config=CircuitConfig(**decoded_data),
-                                calc_config=CalcFromCircuitConfig(**decoded_data),
-                                calc_modulation=CalcModulation(**decoded_data),
-                                calc_currents=CalcCurrents(**decoded_data),
-                                calc_losses=None,
-                                gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
-                                gecko_results=gecko_results,
-                                gecko_waveforms=gecko_waveforms,
-                                inductor_losses=inductor_losses)
-
-        return dab_dto
+        # decoded_data = np.load(file, allow_pickle=True)
+        # keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
+        # keys_of_gecko_waveform_dto = [field.name for field in dataclasses.fields(GeckoWaveforms)]
+        # keys_of_inductor_losses_dto = [field.name for field in dataclasses.fields(InductorLosses)]
+        #
+        # # if loaded results have all keys that are mandatory for the GeckoResults-Class:
+        # if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
+        #     gecko_results = GeckoResults(**decoded_data)
+        # else:
+        #     gecko_results = None
+        #
+        # # if loaded results have all keys that are mandatory for the GeckoWaveform-Class:
+        # if len(set(keys_of_gecko_waveform_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_waveform_dto):
+        #     gecko_waveforms = GeckoWaveforms(**decoded_data)
+        # else:
+        #     gecko_waveforms = None
+        #
+        # # if loaded results have all keys that are mandatory for the GeckoResults-Class:
+        # if len(set(keys_of_inductor_losses_dto) & set(list(decoded_data.keys()))) == len(keys_of_inductor_losses_dto):
+        #     inductor_losses = InductorLosses(**decoded_data)
+        # else:
+        #     inductor_losses = None
+        #
+        # dab_dto = CircuitDabDTO(name=str(decoded_data["name"]),
+        #                         timestamp=decoded_data["timestamp"],
+        #                         metadata=decoded_data["metadata"],
+        #                         input_config=CircuitConfig(**decoded_data),
+        #                         calc_config=CalcFromCircuitConfig(**decoded_data),
+        #                         calc_modulation=CalcModulation(**decoded_data),
+        #                         calc_currents=CalcCurrents(**decoded_data),
+        #                         calc_losses=None,
+        #                         gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
+        #                         gecko_results=gecko_results,
+        #                         gecko_waveforms=gecko_waveforms,
+        #                         inductor_losses=inductor_losses)
+        #
+        # return dab_dto
 
     @staticmethod
     def get_max_peak_waveform_transformer(dab_dto: CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:

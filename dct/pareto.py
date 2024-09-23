@@ -204,7 +204,7 @@ class Optimization:
         config_on_disk_filepath = f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
             config_on_disk = Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
-            difference = deepdiff.DeepDiff(dab_config, config_on_disk, ignore_order=True, significant_digits=10)
+            difference = deepdiff.DeepDiff(config_on_disk, dab_config, ignore_order=True, significant_digits=10)
             if difference:
                 print("Configuration file has changed from previous simulation. Do you want to proceed?")
                 print(f"Difference: {difference}")
