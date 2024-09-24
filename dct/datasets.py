@@ -440,9 +440,9 @@ class HandleDabDto:
         i_hf_2_max_current_waveform = i_hf_2_sorted[max_index]
         i_l_s_max_current_waveform = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))[max_index]
 
-        sorted_max_angles = d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index])
-        i_l_s_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_l_s_max_current_waveform)
-        i_hf_2_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_hf_2_max_current_waveform)
+        sorted_max_angles, unique_indices = np.unique(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index]), return_index=True)
+        i_l_s_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_l_s_max_current_waveform)[unique_indices]
+        i_hf_2_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_hf_2_max_current_waveform)[unique_indices]
 
         if plot:
             plt.plot(sorted_max_angles, i_hf_2_max_current_waveform, color='red', label='peak current full waveform')
@@ -478,8 +478,8 @@ class HandleDabDto:
 
         i_l1_max_current_waveform = i_l1_sorted[max_index]
 
-        sorted_max_angles = d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index])
-        i_l1_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_l1_max_current_waveform)
+        sorted_max_angles, unique_indices = np.unique(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index]), return_index=True)
+        i_l1_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_l1_max_current_waveform)[unique_indices]
 
         if plot:
             plt.plot(sorted_max_angles, i_l1_max_current_waveform, color='red', label='peak current full waveform')

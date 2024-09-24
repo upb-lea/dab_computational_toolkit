@@ -29,3 +29,25 @@ def full_current_waveform_from_currents(sorted_currents: np.array) -> np.array:
     sorted_currents = np.append(sorted_currents, -1 * sorted_currents)
     sorted_currents = np.append(sorted_currents[-1], sorted_currents)
     return sorted_currents
+
+def full_waveforms_from_angles_currents(angles_rad_sorted: np.array, *sorted_currents):
+    """
+    Generate the full 2pi-periodic time and current waveform from the four time and current values at [alpha, beta, gamma, delta].
+
+    Multiple current inputs possible. Sorts out same time values, e.g [0, 2, 3.14, 3,14] -> [0, 2, 3.14]
+
+    :param angles_rad_sorted: [alpha, beta, gamma, delta], but in sorted order. Unit is radiant.
+    :type angles_rad_sorted: np.array
+    :param sorted_currents: [i_alpha, i_beta, i_gamma, i_delta], but sorted
+    :type sorted_currents: np.array
+    :return: 2pi-periodic time and current waveforms
+    :rtype: np.array
+    """
+    sorted_angles_full_waveform, unique_indices = np.unique(full_angle_waveform_from_angles(angles_rad_sorted), return_index=True)
+
+    sorted_currents_full_waveform = sorted_angles_full_waveform,
+    for sorted_current in sorted_currents:
+        sorted_current_full_waveform = full_current_waveform_from_currents(sorted_current)[unique_indices]
+        sorted_currents_full_waveform = sorted_currents_full_waveform + (sorted_current_full_waveform,)
+
+    return sorted_currents_full_waveform
