@@ -1,3 +1,4 @@
+"""Example for inductor optimization."""
 
 # python libraries
 import os
@@ -5,7 +6,6 @@ import os
 # 3rd party libraries
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
 
 # own libraries
 import femmt as fmt
@@ -105,13 +105,14 @@ for circuit_trial_number in circuit_trial_numbers:
     result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
     for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-        time = dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+        time, unique_indices = np.unique(
+            dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
+        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
         current_waveform = np.array([time, current])
         print(f"{current_waveform=}")
         print("----------------------")
-        print(f"Re-simulation of:")
+        print("Re-simulation of:")
         print(f"   * Circuit study: {circuit_study_name}")
         print(f"   * Circuit trial: {circuit_trial_number}")
         print(f"   * Inductor study: {inductor_study_name}")
@@ -121,7 +122,7 @@ for circuit_trial_number in circuit_trial_numbers:
         result_array[vec_vvp] = combined_losses
 
     print(f"{result_array=}")
-    result_dict={}
+    result_dict = {}
     result_dict["inductor_losses"] = result_array
 
     circuit_dto = dct.HandleDabDto.add_inductor_results(circuit_dto, result_dict)
