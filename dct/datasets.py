@@ -527,7 +527,21 @@ class HandleDabDto:
         :return: Dual-active bridge DTO including the inductor losses
         :rtype: d_dtos.CircuitDabDTO
         """
-        dab_dto.gecko_waveforms = d_dtos.InductorLosses(**inductor_losses)
+        dab_dto.inductor_results = d_dtos.InductorLosses(**inductor_losses)
+        return dab_dto
+
+    @staticmethod
+    def add_stacked_transformer_results(dab_dto: d_dtos.CircuitDabDTO, stacked_transformer_losses: dict) -> d_dtos.CircuitDabDTO:
+        """Add stacked transformer results to the CircuitDabDTO.
+
+        :param dab_dto: Dual-active bridge DTO
+        :type dab_dto: d_dtos.CircuitDabDTO
+        :param stacked_transformer_losses: stacked transformer losses dictionary
+        :type stacked_transformer_losses: dict
+        :return: Dual-active bridge DTO including the inductor losses
+        :rtype: d_dtos.CircuitDabDTO
+        """
+        dab_dto.stacked_transformer_losses = d_dtos.StackedTransformerLosses(**stacked_transformer_losses)
         return dab_dto
 
 class HandleTransistorDto:

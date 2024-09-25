@@ -284,12 +284,10 @@ class Optimization:
         """
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
         database_url = Optimization.create_sqlite_database_url(dab_config)
-        study = optuna.create_study(study_name=dab_config.circuit_study_name,
-                                    storage=database_url, load_if_exists=True)
+        study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
 
         fig = optuna.visualization.plot_pareto_front(study, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
-        fig.update_layout(
-            title=f"{dab_config.circuit_study_name}")
+        fig.update_layout(title=f"{dab_config.circuit_study_name} <br><sup>{dab_config.project_directory}</sup>")
         fig.write_html(
             f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}"
             f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
