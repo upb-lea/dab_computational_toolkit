@@ -13,14 +13,14 @@ import dct
 
 # settings of the general project and of the circuit
 project_name = "2024-09-12_project_dab_paper"
-circuit_study_name = "circuit_trial_3_sort_out_invalid_phi"
+circuit_study_name = "circuit_trial_11_workflow_steps_1"
 
 # inductor optimization
 # circuit_trial_numbers = [9422, 9388]
 # re_simulation_numbers = [40, 27],
-circuit_trial_numbers = [8051, 8239]
-re_simulation_numbers = [769, 0]
-inductor_study_name = "inductor_trial_1"
+circuit_trial_numbers = [3004, 3493]
+re_simulation_numbers_matrix = [[1251, 3908, 5420], [734, 3207, 4894]]
+inductor_study_name = "inductor_trial_1_workflow"
 
 insulations = fmt.InductorInsulationDTO(
     core_bot=1e-3,
@@ -42,7 +42,7 @@ material_data_sources = fmt.InductorMaterialDataSources(
 filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
 for circuit_trial_number in circuit_trial_numbers:
-    circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.npz")
+    circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
 
     circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
     # get the peak current waveform
@@ -67,29 +67,31 @@ for circuit_trial_number in circuit_trial_numbers:
     )
     print(f"{circuit_dto.input_config.Lc1=}")
 
-    fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, 1)
-    fmt.optimization.InductorOptimization.ReluctanceModel.show_study_results(io_config)
+    # fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, 20000)
+    # fmt.optimization.InductorOptimization.ReluctanceModel.show_study_results(io_config)
     df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(io_config)
-    df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.1)
+    df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.01)
     # fmt.optimization.InductorOptimization.ReluctanceModel.df_plot_pareto_front(df, df_filtered, label_list=["all", "front"], interactive=False)
-
+    print(df_filtered["number"])
     fmt.InductorOptimization.FemSimulation.fem_simulations_from_reluctance_df(df_filtered, io_config)
 
     fem_results_folder_path = os.path.join(filepaths.inductor, circuit_study_name, circuit_dto.name, inductor_study_name, "02_fem_simulation_results")
 
     df_fem = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
+    print(df_fem.head())
+
     # fmt.InductorOptimization.FemSimulation.fem_vs_reluctance_pareto(df_fem)
 
-    print(f"{re_simulation_numbers=}")
+    print(f"{re_simulation_numbers_matrix=}")
 
     if circuit_trial_number == circuit_trial_numbers[0]:
-        print(f"Case: {circuit_trial_number}")
-        re_simulate_number = re_simulation_numbers[0]
+        print(f"Circuit number: {circuit_trial_number}")
+        re_simulate_numbers = re_simulation_numbers_matrix[0]
         config_filepath = os.path.join(filepaths.inductor, circuit_study_name, str(circuit_trial_number), inductor_study_name, f"{inductor_study_name}.pkl")
     elif circuit_trial_number == circuit_trial_numbers[1]:
-        print(f"Case: {circuit_trial_number}")
-        re_simulate_number = re_simulation_numbers[1]
+        print(f"Circuit number: {circuit_trial_number}")
+        re_simulate_numbers = re_simulation_numbers_matrix[1]
 
     config_on_disk = fmt.InductorOptimization.ReluctanceModel.load_config(config_filepath)
 
@@ -100,35 +102,49 @@ for circuit_trial_number in circuit_trial_numbers:
     i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
     angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-    df_geometry_re_simulation_number = df_fem[df_fem["number"] == re_simulate_number]
+    print(df_fem["number"])
 
-    result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+    for re_simulate_number in re_simulate_numbers:
+        print(f"{re_simulate_number=}")
+        df_geometry_re_simulation_number = df_fem[df_fem["number"] == float(re_simulate_number)]
 
-    for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-        time, unique_indices = np.unique(
-            dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+        print(df_geometry_re_simulation_number.head())
 
-        current_waveform = np.array([time, current])
-        print(f"{current_waveform=}")
-        print("----------------------")
-        print("Re-simulation of:")
-        print(f"   * Circuit study: {circuit_study_name}")
-        print(f"   * Circuit trial: {circuit_trial_number}")
-        print(f"   * Inductor study: {inductor_study_name}")
-        print(f"   * Inductor re-simulation trial: {re_simulate_number}")
+        result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-        volume, combined_losses = fmt.InductorOptimization.FemSimulation.full_simulation(df_geometry_re_simulation_number, current_waveform, config_filepath)
-        result_array[vec_vvp] = combined_losses
+        new_circuit_dto_directory = os.path.join(io_config.inductor_optimization_directory, "09_circuit_dtos_incl_inductor_losses")
+        if not os.path.exists(new_circuit_dto_directory):
+            os.makedirs(new_circuit_dto_directory)
 
-    print(f"{result_array=}")
-    result_dict = {}
-    result_dict["inductor_losses"] = result_array
+        if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
+            print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+        else:
+            for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                time, unique_indices = np.unique(
+                    dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
+                    return_index=True)
+                current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
-    circuit_dto = dct.HandleDabDto.add_inductor_results(circuit_dto, result_dict)
+                current_waveform = np.array([time, current])
+                print(f"{current_waveform=}")
+                print("----------------------")
+                print("Re-simulation of:")
+                print(f"   * Circuit study: {circuit_study_name}")
+                print(f"   * Circuit trial: {circuit_trial_number}")
+                print(f"   * Inductor study: {inductor_study_name}")
+                print(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
-    new_circuit_dto_directory = os.path.join(io_config.inductor_optimization_directory, "09_cirucit_dtos_incl_inductor_losses")
-    if not os.path.exists(new_circuit_dto_directory):
-        os.makedirs(new_circuit_dto_directory)
+                volume, combined_losses = fmt.InductorOptimization.FemSimulation.full_simulation(
+                    df_geometry_re_simulation_number, current_waveform, config_filepath)
+                result_array[vec_vvp] = combined_losses
 
-    dct.HandleDabDto.save(circuit_dto, circuit_dto.name, directory=new_circuit_dto_directory, comment=None)
+            inductor_losses = dct.InductorResults(
+                p_combined_losses=result_array,
+                volume=volume,
+                circuit_trial_number=circuit_trial_number,
+                inductor_trial_number=re_simulate_number,
+            )
+
+            circuit_dto = dct.HandleDabDto.add_inductor_results(circuit_dto, inductor_losses)
+
+            dct.HandleDabDto.save(circuit_dto, str(re_simulate_number), directory=new_circuit_dto_directory, comment=None, timestamp=False)

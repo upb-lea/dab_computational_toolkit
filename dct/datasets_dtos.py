@@ -160,6 +160,9 @@ class InductorResults:
     """DTO contains the inductor losses."""
 
     p_combined_losses: np.array
+    volume: float
+    circuit_trial_number: int
+    inductor_trial_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -172,6 +175,9 @@ class StackedTransformerResults:
     """DTO contains the stacked transformer losses."""
 
     p_combined_losses: np.array
+    volume: float
+    circuit_trial_number: int
+    stacked_transformer_trial_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -263,7 +269,7 @@ class CircuitDabDTO:
     gecko_results: GeckoResults | None
     gecko_waveforms: GeckoWaveforms | None
     inductor_results: InductorResults | None
-    # stacked_transformer_losses: StackedTransformerLosses | None
+    stacked_transformer_results: StackedTransformerResults | None
 
 @dataclasses.dataclass
 class TransformerTargetParameters:

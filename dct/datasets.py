@@ -127,7 +127,9 @@ class HandleDabDto:
             gecko_additional_params=gecko_additional_params,
             gecko_results=None,
             gecko_waveforms=None,
-            inductor_losses=None)
+            inductor_results=None,
+            stacked_transformer_results=None
+        )
         return dab_dto
 
     @staticmethod
@@ -517,38 +519,32 @@ class HandleDabDto:
             temperature=100)
 
     @staticmethod
-    def add_inductor_results(dab_dto: d_dtos.CircuitDabDTO, inductor_losses: d_dtos.InductorResults) -> d_dtos.CircuitDabDTO:
+    def add_inductor_results(dab_dto: d_dtos.CircuitDabDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.CircuitDabDTO:
         """Add inductor results to the CircuitDabDTO.
 
         :param dab_dto: Dual-active bridge DTO
         :type dab_dto: d_dtos.CircuitDabDTO
-        :param inductor_losses: inductor losses dictionary
-        :type inductor_losses: dict
+        :param inductor_results: inductor losses
+        :type inductor_results: InductorResults
         :return: Dual-active bridge DTO including the inductor losses
         :rtype: d_dtos.CircuitDabDTO
         """
-        # dab_dto.gecko_results = d_dtos.GeckoResults(**gecko_results)
-
-        print(f"Inside 'add_inductor_results', this should be added: {inductor_losses=}")
-
-        dab_dto.inductor_results = inductor_losses
-
-        print(f"Inside 'add_inductor_results': {dab_dto.inductor_results=}")
+        dab_dto.inductor_results = inductor_results
 
         return dab_dto
 
     @staticmethod
-    def add_stacked_transformer_results(dab_dto: d_dtos.CircuitDabDTO, stacked_transformer_losses: dict) -> d_dtos.CircuitDabDTO:
+    def add_stacked_transformer_results(dab_dto: d_dtos.CircuitDabDTO, transformer_results: d_dtos.StackedTransformerResults) -> d_dtos.CircuitDabDTO:
         """Add stacked transformer results to the CircuitDabDTO.
 
         :param dab_dto: Dual-active bridge DTO
         :type dab_dto: d_dtos.CircuitDabDTO
-        :param stacked_transformer_losses: stacked transformer losses dictionary
-        :type stacked_transformer_losses: dict
+        :param transformer_results: stacked transformer results
+        :type transformer_results: StackedTransformerResults
         :return: Dual-active bridge DTO including the inductor losses
         :rtype: d_dtos.CircuitDabDTO
         """
-        dab_dto.stacked_transformer_losses = d_dtos.StackedTransformerResults(**stacked_transformer_losses)
+        dab_dto.stacked_transformer_results = transformer_results
         return dab_dto
 
 class HandleTransistorDto:
