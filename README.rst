@@ -1,7 +1,7 @@
 .. sectnum::
 
-Welcome to the DAB computation Toolbox (DCT)
-==================================================
+Welcome to the Pareto DAB (Dual Active Bridge) Tool
+===================================================
 
 
 Installation

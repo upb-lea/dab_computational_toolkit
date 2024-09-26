@@ -14,9 +14,9 @@ import pandas as pd
 import deepdiff
 
 # own libraries
-import dct.datasets_dtos as d_dtos
-import dct.pareto_dtos as p_dtos
-import dct.datasets as d_sets
+import paretodab.datasets_dtos as d_dtos
+import paretodab.pareto_dtos as p_dtos
+import paretodab.datasets as d_sets
 
 
 class Optimization:

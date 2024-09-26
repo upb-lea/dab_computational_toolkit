@@ -1,5 +1,5 @@
 [project]
-name = "dct"
+name = "paretodab"
 version = "0.1.0"
 authors = [
     { name = "UPB-LEA" },
@@ -30,11 +30,11 @@ build-backend = "hatchling.build"
 files = ["requirements.txt"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["dct/"]
+packages = ["paretodab/"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "dct/*.py",
+    "paretodab/*.py",
     "tests",
     "requirements.txt"
 ]

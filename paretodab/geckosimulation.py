@@ -6,7 +6,7 @@ import socket
 import random
 
 # own libraries
-from dct.debug_tools import *
+from paretodab.debug_tools import *
 
 # 3rd party libraries
 import numpy as np

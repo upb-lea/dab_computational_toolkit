@@ -9,7 +9,7 @@ import numpy as np
 
 # own libraries
 import femmt as fmt
-import dct
+import paretodab
 
 # settings of the general project and of the circuit
 project_name = "2024-09-12_project_dab_paper"
@@ -39,14 +39,14 @@ material_data_sources = fmt.InductorMaterialDataSources(
     permittivity_measurement_setup=fmt.MeasurementSetup.LEA_MTB_small_signal
 )
 
-filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
 for circuit_trial_number in circuit_trial_numbers:
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
 
-    circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
+    circuit_dto = paretodab.HandleDabDto.load_from_file(circuit_filepath)
     # get the peak current waveform
-    sorted_max_angles, i_l_1_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_inductor(circuit_dto, False)
+    sorted_max_angles, i_l_1_max_current_waveform = paretodab.HandleDabDto.get_max_peak_waveform_inductor(circuit_dto, False)
 
     time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
 
@@ -121,9 +121,9 @@ for circuit_trial_number in circuit_trial_numbers:
         else:
             for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
                 time, unique_indices = np.unique(
-                    dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
+                    paretodab.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
                     return_index=True)
-                current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                current = paretodab.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
                 current_waveform = np.array([time, current])
                 print(f"{current_waveform=}")
@@ -138,13 +138,13 @@ for circuit_trial_number in circuit_trial_numbers:
                     df_geometry_re_simulation_number, current_waveform, config_filepath)
                 result_array[vec_vvp] = combined_losses
 
-            inductor_losses = dct.InductorResults(
+            inductor_losses = paretodab.InductorResults(
                 p_combined_losses=result_array,
                 volume=volume,
                 circuit_trial_number=circuit_trial_number,
                 inductor_trial_number=re_simulate_number,
             )
 
-            circuit_dto = dct.HandleDabDto.add_inductor_results(circuit_dto, inductor_losses)
+            circuit_dto = paretodab.HandleDabDto.add_inductor_results(circuit_dto, inductor_losses)
 
-            dct.HandleDabDto.save(circuit_dto, str(re_simulate_number), directory=new_circuit_dto_directory, comment=None, timestamp=False)
+            paretodab.HandleDabDto.save(circuit_dto, str(re_simulate_number), directory=new_circuit_dto_directory, comment=None, timestamp=False)

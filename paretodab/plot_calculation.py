@@ -4,8 +4,8 @@
 import os
 
 # own libraries
-import dct
-from dct import CircuitDabDTO
+import paretodab
+from paretodab import CircuitDabDTO
 
 # 3rd party libraries
 import numpy as np
@@ -17,12 +17,12 @@ def plot_calculation_results(dab_config: CircuitDabDTO):
     :param dab_config: DAB configuration file
     :type dab_config: CircuitDabDTO
     """
-    dct.debug('phi min:', np.nanmin(dab_config.calc_modulation.phi), 'phi max:', np.nanmax(dab_config.calc_modulation.phi))
+    paretodab.debug('phi min:', np.nanmin(dab_config.calc_modulation.phi), 'phi max:', np.nanmax(dab_config.calc_modulation.phi))
     zvs_coverage = np.count_nonzero(dab_config.calc_modulation.mask_zvs) / np.size(dab_config.calc_modulation.mask_zvs)
-    dct.debug('zvs coverage:', zvs_coverage)
+    paretodab.debug('zvs coverage:', zvs_coverage)
 
     # Plotting
-    dct.info("\nStart Plotting\n")
+    paretodab.info("\nStart Plotting\n")
 
     directory = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
     directory = os.path.join(directory, 'results')
@@ -37,12 +37,12 @@ def plot_calculation_results(dab_config: CircuitDabDTO):
         int(dab_config.input_config.V2_step),
         int(dab_config.input_config.P_step))
 
-    plt = dct.plot_dab.Plot_DAB(latex=False)
+    plt = paretodab.plot_dab.Plot_DAB(latex=False)
 
     # Plot OptZVS mod results
     # Plot a cross-section through the V1 plane
     v1_middle = int(np.shape(dab_config.calc_config.mesh_P)[1] / 2)
-    dct.debug('View plane: U_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0]))
+    paretodab.debug('View plane: U_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0]))
     # Plot all modulation angles
     plt.plot_modulation(dab_config.calc_config.mesh_P[:, v1_middle, :],
                         dab_config.calc_config.mesh_V2[:, v1_middle, :],
@@ -82,7 +82,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO):
 
     # Plot a cross-section through the V2 plane
     v2_middle = int(np.shape(dab_config.calc_config.mesh_P)[0] / 2)
-    dct.debug('View plane: U_2 = {:.1f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0]))
+    paretodab.debug('View plane: U_2 = {:.1f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0]))
 
     plt.plot_modulation(dab_config.calc_config.mesh_P[v2_middle, :, :],
                         dab_config.calc_config.mesh_V1[v2_middle, :, :],

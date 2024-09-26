@@ -12,11 +12,11 @@ import transistordatabase as tdb
 from matplotlib import pyplot as plt
 
 # own libraries
-import dct.datasets_dtos as d_dtos
-import dct.functions_waveforms as d_waveforms
-import dct.mod_zvs as mod
-import dct.currents as dct_currents
-import dct.geckosimulation as dct_gecko
+import paretodab.datasets_dtos as d_dtos
+import paretodab.functions_waveforms as d_waveforms
+import paretodab.mod_zvs as mod
+import paretodab.currents as dct_currents
+import paretodab.geckosimulation as dct_gecko
 
 class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""

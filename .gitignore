@@ -1,4 +1,4 @@
-dct/results/
+paretodab/results/
 .idea/
 docs/build/
 results/
@@ -6,7 +6,7 @@ dab_modulation_output*
 *.nlc
 *.npz
 */__pycache__/
-dct/design_check/__pycache__/
+paretodab/design_check/__pycache__/
 *.sqlite3
 *.html
 *.csv

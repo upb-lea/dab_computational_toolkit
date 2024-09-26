@@ -2,10 +2,10 @@
 # python libraries
 import math
 
-import dct.datasets
+import paretodab.datasets
 # own libraries
-from dct.datasets_dtos import CircuitDabDTO
-from dct.datasets import HandleDabDto
+from paretodab.datasets_dtos import CircuitDabDTO
+from paretodab.datasets import HandleDabDto
 
 def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direction: int | None = None) -> CircuitDabDTO:
     """
@@ -19,8 +19,8 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
     """
     if dab_configuration_name.lower() == "initial":
 
-        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
-        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+        transistor_dto_1 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
 
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
@@ -50,8 +50,8 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
 
         return dab_config
     elif dab_configuration_name.lower() == "everts":
-        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
-        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+        transistor_dto_1 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
 
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
@@ -82,8 +82,8 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
     elif dab_configuration_name.lower() == "initial_reversed":
         # Set the basic DAB Specification
         n = 1 / 2.99
-        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
-        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+        transistor_dto_1 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
 
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
@@ -114,8 +114,8 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
         return dab_config
     elif dab_configuration_name.lower() == "dab_ds_default_gv8_sim":
         n = 2.99
-        transistor_dto_1 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
-        transistor_dto_2 = dct.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
+        transistor_dto_1 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0065100J')
+        transistor_dto_2 = paretodab.HandleTransistorDto.tdb_to_transistor_dto('CREE_C3M0060065J')
         dab_config = HandleDabDto.init_config(
             name=dab_configuration_name,
             V1_nom=700,
