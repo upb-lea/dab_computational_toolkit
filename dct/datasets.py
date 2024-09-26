@@ -517,7 +517,7 @@ class HandleDabDto:
             temperature=100)
 
     @staticmethod
-    def add_inductor_results(dab_dto: d_dtos.CircuitDabDTO, inductor_losses: dict) -> d_dtos.CircuitDabDTO:
+    def add_inductor_results(dab_dto: d_dtos.CircuitDabDTO, inductor_losses: d_dtos.InductorResults) -> d_dtos.CircuitDabDTO:
         """Add inductor results to the CircuitDabDTO.
 
         :param dab_dto: Dual-active bridge DTO
@@ -527,7 +527,14 @@ class HandleDabDto:
         :return: Dual-active bridge DTO including the inductor losses
         :rtype: d_dtos.CircuitDabDTO
         """
-        dab_dto.inductor_results = d_dtos.InductorLosses(**inductor_losses)
+        # dab_dto.gecko_results = d_dtos.GeckoResults(**gecko_results)
+
+        print(f"Inside 'add_inductor_results', this should be added: {inductor_losses=}")
+
+        dab_dto.inductor_results = inductor_losses
+
+        print(f"Inside 'add_inductor_results': {dab_dto.inductor_results=}")
+
         return dab_dto
 
     @staticmethod
@@ -541,7 +548,7 @@ class HandleDabDto:
         :return: Dual-active bridge DTO including the inductor losses
         :rtype: d_dtos.CircuitDabDTO
         """
-        dab_dto.stacked_transformer_losses = d_dtos.StackedTransformerLosses(**stacked_transformer_losses)
+        dab_dto.stacked_transformer_losses = d_dtos.StackedTransformerResults(**stacked_transformer_losses)
         return dab_dto
 
 class HandleTransistorDto:

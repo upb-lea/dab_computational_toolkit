@@ -156,7 +156,7 @@ class CalcLosses:
                 setattr(self, k, v)
 
 @dataclasses.dataclass(init=False)
-class InductorLosses:
+class InductorResults:
     """DTO contains the inductor losses."""
 
     p_combined_losses: np.array
@@ -168,7 +168,7 @@ class InductorLosses:
                 setattr(self, k, v)
 
 @dataclasses.dataclass(init=False)
-class StackedTransformerLosses:
+class StackedTransformerResults:
     """DTO contains the stacked transformer losses."""
 
     p_combined_losses: np.array
@@ -262,8 +262,8 @@ class CircuitDabDTO:
     gecko_additional_params: GeckoAdditionalParameters
     gecko_results: GeckoResults | None
     gecko_waveforms: GeckoWaveforms | None
-    inductor_losses: InductorLosses | None
-    stacked_transformer_losses: StackedTransformerLosses | None
+    inductor_results: InductorResults | None
+    # stacked_transformer_losses: StackedTransformerLosses | None
 
 @dataclasses.dataclass
 class TransformerTargetParameters:
