@@ -1,37 +1,37 @@
 .. sectnum::
 
-Welcome to the DAB Computation Toolbox (DCT)
-==================================================
+Welcome to the Pareto DAB (Dual Active Bridge) Tool
+===================================================
 
 
 Installation
 ---------------------------------------
-Install the DAB Computation Toolbox (DCT) as a developer
+Install the Toolbox as a developer
 
 ::
 
     pip install -e .
 
-DAB Computation Toolbox (DCT) function documentation
-====================================================
-.. currentmodule:: dct.debug_tools
+Pareto DAB (Dual Active Bridge) Tool function documentation
+===========================================================
+.. currentmodule:: paretodab.debug_tools
 
-.. automodule:: dct.debug_tools
+.. automodule:: paretodab.debug_tools
    :members:
 
 Store specifications, modulation and simulation results
 --------------------------------------------------------
-.. autoclass:: dct.DabData
+.. autoclass:: paretodab.DabData
    :members:
 
 Calculate DAB intervals
 ------------------------------
-.. currentmodule:: dct.interval_calc
+.. currentmodule:: paretodab.interval_calc
 
-.. automodule:: dct.interval_calc
+.. automodule:: paretodab.interval_calc
    :members: calc_modulation, _calc_interval_1, _calc_interval_2, _calc_interval_3, _integrate_Coss
 
 Sample requirements
 ------------------------------
-.. automodule:: dct.sample_requirements
+.. automodule:: paretodab.sample_requirements
    :members:

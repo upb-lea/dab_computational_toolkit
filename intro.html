@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1 Welcome to the DAB Computation Toolbox (DCT) &mdash; dct 0.1.0 documentation</title>
+  <title>1 Welcome to the Pareto DAB (Dual Active Bridge) Tool &mdash; paretodab 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Welcome to the DAB Computation Toolbox (DCT) documentation!" href="index.html" /> 
+    <link rel="prev" title="Welcome to the Pareto DAB (Dual Active Bridge) Documentation" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -33,7 +33,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            dct
+            paretodab
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -45,15 +45,15 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#"><span class="sectnum">1 </span>Welcome to the DAB Computation Toolbox (DCT)</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><span class="sectnum">1 </span>Welcome to the Pareto DAB (Dual Active Bridge) Tool</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation"><span class="sectnum">1.1 </span>Installation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#dab-computation-toolbox-dct-function-documentation"><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="#pareto-dab-dual-active-bridge-tool-function-documentation"><span class="sectnum">2 </span>Pareto DAB (Dual Active Bridge) Tool function documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#store-specifications-modulation-and-simulation-results"><span class="sectnum">2.1 </span>Store specifications, modulation and simulation results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#calculate-dab-intervals"><span class="sectnum">2.2 </span>Calculate DAB intervals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-dct.sample_requirements"><span class="sectnum">2.3 </span>Sample requirements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#dct.sample_requirements.load_dab_specification"><code class="docutils literal notranslate"><span class="pre">load_dab_specification()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-paretodab.sample_requirements"><span class="sectnum">2.3 </span>Sample requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#paretodab.sample_requirements.load_dab_specification"><code class="docutils literal notranslate"><span class="pre">load_dab_specification()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -66,7 +66,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">dct</a>
+          <a href="index.html">paretodab</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -74,7 +74,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active"><span class="sectnum">1 </span>Welcome to the DAB Computation Toolbox (DCT)</li>
+      <li class="breadcrumb-item active"><span class="sectnum">1 </span>Welcome to the Pareto DAB (Dual Active Bridge) Tool</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/intro.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -84,30 +84,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="welcome-to-the-dab-computation-toolbox-dct">
-<h1><span class="sectnum">1 </span>Welcome to the DAB Computation Toolbox (DCT)<a class="headerlink" href="#welcome-to-the-dab-computation-toolbox-dct" title="Link to this heading"></a></h1>
+  <section id="welcome-to-the-pareto-dab-dual-active-bridge-tool">
+<h1><span class="sectnum">1 </span>Welcome to the Pareto DAB (Dual Active Bridge) Tool<a class="headerlink" href="#welcome-to-the-pareto-dab-dual-active-bridge-tool" title="Link to this heading"></a></h1>
 <section id="installation">
 <h2><span class="sectnum">1.1 </span>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>Install the DAB Computation Toolbox (DCT) as a developer</p>
+<p>Install the Toolbox as a developer</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
 </pre></div>
 </div>
 </section>
 </section>
-<section id="dab-computation-toolbox-dct-function-documentation">
-<h1><span class="sectnum">2 </span>DAB Computation Toolbox (DCT) function documentation<a class="headerlink" href="#dab-computation-toolbox-dct-function-documentation" title="Link to this heading"></a></h1>
+<section id="pareto-dab-dual-active-bridge-tool-function-documentation">
+<h1><span class="sectnum">2 </span>Pareto DAB (Dual Active Bridge) Tool function documentation<a class="headerlink" href="#pareto-dab-dual-active-bridge-tool-function-documentation" title="Link to this heading"></a></h1>
 <section id="store-specifications-modulation-and-simulation-results">
 <h2><span class="sectnum">2.1 </span>Store specifications, modulation and simulation results<a class="headerlink" href="#store-specifications-modulation-and-simulation-results" title="Link to this heading"></a></h2>
 </section>
 <section id="calculate-dab-intervals">
 <h2><span class="sectnum">2.2 </span>Calculate DAB intervals<a class="headerlink" href="#calculate-dab-intervals" title="Link to this heading"></a></h2>
 </section>
-<section id="module-dct.sample_requirements">
-<span id="sample-requirements"></span><h2><span class="sectnum">2.3 </span>Sample requirements<a class="headerlink" href="#module-dct.sample_requirements" title="Link to this heading"></a></h2>
+<section id="module-paretodab.sample_requirements">
+<span id="sample-requirements"></span><h2><span class="sectnum">2.3 </span>Sample requirements<a class="headerlink" href="#module-paretodab.sample_requirements" title="Link to this heading"></a></h2>
 <p>File contains DAB converter sample specifications.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="dct.sample_requirements.load_dab_specification">
-<span class="sig-prename descclassname"><span class="pre">dct.sample_requirements.</span></span><span class="sig-name descname"><span class="pre">load_dab_specification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dab_configuration_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_in_mesh_per_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CircuitDabDTO</span></span></span><a class="headerlink" href="#dct.sample_requirements.load_dab_specification" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="paretodab.sample_requirements.load_dab_specification">
+<span class="sig-prename descclassname"><span class="pre">paretodab.sample_requirements.</span></span><span class="sig-name descname"><span class="pre">load_dab_specification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dab_configuration_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_in_mesh_per_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CircuitDabDTO</span></span></span><a class="headerlink" href="#paretodab.sample_requirements.load_dab_specification" title="Link to this definition"></a></dt>
 <dd><p>Load some predefined DAB specification from different lab samples or papers.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -129,7 +129,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the DAB Computation Toolbox (DCT) documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the Pareto DAB (Dual Active Bridge) Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
