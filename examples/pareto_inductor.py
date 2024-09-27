@@ -135,13 +135,14 @@ for circuit_trial_number in circuit_trial_numbers:
                 print(f"   * Inductor study: {inductor_study_name}")
                 print(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
-                volume, combined_losses = fmt.InductorOptimization.FemSimulation.full_simulation(
+                volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
                     df_geometry_re_simulation_number, current_waveform, config_filepath)
                 result_array[vec_vvp] = combined_losses
 
             inductor_losses = paretodab.InductorResults(
                 p_combined_losses=result_array,
                 volume=volume,
+                area_to_heat_sink=area_to_heat_sink,
                 circuit_trial_number=circuit_trial_number,
                 inductor_trial_number=re_simulate_number,
             )

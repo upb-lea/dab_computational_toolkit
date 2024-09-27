@@ -164,6 +164,7 @@ class InductorResults:
 
     p_combined_losses: np.array
     volume: float
+    area_to_heat_sink: float
     circuit_trial_number: int
     inductor_trial_number: int
 
@@ -179,6 +180,7 @@ class StackedTransformerResults:
 
     p_combined_losses: np.array
     volume: float
+    area_to_heat_sink: float
     circuit_trial_number: int
     stacked_transformer_trial_number: int
 

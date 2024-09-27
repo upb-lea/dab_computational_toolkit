@@ -223,13 +223,14 @@ for circuit_trial_number in circuit_trial_numbers:
                 # workaround for comma problem. Read a random csv file and set back the delimiter.
                 pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 
-                volume, combined_losses = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(df_geometry_re_simulation_number, current_waveform,
-                                                                                                           config_filepath, show_visual_outputs=False)
+                volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
+                    df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False)
                 result_array[vec_vvp] = combined_losses
 
             results_dto = paretodab.StackedTransformerResults(
                 p_combined_losses=result_array,
                 volume=volume,
+                area_to_heat_sink=area_to_heat_sink,
                 circuit_trial_number=circuit_trial_number,
                 stacked_transformer_trial_number=re_simulate_number
             )

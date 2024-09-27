@@ -22,7 +22,5 @@ class TransistorCooling:
 class InductiveElementCooling:
     """Fix parameters for the inductive element cooling."""
 
-    r_th_potting: float
-    r_th_aluminium: float
-    r_th_tim: float
-    t_max: float
+    tim_conductivity: float
+    tim_thickness: float
