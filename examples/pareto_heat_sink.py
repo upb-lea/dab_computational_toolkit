@@ -169,6 +169,7 @@ for circuit_number in circuit_numbers:
                             "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
                             "circuit_heat_sink_max_1": circuit_heat_sink_max_1,
                             "circuit_heat_sink_max_2": circuit_heat_sink_max_2,
+                            "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
                             # inductor
                             "inductor_study_name": inductor_study_name,
                             "inductor_number": inductor_number,
@@ -181,6 +182,7 @@ for circuit_number in circuit_numbers:
                             "inductor_max_transformer_loss": inductance_loss_matrix[max_loss_transformer_index],
                             "inductor_t_max": circuit_dto.input_config,
                             "inductor_heat_sink_max": inductor_heat_sink_max,
+                            "inductor_area": inductor_dto.area_to_heat_sink,
                             # transformer
                             "transformer_study_name": stacked_transformer_study_name,
                             "transformer_number": stacked_transformer_number,
@@ -193,6 +195,7 @@ for circuit_number in circuit_numbers:
                             "transformer_max_transformer_loss": transformer_loss_matrix[max_loss_transformer_index],
                             "transformer_t_max": 0,
                             "transformer_heat_sink_max": xfmr_heat_sink_max,
+                            "transformer_area": transformer_dto.area_to_heat_sink,
 
                             # summary
                             "total_losses": total_loss_matrix[max_loss_all_index]
@@ -203,6 +206,7 @@ for circuit_number in circuit_numbers:
 
 
 df["total_volume"] = df["transformer_volume"] + df["inductor_volume"]
+df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
 df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
 
 df["t_heat_sink_lowest"] = df[["circuit_heat_sink_max_1", "circuit_heat_sink_max_2", "inductor_heat_sink_max", "transformer_heat_sink_max"]].max(axis=1)
