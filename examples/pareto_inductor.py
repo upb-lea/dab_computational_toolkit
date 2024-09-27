@@ -2,6 +2,7 @@
 
 # python libraries
 import os
+import pickle
 
 # 3rd party libraries
 import pandas as pd
@@ -145,6 +146,6 @@ for circuit_trial_number in circuit_trial_numbers:
                 inductor_trial_number=re_simulate_number,
             )
 
-            circuit_dto = paretodab.HandleDabDto.add_inductor_results(circuit_dto, inductor_losses)
-
-            paretodab.HandleDabDto.save(circuit_dto, str(re_simulate_number), directory=new_circuit_dto_directory, comment=None, timestamp=False)
+            pickle_file = os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")
+            with open(pickle_file, 'wb') as output:
+                pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
