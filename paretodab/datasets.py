@@ -191,8 +191,8 @@ class HandleDabDto:
             mesh_V2=mesh_V2,
             mesh_P=mesh_P,
             Lc2_=Lc2_,
-            t_j_1=config.transistor_dto_1.t_j,
-            t_j_2=config.transistor_dto_2.t_j,
+            t_j_1=config.transistor_dto_1.t_j_max_op,
+            t_j_2=config.transistor_dto_2.t_j_max_op,
             c_oss_par_1=config.transistor_dto_1.c_oss + config.c_par_1,
             c_oss_par_2=config.transistor_dto_2.c_oss + config.c_par_2,
             c_oss_1=config.transistor_dto_1.c_oss,
@@ -565,7 +565,7 @@ class HandleTransistorDto:
         db = tdb.DatabaseManager()
         db.set_operation_mode_json()
 
-        transistor = db.load_transistor(transistor_name)
+        transistor: tdb.Transistor = db.load_transistor(transistor_name)
 
         if transistor.type != "MOSFET" and transistor.type != "SiC-MOSFET":
             raise ValueError(f"Transistor 1: {transistor.name} is of non-allowed type {transistor.type}. "
@@ -582,9 +582,12 @@ class HandleTransistorDto:
 
         transistor_dto = d_dtos.TransistorDTO(
             name=transistor.name,
-            t_j=t_j_recommended,
+            t_j_max_op=t_j_recommended,
             c_oss=c_oss,
-            q_oss=q_oss
+            q_oss=q_oss,
+            r_th_jc=transistor.switch.thermal_foster.r_th_total,
+            cooling_area=transistor.cooling_area,
+            housing_area=transistor.housing_area,
         )
 
         return transistor_dto

@@ -11,9 +11,12 @@ class TransistorDTO:
     """Contains constant transistor information."""
 
     name: str
-    t_j: np.array
+    t_j_max_op: np.array
     c_oss: np.array
     q_oss: np.array
+    housing_area: np.array
+    cooling_area: np.array
+    r_th_jc: np.array
 
 @dataclasses.dataclass
 class FixedParameters:

@@ -17,7 +17,7 @@ circuit_study_name = "circuit_trial_11_workflow_steps_1"
 inductor_study_name_list = ["inductor_trial_1_workflow"]
 stacked_transformer_study_name_list = ["transformer_trial_1_workflow"]
 
-global_df = pd.DataFrame()
+df = pd.DataFrame()
 
 # load project file paths
 filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
@@ -26,13 +26,28 @@ circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "
 circuit_objects = os.scandir(circuit_filepath_results)
 circuit_numbers = [entry.name.split(os.extsep)[0] for entry in circuit_objects]
 
+transistor_b1_cooling = paretodab.TransistorCooling(
+    tim_thickness=1e-3,
+    tim_conductivity=12,
+)
+
+transistor_b2_cooling = paretodab.TransistorCooling(
+    tim_thickness=1e-3,
+    tim_conductivity=12,
+)
+
+heat_sink = paretodab.HeatSink(
+    t_ambient=40,
+    t_hs_max=90,
+)
+
 # iterate circuit numbers
 for circuit_number in circuit_numbers:
     circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
     circuit_filepath_number = os.path.join(circuit_filepath_results, f"{circuit_number}.pkl")
 
     # Get circuit results
-    circuit_dto_results = paretodab.HandleDabDto.load_from_file(circuit_filepath_number)
+    circuit_dto = paretodab.HandleDabDto.load_from_file(circuit_filepath_number)
 
     # iterate inductor study
     for inductor_study_name in inductor_study_name_list:
@@ -80,79 +95,105 @@ for circuit_number in circuit_numbers:
                         transformer_loss_matrix = transformer_dto_results.p_combined_losses
 
                         # get transistor results
-                        total_transistor_cond_loss_matrix = 2 * (circuit_dto_results.gecko_results.S11_p_cond + circuit_dto_results.gecko_results.S12_p_cond + \
-                                                                 circuit_dto_results.gecko_results.S23_p_cond + circuit_dto_results.gecko_results.S24_p_cond)
+                        total_transistor_cond_loss_matrix = 2 * (circuit_dto.gecko_results.S11_p_cond + circuit_dto.gecko_results.S12_p_cond + \
+                                                                 circuit_dto.gecko_results.S23_p_cond + circuit_dto.gecko_results.S24_p_cond)
 
-                        max_input_bridge_transistor_cond_loss_matrix = circuit_dto_results.gecko_results.S11_p_cond
-                        max_input_bridge_transistor_cond_loss_matrix[
-                            np.greater(circuit_dto_results.gecko_results.S12_p_cond, circuit_dto_results.gecko_results.S11_p_cond)] = (
-                            circuit_dto_results.gecko_results.S12_p_cond)[
-                            np.greater(circuit_dto_results.gecko_results.S12_p_cond, circuit_dto_results.gecko_results.S11_p_cond)]
+                        max_b1_transistor_cond_loss_matrix = circuit_dto.gecko_results.S11_p_cond
+                        max_b1_transistor_cond_loss_matrix[
+                            np.greater(circuit_dto.gecko_results.S12_p_cond, circuit_dto.gecko_results.S11_p_cond)] = (
+                            circuit_dto.gecko_results.S12_p_cond)[
+                            np.greater(circuit_dto.gecko_results.S12_p_cond, circuit_dto.gecko_results.S11_p_cond)]
 
-                        max_output_bridge_transistor_cond_loss_matrix = circuit_dto_results.gecko_results.S23_p_cond
-                        max_output_bridge_transistor_cond_loss_matrix[
-                            np.greater(circuit_dto_results.gecko_results.S24_p_cond, circuit_dto_results.gecko_results.S23_p_cond)] = \
-                            circuit_dto_results.gecko_results.S24_p_cond[
-                            np.greater(circuit_dto_results.gecko_results.S24_p_cond, circuit_dto_results.gecko_results.S23_p_cond)]
+                        max_b2_transistor_cond_loss_matrix = circuit_dto.gecko_results.S23_p_cond
+                        max_b2_transistor_cond_loss_matrix[
+                            np.greater(circuit_dto.gecko_results.S24_p_cond, circuit_dto.gecko_results.S23_p_cond)] = \
+                            circuit_dto.gecko_results.S24_p_cond[
+                            np.greater(circuit_dto.gecko_results.S24_p_cond, circuit_dto.gecko_results.S23_p_cond)]
 
                         total_loss_matrix = (inductance_dto_results.p_combined_losses + total_transistor_cond_loss_matrix + \
                                              transformer_dto_results.p_combined_losses)
 
                         # get all the maximum losses
                         max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
-                        max_loss_circuit_ib_index = np.unravel_index(max_input_bridge_transistor_cond_loss_matrix.argmax(),
-                                                                     np.shape(max_input_bridge_transistor_cond_loss_matrix))
-                        max_loss_circuit_ob_index = np.unravel_index(max_output_bridge_transistor_cond_loss_matrix.argmax(),
-                                                                     np.shape(max_output_bridge_transistor_cond_loss_matrix))
+                        max_loss_circuit_1_index = np.unravel_index(max_b1_transistor_cond_loss_matrix.argmax(),
+                                                                    np.shape(max_b1_transistor_cond_loss_matrix))
+                        max_loss_circuit_2_index = np.unravel_index(max_b2_transistor_cond_loss_matrix.argmax(),
+                                                                    np.shape(max_b2_transistor_cond_loss_matrix))
                         max_loss_inductor_index = np.unravel_index(inductance_loss_matrix.argmax(), np.shape(inductance_loss_matrix))
                         max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
+
+                        r_th_copper_coin_1, copper_coin_area_1 = paretodab.calculate_r_th_copper_coin(circuit_dto.input_config.transistor_dto_1.cooling_area)
+                        r_th_copper_coin_2, copper_coin_area_2 = paretodab.calculate_r_th_copper_coin(circuit_dto.input_config.transistor_dto_2.cooling_area)
+
+                        r_th_tim_1 = paretodab.calculate_r_th_tim(copper_coin_area_1, transistor_b1_cooling)
+                        r_th_tim_2 = paretodab.calculate_r_th_tim(copper_coin_area_2, transistor_b2_cooling)
+
+                        circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + r_th_tim_1
+                        circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + r_th_tim_2
+
+                        circuit_heat_sink_max_1 = circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * \
+                            max_b1_transistor_cond_loss_matrix[max_loss_circuit_1_index]
+                        circuit_heat_sink_max_2 = circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * \
+                            max_b2_transistor_cond_loss_matrix[max_loss_circuit_2_index]
 
                         data = {
                             # circuit
                             "circuit_number": circuit_number,
                             "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
                             "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
-                            "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_ib_index],
-                            "circuit_max_circuit_ob_loss": total_transistor_cond_loss_matrix[max_loss_circuit_ob_index],
+                            "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],
+                            "circuit_max_circuit_ob_loss": total_transistor_cond_loss_matrix[max_loss_circuit_2_index],
                             "circuit_max_inductor_loss": total_transistor_cond_loss_matrix[max_loss_inductor_index],
                             "circuit_max_transformer_loss": total_transistor_cond_loss_matrix[max_loss_transformer_index],
-                            "circuit_ib_t_j_max": circuit_dto_results.input_config.transistor_dto_1.t_j,
-                            "circuit_ob_t_j_max": circuit_dto_results.input_config.transistor_dto_2.t_j,
+                            "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
+                            "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
+                            "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
+                            "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
+                            "circuit_heat_sink_max_1": circuit_heat_sink_max_1,
+                            "circuit_heat_sink_max_2": circuit_heat_sink_max_2,
                             # inductor
                             "inductor_study_name": inductor_study_name,
                             "inductor_number": inductor_number,
                             "inductor_volume": inductance_dto_results.volume,
                             "inductor_mean_loss": np.mean(inductance_loss_matrix),
                             "inductor_max_all_loss": inductance_loss_matrix[max_loss_all_index],
-                            "inductor_max_circuit_ib_loss": inductance_loss_matrix[max_loss_circuit_ib_index],
-                            "inductor_max_circuit_ob_loss": inductance_loss_matrix[max_loss_circuit_ob_index],
+                            "inductor_max_circuit_ib_loss": inductance_loss_matrix[max_loss_circuit_1_index],
+                            "inductor_max_circuit_ob_loss": inductance_loss_matrix[max_loss_circuit_2_index],
                             "inductor_max_inductor_loss": inductance_loss_matrix[max_loss_inductor_index],
                             "inductor_max_transformer_loss": inductance_loss_matrix[max_loss_transformer_index],
-                            "inductor_t_max": 0,
+                            "inductor_t_max": circuit_dto.input_config,
                             # transformer
                             "transformer_study_name": stacked_transformer_study_name,
                             "transformer_number": stacked_transformer_number,
                             "transformer_volume": transformer_dto_results.volume,
                             "transformer_mean_loss": np.mean(transformer_dto_results.p_combined_losses),
                             "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
-                            "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_ib_index],
-                            "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_ob_index],
+                            "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
+                            "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],
                             "transformer_max_inductor_loss": transformer_loss_matrix[max_loss_inductor_index],
                             "transformer_max_transformer_loss": transformer_loss_matrix[max_loss_transformer_index],
                             "transformer_t_max": 0,
+
+                            # summary
+                            "total_losses": total_loss_matrix[max_loss_all_index]
                         }
                         local_df = pd.DataFrame([data])
 
-                        global_df = pd.concat([global_df, local_df], axis=0)
+                        df = pd.concat([df, local_df], axis=0)
 
 
-global_df["total_volume"] = global_df["transformer_volume"] + global_df["inductor_volume"]
-global_df["total_mean_loss"] = global_df["circuit_mean_loss"] + global_df["inductor_mean_loss"] + global_df["transformer_mean_loss"]
+df["total_volume"] = df["transformer_volume"] + df["inductor_volume"]
+df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
 
-plt.scatter(global_df["total_volume"], global_df["total_mean_loss"])
+df["t_heat_sink_lowest"] = 120
+df["t_heat_sink_dimensioning"] = df["t_heat_sink_lowest"].apply(lambda x: x if x < heat_sink.t_hs_max else heat_sink.t_hs_max)
+df["r_th_heat_sink"] = (df["t_heat_sink_dimensioning"] - heat_sink.t_ambient) / df["total_losses"]
+
+
+plt.scatter(df["total_volume"], df["total_mean_loss"])
 plt.grid()
 plt.xlabel("Volume in m³")
 plt.ylabel("Mean total losses in W")
 plt.show()
 
-print(global_df.head())
+print(df.head())

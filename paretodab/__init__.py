@@ -15,3 +15,5 @@ from paretodab.pareto import *
 from paretodab.generalplotsettings import *
 from paretodab.functions_waveforms import *
 from paretodab.datasets_dtos import *
+from paretodab.heat_sink import *
+from paretodab.heat_sink_dtos import *
