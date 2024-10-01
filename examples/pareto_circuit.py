@@ -4,6 +4,8 @@ import os
 
 # 3rd party libraries
 import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
 
 # own libraries
 import paretodab
@@ -64,23 +66,61 @@ elif action == 'show_study_results':
 elif action == 'filter_study_results_and_run_gecko':
     df = paretodab.Optimization.study_to_df(dab_config)
     df = df[df["values_0"] == 100]
-    print(df.head())
-    # df["l_2__"] = df["params_l_2_suggest"] * df["params_n_suggest"] * df["params_n_suggest"]
-    # print(df["l_2__"])
-    # df = df[df["params_l_2__suggest"] < 1e-3]
 
-    df = df.nsmallest(n=10, columns=["values_1"])
-    print(df.head())
-    smallest_dto_list = paretodab.Optimization.df_to_dab_dto_list(dab_config, df)
+    df_original = df.copy()
+
+    smallest_dto_list = []
+    df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
+    df_smallest = df.nsmallest(n=1, columns=["values_1"])
+
+    smallest_dto_list.append(paretodab.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
+    print(f"{np.shape(df)=}")
+
+    for count in np.arange(0, 10):
+        print("------------------")
+        print(f"{count=}")
+        n_suggest = df_smallest['params_n_suggest'].item()
+        f_s_suggest = df_smallest['params_f_s_suggest'].item()
+        l_s_suggest = df_smallest['params_l_s_suggest'].item()
+        l_1_suggest = df_smallest['params_l_1_suggest'].item()
+        l_2__suggest = df_smallest['params_l_2__suggest'].item()
+        transistor_1_name_suggest = df_smallest['params_transistor_1_name_suggest'].item()
+        transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
+
+        print(f"{transistor_1_name_suggest=}")
+        print(f"{transistor_2_name_suggest=}")
+
+        # make sure to use parameters with minimum x % difference.
+        difference = 0.05
+
+        df = df.loc[
+            ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \
+              (df["params_f_s_suggest"].ge(f_s_suggest * (1 - difference)) & df["params_f_s_suggest"].le(f_s_suggest * (1 + difference))) & \
+              (df["params_l_s_suggest"].ge(l_s_suggest * (1 - difference)) & df["params_l_s_suggest"].le(l_s_suggest * (1 + difference))) & \
+              (df["params_l_1_suggest"].ge(l_1_suggest * (1 - difference)) & df["params_l_1_suggest"].le(l_1_suggest * (1 + difference))) & \
+              (df["params_l_2__suggest"].ge(l_2__suggest * (1 - difference)) & df["params_l_2__suggest"].le(l_2__suggest * (1 + difference))) & \
+              df["params_transistor_1_name_suggest"].isin([transistor_1_name_suggest]) & \
+              df["params_transistor_2_name_suggest"].isin([transistor_2_name_suggest])
+              )]
+
+        df_smallest = df.nsmallest(n=1, columns=["values_1"])
+        print(f"{df_smallest=}")
+        df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=1)
+        smallest_dto_list.append(paretodab.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
+
+    plt.scatter(df_original["values_0"], df_original["values_1"], color="blue")
+    plt.scatter(df_smallest_all["values_0"], df_smallest_all["values_1"], color="red")
+    plt.show()
 
     folders = paretodab.Optimization.load_filepaths(dab_config.project_directory)
-
     for dto in smallest_dto_list:
         print(f"{dto.name=}")
         dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
         dto = paretodab.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
         paretodab.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
+
+
 elif action == 'custom':
     dab_config = paretodab.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
     # dab_dto = paretodab.Optimization.load_dab_dto_from_study(dab_config, 99999)
