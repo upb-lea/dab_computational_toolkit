@@ -54,6 +54,55 @@ heat_sink = paretodab.HeatSink(
     t_hs_max=90,
 )
 
+def df_plot_final_pareto_front(df: pd.DataFrame, figure_size: tuple | None = None):
+    """
+    Plot an interactive Pareto diagram (losses vs. volume).
+
+    :param df: Dataframe
+    :type df: pd.Dataframe
+    :param figure_size: figures size as a x/y-tuple in mm, e.g. (160, 80)
+    :type figure_size: tuple
+    """
+    df["name_column"] = "c:" + df["circuit_number"] + " i: " + df["inductor_number"] + " t: " + df["transformer_number"]
+    names = df["name_column"].to_numpy()
+
+    fig, ax = plt.subplots(figsize=[x / 25.4 for x in figure_size] if figure_size is not None else None, dpi=80)
+    sc = plt.scatter(df["total_volume"], df["total_mean_loss"], s=10)
+
+    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+                        bbox=dict(boxstyle="round", fc="w"),
+                        arrowprops=dict(arrowstyle="->"))
+    annot.set_visible(False)
+
+    def update_annot(ind):
+        pos = sc.get_offsets()[ind["ind"][0]]
+        annot.xy = pos
+        text = f"{[names[n] for n in ind['ind']]}"
+        annot.set_text(text)
+        annot.get_bbox_patch().set_alpha(0.4)
+
+    def hover(event):
+        vis = annot.get_visible()
+        if event.inaxes == ax:
+            cont, ind = sc.contains(event)
+            if cont:
+                update_annot(ind)
+                annot.set_visible(True)
+                fig.canvas.draw_idle()
+            else:
+                if vis:
+                    annot.set_visible(False)
+                    fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect("motion_notify_event", hover)
+
+    plt.xlabel(r'Volume in m³')
+    plt.ylabel(r'$R_\mathrm{th}$ in K/W')
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
+
+
 # iterate circuit numbers
 for circuit_number in circuit_numbers:
     circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
@@ -237,8 +286,4 @@ df["heat_sink_volume"] = df["r_th_heat_sink"].apply(lambda r_th_max: df_heat_sin
 
 df["total_volume"] = df["transformer_volume"] + df["inductor_volume"] + df["heat_sink_volume"]
 
-plt.scatter(df["total_volume"], df["total_mean_loss"])
-plt.grid()
-plt.xlabel("Volume in m³")
-plt.ylabel("Mean total losses in W")
-plt.show()
+df_plot_final_pareto_front(df)
