@@ -265,7 +265,7 @@ for (_, _, file_name_list) in os.walk('../../HCT_heat_sink_computation_toolbox/h
     fan_list = file_name_list
 
 config = hct.OptimizationParameters(
-    heat_sink_study_name="heat_sink_trial_1",
+    heat_sink_study_name="heat_sink_trial_2",
     heat_sink_optimization_directory=filepaths.heat_sink,
     height_c_list=[0.02, 0.08],
     width_b_list=[0.02, 0.08],
@@ -275,9 +275,10 @@ config = hct.OptimizationParameters(
     thickness_fin_t_list=[1e-3, 5e-3],
     fan_list=fan_list,
     t_ambient=40,
+    area_min=df["total_area"].max()
 )
 
-# hct.Optimization.start_proceed_study(config=config, number_trials=10000)
+hct.Optimization.start_proceed_study(config=config, number_trials=10000)
 
 df_heat_sink = hct.Optimization.study_to_df(config)
 # hct.Optimization.df_plot_pareto_front(df_heat_sink, (50, 60))
