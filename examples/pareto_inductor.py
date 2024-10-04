@@ -13,15 +13,15 @@ import femmt as fmt
 import paretodab
 
 # settings of the general project and of the circuit
-project_name = "2024-09-12_project_dab_paper"
-circuit_study_name = "circuit_trial_11_workflow_steps_1"
+project_name = "2024-10-04_dab_paper"
+circuit_study_name = "circuit_paper_trial_1"
+process_number = 2
 
 # inductor optimization
-# circuit_trial_numbers = [9422, 9388]
-# re_simulation_numbers = [40, 27],
-circuit_trial_numbers = [3004, 3493]
+circuit_trial_numbers = [49878]
 re_simulation_numbers_matrix = [[1251, 3908, 5420], [734, 3207, 4894]]
-inductor_study_name = "inductor_trial_1_workflow"
+inductor_study_name = "inductor_trial_1"
+re_simulate = False
 
 insulations = fmt.InductorInsulationDTO(
     core_bot=1e-3,
@@ -68,85 +68,83 @@ for circuit_trial_number in circuit_trial_numbers:
     )
     print(f"{circuit_dto.input_config.Lc1=}")
 
-    # fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, 20000)
+    fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, 1000)
     # fmt.optimization.InductorOptimization.ReluctanceModel.show_study_results(io_config)
     df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(io_config)
     df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.01)
     # fmt.optimization.InductorOptimization.ReluctanceModel.df_plot_pareto_front(df, df_filtered, label_list=["all", "front"], interactive=False)
-    print(df_filtered["number"])
-    fmt.InductorOptimization.FemSimulation.fem_simulations_from_reluctance_df(df_filtered, io_config)
+
+    fmt.InductorOptimization.FemSimulation.fem_simulations_from_reluctance_df(df_filtered, io_config, process_number=process_number)
 
     fem_results_folder_path = os.path.join(filepaths.inductor, circuit_study_name, circuit_dto.name, inductor_study_name, "02_fem_simulation_results")
 
     df_fem = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
-    print(df_fem.head())
-
     # fmt.InductorOptimization.FemSimulation.fem_vs_reluctance_pareto(df_fem)
 
-    print(f"{re_simulation_numbers_matrix=}")
+    if re_simulate:
 
-    if circuit_trial_number == circuit_trial_numbers[0]:
-        print(f"Circuit number: {circuit_trial_number}")
-        re_simulate_numbers = re_simulation_numbers_matrix[0]
-        config_filepath = os.path.join(filepaths.inductor, circuit_study_name, str(circuit_trial_number), inductor_study_name, f"{inductor_study_name}.pkl")
-    elif circuit_trial_number == circuit_trial_numbers[1]:
-        print(f"Circuit number: {circuit_trial_number}")
-        re_simulate_numbers = re_simulation_numbers_matrix[1]
+        if circuit_trial_number == circuit_trial_numbers[0]:
+            print(f"Circuit number: {circuit_trial_number}")
+            re_simulate_numbers = re_simulation_numbers_matrix[0]
+            config_filepath = os.path.join(filepaths.inductor, circuit_study_name, str(circuit_trial_number), inductor_study_name, f"{inductor_study_name}.pkl")
+        elif circuit_trial_number == circuit_trial_numbers[1]:
+            print(f"Circuit number: {circuit_trial_number}")
+            re_simulate_numbers = re_simulation_numbers_matrix[1]
 
-    config_on_disk = fmt.InductorOptimization.ReluctanceModel.load_config(config_filepath)
+        config_on_disk = fmt.InductorOptimization.ReluctanceModel.load_config(config_filepath)
 
-    # workaround for comma problem. Read a random csv file and set back the delimiter.
-    pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+        # workaround for comma problem. Read a random csv file and set back the delimiter.
+        pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 
-    # sweep through all current waveforms
-    i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-    angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+        # sweep through all current waveforms
+        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-    print(df_fem["number"])
+        print(df_fem["number"])
 
-    for re_simulate_number in re_simulate_numbers:
-        print(f"{re_simulate_number=}")
-        df_geometry_re_simulation_number = df_fem[df_fem["number"] == float(re_simulate_number)]
+        for re_simulate_number in re_simulate_numbers:
+            print(f"{re_simulate_number=}")
+            df_geometry_re_simulation_number = df_fem[df_fem["number"] == float(re_simulate_number)]
 
-        print(df_geometry_re_simulation_number.head())
+            print(df_geometry_re_simulation_number.head())
 
-        result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+            result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-        new_circuit_dto_directory = os.path.join(io_config.inductor_optimization_directory, "09_circuit_dtos_incl_inductor_losses")
-        if not os.path.exists(new_circuit_dto_directory):
-            os.makedirs(new_circuit_dto_directory)
+            new_circuit_dto_directory = os.path.join(io_config.inductor_optimization_directory, "09_circuit_dtos_incl_inductor_losses")
+            if not os.path.exists(new_circuit_dto_directory):
+                os.makedirs(new_circuit_dto_directory)
 
-        if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
-            print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
-        else:
-            for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-                time, unique_indices = np.unique(
-                    paretodab.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
-                    return_index=True)
-                current = paretodab.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
+                print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+            else:
+                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                    time, unique_indices = np.unique(
+                        paretodab.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
+                        return_index=True)
+                    current = paretodab.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
-                current_waveform = np.array([time, current])
-                print(f"{current_waveform=}")
-                print("----------------------")
-                print("Re-simulation of:")
-                print(f"   * Circuit study: {circuit_study_name}")
-                print(f"   * Circuit trial: {circuit_trial_number}")
-                print(f"   * Inductor study: {inductor_study_name}")
-                print(f"   * Inductor re-simulation trial: {re_simulate_number}")
+                    current_waveform = np.array([time, current])
+                    print(f"{current_waveform=}")
+                    print("----------------------")
+                    print("Re-simulation of:")
+                    print(f"   * Circuit study: {circuit_study_name}")
+                    print(f"   * Circuit trial: {circuit_trial_number}")
+                    print(f"   * Inductor study: {inductor_study_name}")
+                    print(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
-                volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
-                    df_geometry_re_simulation_number, current_waveform, config_filepath)
-                result_array[vec_vvp] = combined_losses
+                    volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
+                        df_geometry_re_simulation_number, current_waveform, config_filepath)
+                    result_array[vec_vvp] = combined_losses
 
-            inductor_losses = paretodab.InductorResults(
-                p_combined_losses=result_array,
-                volume=volume,
-                area_to_heat_sink=area_to_heat_sink,
-                circuit_trial_number=circuit_trial_number,
-                inductor_trial_number=re_simulate_number,
-            )
+                inductor_losses = paretodab.InductorResults(
+                    p_combined_losses=result_array,
+                    volume=volume,
+                    area_to_heat_sink=area_to_heat_sink,
+                    circuit_trial_number=circuit_trial_number,
+                    inductor_trial_number=re_simulate_number,
+                )
 
-            pickle_file = os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")
-            with open(pickle_file, 'wb') as output:
-                pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")
+                with open(pickle_file, 'wb') as output:
+                    pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
