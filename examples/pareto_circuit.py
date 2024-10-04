@@ -14,38 +14,28 @@ import logging
 logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
 
-# design_space = paretodab.CircuitParetoDesignSpace(
-#     f_s_min_max_list=[200e3, 200e3],
-#     l_s_min_max_list=[1e-6, 200e-6],
-#     l_1_min_max_list=[100e-6, 100e-3],
-#     l_2__min_max_list=[30e-6, 1e-3],
-#     n_min_max_list=[3, 7],
-#     transistor_1_list=['CREE_C3M0065100J'],
-#     transistor_2_list=['CREE_C3M0060065J']
-# )
-
 design_space = paretodab.CircuitParetoDesignSpace(
-    f_s_min_max_list=[200e3, 200e3],
-    l_s_min_max_list=[120e-6, 125e-6],
-    l_1_min_max_list=[120e-7, 120e-4],
-    l_2__min_max_list=[120e-7 / 4.2 ** 2, 120e-4 / 4.2 ** 2],
-    n_min_max_list=[4.2, 4.2],
-    transistor_1_name_list=['CREE_C3M0065100J'],
-    transistor_2_name_list=['CREE_C3M0060065J'],
-    c_par_1=6e-12,
-    c_par_2=6e-12,
+    f_s_min_max_list=[50e3, 300e3],
+    l_s_min_max_list=[20e-6, 900e-6],
+    l_1_min_max_list=[10e-6, 10e-3],
+    l_2__min_max_list=[10e-6, 1e-3],
+    n_min_max_list=[3, 7],
+    transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J'],
+    transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J'],
+    c_par_1=16e-12,
+    c_par_2=16e-12,
 )
 
 output_range = paretodab.CircuitOutputRange(
     v_1_min_nom_max_list=[690, 700, 710],
     v_2_min_nom_max_list=[175, 235, 295],
     p_min_nom_max_list=[0, 2000, 2200],
-    steps_per_direction=1,
+    steps_per_direction=5,
 )
 
 dab_config = paretodab.CircuitParetoDabDesign(
-    circuit_study_name='circuit_trial_11_workflow_steps_1',
-    project_directory=os.path.abspath(os.path.join(os.curdir, "2024-09-12_project_dab_paper")),
+    circuit_study_name='circuit_paper_trial_1',
+    project_directory=os.path.abspath(os.path.join(os.curdir, "2024-10-04_dab_paper")),
 
     design_space=design_space,
     output_range=output_range
@@ -57,11 +47,12 @@ action = 'filter_study_results_and_run_gecko'
 # action = 'custom'
 
 if action == 'run_new_study':
-    paretodab.Optimization.start_proceed_study(dab_config, 5000)
+    paretodab.Optimization.start_proceed_study(dab_config, 50000)
 
 elif action == 'show_study_results':
     dab_config = paretodab.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
     paretodab.Optimization.show_study_results(dab_config)
+    df = paretodab.Optimization.study_to_df(dab_config)
 
 elif action == 'filter_study_results_and_run_gecko':
     df = paretodab.Optimization.study_to_df(dab_config)
@@ -87,9 +78,6 @@ elif action == 'filter_study_results_and_run_gecko':
         transistor_1_name_suggest = df_smallest['params_transistor_1_name_suggest'].item()
         transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
 
-        print(f"{transistor_1_name_suggest=}")
-        print(f"{transistor_2_name_suggest=}")
-
         # make sure to use parameters with minimum x % difference.
         difference = 0.05
 
@@ -104,9 +92,9 @@ elif action == 'filter_study_results_and_run_gecko':
               )]
 
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
-        print(f"{df_smallest=}")
-        df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=1)
-        smallest_dto_list.append(paretodab.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
+        df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
+
+    smallest_dto_list = paretodab.Optimization.df_to_dab_dto_list(dab_config, df_smallest_all)
 
     plt.scatter(df_original["values_0"], df_original["values_1"], color="blue")
     plt.scatter(df_smallest_all["values_0"], df_smallest_all["values_1"], color="red")

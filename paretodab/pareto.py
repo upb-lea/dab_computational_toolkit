@@ -266,12 +266,15 @@ class Optimization:
         study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.circuit_study_name, sampler=sampler)
         print(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
         study_in_memory.add_trials(study_in_storage.trials)
-        study_in_memory.optimize(func, n_trials=number_trials, show_progress_bar=True)
-
-        study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-        print(f"Finished {number_trials} trials.")
-        print(f"current time: {datetime.datetime.now()}")
-        Optimization.save_config(dab_config)
+        try:
+            study_in_memory.optimize(func, n_trials=number_trials, show_progress_bar=True)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
+            print(f"Finished {number_trials} trials.")
+            print(f"current time: {datetime.datetime.now()}")
+            Optimization.save_config(dab_config)
 
     @staticmethod
     def show_study_results(dab_config: p_dtos.CircuitParetoDabDesign) -> None:
