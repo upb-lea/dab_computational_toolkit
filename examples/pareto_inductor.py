@@ -3,6 +3,7 @@
 # python libraries
 import os
 import pickle
+import logging
 
 # 3rd party libraries
 import pandas as pd
@@ -11,6 +12,10 @@ import numpy as np
 # own libraries
 import femmt as fmt
 import paretodab
+
+# configure root logger
+logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
+logging.getLogger().setLevel(logging.ERROR)
 
 # settings of the general project and of the circuit
 project_name = "2024-10-04_dab_paper"
