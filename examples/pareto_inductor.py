@@ -37,7 +37,24 @@ material_data_sources = fmt.InductorMaterialDataSources(
 )
 
 
-def simulation(circuit_trial_numbers: list, number_trials: int, filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False):
+def simulation(circuit_trial_numbers: list, process_number: int, number_trials: int,
+               filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False) -> None:
+    """
+    Simulate.
+
+    :param circuit_trial_numbers: List of circuit trial numbers to perform inductor optimization
+    :type circuit_trial_numbers: list
+    :param process_number: Process number (in case of parallel computing)
+    :type process_number: int
+    :param number_trials: Number of trials for the reluctance model optimization
+    :type number_trials: int
+    :param filter_factor: Pareto filter, tolerance band = Multiplication of minimum losses
+    :type filter_factor: flot
+    :param re_simulate: True to re-simulate all waveforms
+    :type re_simulate: bool
+    :param debug: True to debug, defaults to False
+    :type debug: bool
+    """
     filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
     for circuit_trial_number in circuit_trial_numbers:
@@ -99,8 +116,6 @@ def simulation(circuit_trial_numbers: list, number_trials: int, filter_factor: f
             i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
             angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-            print(df_fem_reluctance["number"])
-
             re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
 
             for re_simulate_number in re_simulate_numbers:
@@ -135,7 +150,8 @@ def simulation(circuit_trial_numbers: list, number_trials: int, filter_factor: f
                             print(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
-                            df_geometry_re_simulation_number, current_waveform, config_filepath)
+                            df_geometry_re_simulation_number, current_waveform=current_waveform, inductor_config_filepath=config_filepath,
+                            process_number=process_number)
                         result_array[vec_vvp] = combined_losses
 
                     inductor_losses = paretodab.InductorResults(
@@ -161,7 +177,7 @@ def simulation(circuit_trial_numbers: list, number_trials: int, filter_factor: f
 
 if __name__ == '__main__':
     process_number = int(sys.argv[1]) if len(sys.argv) == 2 else 1
-    total_processes = 3
+    total_processes = 4
 
     # project name, circuit study name and inductor study name
     project_name = "2024-10-04_dab_paper"
@@ -170,7 +186,6 @@ if __name__ == '__main__':
 
     # inductor optimization
     process_circuit_trial_numbers = []
-    re_simulate = False
 
     filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
@@ -180,6 +195,7 @@ if __name__ == '__main__':
     # check for empty list
     if not process_circuit_trial_numbers:
         # define circuit numbers per process
-        process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers)) if (index + 1 - process_number) % total_processes == 0]
+        process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
+                                         if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, number_trials=1, filter_factor=1, re_simulate=True, debug=False)
+    simulation(process_circuit_trial_numbers, process_number=process_number, number_trials=10000, filter_factor=1, re_simulate=True, debug=False)
