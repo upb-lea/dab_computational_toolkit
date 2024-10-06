@@ -9,6 +9,7 @@ import sys
 # 3rd party libraries
 import pandas as pd
 import numpy as np
+import tqdm
 
 # own libraries
 import femmt as fmt
@@ -117,20 +118,21 @@ def simulation(circuit_trial_numbers: list, number_trials: int, filter_factor: f
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
                     print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
                 else:
-                    for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                    for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape), total=len(circuit_dto.calc_modulation.phi.flatten())):
                         time, unique_indices = np.unique(
                             paretodab.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
                             return_index=True)
                         current = paretodab.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
                         current_waveform = np.array([time, current])
-                        print(f"{current_waveform=}")
-                        print("----------------------")
-                        print("Re-simulation of:")
-                        print(f"   * Circuit study: {circuit_study_name}")
-                        print(f"   * Circuit trial: {circuit_trial_number}")
-                        print(f"   * Inductor study: {inductor_study_name}")
-                        print(f"   * Inductor re-simulation trial: {re_simulate_number}")
+                        if debug:
+                            print(f"{current_waveform=}")
+                            print("----------------------")
+                            print("Re-simulation of:")
+                            print(f"   * Circuit study: {circuit_study_name}")
+                            print(f"   * Circuit trial: {circuit_trial_number}")
+                            print(f"   * Inductor study: {inductor_study_name}")
+                            print(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform, config_filepath)
@@ -180,4 +182,4 @@ if __name__ == '__main__':
         # define circuit numbers per process
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers)) if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, number_trials=1, filter_factor=1, re_simulate=False, debug=False)
+    simulation(process_circuit_trial_numbers, number_trials=1, filter_factor=1, re_simulate=True, debug=False)
