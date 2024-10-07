@@ -20,15 +20,6 @@ import tqdm
 logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 logging.getLogger().setLevel(logging.ERROR)
 
-# settings of the general project and of the circuit
-project_name = "2024-09-12_project_dab_paper"
-circuit_study_name = "circuit_trial_11_workflow_steps_1"
-
-circuit_trial_numbers = [3004, 3493]
-re_simulation_numbers_list = [[4451, 5641, 5993], [7693, 8062, 8515]]
-sto_study_name = "transformer_trial_1_workflow"
-re_simulate = False
-
 insulations = fmt.StoInsulation(
     # insulation for top core window
     iso_window_top_core_top=1.3e-3,
@@ -54,7 +45,7 @@ material_data_sources = fmt.StackedTransformerMaterialDataSources(
     permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
     permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
 )
-def simulation(circuit_trial_numbers: list, process_number: int, number_trials: int, filter_factor: float = 1.0,
+def simulation(circuit_trial_numbers: list, process_number: int, target_number_trials: int, filter_factor: float = 1.0,
                re_simulate: bool = False, debug: bool = False):
     """
     Simulate.
@@ -63,8 +54,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, number_trials: 
     :type circuit_trial_numbers: list
     :param process_number: Process number (in case of parallel computing)
     :type process_number: int
-    :param number_trials: Number of trials for the reluctance model optimization
-    :type number_trials: int
+    :param target_number_trials: Number of trials for the reluctance model optimization
+    :type target_number_trials: int
     :param filter_factor: Pareto filter, tolerance band = Multiplication of minimum losses
     :type filter_factor: flot
     :param re_simulate: True to re-simulate all waveforms
@@ -133,10 +124,13 @@ def simulation(circuit_trial_numbers: list, process_number: int, number_trials: 
             material_data_sources=material_data_sources
         )
 
-        if number_trials != 0:
-            # overwrite input number of trials with 100 for short simulation times
-            number_trials = 100 if debug and number_trials > 100 else number_trials
-            fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(sto_config, number_trials)
+        if target_number_trials != 0:
+            if debug:
+                # overwrite input number of trials with 100 for short simulation times
+                target_number_trials = 100 if target_number_trials > 100 else target_number_trials
+                fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(sto_config, number_trials=target_number_trials)
+            else:
+                fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(sto_config, target_number_trials=target_number_trials)
 
         # perform FEM simulations
         if filter_factor != 0:
@@ -237,7 +231,7 @@ if __name__ == '__main__':
     # project name, circuit study name and inductor study name
     project_name = "2024-10-04_dab_paper"
     circuit_study_name = "circuit_paper_trial_1"
-    inductor_study_name = "transformer_trial_1"
+    sto_study_name = "transformer_trial_1_test"
 
     # inductor optimization
     process_circuit_trial_numbers = []
@@ -253,4 +247,4 @@ if __name__ == '__main__':
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
                                          if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, number_trials=100, filter_factor=1, re_simulate=True, debug=False, process_number=process_number)
+    simulation(process_circuit_trial_numbers, target_number_trials=200, filter_factor=0, re_simulate=True, debug=False, process_number=process_number)
