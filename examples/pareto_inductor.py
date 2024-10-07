@@ -37,7 +37,7 @@ material_data_sources = fmt.InductorMaterialDataSources(
 )
 
 
-def simulation(circuit_trial_numbers: list, process_number: int, number_trials: int,
+def simulation(circuit_trial_numbers: list, process_number: int, target_number_trials: int,
                filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False) -> None:
     """
     Simulate.
@@ -46,8 +46,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, number_trials: 
     :type circuit_trial_numbers: list
     :param process_number: Process number (in case of parallel computing)
     :type process_number: int
-    :param number_trials: Number of trials for the reluctance model optimization
-    :type number_trials: int
+    :param target_number_trials: Number of trials for the reluctance model optimization
+    :type target_number_trials: int
     :param filter_factor: Pareto filter, tolerance band = Multiplication of minimum losses
     :type filter_factor: flot
     :param re_simulate: True to re-simulate all waveforms
@@ -81,10 +81,13 @@ def simulation(circuit_trial_numbers: list, process_number: int, number_trials: 
             material_data_sources=material_data_sources
         )
 
-        if number_trials != 0:
-            # overwrite input number of trials with 100 for short simulation times
-            number_trials = 100 if debug and number_trials > 100 else number_trials
-            fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, number_trials)
+        if target_number_trials != 0:
+            if debug:
+                # overwrite input number of trials with 100 for short simulation times
+                target_number_trials = 100 if target_number_trials > 100 else target_number_trials
+                fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, number_trials=target_number_trials)
+            else:
+                fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(io_config, target_number_trials=target_number_trials)
 
         # Plot options
         # fmt.optimization.InductorOptimization.ReluctanceModel.show_study_results(io_config)
@@ -162,7 +165,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, number_trials: 
                         inductor_trial_number=re_simulate_number,
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
 
@@ -182,7 +185,7 @@ if __name__ == '__main__':
     # project name, circuit study name and inductor study name
     project_name = "2024-10-04_dab_paper"
     circuit_study_name = "circuit_paper_trial_1"
-    inductor_study_name = "inductor_trial_1"
+    inductor_study_name = "inductor_trial_1_test"
 
     # inductor optimization
     process_circuit_trial_numbers = []
@@ -198,4 +201,4 @@ if __name__ == '__main__':
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
                                          if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, process_number=process_number, number_trials=10000, filter_factor=1, re_simulate=True, debug=False)
+    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=70, filter_factor=0, re_simulate=False, debug=False)
