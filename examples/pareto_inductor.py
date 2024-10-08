@@ -96,7 +96,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
         # perform FEM simulations
         if filter_factor != 0:
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(io_config)
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.01)
+            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=filter_factor,
+                                                                                                    factor_max_dc_losses=100)
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     # project name, circuit study name and inductor study name
     project_name = "2024-10-04_dab_paper"
     circuit_study_name = "circuit_paper_trial_1"
-    inductor_study_name = "inductor_trial_1_test"
+    inductor_study_name = "inductor_trial_1"
 
     # inductor optimization
     process_circuit_trial_numbers = []
@@ -201,4 +202,4 @@ if __name__ == '__main__':
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
                                          if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=70, filter_factor=0, re_simulate=False, debug=False)
+    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=100000, filter_factor=3, re_simulate=False, debug=False)
