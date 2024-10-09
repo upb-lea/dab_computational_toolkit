@@ -135,8 +135,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
         # perform FEM simulations
         if filter_factor != 0:
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(sto_config)
-            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df,
-                                                                                                              factor_min_dc_losses=20, factor_max_dc_losses=30)
+            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
+                df, factor_min_dc_losses=filter_factor, factor_max_dc_losses=100)
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
@@ -151,8 +151,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
         if re_simulate:
             fem_results_folder_path = os.path.join(filepaths.transformer, circuit_study_name, circuit_dto.name, sto_study_name, "02_fem_simulation_results")
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(sto_config)
-            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=20,
-                                                                                                              factor_max_dc_losses=30)
+            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=filter_factor,
+                                                                                                              factor_max_dc_losses=100)
             df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
             config_filepath = os.path.join(filepaths.transformer, circuit_study_name, str(circuit_trial_number), sto_study_name, f"{sto_study_name}.pkl")
