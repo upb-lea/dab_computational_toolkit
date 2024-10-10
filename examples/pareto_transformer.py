@@ -231,7 +231,7 @@ if __name__ == '__main__':
     # project name, circuit study name and inductor study name
     project_name = "2024-10-04_dab_paper"
     circuit_study_name = "circuit_paper_trial_1"
-    sto_study_name = "transformer_trial_1_test"
+    sto_study_name = "transformer_trial_1"
 
     # inductor optimization
     process_circuit_trial_numbers = []
