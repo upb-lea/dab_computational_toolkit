@@ -107,7 +107,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
         if re_simulate:
             fem_results_folder_path = os.path.join(filepaths.inductor, circuit_study_name, circuit_dto.name, inductor_study_name, "02_fem_simulation_results")
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(io_config)
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.01)
+            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=filter_factor,
+                                                                                                    factor_max_dc_losses=100)
             df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
             # fmt.InductorOptimization.FemSimulation.fem_vs_reluctance_pareto(df_fem_reluctance)
 
