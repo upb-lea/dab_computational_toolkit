@@ -11,7 +11,6 @@ import numpy as np
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
             'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan']
 
-
 def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.ndarray | int | float,
                            Coss1: np.ndarray, Coss2: np.ndarray,
                            V1: np.ndarray, V2: np.ndarray, P: np.ndarray) -> dict:
@@ -49,7 +48,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi = np.full_like(V1, np.nan)
     tau1 = np.full_like(V1, np.nan)
     tau2 = np.full_like(V1, np.nan)
-    zvs = np.full_like(V1, False)
+    zvs = np.full_like(V1, np.nan)
     _Im2_mask = np.full_like(V1, False)
     _IIm2_mask = np.full_like(V1, False)
     _IIIm1_mask = np.full_like(V1, False)
@@ -87,7 +86,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi_II, tau1_II, tau2_II = _calc_interval_2(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
 
     # Int. III (mode 1): calculate phi, tau1 and tau2
-    phi_III, tau1_III, tau2_III = _calc_interval_3(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
+    phi_III, tau1_III, tau2_III, additional_mask = _calc_interval_3(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
 
     # Decision Logic
     # Interval I (mode 2):
@@ -105,8 +104,6 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi[_Im2_mask] = phi_I[_Im2_mask]
     tau1[_Im2_mask] = tau1_I[_Im2_mask]
     tau2[_Im2_mask] = tau2_I[_Im2_mask]
-
-    # debug('_Im2_mask', _Im2_mask)
     zvs[_Im2_mask] = True
 
     # Interval II (mode 2):
@@ -121,7 +118,6 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi[_IIm2_mask] = phi_II[_IIm2_mask]
     tau1[_IIm2_mask] = tau1_II[_IIm2_mask]
     tau2[_IIm2_mask] = tau2_II[_IIm2_mask]
-    # debug('_IIm2_mask', _IIm2_mask)
     zvs[_IIm2_mask] = True
 
     # Int. III (mode 1):
@@ -133,11 +129,19 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi[_IIIm1_mask] = phi_III[_IIIm1_mask]
     tau1[_IIIm1_mask] = tau1_III[_IIIm1_mask]
     tau2[_IIIm1_mask] = tau2_III[_IIIm1_mask]
-    # debug('_IIIm1_mask', _IIIm1_mask)
     zvs[_IIIm1_mask] = True
+
+    # fix white area
+    phi[additional_mask] = phi_III[additional_mask]
+    tau1[additional_mask] = tau1_III[additional_mask]
+    tau2[additional_mask] = tau2_III[additional_mask]
+    zvs[additional_mask] = True
 
     # Int. I (mode 2): ZVS is analytically IMPOSSIBLE!
     zvs[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = False
+    phi[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = phi_I[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
+    tau1[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = tau1_I[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
+    tau2[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = tau2_I[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
     # debug('zvs', zvs)
     # zvs = np.bitwise_not(np.bitwise_and(_phi_leq_zero_mask, np.bitwise_not(_tau1_leq_pi_mask)))
     # debug('zvs bitwise not', zvs)
@@ -325,7 +329,7 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     tau_2_rad[_tau2_III_g_pi_mask] = tau2_[_tau2_III_g_pi_mask]
     phi_rad[_tau2_III_g_pi_mask] = phi_[_tau2_III_g_pi_mask]
 
-    return phi_rad, tau_1_rad, tau_2_rad
+    return phi_rad, tau_1_rad, tau_2_rad, _tau2_III_g_pi_mask
 
 
 def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
