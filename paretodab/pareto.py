@@ -169,7 +169,7 @@ class Optimization:
         i_cost_matrix = dab_config.calc_currents.i_hf_1_rms ** 2 + dab_config.calc_currents.i_hf_2_rms ** 2
         i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
 
-        return dab_config.calc_modulation.mask_zvs_coverage_notnan * 100, i_cost
+        return dab_config.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
     def calculate_fix_parameters(dab_config: p_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
