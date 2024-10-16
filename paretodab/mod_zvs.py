@@ -268,7 +268,7 @@ def _calc_interval_2(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
 
 
 def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
-                     v_b1: np.ndarray, v_b2: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
+                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
     """
     Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad.
 
@@ -294,11 +294,11 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     :type i_b1: float
     """
     # Predefined Terms
-    e1 = v_b2 * q_ab_req_b2 * omega_s
+    e1 = v_b2_ * q_ab_req_b2 * omega_s
 
     e2 = n * v_b1 * np.pi * i_b1
 
-    e3 = n * (v_b2 * (l_c_b2_ + l_s) - v_b1 * l_c_b2_)
+    e3 = n * (v_b2_ * (l_c_b2_ + l_s) - v_b1 * l_c_b2_)
 
     e4 = 2 * n * np.sqrt(q_ab_req_b1 * l_s * np.power(omega_s, 2) * v_b1 * l_c_b1 * (l_c_b1 + l_s))
 
@@ -307,9 +307,9 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     # Solution for interval III (mode 1)
     tau_1_rad = np.full_like(v_b1, np.pi)
 
-    tau_2_rad = np.sqrt((2 * e5) / (v_b2 * e3))
+    tau_2_rad = np.sqrt((2 * e5) / (v_b2_ * e3))
 
-    sqrt_part = (- np.power((tau_2_rad - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2
+    sqrt_part = (- np.power((tau_2_rad - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2_
     # sqrt_genan = np.greater_equal(sqrt_part, 0)
     # phi_rad = np.full_like(v_b1, np.nan)
     phi_rad = (- tau_1_rad + tau_2_rad + np.pi) / 2 - np.sqrt(sqrt_part)
@@ -321,7 +321,7 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     # debug('_tau2_III_g_pi_mask', _tau2_III_g_pi_mask)
     tau2_ = np.full_like(v_b1, np.pi)
     phi_ = (- tau_1_rad + tau2_ + np.pi) / 2 - np.sqrt(
-        (- np.power((tau2_ - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2)
+        (- np.power((tau2_ - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2_)
     tau_2_rad[_tau2_III_g_pi_mask] = tau2_[_tau2_III_g_pi_mask]
     phi_rad[_tau2_III_g_pi_mask] = phi_[_tau2_III_g_pi_mask]
 
