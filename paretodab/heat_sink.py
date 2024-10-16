@@ -7,7 +7,7 @@
 # own libraries
 from paretodab.heat_sink_dtos import *
 
-def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55, height_pcb_heat_sink: float = 3.0) -> tuple[float, float]:
+def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55e-3, height_pcb_heat_sink: float = 3.0e-3) -> tuple[float, float]:
     """
     Calculate the thermal resistance of the copper coin.
 
