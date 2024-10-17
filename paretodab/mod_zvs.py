@@ -98,13 +98,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     # debug('_tau1_I_leq_pi_mask', _tau1_I_leq_pi_mask)
     # if phi > 0:
     _phi_I_g_zero_mask = np.greater(phi_I, 0)
-    # debug('_phi_I_g_zero_mask', _phi_I_g_zero_mask)
-    # Int. I (mode 2): use results
     _Im2_mask = np.bitwise_and(_phi_I_leq_zero_mask, _tau1_I_leq_pi_mask)
-    phi[_Im2_mask] = phi_I[_Im2_mask]
-    tau1[_Im2_mask] = tau1_I[_Im2_mask]
-    tau2[_Im2_mask] = tau2_I[_Im2_mask]
-    zvs[_Im2_mask] = True
 
     # Interval II (mode 2):
     # if tau1 <= pi:
@@ -112,30 +106,28 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     # debug('_tau1_II_leq_pi_mask', _tau1_II_leq_pi_mask)
     # if tau1 > pi:
     _tau1_II_g_pi_mask = np.greater(tau1_II, np.pi)
-    # debug('_tau1_II_g_pi_mask', _tau1_II_g_pi_mask)
-    # Int. II (mode 2): use results
-    _IIm2_mask = np.bitwise_and(_tau1_II_leq_pi_mask, _phi_I_g_zero_mask)
-    phi[_IIm2_mask] = phi_II[_IIm2_mask]
-    tau1[_IIm2_mask] = tau1_II[_IIm2_mask]
-    tau2[_IIm2_mask] = tau2_II[_IIm2_mask]
-    zvs[_IIm2_mask] = True
 
     # Int. III (mode 1):
     # if tau2 <= pi:
     _tau2_III_leq_pi_mask = np.less_equal(tau2_III, np.pi)
-    # debug('_tau2_III_leq_pi_mask', _tau2_III_leq_pi_mask)
-    # Int. III (mode 1): use results
-    _IIIm1_mask = np.bitwise_and(_tau2_III_leq_pi_mask, _tau1_II_g_pi_mask)
-    phi[_IIIm1_mask] = phi_III[_IIIm1_mask]
-    tau1[_IIIm1_mask] = tau1_III[_IIIm1_mask]
-    tau2[_IIIm1_mask] = tau2_III[_IIIm1_mask]
-    zvs[_IIIm1_mask] = True
 
     # fix white area
     phi[additional_mask] = phi_III[additional_mask]
     tau1[additional_mask] = tau1_III[additional_mask]
     tau2[additional_mask] = tau2_III[additional_mask]
     zvs[additional_mask] = True
+
+    _IIIm1_mask = np.bitwise_and(_tau2_III_leq_pi_mask, _tau1_II_g_pi_mask)
+    phi[_IIIm1_mask] = phi_III[_IIIm1_mask]
+    tau1[_IIIm1_mask] = tau1_III[_IIIm1_mask]
+    tau2[_IIIm1_mask] = tau2_III[_IIIm1_mask]
+    zvs[_IIIm1_mask] = True
+
+    _IIm2_mask = np.bitwise_and(_tau1_II_leq_pi_mask, _phi_I_g_zero_mask)
+    phi[_IIm2_mask] = phi_II[_IIm2_mask]
+    tau1[_IIm2_mask] = tau1_II[_IIm2_mask]
+    tau2[_IIm2_mask] = tau2_II[_IIm2_mask]
+    zvs[_IIm2_mask] = True
 
     # Int. I (mode 2): ZVS is analytically IMPOSSIBLE!
     zvs[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = False
@@ -145,6 +137,11 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     # debug('zvs', zvs)
     # zvs = np.bitwise_not(np.bitwise_and(_phi_leq_zero_mask, np.bitwise_not(_tau1_leq_pi_mask)))
     # debug('zvs bitwise not', zvs)
+
+    phi[_Im2_mask] = phi_I[_Im2_mask]
+    tau1[_Im2_mask] = tau1_I[_Im2_mask]
+    tau2[_Im2_mask] = tau2_I[_Im2_mask]
+    zvs[_Im2_mask] = True
 
     # Recalculate phi for negative power
     phi_nP = - (tau1 + phi - tau2)
