@@ -320,15 +320,15 @@ def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
     # Check if tau_2_rad > pi: Set tau_2_rad = pi and recalculate phi_rad for these points
 
     # if tau_2_rad > pi:
-    _tau2_III_g_pi_mask = np.greater(tau_2_rad, np.pi)
-    # debug('_tau2_III_g_pi_mask', _tau2_III_g_pi_mask)
+    tau2_III_g_pi_mask = np.greater(tau_2_rad, np.pi)
+    # debug('tau2_III_g_pi_mask', tau2_III_g_pi_mask)
     tau2_ = np.full_like(v_b1, np.pi)
     phi_ = (- tau_1_rad + tau2_ + np.pi) / 2 - np.sqrt(
         (- np.power((tau2_ - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2_)
-    tau_2_rad[_tau2_III_g_pi_mask] = tau2_[_tau2_III_g_pi_mask]
-    phi_rad[_tau2_III_g_pi_mask] = phi_[_tau2_III_g_pi_mask]
+    tau_2_rad[tau2_III_g_pi_mask] = tau2_[tau2_III_g_pi_mask]
+    phi_rad[tau2_III_g_pi_mask] = phi_[tau2_III_g_pi_mask]
 
-    return phi_rad, tau_1_rad, tau_2_rad, _tau2_III_g_pi_mask
+    return phi_rad, tau_1_rad, tau_2_rad, tau2_III_g_pi_mask
 
 
 def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
