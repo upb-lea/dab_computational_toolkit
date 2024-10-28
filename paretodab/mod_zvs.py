@@ -157,7 +157,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     da_mod_results[MOD_KEYS[3]] = zvs
     da_mod_results[MOD_KEYS[4]] = _Im2_mask
     da_mod_results[MOD_KEYS[5]] = _IIm2_mask
-    da_mod_results[MOD_KEYS[6]] = _IIIm1_mask
+    da_mod_results[MOD_KEYS[6]] = np.bitwise_or(_IIIm1_mask, additional_mask)
 
     # ZVS coverage based on calculation: Percentage ZVS based on all points (full operating range)
     da_mod_results[MOD_KEYS[7]] = np.count_nonzero(zvs) / np.size(zvs)
