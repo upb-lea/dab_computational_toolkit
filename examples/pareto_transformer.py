@@ -211,7 +211,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                         stacked_transformer_trial_number=re_simulate_number
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
 

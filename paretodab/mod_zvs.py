@@ -131,9 +131,12 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
 
     # Int. I (mode 2): ZVS is analytically IMPOSSIBLE!
     zvs[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = False
-    phi[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = phi_I[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    tau1[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = tau1_I[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    tau2[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = tau2_I[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
+    phi[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
+        phi_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
+    tau1[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
+        tau1_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
+    tau2[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
+        tau2_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
     # debug('zvs', zvs)
     # zvs = np.bitwise_not(np.bitwise_and(_phi_leq_zero_mask, np.bitwise_not(_tau1_leq_pi_mask)))
     # debug('zvs bitwise not', zvs)

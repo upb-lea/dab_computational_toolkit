@@ -30,27 +30,34 @@ output_range = paretodab.CircuitOutputRange(
     v_1_min_nom_max_list=[690, 700, 710],
     v_2_min_nom_max_list=[175, 235, 295],
     p_min_nom_max_list=[0, 2000, 2200],
-    steps_per_direction=5,
+    steps_per_direction=19,
 )
 
 dab_config = paretodab.CircuitParetoDabDesign(
-    circuit_study_name='circuit_paper_trial_1',
+    # circuit_study_name='circuit_paper_trial_1',
+
+    # circuit_study_name='fix_white_area_trial_5',
+    circuit_study_name='fix_white_area_trial_5_neu_changed_1_false',
     project_directory=os.path.abspath(os.path.join(os.curdir, "2024-10-04_dab_paper")),
 
     design_space=design_space,
     output_range=output_range
 )
 
-# action = 'run_new_study'
+action = 'run_new_study'
 # action = 'show_study_results'
-action = 'filter_study_results_and_run_gecko'
+# action = 'filter_study_results_and_run_gecko'
 # action = 'custom'
 
 if action == 'run_new_study':
-    paretodab.Optimization.start_proceed_study(dab_config, 50000)
+    paretodab.Optimization.start_proceed_study(dab_config, 15000)
+    paretodab.Optimization.show_study_results(dab_config)
 
 elif action == 'show_study_results':
     dab_config = paretodab.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
+    print(f"{dab_config.project_directory=}")
+    dab_config.project_directory = dab_config.project_directory.replace("@uni-paderborn.de", "")
+    print(f"{dab_config.project_directory=}")
     paretodab.Optimization.show_study_results(dab_config)
     df = paretodab.Optimization.study_to_df(dab_config)
 
@@ -67,7 +74,7 @@ elif action == 'filter_study_results_and_run_gecko':
     smallest_dto_list.append(paretodab.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
     print(f"{np.shape(df)=}")
 
-    for count in np.arange(0, 10):
+    for count in np.arange(0, 20):
         print("------------------")
         print(f"{count=}")
         n_suggest = df_smallest['params_n_suggest'].item()
@@ -96,17 +103,37 @@ elif action == 'filter_study_results_and_run_gecko':
 
     smallest_dto_list = paretodab.Optimization.df_to_dab_dto_list(dab_config, df_smallest_all)
 
-    plt.scatter(df_original["values_0"], df_original["values_1"], color="blue")
-    plt.scatter(df_smallest_all["values_0"], df_smallest_all["values_1"], color="red")
+    paretodab.global_plot_settings_font_latex()
+    figure = "zoom"  # "zoom"
+
+    fig = plt.figure(figsize=(80/25.4, 80/25.4), dpi=350)
+
+    plt.scatter(df_original["values_0"], df_original["values_1"], color=paretodab.colors()["blue"], label="Possible designs")
+    plt.scatter(df_smallest_all["values_0"], df_smallest_all["values_1"], color=paretodab.colors()["red"], label="Non-similar designs")
+    plt.xlabel(r"ZVS coverage / \%")
+    plt.ylabel(r"$i_\mathrm{cost}$ / A²")
+
+    if figure == "zoom":
+        plt.ylim(91.37, 91.47)
+    else:
+        plt.ylim(50, 200)
+    plt.xticks(ticks=[100], labels=["100"])
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    if figure == "zoom":
+        plt.savefig("/home/nikolasf/Dokumente/12_Paper/14_2024_DMC/03_final_paper_git/figures/circuit_zvs_current_zoom.png")
+    else:
+        plt.savefig("/home/nikolasf/Dokumente/12_Paper/14_2024_DMC/03_final_paper_git/figures/circuit_zvs_current.png")
     plt.show()
 
-    folders = paretodab.Optimization.load_filepaths(dab_config.project_directory)
-    for dto in smallest_dto_list:
-        print(f"{dto.name=}")
-        dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
-        os.makedirs(dto_directory, exist_ok=True)
-        dto = paretodab.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
-        paretodab.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
+    # folders = paretodab.Optimization.load_filepaths(dab_config.project_directory)
+    # for dto in smallest_dto_list:
+    #     print(f"{dto.name=}")
+    #     dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
+    #     os.makedirs(dto_directory, exist_ok=True)
+    #     dto = paretodab.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+    #     paretodab.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
 
 
 elif action == 'custom':
