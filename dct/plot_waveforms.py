@@ -2,8 +2,8 @@
 # python libraries
 
 # own libraries
-from paretodab import CircuitDabDTO
-import paretodab.functions_waveforms as fw
+from dct import CircuitDabDTO
+import dct.functions_waveforms as fw
 
 # 3rd party libraries
 import numpy as np

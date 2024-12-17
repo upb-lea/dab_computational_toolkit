@@ -3,9 +3,9 @@
 import logging
 
 # own libraries
-from paretodab.debug_tools import timeit
-from paretodab import CircuitDabDTO
-from paretodab import Plot_DAB
+from dct.debug_tools import timeit
+from dct import CircuitDabDTO
+from dct import Plot_DAB
 
 # 3rd party libraries
 import numpy as np

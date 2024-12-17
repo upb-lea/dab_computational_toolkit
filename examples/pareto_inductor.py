@@ -13,7 +13,7 @@ import tqdm
 
 # own libraries
 import femmt as fmt
-import paretodab
+import dct
 
 # configure root logger
 logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
@@ -55,14 +55,14 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
     :param debug: True to debug, defaults to False
     :type debug: bool
     """
-    filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+    filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
     for circuit_trial_number in circuit_trial_numbers:
         circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
 
-        circuit_dto = paretodab.HandleDabDto.load_from_file(circuit_filepath)
+        circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
         # get the peak current waveform
-        sorted_max_angles, i_l_1_max_current_waveform = paretodab.HandleDabDto.get_max_peak_waveform_inductor(circuit_dto, False)
+        sorted_max_angles, i_l_1_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_inductor(circuit_dto, False)
         time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
 
         io_config = fmt.InductorOptimizationDTO(
@@ -140,9 +140,9 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape), total=len(circuit_dto.calc_modulation.phi.flatten())):
                         time, unique_indices = np.unique(
-                            paretodab.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
+                            dct.functions_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs,
                             return_index=True)
-                        current = paretodab.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
                         current_waveform = np.array([time, current])
                         if debug:
@@ -159,7 +159,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                             process_number=process_number)
                         result_array[vec_vvp] = combined_losses
 
-                    inductor_losses = paretodab.InductorResults(
+                    inductor_losses = dct.InductorResults(
                         p_combined_losses=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
@@ -190,9 +190,9 @@ if __name__ == '__main__':
     inductor_study_name = "inductor_trial_1"
 
     # inductor optimization
-    process_circuit_trial_numbers = []
+    process_circuit_trial_numbers = [75056]
 
-    filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+    filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
     objects = os.scandir(circuit_filepath)
     all_circuit_trial_numbers = [entity.name.replace(".pkl", "") for entity in objects]
@@ -203,4 +203,4 @@ if __name__ == '__main__':
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
                                          if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=100000, filter_factor=3, re_simulate=False, debug=False)
+    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=0, filter_factor=0.02, re_simulate=True, debug=False)

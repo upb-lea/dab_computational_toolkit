@@ -2,7 +2,7 @@
 # python libraries
 
 # own libraries
-import paretodab
+import dct
 
 # 3rd party libraries
 from pytest import approx
@@ -24,7 +24,7 @@ def test_rms_1d():
     i_gamma = np.array([1.0])
     i_delta = np.array([0.0])
 
-    i_rms, _, _ = paretodab.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
+    i_rms, _, _ = dct.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
 
     assert i_rms == approx(1.364, rel=5e-3)
 
@@ -44,7 +44,7 @@ def test_rms_1d_sorting_out_of_pi_range():
     i_gamma = np.array([1.0])  # Number 1, negative due to shifting
     i_delta = np.array([5.0])  # Number 4, no shifting, positive
 
-    i_rms, angles_sorted, currents_sorted = paretodab.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
+    i_rms, angles_sorted, currents_sorted = dct.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
 
     assert angles_sorted == approx(np.array([[0.85840735], [1.14159265], [2.14159265], [3.14159265]]), rel=5e-3)
     assert currents_sorted == approx(np.array([[-1.], [-3.], [2.], [5.]]))
@@ -70,7 +70,7 @@ def test_rms_2d():
     i_gamma = np.array([[1.0, 0.0], [1.0, -1.0]])
     i_delta = np.array([[0.0, 1.0], [-2.0, -2.0]])
 
-    i_rms, _, _ = paretodab.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
+    i_rms, _, _ = dct.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
 
     assert i_rms == approx(np.array([[1.364, 1.364], [2.08, 1.94]]), rel=5e-3)
 
@@ -90,7 +90,7 @@ def test_rms_3d():
     i_gamma = np.array([[[1.0, 0.0], [1.0, -1.0]], [[1.0, 0.0], [1.0, -1.0]]])
     i_delta = np.array([[[0.0, 1.0], [-2.0, -2.0]], [[0.0, 1.0], [-2.0, -2.0]]])
 
-    i_rms, _, _ = paretodab.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
+    i_rms, _, _ = dct.calc_rms(alpha_rad, beta_rad, gamma_rad, delta_rad, i_alpha, i_beta, i_gamma, i_delta)
 
     assert i_rms == approx(np.array([[[1.364, 1.364], [2.08, 1.94]], [[1.364, 1.364], [2.08, 1.94]]]), rel=5e-3)
 
@@ -105,7 +105,7 @@ def test_hf_current_calculation():
     sorted_i_l_1 = np.array([[2], [3], [1], [-2]])
     sorted_i_l_2 = np.array([[2], [-3], [-1], [-2]])
 
-    i_hf_1_rms, i_hf_2_rms = paretodab.calc_hf_rms_currents(sorted_angles_rad, sorted_i_l_s, sorted_i_l_1, sorted_i_l_2, n=1)
+    i_hf_1_rms, i_hf_2_rms = dct.calc_hf_rms_currents(sorted_angles_rad, sorted_i_l_s, sorted_i_l_1, sorted_i_l_2, n=1)
 
     assert i_hf_1_rms == approx(np.array([3.2008]), rel=1e-3)
     assert i_hf_2_rms == approx(np.array([3.0141]), rel=1e-3)

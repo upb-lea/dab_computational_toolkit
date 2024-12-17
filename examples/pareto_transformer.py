@@ -8,7 +8,7 @@ import sys
 
 
 # own libraries
-import paretodab
+import dct
 import femmt as fmt
 
 # 3rd party libraries
@@ -63,19 +63,19 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
     :param debug: True to debug, defaults to False
     :type debug: bool
     """
-    filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+    filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
     for circuit_trial_number in circuit_trial_numbers:
         circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
 
-        circuit_dto = paretodab.HandleDabDto.load_from_file(circuit_filepath)
+        circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
         # get the peak current waveform
-        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = paretodab.HandleDabDto.get_max_peak_waveform_transformer(
+        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_transformer(
             circuit_dto, False)
 
         time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
 
-        transformer_target_params = paretodab.HandleDabDto.export_transformer_target_parameters_dto(dab_dto=circuit_dto)
+        transformer_target_params = dct.HandleDabDto.export_transformer_target_parameters_dto(dab_dto=circuit_dto)
 
         target_param_ls12 = float(transformer_target_params.l_s12_target)
         target_param_lh = float(transformer_target_params.l_h_target)
@@ -188,9 +188,9 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                             print(f"   * Circuit trial: {circuit_trial_number}")
                             print(f"   * Inductor study: {sto_study_name}")
                             print(f"   * Inductor re-simulation trial: {re_simulate_number}")
-                        time = paretodab.functions_waveforms.full_angle_waveform_from_angles(
+                        time = dct.functions_waveforms.full_angle_waveform_from_angles(
                             angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                        current = paretodab.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
 
                         current_waveform = np.array([time, current])
 
@@ -203,7 +203,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                             process_number=process_number)
                         result_array[vec_vvp] = combined_losses
 
-                    results_dto = paretodab.StackedTransformerResults(
+                    results_dto = dct.StackedTransformerResults(
                         p_combined_losses=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     # inductor optimization
     process_circuit_trial_numbers = []
 
-    filepaths = paretodab.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+    filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
     objects = os.scandir(circuit_filepath)
     all_circuit_trial_numbers = [entity.name.replace(".pkl", "") for entity in objects]

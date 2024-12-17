@@ -13,14 +13,14 @@ print(f"{type(loaded_dto.gecko_results.i_Ls)=}")
 dct.plot_calc_waveforms(loaded_dto, compare_gecko_waveforms=True)
 
 
-# paretodab.HandleDabDto.save(loaded_dto, name='initial_with_simulation_results', comment='', directory=None, timestamp=False)
+# dct.HandleDabDto.save(loaded_dto, name='initial_with_simulation_results', comment='', directory=None, timestamp=False)
 
-# loaded_dto = paretodab.HandleDabDto.load_from_file('initial_with_simulation_results.npz')
+# loaded_dto = dct.HandleDabDto.load_from_file('initial_with_simulation_results.npz')
 #
 # relative_error = (loaded_dto.calc_currents.i_l_s_rms - loaded_dto.gecko_results.i_Ls) / loaded_dto.calc_currents.i_l_s_rms
 # print(f"{loaded_dto.calc_currents.i_l_s_rms=}")
 # print(f"{loaded_dto.gecko_results.i_Ls=}")
 
-# paretodab.plot_gecko_simulation_results(loaded_dto, simulation_name='döner', comment='comment', directory=None, show_plot=True)
+# dct.plot_gecko_simulation_results(loaded_dto, simulation_name='döner', comment='comment', directory=None, show_plot=True)
 
-# paretodab.plot_calculation_results(loaded_dto)
+# dct.plot_calculation_results(loaded_dto)

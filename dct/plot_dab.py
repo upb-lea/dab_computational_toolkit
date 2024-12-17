@@ -7,8 +7,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
-from paretodab.debug_tools import *
-from paretodab.plot_window import *
+from dct.debug_tools import *
+from dct.plot_window import *
 
 
 class Plot_DAB:
