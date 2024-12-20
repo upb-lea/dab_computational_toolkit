@@ -9,7 +9,7 @@ import numpy as np
 
 # The dict keys this modulation will return
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
-            'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan']
+            'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p']
 
 def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.ndarray | int | float,
                            Coss1: np.ndarray, Coss2: np.ndarray,
@@ -60,6 +60,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     V2_ = V2 * n
     # For negative P we have to recalculate phi at the end
     _negative_power_mask = np.less(P, 0)
+    _positive_power_mask = np.less(0, P)
     I1 = np.abs(P) / V1
     # Convert fs into omega_s
     ws = 2 * np.pi * fs
@@ -167,6 +168,11 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
 
     # ZVS coverage based on calculation: Percentage ZVS based on all points where the converter can be operated (not full operating range)
     da_mod_results[MOD_KEYS[8]] = np.count_nonzero(zvs[~np.isnan(tau1)]) / np.size(zvs[~np.isnan(tau1)])
+
+    # negative high power mode 1-
+    da_mod_results[MOD_KEYS[9]] = np.bitwise_and(_negative_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
+    # positive high power mode 1+
+    da_mod_results[MOD_KEYS[10]] = np.bitwise_and(_positive_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
 
     # debug(da_mod_results)
     return da_mod_results
