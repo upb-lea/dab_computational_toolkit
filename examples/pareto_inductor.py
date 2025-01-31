@@ -182,15 +182,15 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
 
 if __name__ == '__main__':
     process_number = int(sys.argv[1]) if len(sys.argv) == 2 else 1
-    total_processes = 4
+    total_processes = 1
 
     # project name, circuit study name and inductor study name
-    project_name = "2024-10-04_dab_paper"
-    circuit_study_name = "circuit_paper_trial_1"
-    inductor_study_name = "inductor_trial_1"
+    project_name = "2025-01-31_example"
+    circuit_study_name = "circuit_01"
+    inductor_study_name = "inductor_01"
 
     # inductor optimization
-    process_circuit_trial_numbers = [75056]
+    process_circuit_trial_numbers = [682]
 
     filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
@@ -203,4 +203,4 @@ if __name__ == '__main__':
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
                                          if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=0, filter_factor=0.02, re_simulate=True, debug=False)
+    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=1100, filter_factor=0.02, re_simulate=True, debug=False)
