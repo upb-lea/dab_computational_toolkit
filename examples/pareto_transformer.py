@@ -229,9 +229,9 @@ if __name__ == '__main__':
     total_processes = 1
 
     # project name, circuit study name and inductor study name
-    project_name = "2024-10-04_dab_paper"
-    circuit_study_name = "circuit_paper_trial_1"
-    sto_study_name = "transformer_trial_1"
+    project_name = "2025-01-31_example_andreas"
+    circuit_study_name = "circuit_01"
+    sto_study_name = "transformer_01"
 
     # inductor optimization
     process_circuit_trial_numbers = []
@@ -247,4 +247,4 @@ if __name__ == '__main__':
         process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
                                          if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, target_number_trials=200, filter_factor=0, re_simulate=True, debug=False, process_number=process_number)
+    simulation(process_circuit_trial_numbers, target_number_trials=0, filter_factor=0.01, re_simulate=True, debug=False, process_number=process_number)

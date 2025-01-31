@@ -4,7 +4,6 @@
 import os
 
 # 3rd party libraries
-import pandas as pd
 
 # own libraries
 import hct
@@ -40,5 +39,6 @@ hct.Optimization.start_proceed_study(config=config, number_trials=1000)
 df_heat_sink = hct.Optimization.study_to_df(config)
 hct.Optimization.df_plot_pareto_front(df_heat_sink, (50, 60))
 
-# df_heat_sink["heat_sink_volume"] = df_heat_sink["r_th_heat_sink"].apply(lambda r_th_max: df_heat_sink.loc[df_heat_sink["values_1"] < r_th_max]["values_0"].nsmallest(n=1))
+# df_heat_sink["heat_sink_volume"] =
+# df_heat_sink["r_th_heat_sink"].apply(lambda r_th_max: df_heat_sink.loc[df_heat_sink["values_1"] < r_th_max]["values_0"].nsmallest(n=1))
 # df_heat_sink["total_volume"] = df_heat_sink["transformer_volume"] + df_heat_sink["inductor_volume"] + df_heat_sink["heat_sink_volume"]
