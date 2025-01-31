@@ -63,12 +63,17 @@ def plot_calc_waveforms(dab_dto: CircuitDabDTO, compare_gecko_waveforms: bool = 
                          f"v1={dab_dto.calc_config.mesh_V1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_V2[vec_vvp]} V,"
                          f"f={dab_dto.input_config.fs=}")
 
+            if dab_dto.calc_modulation.mask_zvs[vec_vvp]:
+                color = "green"
+            else:
+                color = "red"
+
             if dab_dto.calc_modulation.mask_IIIm1[vec_vvp]:
-                plt.title("IIIm1" + plot_info)
+                plt.title("IIIm1" + plot_info, color=color)
             if dab_dto.calc_modulation.mask_IIm2[vec_vvp]:
-                plt.title("IIm2" + plot_info)
+                plt.title("IIm2" + plot_info, color=color)
             if dab_dto.calc_modulation.mask_Im2[vec_vvp]:
-                plt.title("Im2" + plot_info)
+                plt.title("Im2" + plot_info, color=color)
 
             plt.subplot(312, sharex=ax1)
             plt.plot(sorted_total_angles, sorted_i_l_1_total, label='calculation')
