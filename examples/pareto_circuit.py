@@ -29,24 +29,21 @@ design_space = dct.CircuitParetoDesignSpace(
 output_range = dct.CircuitOutputRange(
     v_1_min_nom_max_list=[690, 700, 710],
     v_2_min_nom_max_list=[175, 235, 295],
-    p_min_nom_max_list=[0, 2000, 2200],
-    steps_per_direction=19,
+    p_min_nom_max_list=[-2000, 2000, 2200],
+    steps_per_direction=3,
 )
 
 dab_config = dct.CircuitParetoDabDesign(
-    # circuit_study_name='circuit_paper_trial_1',
-
-    # circuit_study_name='fix_white_area_trial_5',
-    circuit_study_name='2024-12-17_trial',
-    project_directory=os.path.abspath(os.path.join(os.curdir, "2024-12-17_trial")),
+    circuit_study_name='circuit_01',
+    project_directory=os.path.abspath(os.path.join(os.curdir, "2025-01-31_example")),
 
     design_space=design_space,
     output_range=output_range
 )
 
-action = 'run_new_study'
+# action = 'run_new_study'
 # action = 'show_study_results'
-# action = 'filter_study_results_and_run_gecko'
+action = 'filter_study_results_and_run_gecko'
 # action = 'custom'
 
 if action == 'run_new_study':
@@ -74,7 +71,7 @@ elif action == 'filter_study_results_and_run_gecko':
     smallest_dto_list.append(dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
     print(f"{np.shape(df)=}")
 
-    for count in np.arange(0, 20):
+    for count in np.arange(0, 3):
         print("------------------")
         print(f"{count=}")
         n_suggest = df_smallest['params_n_suggest'].item()
@@ -104,8 +101,6 @@ elif action == 'filter_study_results_and_run_gecko':
     smallest_dto_list = dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest_all)
 
     dct.global_plot_settings_font_latex()
-    figure = "zoom"  # "zoom"
-
     fig = plt.figure(figsize=(80/25.4, 80/25.4), dpi=350)
 
     plt.scatter(df_original["values_0"], df_original["values_1"], color=dct.colors()["blue"], label="Possible designs")
@@ -113,35 +108,25 @@ elif action == 'filter_study_results_and_run_gecko':
     plt.xlabel(r"ZVS coverage / \%")
     plt.ylabel(r"$i_\mathrm{cost}$ / A²")
 
-    if figure == "zoom":
-        plt.ylim(91.37, 91.47)
-    else:
-        plt.ylim(50, 200)
     plt.xticks(ticks=[100], labels=["100"])
     plt.legend()
     plt.grid()
     plt.tight_layout()
-    if figure == "zoom":
-        plt.savefig("/home/nikolasf/Dokumente/12_Paper/14_2024_DMC/03_final_paper_git/figures/circuit_zvs_current_zoom.png")
-    else:
-        plt.savefig("/home/nikolasf/Dokumente/12_Paper/14_2024_DMC/03_final_paper_git/figures/circuit_zvs_current.png")
     plt.show()
 
-    # folders = dct.Optimization.load_filepaths(dab_config.project_directory)
-    # for dto in smallest_dto_list:
-    #     print(f"{dto.name=}")
-    #     dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
-    #     os.makedirs(dto_directory, exist_ok=True)
-    #     dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
-    #     dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
+    folders = dct.Optimization.load_filepaths(dab_config.project_directory)
+    for dto in smallest_dto_list:
+        print(f"{dto.name=}")
+        dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
+        os.makedirs(dto_directory, exist_ok=True)
+        dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+        dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
 
 
 elif action == 'custom':
     dab_config = dct.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
-    # dab_dto = dct.Optimization.load_dab_dto_from_study(dab_config, 99999)
     df = dct.Optimization.load_csv_to_df(os.path.join(dab_config.project_directory, "01_circuit", dab_config.circuit_study_name,
                                          f"{dab_config.circuit_study_name}.csv"))
-    # df = df[df["number"] == 99999]
     df = df[df["number"] == 79030]
     print(df.head())
 
@@ -169,9 +154,3 @@ elif action == 'custom':
     print(f"{np.mean(error_matrix_hf_2)=}")
 
     dct.HandleDabDto.save(dab_dto, "results", "", "~/Downloads", False)
-
-    # loaded_dto = dct.HandleDabDto.load_from_file("~/Downloads/results.pkl")
-    #
-    # print(loaded_dto)
-    #
-    # loaded_dto = dct.HandleDabDto.add_gecko_simulation_results(loaded_dto)
