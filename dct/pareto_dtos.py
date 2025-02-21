@@ -5,6 +5,19 @@ import dataclasses
 # 3rd party libraries
 import numpy as np
 
+# General information about names and path
+@dataclasses.dataclass
+class GeneralInformation:
+    """Names and paths."""
+
+    project_directory: str
+    circuit_study_name: str
+    # filtered_list_id: List[int]
+    filtered_list_id = []
+    circuit_study_path: str
+    inductor_study_path: str
+    transformer_study_path: str
+
 @dataclasses.dataclass
 class ParetoFilePaths:
     """File paths for the sub simulation optimization parts."""
