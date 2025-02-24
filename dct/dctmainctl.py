@@ -1,6 +1,7 @@
 """Main control program to optimise the DAB converter."""
 # python libraries
 import os
+import sys
 
 # 3rd party libraries
 import toml
@@ -10,7 +11,7 @@ import dct
 # Electrical circuit simulations class
 import circuit_sim as Elecsimclass
 # Inductor simulations class
-import induct_sim as Inductsimclass
+# import induct_sim as Inductsimclass
 # import transf_sim
 
 
@@ -189,7 +190,9 @@ class DctMainCtl:
         return act_esim.init_configuration(dab_config)
 
     @staticmethod
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
+    # ASA: Femmt will be installed later
+    #def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
+    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, Nix: any) -> bool:
         """
         Load and initialize the inductor optimization configuration.
 
@@ -201,6 +204,8 @@ class DctMainCtl:
         :type  act_isim: Inductsimclass.Inductorsim:
         :return: True, if the configuration is sucessfull
         :rtype: bool
+        """
+
         """
         #   Variable initialisation
 
@@ -215,8 +220,11 @@ class DctMainCtl:
                             "core_top": act_config_inductor["InsulationData"]["core_top"],
                             "core_right": act_config_inductor["InsulationData"]["core_right"],
                             "core_left": act_config_inductor["InsulationData"]["core_left"]}
+        """
 
-        return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
+        # ASA: Femmt will be installed later
+        # return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
+        return False
 
     @staticmethod
     def check_breakpoint(breakpointkey: str, info: str):
@@ -230,7 +238,9 @@ class DctMainCtl:
         """
         # Check if breakpoint stops the programm
         if breakpointkey == "Stop":
-            raise ValueError("Program stops cause by breakpoint at: '"+info+"'!")
+            print("Program stops cause by breakpoint at: '"+info+"'!")
+            # stop program
+            sys.exit()
 
         elif breakpointkey == "Pause":
             # Information
@@ -243,7 +253,9 @@ class DctMainCtl:
 
             # Check result
             if key_inp == "s" or key_inp == "S":
-                raise ValueError("User stops the programm!")
+                print("User stops the program!")
+                # stop program
+                sys.exit()
         else:
             pass
 
@@ -264,7 +276,9 @@ class DctMainCtl:
         # Electrical simulation
         esim = Elecsimclass.Elecsim
         # Inductor simulation
-        isim = Inductsimclass.Inductorsim
+        # ASA: Femmt will be installed later
+        # isim = Inductsimclass.Inductorsim
+        isim = ""
         # Flag for available filtered results
         filtered_resultFlag = False
 
@@ -336,7 +350,7 @@ class DctMainCtl:
                                         config_program_flow["inductor"]["LinkIdSubdirectory"])
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(datapath, "inductor_01"):
-                    raise ValueError(f"Study {config_program_flow["general"]["StudyName"]} in path {datapath} does not exist. No sqlite3-database found!")
+                    raise ValueError(f"Study {config_program_flow[general][StudyName]} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the configuration for heatsink optimization
 
@@ -392,8 +406,8 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 NewStudyFlag = False
 
-            # Start simulation
-            isim.simulation_handler(ginfo, 100, 1.0, True)
+            # Start simulation ASA: Comment out
+            # isim.simulation_handler(ginfo, 100, 1.0, True)
         # Initialize data
         # Start calculation
 

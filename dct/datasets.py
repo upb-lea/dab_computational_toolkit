@@ -16,7 +16,8 @@ import dct.datasets_dtos as d_dtos
 import dct.functions_waveforms as d_waveforms
 import dct.mod_zvs as mod
 import dct.currents as dct_currents
-import dct.geckosimulation as dct_gecko
+# ASA Commen out because uses GUI 
+# import dct.geckosimulation as dct_gecko
 
 class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
@@ -142,6 +143,8 @@ class HandleDabDto:
         :type get_waveforms: bool
         :return: DabDTO
         """
+        # ASA Commen out because uses GUI 
+        """
         gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
             mesh_V1=dab_dto.calc_config.mesh_V1, mesh_V2=dab_dto.calc_config.mesh_V2,
             mesh_P=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
@@ -167,6 +170,8 @@ class HandleDabDto:
         dab_dto.gecko_results = d_dtos.GeckoResults(**gecko_results)
 
         dab_dto.gecko_waveforms = d_dtos.GeckoWaveforms(**gecko_waveforms)
+
+        """
         return dab_dto
 
     @staticmethod
