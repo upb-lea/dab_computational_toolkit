@@ -115,7 +115,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
             config_filepath = os.path.join(filepaths.inductor, circuit_study_name, str(circuit_trial_number), inductor_study_name, f"{inductor_study_name}.pkl")
 
             # workaround for comma problem. Read a random csv file and set back the delimiter.
-            pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+            pd.read_csv('Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 
             # sweep through all current waveforms
             i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     inductor_study_name = "inductor_01"
 
     # inductor optimization
-    process_circuit_trial_numbers = [682]
+    process_circuit_trial_numbers = [913]
 
     filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")

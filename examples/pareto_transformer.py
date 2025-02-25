@@ -229,12 +229,12 @@ if __name__ == '__main__':
     total_processes = 1
 
     # project name, circuit study name and inductor study name
-    project_name = "2025-01-31_example_andreas"
+    project_name = "2025-01-31_example"
     circuit_study_name = "circuit_01"
     sto_study_name = "transformer_01"
 
     # inductor optimization
-    process_circuit_trial_numbers = []
+    process_circuit_trial_numbers = [913]
 
     filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")

@@ -100,7 +100,7 @@ elif action == 'filter_study_results_and_run_gecko':
 
     smallest_dto_list = dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest_all)
 
-    dct.global_plot_settings_font_latex()
+    # dct.global_plot_settings_font_latex()
     fig = plt.figure(figsize=(80/25.4, 80/25.4), dpi=350)
 
     plt.scatter(df_original["values_0"], df_original["values_1"], color=dct.colors()["blue"], label="Possible designs")

@@ -5,9 +5,6 @@ import dataclasses
 
 # 3rd party libraries
 import numpy as np
-from typing import List
-from typing import Union
-
 
 @dataclasses.dataclass
 class TransistorDTO:
@@ -25,8 +22,8 @@ class TransistorDTO:
 class FixedParameters:
     """Fixed parameters for the circuit optimization."""
 
-    transistor_1_dto_list: List[TransistorDTO]
-    transistor_2_dto_list: List[TransistorDTO]
+    transistor_1_dto_list: list[TransistorDTO]
+    transistor_2_dto_list: list[TransistorDTO]
 
 @dataclasses.dataclass(init=False)
 class CircuitConfig:
@@ -274,12 +271,12 @@ class CircuitDabDTO:
     calc_config: CalcFromCircuitConfig
     calc_modulation: CalcModulation
     calc_currents: CalcCurrents
-    calc_losses: Union[CalcLosses,None]
+    calc_losses: CalcLosses | None
     gecko_additional_params: GeckoAdditionalParameters
-    gecko_results: Union[GeckoResults,None]
-    gecko_waveforms: Union[GeckoWaveforms,None]
-    inductor_results: Union[InductorResults,None]
-    stacked_transformer_results: Union[StackedTransformerResults,None]
+    gecko_results: GeckoResults | None
+    gecko_waveforms: GeckoWaveforms | None
+    inductor_results: InductorResults | None
+    stacked_transformer_results: StackedTransformerResults | None
 
 @dataclasses.dataclass
 class TransformerTargetParameters:

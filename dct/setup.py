@@ -1,3 +1,4 @@
+"""Setup file for dct-module."""
 from setuptools import setup, find_packages
 
 setup(
@@ -5,4 +6,3 @@ setup(
     version="0.1",
     packages=find_packages(),
 )
-

@@ -191,7 +191,7 @@ class DctMainCtl:
 
     @staticmethod
     # ASA: Femmt will be installed later
-    #def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
+    # def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
     def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, Nix: any) -> bool:
         """
         Load and initialize the inductor optimization configuration.
@@ -205,7 +205,6 @@ class DctMainCtl:
         :return: True, if the configuration is sucessfull
         :rtype: bool
         """
-
         """
         #   Variable initialisation
 
@@ -260,10 +259,13 @@ class DctMainCtl:
             pass
 
     @staticmethod
-    def executeProgram():
+    def executeProgram(workspace_path: str):
         """Perform the main programm.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
+
+        :param  workspace_path: Path to subfolder 'workspace' (if empty default path '../<path to this file>' is used)
+        :type   workspace_path: str
         """
         # Variable declaration
         # General information
@@ -282,11 +284,17 @@ class DctMainCtl:
         # Flag for available filtered results
         filtered_resultFlag = False
 
-        # Change to workspace
-        os.chdir("..")
-        # change to folder 'workspace'
+        # Check if workspace path is not provided by argument
+        if workspace_path == "":
+            # Find process workspace
+            workspace_path = os.path.dirname(os.path.abspath(__file__))
+            # Join parent folder of workspace_path and workspace path to absolute path name
+            workspace_path = os.path.join(os.path.dirname(workspace_path), "workspace")
+
+        # Set directory to workspace path
         try:
-            os.chdir("workspace")
+            # Change to workspace
+            os.chdir(workspace_path)
         except FileNotFoundError as exc:
             raise ValueError("Error: Workspace folder does not exists!") from exc
         except PermissionError as exc:
@@ -350,7 +358,7 @@ class DctMainCtl:
                                         config_program_flow["inductor"]["LinkIdSubdirectory"])
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(datapath, "inductor_01"):
-                    raise ValueError(f"Study {config_program_flow[general][StudyName]} in path {datapath} does not exist. No sqlite3-database found!")
+                    raise ValueError(f"Study {config_program_flow["general"]["StudyName"]} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the configuration for heatsink optimization
 
@@ -437,7 +445,33 @@ class DctMainCtl:
 
 # Program flow control of DAB-optimization
 if __name__ == "__main__":
+    # Variable declaration
+    arg1 = ""
+
     # Create an mainctl-instance
     dct_mctl = DctMainCtl()
+    # Read the command line
+    arguments = sys.argv
+
+    # Check on argument, which corresponds to the workspace file location
+    if len(arguments) > 1:
+        arg1 = arguments[1]
+        # Check if this corresponds to the workspace path
+        arg1 = os.path.join(arg1, "workspace")
+        print(f"Pfad={arg1}")
+        # Check if the path not exist (absolute or relative path)
+        if not os.path.exists(arg1):
+            # Consider it as relative path and create the absolute path
+            arg1 = os.path.abspath(arg1)
+            print(f"Neuer Pfad={arg1}")
+            # Check if the path does not exist
+            if not os.path.exists(arg1):
+                print(f"Provides argument {arguments[1]} does not corresponds to the path to subfolder 'workspace'.\n")
+                print("This is neither the absolute nor the relative path. Program will use the default path!")
+                # Reset path variable
+                arg1 = ""
+
+        # Convert it to the absolute path
+        arg1 = os.path.abspath(arg1)
     # Execute program
-    dct_mctl.executeProgram()
+    dct_mctl.executeProgram(arg1)
