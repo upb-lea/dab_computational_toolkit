@@ -8,7 +8,7 @@
     # possible values: No/Pause/Stop
     Electrical_pareto = "No"  # After Electrical paretofront calculation
     Electrical_filtered = "No"  # After Electrical filtered result calculation
-    Inductor = "Pause"    # After inductor paretofront calculations of for all correspondent electrical points
+    Inductor = "Stop"    # After inductor paretofront calculations of for all correspondent electrical points
     Transformer = "Pause" # After transformer paretofront calculations of for all correspondent electrical points
     Heatsink = "Pause"    # After heatsink paretofront calculation
 
@@ -20,21 +20,21 @@
 
 [electrical]
     NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
+    ReCalculation = "skip" # (new,continue,skip)
     Subdirectory = "01_circuit"
 
 [inductor]
-    NumberOfTrials = 1000
-    ReCalculation = "continue" # (new,continue,skip)
+    NumberOfTrials = 10
+    ReCalculation = "new" # (new,continue,skip)
     Subdirectory = "02_inductor"
 
 [transformer]
-    NumberOfTrials = 1000
+    NumberOfTrials = 100
     ReCalculation = "continue" # (new,continue,skip)
     Subdirectory = "03_transformer"
 
 [heatsink]
-    NumberOfTrials = 1000
+    NumberOfTrials = 100
     ReCalculation = "continue" # (new,continue,skip)
     Subdirectory = "04_heat_sink"
 

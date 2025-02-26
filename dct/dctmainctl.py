@@ -11,7 +11,7 @@ import dct
 # Electrical circuit simulations class
 import circuit_sim as Elecsimclass
 # Inductor simulations class
-# import induct_sim as Inductsimclass
+import induct_sim as Inductsimclass
 # import transf_sim
 
 
@@ -190,9 +190,7 @@ class DctMainCtl:
         return act_esim.init_configuration(dab_config)
 
     @staticmethod
-    # ASA: Femmt will be installed later
-    # def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, Nix: any) -> bool:
+    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
         """
         Load and initialize the inductor optimization configuration.
 
@@ -205,7 +203,7 @@ class DctMainCtl:
         :return: True, if the configuration is sucessfull
         :rtype: bool
         """
-        """
+
         #   Variable initialisation
 
         # Designspace
@@ -219,11 +217,9 @@ class DctMainCtl:
                             "core_top": act_config_inductor["InsulationData"]["core_top"],
                             "core_right": act_config_inductor["InsulationData"]["core_right"],
                             "core_left": act_config_inductor["InsulationData"]["core_left"]}
-        """
 
-        # ASA: Femmt will be installed later
-        # return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
-        return False
+        # Initialize inductor optimization and return, if it was successful (true)
+        return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
 
     @staticmethod
     def check_breakpoint(breakpointkey: str, info: str):
@@ -278,9 +274,7 @@ class DctMainCtl:
         # Electrical simulation
         esim = Elecsimclass.Elecsim
         # Inductor simulation
-        # ASA: Femmt will be installed later
-        # isim = Inductsimclass.Inductorsim
-        isim = ""
+        isim = Inductsimclass.Inductorsim
         # Flag for available filtered results
         filtered_resultFlag = False
 
@@ -414,8 +408,8 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 NewStudyFlag = False
 
-            # Start simulation ASA: Comment out
-            # isim.simulation_handler(ginfo, 100, 1.0, True)
+            # Start simulation
+            isim.simulation_handler(ginfo, 100, 1.0, True)
         # Initialize data
         # Start calculation
 
