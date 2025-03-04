@@ -10,3 +10,5 @@ dct/design_check/__pycache__/
 *.sqlite3
 *.html
 *.csv
+examples/
+workspace/2025-01-31_example/

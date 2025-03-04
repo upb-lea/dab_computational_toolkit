@@ -107,6 +107,7 @@ class Inductorsim:
         return ret_val
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
+    @staticmethod
     def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: dct.GeneralInformation,
                     target_number_trials: int, filter_factor: float, re_simulate: bool, debug: bool):
         """
@@ -129,13 +130,9 @@ class Inductorsim:
         """
         # Variable declaration
         # Process_number are unclear (Usage in femmt)
-        process_number = circuit_id
+        process_number = 1
 
-        # Load circuitDTO from file
-        # Debug
-        if circuit_id == 924:
-            print(f"Pfad={os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_id}.pkl")}\n")
-
+        # Load configuration
         circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:

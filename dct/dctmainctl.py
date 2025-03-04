@@ -1,6 +1,7 @@
 """Main control program to optimise the DAB converter."""
 # python libraries
 import os
+import sys
 
 # 3rd party libraries
 import toml
@@ -12,6 +13,7 @@ import circuit_sim as Elecsimclass
 # Inductor simulations class
 import induct_sim as Inductsimclass
 # import transf_sim
+import transf_sim as Transfsimclass
 
 
 import logging
@@ -101,15 +103,17 @@ class DctMainCtl:
         :param act_config_program_flow: toml data of the program flow
         :type  act_config_program_flow: dict
         """
+        # Read the current directory name
+        abs_path=os.getcwd()
         # Store project directory and study name
         act_ginfo.project_directory = act_config_program_flow["general"]["ProjectDirectory"]
         act_ginfo.circuit_study_name = act_config_program_flow["general"]["StudyName"]
         # Create path names
-        act_ginfo.circuit_study_path = os.path.join(act_ginfo.project_directory,
+        act_ginfo.circuit_study_path = os.path.join(abs_path,act_ginfo.project_directory,
                                                     DctMainCtl.const_circuit_folder, act_ginfo.circuit_study_name)
-        act_ginfo.inductor_study_path = os.path.join(act_ginfo.project_directory,
+        act_ginfo.inductor_study_path = os.path.join(abs_path,act_ginfo.project_directory,
                                                      DctMainCtl.const_inductor_folder, act_ginfo.circuit_study_name)
-        act_ginfo.transformer_study_path = os.path.join(act_ginfo.project_directory,
+        act_ginfo.transformer_study_path = os.path.join(abs_path,act_ginfo.project_directory,
                                                         DctMainCtl.const_transformer_folder, act_ginfo.circuit_study_name)
 
     @staticmethod
@@ -202,6 +206,7 @@ class DctMainCtl:
         :return: True, if the configuration is sucessfull
         :rtype: bool
         """
+
         #   Variable initialisation
 
         # Designspace
@@ -216,7 +221,58 @@ class DctMainCtl:
                             "core_right": act_config_inductor["InsulationData"]["core_right"],
                             "core_left": act_config_inductor["InsulationData"]["core_left"]}
 
+        # Initialize inductor optimization and return, if it was successful (true)
         return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
+
+
+    @staticmethod
+    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.Transfsim) -> bool:
+        """
+        Load and initialize the transformer optimization configuration.
+
+        :param act_ginfo : General information about the study
+        :type  act_ginfo : dct.GeneralInformation:
+        :param act_config_inductor: actual inductor configuration information
+        :type  act_config_inductor: dict: dictionary with the necessary configuration parameter
+        :param act_isim: inductor optimization object reference
+        :type  act_isim: Inductsimclass.Inductorsim:
+        :return: True, if the configuration is sucessfull
+        :rtype: bool
+        """
+
+        #   Variable initialisation
+
+        # Designspace
+        designspace_dict = {"core_name_list": act_config_transformer["Designspace"]["core_name_list"],
+                            "material_name_list": act_config_transformer["Designspace"]["material_name_list"],
+                            "core_inner_diameter_min_max_list": act_config_transformer["Designspace"]["core_inner_diameter_min_max_list"],
+                            "window_w_min_max_list": act_config_transformer["Designspace"]["window_w_min_max_list"],
+                            "window_h_bot_min_max_list": act_config_transformer["Designspace"]["window_h_bot_min_max_list"],
+                            "primary_litz_wire_list": act_config_transformer["Designspace"]["primary_litz_wire_list"],
+                            "secondary_litz_wire_list": act_config_transformer["Designspace"]["secondary_litz_wire_list"]}
+
+        # Transformer data
+        transformer_data_dict={"max_transformer_total_height": act_config_transformer["TransformerData"]["max_transformer_total_height"],
+                               "max_core_volume": act_config_transformer["TransformerData"]["max_core_volume"],
+                               "n_p_top_min_max_list": act_config_transformer["TransformerData"]["n_p_top_min_max_list"],
+                               "n_p_bot_min_max_list": act_config_transformer["TransformerData"]["n_p_bot_min_max_list"],
+                               "iso_window_top_core_top": act_config_transformer["TransformerData"]["iso_window_top_core_top"],
+                               "iso_window_top_core_bot": act_config_transformer["TransformerData"]["iso_window_top_core_bot"],
+                               "iso_window_top_core_left": act_config_transformer["TransformerData"]["iso_window_top_core_left"],
+                               "iso_window_top_core_right": act_config_transformer["TransformerData"]["iso_window_top_core_right"],
+                               "iso_window_bot_core_top": act_config_transformer["TransformerData"]["iso_window_bot_core_top"],
+                               "iso_window_bot_core_bot": act_config_transformer["TransformerData"]["iso_window_bot_core_bot"],
+                               "iso_window_bot_core_left": act_config_transformer["TransformerData"]["iso_window_bot_core_left"],
+                               "iso_window_bot_core_right": act_config_transformer["TransformerData"]["iso_window_bot_core_right"],
+                               "iso_primary_to_primary": act_config_transformer["TransformerData"]["iso_primary_to_primary"],
+                               "iso_secondary_to_secondary": act_config_transformer["TransformerData"]["iso_secondary_to_secondary"],
+                               "iso_primary_to_secondary": act_config_transformer["TransformerData"]["iso_primary_to_secondary"],
+                               "fft_filter_value_factor": act_config_transformer["TransformerData"]["fft_filter_value_factor"],
+                               "mesh_accuracy": act_config_transformer["TransformerData"]["mesh_accuracy"]}
+
+        # Initialize inductor optimization and return, if it was successful (true)
+        return act_tsim.init_configuration(act_config_transformer["TransformerConfigName"]["transformer_config_name"], act_ginfo, designspace_dict,transformer_data_dict)
+
 
     @staticmethod
     def check_breakpoint(breakpointkey: str, info: str):
@@ -230,7 +286,9 @@ class DctMainCtl:
         """
         # Check if breakpoint stops the programm
         if breakpointkey == "Stop":
-            raise ValueError("Program stops cause by breakpoint at: '"+info+"'!")
+            print("Program stops cause by breakpoint at: '"+info+"'!")
+            # stop program
+            sys.exit()
 
         elif breakpointkey == "Pause":
             # Information
@@ -243,15 +301,20 @@ class DctMainCtl:
 
             # Check result
             if key_inp == "s" or key_inp == "S":
-                raise ValueError("User stops the programm!")
+                print("User stops the program!")
+                # stop program
+                sys.exit()
         else:
             pass
 
     @staticmethod
-    def executeProgram():
+    def executeProgram(workspace_path: str):
         """Perform the main programm.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
+
+        :param  workspace_path: Path to subfolder 'workspace' (if empty default path '../<path to this file>' is used)
+        :type   workspace_path: str
         """
         # Variable declaration
         # General information
@@ -261,18 +324,27 @@ class DctMainCtl:
         # Electric, inductor, transformer and heatsink configuration files
         config_electric = {}
         config_inductor = {}
+        config_transformer = {}
         # Electrical simulation
         esim = Elecsimclass.Elecsim
         # Inductor simulation
         isim = Inductsimclass.Inductorsim
+        # Transformer simulation
+        tsim = Transfsimclass.Transfsim
         # Flag for available filtered results
         filtered_resultFlag = False
 
-        # Change to workspace
-        os.chdir("..")
-        # change to folder 'workspace'
+        # Check if workspace path is not provided by argument
+        if workspace_path == "":
+            # Find process workspace
+            workspace_path = os.path.dirname(os.path.abspath(__file__))
+            # Join parent folder of workspace_path and workspace path to absolute path name
+            workspace_path = os.path.join(os.path.dirname(workspace_path), "workspace")
+
+        # Set directory to workspace path
         try:
-            os.chdir("workspace")
+            # Change to workspace
+            os.chdir(workspace_path)
         except FileNotFoundError as exc:
             raise ValueError("Error: Workspace folder does not exists!") from exc
         except PermissionError as exc:
@@ -333,9 +405,28 @@ class DctMainCtl:
                                         config_program_flow["inductor"]["Subdirectory"],
                                         config_program_flow["general"]["StudyName"],
                                         id_entry,
-                                        config_program_flow["inductor"]["LinkIdSubdirectory"])
+                                        config_inductor["InductorConfigName"]["inductor_config_name"])
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(datapath, "inductor_01"):
+                    raise ValueError(f"Study {config_program_flow["general"]["StudyName"]} in path {datapath} does not exist. No sqlite3-database found!")
+
+        # Load the transformer-configuration parameter
+        targetfile = config_program_flow["configurationdatafiles"]["TransformerConfFile"]
+        if not DctMainCtl.load_conf_file(targetfile, config_transformer):
+            raise ValueError(f"Transformer configuration file: {targetfile} does not exist.")
+
+        # Check, if transformer optimization is to skip
+        if config_program_flow["transformer"]["ReCalculation"] == "skip":
+            # For loop to check, if all filtered values are available
+            for id_entry in ginfo.filtered_list_id:
+                # Assemble pathname
+                datapath = os.path.join(config_program_flow["general"]["ProjectDirectory"],
+                                        config_program_flow["transformer"]["Subdirectory"],
+                                        config_program_flow["general"]["StudyName"],
+                                        id_entry,
+                                        config_transformer["InductorConfigName"]["inductor_config_name"])
+                # Check, if data are available (skip case)
+                if not DctMainCtl.check_study_data(datapath, "transformer_01"):
                     raise ValueError(f"Study {config_program_flow["general"]["StudyName"]} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the configuration for heatsink optimization
@@ -345,6 +436,8 @@ class DctMainCtl:
         # Warning, no data are available
         # Check, if heatsink optimization is to skip
         # Warning, no data are available
+
+        ################# Start simulation  ##############################################################
 
         # Check, if electrical optimization is not to skip
         if not config_program_flow["electrical"]["ReCalculation"] == "skip":
@@ -381,21 +474,41 @@ class DctMainCtl:
 
         # Check, if inductor optimization is not to skip
         if not config_program_flow["inductor"]["ReCalculation"] == "skip":
-            # Load initialisation data of electrical simulation and initialize
+            # Load initialisation data of inductor simulation and initialize
             if not DctMainCtl.load_inductor_config(ginfo, config_inductor, isim):
                 raise ValueError("Inductor configuration not initialized!")
             # Check, if old study is to delete, if available
             if config_program_flow["inductor"]["ReCalculation"] == "new":
                 # delete old study
-                NewStudyFlag = True
+                new_study_flag = True
             else:
                 # overtake the trails of the old study
-                NewStudyFlag = False
+                new_study_flag = False
 
-            # Start simulation
-            isim.simulation_handler(ginfo, 100, 1.0, True)
-        # Initialize data
-        # Start calculation
+            # Start simulation ASA: Filter_factor to correct
+            isim.simulation_handler(ginfo, config_program_flow["inductor"]["NumberOfTrials"], 1.0, new_study_flag)
+
+        # Check breakpoint
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Inductor"], "Inductor paretofront calculated")
+
+        # Check, if inductor optimization is not to skip
+        if not config_program_flow["transformer"]["ReCalculation"] == "skip":
+            # Load initialisation data of transformer simulation and initialize
+            if not DctMainCtl.load_transformer_config(ginfo, config_transformer, tsim):
+                raise ValueError("transformer configuration not initialized!")
+            # Check, if old study is to delete, if available
+            if config_program_flow["transformer"]["ReCalculation"] == "new":
+                # delete old study
+                new_study_flag = True
+            else:
+                # overtake the trails of the old study
+                new_study_flag = False
+
+            # Start simulation ASA: Filter_factor to correct
+            tsim.simulation_handler(ginfo, config_program_flow["transformer"]["NumberOfTrials"], 1.0, new_study_flag)
+
+        # Check breakpoint
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Transformer"], "Transformer paretofront calculated")
 
         # Check, if transformer optimization is to skip
         # Initialize data
@@ -423,7 +536,33 @@ class DctMainCtl:
 
 # Program flow control of DAB-optimization
 if __name__ == "__main__":
+    # Variable declaration
+    arg1 = ""
+
     # Create an mainctl-instance
     dct_mctl = DctMainCtl()
+    # Read the command line
+    arguments = sys.argv
+
+    # Check on argument, which corresponds to the workspace file location
+    if len(arguments) > 1:
+        arg1 = arguments[1]
+        # Check if this corresponds to the workspace path
+        arg1 = os.path.join(arg1, "workspace")
+        print(f"Pfad={arg1}")
+        # Check if the path not exist (absolute or relative path)
+        if not os.path.exists(arg1):
+            # Consider it as relative path and create the absolute path
+            arg1 = os.path.abspath(arg1)
+            print(f"Neuer Pfad={arg1}")
+            # Check if the path does not exist
+            if not os.path.exists(arg1):
+                print(f"Provides argument {arguments[1]} does not corresponds to the path to subfolder 'workspace'.\n")
+                print("This is neither the absolute nor the relative path. Program will use the default path!")
+                # Reset path variable
+                arg1 = ""
+
+        # Convert it to the absolute path
+        arg1 = os.path.abspath(arg1)
     # Execute program
-    dct_mctl.executeProgram()
+    dct_mctl.executeProgram(arg1)
