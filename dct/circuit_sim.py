@@ -86,8 +86,7 @@ class Elecsim:
             # storage = optuna.storages.RDBStorage(storage_url)
 
             dct.Optimization.start_proceed_study(dab_config=Elecsim._dab_config, number_trials=no_of_trials, deleteStudyFlag=deleteFlag)
-            # ASA: Comment out because GUI is not available
-            # dct.Optimization.show_study_results(Elecsim._dab_config)
+            dct.Optimization.show_study_results(Elecsim._dab_config)
 
             # Set result value to True (Check of optimization is necessary
             retval = True

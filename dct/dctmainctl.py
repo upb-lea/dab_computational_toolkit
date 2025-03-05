@@ -13,6 +13,7 @@ import circuit_sim as Elecsimclass
 # Inductor simulations class
 import induct_sim as Inductsimclass
 # import transf_sim
+import transf_sim as Transfsimclass
 
 
 import logging
@@ -102,15 +103,17 @@ class DctMainCtl:
         :param act_config_program_flow: toml data of the program flow
         :type  act_config_program_flow: dict
         """
+        # Read the current directory name
+        abs_path=os.getcwd()
         # Store project directory and study name
         act_ginfo.project_directory = act_config_program_flow["general"]["ProjectDirectory"]
         act_ginfo.circuit_study_name = act_config_program_flow["general"]["StudyName"]
         # Create path names
-        act_ginfo.circuit_study_path = os.path.join(act_ginfo.project_directory,
+        act_ginfo.circuit_study_path = os.path.join(abs_path,act_ginfo.project_directory,
                                                     DctMainCtl.const_circuit_folder, act_ginfo.circuit_study_name)
-        act_ginfo.inductor_study_path = os.path.join(act_ginfo.project_directory,
+        act_ginfo.inductor_study_path = os.path.join(abs_path,act_ginfo.project_directory,
                                                      DctMainCtl.const_inductor_folder, act_ginfo.circuit_study_name)
-        act_ginfo.transformer_study_path = os.path.join(act_ginfo.project_directory,
+        act_ginfo.transformer_study_path = os.path.join(abs_path,act_ginfo.project_directory,
                                                         DctMainCtl.const_transformer_folder, act_ginfo.circuit_study_name)
 
     @staticmethod
@@ -221,6 +224,56 @@ class DctMainCtl:
         # Initialize inductor optimization and return, if it was successful (true)
         return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
 
+
+    @staticmethod
+    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.Transfsim) -> bool:
+        """
+        Load and initialize the transformer optimization configuration.
+
+        :param act_ginfo : General information about the study
+        :type  act_ginfo : dct.GeneralInformation:
+        :param act_config_inductor: actual inductor configuration information
+        :type  act_config_inductor: dict: dictionary with the necessary configuration parameter
+        :param act_isim: inductor optimization object reference
+        :type  act_isim: Inductsimclass.Inductorsim:
+        :return: True, if the configuration is sucessfull
+        :rtype: bool
+        """
+
+        #   Variable initialisation
+
+        # Designspace
+        designspace_dict = {"core_name_list": act_config_transformer["Designspace"]["core_name_list"],
+                            "material_name_list": act_config_transformer["Designspace"]["material_name_list"],
+                            "core_inner_diameter_min_max_list": act_config_transformer["Designspace"]["core_inner_diameter_min_max_list"],
+                            "window_w_min_max_list": act_config_transformer["Designspace"]["window_w_min_max_list"],
+                            "window_h_bot_min_max_list": act_config_transformer["Designspace"]["window_h_bot_min_max_list"],
+                            "primary_litz_wire_list": act_config_transformer["Designspace"]["primary_litz_wire_list"],
+                            "secondary_litz_wire_list": act_config_transformer["Designspace"]["secondary_litz_wire_list"]}
+
+        # Transformer data
+        transformer_data_dict={"max_transformer_total_height": act_config_transformer["TransformerData"]["max_transformer_total_height"],
+                               "max_core_volume": act_config_transformer["TransformerData"]["max_core_volume"],
+                               "n_p_top_min_max_list": act_config_transformer["TransformerData"]["n_p_top_min_max_list"],
+                               "n_p_bot_min_max_list": act_config_transformer["TransformerData"]["n_p_bot_min_max_list"],
+                               "iso_window_top_core_top": act_config_transformer["TransformerData"]["iso_window_top_core_top"],
+                               "iso_window_top_core_bot": act_config_transformer["TransformerData"]["iso_window_top_core_bot"],
+                               "iso_window_top_core_left": act_config_transformer["TransformerData"]["iso_window_top_core_left"],
+                               "iso_window_top_core_right": act_config_transformer["TransformerData"]["iso_window_top_core_right"],
+                               "iso_window_bot_core_top": act_config_transformer["TransformerData"]["iso_window_bot_core_top"],
+                               "iso_window_bot_core_bot": act_config_transformer["TransformerData"]["iso_window_bot_core_bot"],
+                               "iso_window_bot_core_left": act_config_transformer["TransformerData"]["iso_window_bot_core_left"],
+                               "iso_window_bot_core_right": act_config_transformer["TransformerData"]["iso_window_bot_core_right"],
+                               "iso_primary_to_primary": act_config_transformer["TransformerData"]["iso_primary_to_primary"],
+                               "iso_secondary_to_secondary": act_config_transformer["TransformerData"]["iso_secondary_to_secondary"],
+                               "iso_primary_to_secondary": act_config_transformer["TransformerData"]["iso_primary_to_secondary"],
+                               "fft_filter_value_factor": act_config_transformer["TransformerData"]["fft_filter_value_factor"],
+                               "mesh_accuracy": act_config_transformer["TransformerData"]["mesh_accuracy"]}
+
+        # Initialize inductor optimization and return, if it was successful (true)
+        return act_tsim.init_configuration(act_config_transformer["TransformerConfigName"]["transformer_config_name"], act_ginfo, designspace_dict,transformer_data_dict)
+
+
     @staticmethod
     def check_breakpoint(breakpointkey: str, info: str):
         """
@@ -271,10 +324,13 @@ class DctMainCtl:
         # Electric, inductor, transformer and heatsink configuration files
         config_electric = {}
         config_inductor = {}
+        config_transformer = {}
         # Electrical simulation
         esim = Elecsimclass.Elecsim
         # Inductor simulation
         isim = Inductsimclass.Inductorsim
+        # Transformer simulation
+        tsim = Transfsimclass.Transfsim
         # Flag for available filtered results
         filtered_resultFlag = False
 
@@ -349,10 +405,29 @@ class DctMainCtl:
                                         config_program_flow["inductor"]["Subdirectory"],
                                         config_program_flow["general"]["StudyName"],
                                         id_entry,
-                                        config_program_flow["inductor"]["LinkIdSubdirectory"])
+                                        config_inductor["InductorConfigName"]["inductor_config_name"])
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(datapath, "inductor_01"):
-                    raise ValueError(f"Study {config_program_flow["general"]["StudyName"]} in path {datapath} does not exist. No sqlite3-database found!")
+                    raise ValueError(f"Study {config_program_flow['general']['StudyName']} in path {datapath} does not exist. No sqlite3-database found!")
+
+        # Load the transformer-configuration parameter
+        targetfile = config_program_flow["configurationdatafiles"]["TransformerConfFile"]
+        if not DctMainCtl.load_conf_file(targetfile, config_transformer):
+            raise ValueError(f"Transformer configuration file: {targetfile} does not exist.")
+
+        # Check, if transformer optimization is to skip
+        if config_program_flow["transformer"]["ReCalculation"] == "skip":
+            # For loop to check, if all filtered values are available
+            for id_entry in ginfo.filtered_list_id:
+                # Assemble pathname
+                datapath = os.path.join(config_program_flow["general"]["ProjectDirectory"],
+                                        config_program_flow["transformer"]["Subdirectory"],
+                                        config_program_flow["general"]["StudyName"],
+                                        id_entry,
+                                        config_transformer["InductorConfigName"]["inductor_config_name"])
+                # Check, if data are available (skip case)
+                if not DctMainCtl.check_study_data(datapath, "transformer_01"):
+                    raise ValueError(f"Study {config_program_flow['general']['StudyName']} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the configuration for heatsink optimization
 
@@ -361,6 +436,8 @@ class DctMainCtl:
         # Warning, no data are available
         # Check, if heatsink optimization is to skip
         # Warning, no data are available
+
+        ################# Start simulation  ##############################################################
 
         # Check, if electrical optimization is not to skip
         if not config_program_flow["electrical"]["ReCalculation"] == "skip":
@@ -397,21 +474,41 @@ class DctMainCtl:
 
         # Check, if inductor optimization is not to skip
         if not config_program_flow["inductor"]["ReCalculation"] == "skip":
-            # Load initialisation data of electrical simulation and initialize
+            # Load initialisation data of inductor simulation and initialize
             if not DctMainCtl.load_inductor_config(ginfo, config_inductor, isim):
                 raise ValueError("Inductor configuration not initialized!")
             # Check, if old study is to delete, if available
             if config_program_flow["inductor"]["ReCalculation"] == "new":
                 # delete old study
-                NewStudyFlag = True
+                new_study_flag = True
             else:
                 # overtake the trails of the old study
-                NewStudyFlag = False
+                new_study_flag = False
 
-            # Start simulation
-            isim.simulation_handler(ginfo, 100, 1.0, True)
-        # Initialize data
-        # Start calculation
+            # Start simulation ASA: Filter_factor to correct
+            isim.simulation_handler(ginfo, config_program_flow["inductor"]["NumberOfTrials"], 1.0, new_study_flag)
+
+        # Check breakpoint
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Inductor"], "Inductor paretofront calculated")
+
+        # Check, if inductor optimization is not to skip
+        if not config_program_flow["transformer"]["ReCalculation"] == "skip":
+            # Load initialisation data of transformer simulation and initialize
+            if not DctMainCtl.load_transformer_config(ginfo, config_transformer, tsim):
+                raise ValueError("transformer configuration not initialized!")
+            # Check, if old study is to delete, if available
+            if config_program_flow["transformer"]["ReCalculation"] == "new":
+                # delete old study
+                new_study_flag = True
+            else:
+                # overtake the trails of the old study
+                new_study_flag = False
+
+            # Start simulation ASA: Filter_factor to correct
+            tsim.simulation_handler(ginfo, config_program_flow["transformer"]["NumberOfTrials"], 1.0, new_study_flag)
+
+        # Check breakpoint
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Transformer"], "Transformer paretofront calculated")
 
         # Check, if transformer optimization is to skip
         # Initialize data

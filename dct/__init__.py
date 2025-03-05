@@ -2,8 +2,7 @@
 from dct.mod_zvs import *
 from dct.currents import *
 from dct.datasets import *
-# ASA: Comment out because no gui available
-# from dct.geckosimulation import *
+from dct.geckosimulation import *
 from dct.sample_requirements import *
 from dct.mod_zvs import *
 from dct.plot_dab import *
@@ -19,4 +18,3 @@ from dct.datasets_dtos import *
 from dct.heat_sink import *
 from dct.heat_sink_dtos import *
 from dct.plot_masks import *
-# from dct.circuit_sim import *

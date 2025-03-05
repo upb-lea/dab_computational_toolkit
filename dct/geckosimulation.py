@@ -12,7 +12,7 @@ from dct.debug_tools import *
 import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
-import pygeckocircuits2 as pgc
+# import pygeckocircuits2 as pgc
 import pandas as pd
 
 def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
@@ -139,8 +139,9 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     simtime_pre = number_pre_sim_periods / fs
     simtime = number_sim_periods / fs
 
-    gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, timestep=timestep,
-                                              simtime=simtime + t_dead1, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
+    # ASA Comment out for  HPC
+    # gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, timestep=timestep,
+    #                                           simtime=simtime + t_dead1, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
     for vec_vvp in np.ndindex(mod_phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
@@ -166,52 +167,9 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             'i_Lc2__start': i_lc2_start[vec_vvp].item() / n,
         }
 
+        # HPC_version, which cannot run geckocircuits
         # Only run simulation if all params are valid
-        if not np.any(np.isnan(list(sim_params.values()))):
-            # start simulation for this operation point
-            c_oss_1_file = os.path.join(lossfilepath, f'{transistor_1_name}_c_oss.nlc')
-            c_oss_2_file = os.path.join(lossfilepath, f'{transistor_2_name}_c_oss.nlc')
-
-            gecko_dab_converter.set_global_parameters(sim_params)
-            gecko_dab_converter.set_nonlinear_file(['C11', 'C12', 'C13', 'C14'], c_oss_1_file)
-            gecko_dab_converter.set_nonlinear_file(['C21', 'C22', 'C23', 'C24'], c_oss_2_file)
-
-            # Start the simulation and get the results. Do not set times here because it is set while init Gecko.
-            gecko_dab_converter.run_simulation()
-            values_mean = gecko_dab_converter.get_values(
-                nodes=l_means_keys,
-                operations=['mean'],
-                # Just use the last part, because the beginning is garbage
-                # simtime must be greater than 2*Ts
-                # Use only second half of simtime and make it multiple of Ts
-                range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
-                                  'end']
-            )
-            values_rms = gecko_dab_converter.get_values(
-                nodes=l_rms_keys,
-                operations=['rms'],
-                # Just use the last part, because the beginning is garbage
-                # simtime must be greater than 2*Ts
-                # Use only second half of simtime and make it multiple of Ts
-                range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
-                                  'end']
-            )
-            values_min = gecko_dab_converter.get_values(
-                nodes=l_min_keys,
-                operations=['min'],
-                # Just use the last part, because the beginning is garbage
-                # Use the smallest possible timerange at the end
-                range_start_stop=[2 * timestep, 'end']
-            )
-
-            if get_waveforms:
-                result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
-
-                for key in waveform_keys:
-                    gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()
-                gecko_waveforms_single_simulation['time'] = result_df['time'].to_numpy()
-
-        else:
+        if True:
             # When params are not valid return NaN values
             values_mean = defaultdict(dict)
             values_rms = defaultdict(dict)
@@ -245,10 +203,6 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
 
         # Progressbar update, default increment +1
         pbar.update()
-
-    if not __debug__:
-        # Gecko Basics
-        gecko_dab_converter.__del__()
 
     # Calculate results for the entire Simulation
 

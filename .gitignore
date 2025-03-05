@@ -7,6 +7,8 @@ dab_modulation_output*
 *.npz
 */__pycache__/
 dct/design_check/__pycache__/
+workspace/2025-01-31_example/
+examples/2025-01-31_example/
 *.sqlite3
 *.html
 *.csv
