@@ -2,38 +2,19 @@
 
 # python libraries
 import os
-import pickle
-import logging
 import copy
-
-# 3rd party libraries
-import numpy as np
-import tqdm
-
-# own libraries
-import femmt as fmt
-
-# configure root logger
-logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-logging.getLogger().setLevel(logging.ERROR)
-
-
-
-# python libraries
 import logging
 import os.path
 import pickle
-import sys
-
-
-# own libraries
-import dct
-import femmt as fmt
 
 # 3rd party libraries
 import numpy as np
 import pandas as pd
 import tqdm
+
+# own libraries
+import dct
+import femmt as fmt
 
 # configure root logger
 logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
@@ -41,6 +22,7 @@ logging.getLogger().setLevel(logging.ERROR)
 
 
 class Transfsim:
+    """Optimation of the transformer."""
 
     # Configuration list
     sim_config_list = []
@@ -51,8 +33,8 @@ class Transfsim:
         """
         Initialize the configuration.
 
-        :param act_ind_config_name : Name of the transformer study
-        :type act_ind_config_name : str
+        :param act_transf_config_name : Name of the transformer study
+        :type act_transf_config_name : str
         :param act_ginfo : General information about the study
         :type  act_ginfo : dct.GeneralInformation:
         :param act_designspace_dict : dict with data of the design space
@@ -68,31 +50,32 @@ class Transfsim:
         ret_val = True
 
         # Insulation parameter
-        act_insulation = fmt.StoInsulation( # insulation for top core window
-                                             iso_window_top_core_top=act_transformerdata_dict["iso_window_top_core_top"],
-                                             iso_window_top_core_bot=act_transformerdata_dict["iso_window_top_core_bot"],
-                                             iso_window_top_core_left=act_transformerdata_dict["iso_window_top_core_left"],
-                                             iso_window_top_core_right=act_transformerdata_dict["iso_window_top_core_right"],
-                                             # insulation for bottom core window
-                                             iso_window_bot_core_top=act_transformerdata_dict["iso_window_bot_core_top"],
-                                             iso_window_bot_core_bot=act_transformerdata_dict["iso_window_bot_core_bot"],
-                                             iso_window_bot_core_left=act_transformerdata_dict["iso_window_bot_core_left"],
-                                             iso_window_bot_core_right=act_transformerdata_dict["iso_window_bot_core_right"],
-                                             # winding-to-winding insulation
-                                             iso_primary_to_primary=act_transformerdata_dict["iso_primary_to_primary"],
-                                             iso_secondary_to_secondary=act_transformerdata_dict["iso_secondary_to_secondary"],
-                                             iso_primary_to_secondary=act_transformerdata_dict["iso_primary_to_secondary"],
-                                           )
+        act_insulation = fmt.StoInsulation(
+            # insulation for top core window
+            iso_window_top_core_top=act_transformerdata_dict["iso_window_top_core_top"],
+            iso_window_top_core_bot=act_transformerdata_dict["iso_window_top_core_bot"],
+            iso_window_top_core_left=act_transformerdata_dict["iso_window_top_core_left"],
+            iso_window_top_core_right=act_transformerdata_dict["iso_window_top_core_right"],
+            # insulation for bottom core window
+            iso_window_bot_core_top=act_transformerdata_dict["iso_window_bot_core_top"],
+            iso_window_bot_core_bot=act_transformerdata_dict["iso_window_bot_core_bot"],
+            iso_window_bot_core_left=act_transformerdata_dict["iso_window_bot_core_left"],
+            iso_window_bot_core_right=act_transformerdata_dict["iso_window_bot_core_right"],
+            # winding-to-winding insulation
+            iso_primary_to_primary=act_transformerdata_dict["iso_primary_to_primary"],
+            iso_secondary_to_secondary=act_transformerdata_dict["iso_secondary_to_secondary"],
+            iso_primary_to_secondary=act_transformerdata_dict["iso_primary_to_secondary"]
+        )
 
         # Init the material data source       
         act_material_data_sources = fmt.StackedTransformerMaterialDataSources(
-                                            permeability_datasource=fmt.MaterialDataSource.Measurement,
-                                            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
-                                            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
-                                            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
-                                            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
-                                            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
-                                        )
+            permeability_datasource=fmt.MaterialDataSource.Measurement,
+            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
+            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
+            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
+            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
+            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
+        )
 
         # Create fix part of io_config
         sto_config_gen = fmt.StoSingleInputConfig(
@@ -158,8 +141,8 @@ class Transfsim:
                 next_io_config.time_current_1_vec = transformer_target_params.time_current_1_vec
                 next_io_config.time_current_2_vec = transformer_target_params.time_current_2_vec
                 # misc
-                next_io_config.stacked_transformer_optimization_directory \
-                 = os.path.join(act_ginfo.transformer_study_path,circuit_trial_number,act_transf_config_name)
+                next_io_config.stacked_transformer_optimization_directory\
+                    = os.path.join(act_ginfo.transformer_study_path, circuit_trial_number, act_transf_config_name)
                 Transfsim.sim_config_list.append([circuit_trial_number, next_io_config])
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
@@ -169,7 +152,6 @@ class Transfsim:
     @staticmethod
     def _simulation(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, act_ginfo: dct.GeneralInformation,
                     act_target_number_trials: int, act_filter_factor: float, act_re_simulate: bool, debug: bool):
-
         """
         Simulate.
 
@@ -254,6 +236,13 @@ class Transfsim:
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
+
+                        time = dct.functions_waveforms.full_angle_waveform_from_angles(
+                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
+                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+
+                        current_waveform = np.array([time, current])
+
                         if debug:
                             print(f"{current_waveform=}")
                             print("----------------------")
@@ -262,13 +251,6 @@ class Transfsim:
                             print(f"   * Circuit trial: {circuit_id}")
                             print(f"   * Transformer study: {act_sto_config.transformer_study_name}")
                             print(f"   * Transformer re-simulation trial: {re_simulate_number}")
-
-
-                        time = dct.functions_waveforms.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
-
-                        current_waveform = np.array([time, current])
 
                         print(f"{current_waveform=}")
                         # workaround for comma problem. Read a random csv file and set back the delimiter.
@@ -313,7 +295,6 @@ class Transfsim:
         :param debug : Debug mode flag
         :type  debug : bool
         """
-
         # Later this is to parallelize with multiple processes
         for act_sim_config in Transfsim.sim_config_list:
             # Debug switch
