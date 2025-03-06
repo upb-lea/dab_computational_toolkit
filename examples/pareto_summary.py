@@ -1,4 +1,4 @@
-"""Optimize the heat sink"""
+"""Optimize the heat sink."""
 
 # python libraries
 import os
@@ -38,7 +38,9 @@ if task == "generate_pareto_summary":
 
     # generate full summary
     print(df_hs.loc[df_hs["values_1"] < 1]["values_0"].nsmallest(n=1).values[0])
-    df_wo_hs["heat_sink_volume"] = df_wo_hs["r_th_heat_sink"].apply(lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] if df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values else None)
+    df_wo_hs["heat_sink_volume"] = df_wo_hs["r_th_heat_sink"].apply(
+        lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
+        if df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values else None)
 
     df_wo_hs["total_volume"] = df_wo_hs["transformer_volume"] + df_wo_hs["inductor_volume"] + df_wo_hs["heat_sink_volume"]
 
@@ -49,7 +51,7 @@ elif task == "plot_pareto_summary":
     df = pd.read_csv(f"{filepaths.heat_sink}/df_summary.csv")
 
     df_filtered = dct.Optimization.filter_df(df, x="total_volume", y="total_mean_loss",
-                                             factor_min_dc_losses= 0.001, factor_max_dc_losses = 10)
+                                             factor_min_dc_losses=0.001, factor_max_dc_losses=10)
 
     dct.global_plot_settings_font_latex()
     fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)

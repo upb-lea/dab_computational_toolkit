@@ -199,15 +199,16 @@ for circuit_number in circuit_numbers:
                             circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
                             circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
 
-                            circuit_heat_sink_max_1_matrix = circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * \
-                                                             max_b1_transistor_cond_loss_matrix
-                            circuit_heat_sink_max_2_matrix = circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * \
-                                                             max_b2_transistor_cond_loss_matrix
+                            circuit_heat_sink_max_1_matrix = (
+                                circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * max_b1_transistor_cond_loss_matrix)
+                            circuit_heat_sink_max_2_matrix = (
+                                circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * max_b2_transistor_cond_loss_matrix)
 
                             r_th_ind_heat_sink = 1 / inductor_cooling.tim_conductivity * inductor_cooling.tim_thickness / inductor_dto.area_to_heat_sink
                             temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
 
-                            r_th_xfmr_heat_sink = 1 / transformer_cooling.tim_conductivity * transformer_cooling.tim_thickness / transformer_dto.area_to_heat_sink
+                            r_th_xfmr_heat_sink = (1 / transformer_cooling.tim_conductivity * \
+                                                   transformer_cooling.tim_thickness / transformer_dto.area_to_heat_sink)
                             temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
 
                             # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
