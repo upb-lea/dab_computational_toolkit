@@ -9,7 +9,7 @@
     Electrical_pareto = "No"  # After Electrical paretofront calculation
     Electrical_filtered = "No"  # After Electrical filtered result calculation
     Inductor = "No"    # After inductor paretofront calculations of for all correspondent electrical points
-    Transformer = "Pause" # After transformer paretofront calculations of for all correspondent electrical points
+    Transformer = "No" # After transformer paretofront calculations of for all correspondent electrical points
     Heatsink = "Pause"    # After heatsink paretofront calculation
 
 [condbreakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
@@ -34,9 +34,10 @@
     Subdirectory = "03_transformer"
 
 [heatsink]
-    NumberOfTrials = 1000
+    NumberOfTrials = 100
     ReCalculation = "continue" # (new,continue,skip)
     Subdirectory = "04_heat_sink"
+    CircuitStudyNameFlag = "True" # True=Use circuit study name, False (or any word except 'True') = Do not use ciruit study name
 
 
 [configurationdatafiles]
