@@ -17,6 +17,7 @@ class GeneralInformation:
     circuit_study_path: str
     inductor_study_path: str
     transformer_study_path: str
+    heatsink_study_path: str
 
 @dataclasses.dataclass
 class ParetoFilePaths:

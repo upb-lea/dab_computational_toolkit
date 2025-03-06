@@ -13,9 +13,8 @@ from matplotlib import pyplot as plt
 # own libraries
 import dct
 
-import logging
-logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
+# logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
+# logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
 
 
 class Elecsim:

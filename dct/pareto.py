@@ -30,6 +30,7 @@ class Optimization:
         :param config: configuration
         :type config: InductorOptimizationDTO
         """
+        # ASA: xtodo: Merge ginfo and set_up_folder_structure
         project_directory = os.path.abspath(config.project_directory)
         circuit_path = os.path.join(project_directory, "01_circuit")
         inductor_path = os.path.join(project_directory, "02_inductor")
@@ -59,6 +60,7 @@ class Optimization:
         :return: File path in a DTO
         :rtype: p_dtos.ParetoFilePaths
         """
+        # ASA: xtodo: Merge ginfo and set_up_folder_structure
         filepath_config = f"{project_directory}/filepath_config.json"
         if os.path.exists(filepath_config):
             with open(filepath_config, 'r', encoding='utf8') as json_file:
