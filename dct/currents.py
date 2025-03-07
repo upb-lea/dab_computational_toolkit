@@ -181,18 +181,11 @@ def _calc_l_s_mode_1_minus_currents(phi_rad, tau_1_rad, tau_2_rad, d, v_1, f_s, 
     """
     denominator = 2 * np.pi * f_s * l_s
 
-    # using same formulas
-    # i_l_s_alpha_rad = v_1 * (d * (tau_1_rad + phi_rad - tau_2_rad / 2) - tau_1_rad / 2) / denominator
-    # i_l_s_beta_rad = v_1 * (phi_rad + tau_1_rad / 2 - d * tau_2_rad / 2) / denominator
-    # i_l_s_gamma_rad = v_1 * (np.pi - tau_2_rad + phi_rad + tau_1_rad / 2 -d * tau_2_rad / 2) / denominator
-    # i_l_s_delta_rad = -v_1 * (d * (np.pi + phi_rad - tau_2_rad / 2) - tau_1_rad / 2) / denominator
-
-    # second approach: same formulas as for mode 1+, just exchange phi_rad
-    phi_rad = - (tau_1_rad + phi_rad - tau_2_rad)
-    i_l_s_alpha_rad = v_1 * (d * (-tau_1_rad + tau_2_rad / 2 - phi_rad + np.pi) - tau_1_rad / 2) / denominator
-    i_l_s_beta_rad = v_1 * (d * tau_2_rad / 2 + tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
-    i_l_s_gamma_rad = v_1 * (d * (-tau_2_rad / 2 + phi_rad) + tau_1_rad / 2) / denominator
-    i_l_s_delta_rad = v_1 * (-d * tau_2_rad / 2 - tau_1_rad / 2 - phi_rad + np.pi) / denominator
+    # derived formulas for negative current
+    i_l_s_alpha_rad = v_1 * (d * tau_1_rad + d * phi_rad - d * tau_2_rad / 2 - tau_1_rad / 2) / denominator
+    i_l_s_beta_rad = - v_1 * (np.pi - tau_2_rad + phi_rad + tau_1_rad / 2 - d * tau_2_rad / 2) / denominator
+    i_l_s_gamma_rad = -v_1 * (d * np.pi + d * phi_rad - d * tau_2_rad / 2 - tau_1_rad / 2) / denominator
+    i_l_s_delta_rad = v_1 * (phi_rad + tau_1_rad / 2 - d * tau_2_rad / 2) / denominator
 
     return i_l_s_alpha_rad, i_l_s_beta_rad, i_l_s_gamma_rad, i_l_s_delta_rad
 
@@ -214,11 +207,11 @@ def _calc_l_1_mode_1_minus_currents(phi_rad, tau_1_rad, tau_2_rad, v_1, f_s, l_1
     """
     denominator = 2 * np.pi * f_s * l_1
     # second approach: same formulas as for mode 1+, just exchange phi_rad
-    phi_rad = - (tau_1_rad + phi_rad - tau_2_rad)
+
     i_l_1_alpha = -v_1 * tau_1_rad / 2 / denominator
-    i_l_1_beta = v_1 * (tau_1_rad / 2 - tau_2_rad + phi_rad) / denominator
+    i_l_1_beta = - v_1 * (2 * np.pi - 2 * tau_2_rad + 2 * phi_rad + tau_1_rad) / 2 / denominator
     i_l_1_gamma = v_1 * tau_1_rad / 2 / denominator
-    i_l_1_delta = v_1 * (-tau_1_rad / 2 - phi_rad + np.pi) / denominator
+    i_l_1_delta = v_1 * (2 * phi_rad + tau_1_rad) / 2 / denominator
 
     return i_l_1_alpha, i_l_1_beta, i_l_1_gamma, i_l_1_delta
 
