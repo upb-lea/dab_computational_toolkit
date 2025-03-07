@@ -17,6 +17,7 @@ class TransistorDTO:
     housing_area: np.array
     cooling_area: np.array
     r_th_jc: np.array
+    r_channel: np.array
 
 @dataclasses.dataclass
 class FixedParameters:
@@ -134,6 +135,8 @@ class CalcCurrents:
     i_l_2_rms: np.array
     i_hf_1_rms: np.array
     i_hf_2_rms: np.array
+    i_m1_rms: np.array
+    i_m2_rms: np.array
 
     # sorted values: angles (alpha, beta, gamma, delta) and currents.
     angles_rad_sorted: np.array
@@ -152,7 +155,9 @@ class CalcCurrents:
 class CalcLosses:
     """DTO contains te calculated losses."""
 
-    p_1_tbd: np.array
+    p_m1_conduction: np.array
+    p_m2_conduction: np.array
+    p_dab_conduction: np.array
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -224,6 +229,10 @@ class GeckoResults:
     i_C12: np.array
     i_C23: np.array
     i_C24: np.array
+    i_S11: np.array
+    i_S12: np.array
+    i_S23: np.array
+    i_S24: np.array
     v_ds_S11_sw_on: np.array
     v_ds_S23_sw_on: np.array
     i_HF1_S11_sw_on: np.array

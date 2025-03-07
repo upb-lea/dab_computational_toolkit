@@ -486,3 +486,14 @@ def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_
                                 i_hf_2_sorted[0], i_hf_2_sorted[1], i_hf_2_sorted[2], i_hf_2_sorted[3])
 
     return i_hf_1_rms, i_hf_2_rms
+
+def calc_transistor_rms_currents(i_hf_rms: float) -> float:
+    """
+    Calculate the transistor RMS currents from the i_HF currents (bridge 1 or bridge 2).
+
+    :param i_hf_rms: bridge 1 or bridge 2 RMS current
+    :type i_hf_rms: float
+    :return: bridge 1 or bridge 2 transistor RMS current
+    :rtype: float
+    """
+    return i_hf_rms / np.sqrt(2)

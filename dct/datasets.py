@@ -17,6 +17,7 @@ import dct.functions_waveforms as d_waveforms
 import dct.mod_zvs as mod
 import dct.currents as dct_currents
 import dct.geckosimulation as dct_gecko
+import dct.losses as dct_loss
 
 class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
@@ -105,9 +106,19 @@ class HandleDabDto:
 
         i_hf_1_rms, i_hf_2_rms = dct_currents.calc_hf_rms_currents(angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
 
+        i_m1_rms = dct_currents.calc_transistor_rms_currents(i_hf_1_rms)
+        i_m2_rms = dct_currents.calc_transistor_rms_currents(i_hf_2_rms)
+
         calc_currents = d_dtos.CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
                                                'angles_rad_unsorted': angles_rad_unsorted, 'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted,
-                                               'i_l_2_sorted': i_l_2_sorted, 'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms})
+                                               'i_l_2_sorted': i_l_2_sorted, 'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms,
+                                               'i_m1_rms': i_m1_rms, 'i_m2_rms': i_m2_rms})
+        p_m1_cond = dct_loss.transistor_conduction_loss(i_m1_rms, transistor_dto_1)
+        p_m2_cond = dct_loss.transistor_conduction_loss(i_m2_rms, transistor_dto_2)
+
+        calc_losses = d_dtos.CalcLosses(**{'p_m1_conduction': p_m1_cond,
+                                           'p_m2_conduction': p_m2_cond,
+                                           'p_dab_conduction': 4 * (p_m1_cond + p_m2_cond)})
 
         gecko_additional_params = d_dtos.GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
@@ -123,7 +134,7 @@ class HandleDabDto:
             calc_config=calc_config,
             calc_modulation=modulation_parameters,
             calc_currents=calc_currents,
-            calc_losses=None,
+            calc_losses=calc_losses,
             gecko_additional_params=gecko_additional_params,
             gecko_results=None,
             gecko_waveforms=None,
@@ -580,6 +591,8 @@ class HandleTransistorDto:
         if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor.name}_c_oss.nlc")):
             transistor.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=c_oss_margin_factor)
 
+        transistor.quickstart_wp()
+
         transistor_dto = d_dtos.TransistorDTO(
             name=transistor.name,
             t_j_max_op=t_j_recommended,
@@ -588,6 +601,7 @@ class HandleTransistorDto:
             r_th_jc=transistor.switch.thermal_foster.r_th_total,
             cooling_area=transistor.cooling_area,
             housing_area=transistor.housing_area,
+            r_channel=transistor.wp.switch_r_channel
         )
 
         return transistor_dto
