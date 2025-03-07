@@ -1,7 +1,6 @@
 """Calculate the transistor losses."""
 
 # 3rd party libraries
-import numpy as np
 
 # own modules
 import dct.datasets_dtos as dtos
