@@ -104,7 +104,8 @@ class HandleDabDto:
         i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct_currents.calc_rms_currents(
             input_configuration, calc_config, modulation_parameters)
 
-        i_hf_1_rms, i_hf_2_rms = dct_currents.calc_hf_rms_currents(angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
+        i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted = dct_currents.calc_hf_currents(
+            angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
 
         i_m1_rms = dct_currents.calc_transistor_rms_currents(i_hf_1_rms)
         i_m2_rms = dct_currents.calc_transistor_rms_currents(i_hf_2_rms)
@@ -112,7 +113,7 @@ class HandleDabDto:
         calc_currents = d_dtos.CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
                                                'angles_rad_unsorted': angles_rad_unsorted, 'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted,
                                                'i_l_2_sorted': i_l_2_sorted, 'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms,
-                                               'i_m1_rms': i_m1_rms, 'i_m2_rms': i_m2_rms})
+                                               'i_m1_rms': i_m1_rms, 'i_m2_rms': i_m2_rms, 'i_hf_1_sorted': i_hf_1_sorted, 'i_hf_2_sorted': i_hf_2_sorted})
         p_m1_cond = dct_loss.transistor_conduction_loss(i_m1_rms, transistor_dto_1)
         p_m2_cond = dct_loss.transistor_conduction_loss(i_m2_rms, transistor_dto_2)
 

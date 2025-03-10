@@ -453,7 +453,7 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
 
     return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
 
-def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_sorted: np.array, i_l_2_sorted: np.array, n: np.array) -> tuple:
+def calc_hf_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_sorted: np.array, i_l_2_sorted: np.array, n: np.array) -> tuple:
     """
     Calculate i_hf_1_rms and i_hf_2_rms from i_l_s, i_l_1 and i_l_2.
 
@@ -467,7 +467,7 @@ def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_
     :type i_l_2_sorted: np.array
     :param n: transfer ratio
     :type n: np.array
-    :return: (i_hf_1_rms, i_hf_2_rms)
+    :return: (i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted)
     :rtype: tuple
     """
     i_hf_1_sorted = i_l_s_sorted + i_l_1_sorted
@@ -478,7 +478,7 @@ def calc_hf_rms_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_
     i_hf_2_rms, _, _ = calc_rms(angles_sorted[0], angles_sorted[1], angles_sorted[2], angles_sorted[3],
                                 i_hf_2_sorted[0], i_hf_2_sorted[1], i_hf_2_sorted[2], i_hf_2_sorted[3])
 
-    return i_hf_1_rms, i_hf_2_rms
+    return i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted
 
 def calc_transistor_rms_currents(i_hf_rms: float) -> float:
     """

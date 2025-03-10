@@ -144,6 +144,8 @@ class CalcCurrents:
     i_l_s_sorted: np.array
     i_l_1_sorted: np.array
     i_l_2_sorted: np.array
+    i_hf_1_sorted: np.array
+    i_hf_2_sorted: np.array
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -262,6 +264,8 @@ class GeckoWaveforms:
     i_Ls: np.array
     i_Lc1: np.array
     i_Lc2: np.array
+    i_HF1: np.array
+    i_HF2: np.array
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
