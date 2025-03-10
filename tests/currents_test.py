@@ -105,7 +105,7 @@ def test_hf_current_calculation():
     sorted_i_l_1 = np.array([[2], [3], [1], [-2]])
     sorted_i_l_2 = np.array([[2], [-3], [-1], [-2]])
 
-    i_hf_1_rms, i_hf_2_rms = dct.calc_hf_currents(sorted_angles_rad, sorted_i_l_s, sorted_i_l_1, sorted_i_l_2, n=1)
+    i_hf_1_rms, i_hf_2_rms, _, _ = dct.calc_hf_currents(sorted_angles_rad, sorted_i_l_s, sorted_i_l_1, sorted_i_l_2, n=1)
 
     assert i_hf_1_rms == approx(np.array([3.2008]), rel=1e-3)
     assert i_hf_2_rms == approx(np.array([3.0141]), rel=1e-3)
