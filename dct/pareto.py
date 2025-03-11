@@ -30,6 +30,7 @@ class Optimization:
         :param config: configuration
         :type config: InductorOptimizationDTO
         """
+        # ASA: TODO: Merge ginfo and set_up_folder_structure
         project_directory = os.path.abspath(config.project_directory)
         circuit_path = os.path.join(project_directory, "01_circuit")
         inductor_path = os.path.join(project_directory, "02_inductor")
@@ -59,6 +60,7 @@ class Optimization:
         :return: File path in a DTO
         :rtype: p_dtos.ParetoFilePaths
         """
+        # ASA: TODO: Merge ginfo and set_up_folder_structure
         filepath_config = f"{project_directory}/filepath_config.json"
         if os.path.exists(filepath_config):
             with open(filepath_config, 'r', encoding='utf8') as json_file:
@@ -196,21 +198,82 @@ class Optimization:
         )
         return fix_parameters
 
+    # Add for Parallelization: Optimization function
+    @staticmethod
+    def run_optimization_sqlite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
+                                act_fixed_parameters: d_dtos.FixedParameters):
+        """Proceed a study which is stored as sqlite database.
+
+        :param act_study: Study information configuration
+        :type  act_study: optuna.Study
+        :param act_study_name: Study information configuration
+        :type  act_study_name: str
+        :param act_number_trials: Number of trials adding to the existing study
+        :type act_number_trials: int
+        :param act_dab_config: DAB optimization configuration file
+        :type act_dab_config: p_dtos.CircuitParetoDabDesign
+        :param act_fixed_parameters: fix configuration parameters for the optimization process
+        :type act_fixed_parameters: d_dtos.FixedParameters
+        """
+        # Function to execute
+        func = lambda trial: Optimization.objective(trial, act_dab_config, act_fixed_parameters)
+
+        try:
+            act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
+        except KeyboardInterrupt:
+            pass
+
+    @staticmethod
+    def run_optimization_mysql(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
+                               act_fixed_parameters: d_dtos.FixedParameters):
+        """Proceed a study which is stored as sqlite database.
+
+        :param act_storage_url: url-Name of the database path
+        :type act_storage_url: str
+        :param act_study_name: Study information configuration
+        :type  act_study_name: str
+        :param act_number_trials: Number of trials adding to the existing study
+        :type  act_number_trials: int
+        :param act_dab_config: DAB optimization configuration file
+        :type act_dab_config: p_dtos.CircuitParetoDabDesign
+        :param act_fixed_parameters: fix configuration parameters for the optimization process
+        :type act_fixed_parameters: d_dtos.FixedParameters
+        """
+        # Function to execute
+        func = lambda trial: Optimization.objective(trial, act_dab_config, act_fixed_parameters)
+
+        # Each process create his own study instance with the same database and study name
+        act_study = optuna.load_study(storage=act_storage_url, study_name=act_study_name)
+        # Run optimization
+        try:
+            act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            # study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
+            print(f"Finished {act_number_trials} trials.")
+            print(f"current time: {datetime.datetime.now()}")
+            # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
+
     @staticmethod
     def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
-                            storage: str = 'sqlite',
+                            # dbType: str = 'mysql',
+                            database_type: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
-                            ) -> None:
+                            delete_study: bool = False
+                            ):
         """Proceed a study which is stored as sqlite database.
 
         :param dab_config: DAB optimization configuration file
         :type dab_config: p_dtos.CircuitParetoDabDesign
         :param number_trials: Number of trials adding to the existing study
         :type number_trials: int
-        :param storage: storage database, e.g. 'sqlite' or 'mysql'
-        :type storage: str
+        :param database_type: storage database, e.g. 'sqlite' or 'mysql'
+        :type  database_type: str
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
+        :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
+        :type  delete_study: bool
         """
         Optimization.set_up_folder_structure(dab_config)
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
@@ -222,14 +285,6 @@ class Optimization:
             print("Existing study found. Proceeding.")
         else:
             os.makedirs(f"{filepaths.circuit}/{dab_config.circuit_study_name}", exist_ok=True)
-
-        # introduce study in storage, e.g. sqlite or mysql
-        if storage == 'sqlite':
-            # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
-            # Means, in total there are four slashes including the path itself '////home/.../database.sqlite3'
-            storage = f"sqlite:///{circuit_study_sqlite_database}"
-        elif storage == 'mysql':
-            storage = "mysql://monty@localhost/mydb",
 
         # set logging verbosity: https://optuna.readthedocs.io/en/stable/reference/generated/optuna.logging.set_verbosity.html#optuna.logging.set_verbosity
         # .INFO: all messages (default)
@@ -256,25 +311,93 @@ class Optimization:
 
         fixed_parameters = Optimization.calculate_fix_parameters(dab_config)
 
-        func = lambda trial: Optimization.objective(trial, dab_config, fixed_parameters)
+        # introduce study in storage, e.g. sqlite or mysql
+        if database_type == 'sqlite':
+            # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
+            # Means, in total there are four slashes including the path itself '////home/.../database.sqlite3'
+            storage = f"sqlite:///{circuit_study_sqlite_database}"
 
-        study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
-                                               storage=storage,
-                                               directions=directions,
-                                               load_if_exists=True, sampler=sampler)
+            # Check the deleteStudyFlag
+            if delete_study and os.path.exists(circuit_study_sqlite_database):
+                os.remove(circuit_study_sqlite_database)
 
-        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.circuit_study_name, sampler=sampler)
-        print(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
-        study_in_memory.add_trials(study_in_storage.trials)
-        try:
-            study_in_memory.optimize(func, n_trials=number_trials, show_progress_bar=True)
-        except KeyboardInterrupt:
-            pass
-        finally:
+            # Create study object in drive
+            study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+                                                   storage=storage,
+                                                   directions=directions,
+                                                   load_if_exists=True, sampler=sampler)
+
+            # Create study object in memory
+            study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
+            # If trials exists, add them to study_in_memory
+            study_in_memory.add_trials(study_in_storage.trials)
+            # Inform about sampler type
+            print(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
+            # actual number of trials
+            overtaken_no_trials = len(study_in_memory.trials)
+            # Start optimization
+            Optimization.run_optimization_sqlite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            # Store memory to storage
             study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-            print(f"Finished {number_trials} trials.")
+            print(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials = {len(study_in_memory.trials)} trials.")
             print(f"current time: {datetime.datetime.now()}")
             Optimization.save_config(dab_config)
+
+        elif database_type == 'mysql':
+
+            # connection to MySQL-database
+            storage_url = "mysql+pymysql://oaml_optuna:optuna@localhost/optuna_db"
+
+            # Create storage-object for Optuna on drive (Later RAMDISK)
+            storage = optuna.storages.RDBStorage(storage_url)
+            # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
+
+            # Create study object in drive
+            study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+                                                   storage=storage,
+                                                   directions=directions,
+                                                   load_if_exists=True, sampler=sampler)
+
+            # Inform about sampler type
+            print(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
+            # Start optimization
+            Optimization.run_optimization_mysql(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+
+        # Parallelization Test with mysql
+        # Number of processes
+        #   num_processes = 1
+        # Process list
+        #    processes = []
+        # Loop to start the processes
+        #   for proc in range(num_processes):
+        #       print(f"Process {proc} started")
+        #       p = multiprocessing.Process(target=Optimization.run_optimization,
+        #                                   args=(storage_url, dab_config.circuit_study_name,
+        #                                         number_trials, dab_config,fixed_parameters
+        #                                        )
+        #                                  )
+        #       p.start()
+        #       processes.append(p)
+
+        # Wait for joining
+        #   for proc in processes:
+            # wait until each process is joined
+        #       p.join()
+        #       print(f"Process {proc} joins")
+
+#        Old approach
+#        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.circuit_study_name, sampler=sampler)
+#        print(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
+#        study_in_memory.add_trials(study_in_storage.trials)
+#        try:
+#            study_in_memory.optimize(func, n_trials=number_trials, n_jobs=1, show_progress_bar=True)
+#        except KeyboardInterrupt:
+#            pass
+#        finally:
+#            study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
+#            print(f"Finished {number_trials} trials.")
+#            print(f"current time: {datetime.datetime.now()}")
+#            Optimization.save_config(dab_config)
 
     @staticmethod
     def show_study_results(dab_config: p_dtos.CircuitParetoDabDesign) -> None:
@@ -504,11 +627,11 @@ class Optimization:
         n_points = costs.shape[0]
         next_point_index = 0  # Next index in the is_efficient array to search for
         while next_point_index < len(costs):
-            nondominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
-            nondominated_point_mask[next_point_index] = True
-            is_efficient = is_efficient[nondominated_point_mask]  # Remove dominated points
-            costs = costs[nondominated_point_mask]
-            next_point_index = np.sum(nondominated_point_mask[:next_point_index]) + 1
+            non_dominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
+            non_dominated_point_mask[next_point_index] = True
+            is_efficient = is_efficient[non_dominated_point_mask]  # Remove dominated points
+            costs = costs[non_dominated_point_mask]
+            next_point_index = np.sum(non_dominated_point_mask[:next_point_index]) + 1
         if return_mask:
             is_efficient_mask = np.zeros(n_points, dtype=bool)
             is_efficient_mask[is_efficient] = True

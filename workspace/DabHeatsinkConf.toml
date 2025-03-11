@@ -1,0 +1,21 @@
+[HeatsinkConfigName]
+    heatsink_config_name = "heatsink_01"
+
+[Designspace]
+    heatsink_designspace_path = "/home/andreas/Workspace/Projekt/HCT_heat_sink_computation_toolbox/hct/data"
+
+[DimensionData]
+    height_c_list=[0.02, 0.08]
+    width_b_list=[0.02, 0.08]
+    length_l_list=[0.08, 0.20]
+    height_d_list=[0.001, 0.003]
+    number_fins_n_list=[5, 20]
+    thickness_fin_t_list=[1e-3, 5e-3]
+    t_ambient=40
+    area_min=0.001
+    number_directions=3
+    factor_pcb_area_copper_coin = 1.42
+    factor_bottom_area_copper_coin = 0.39
+    # W/(m*K)
+    thermal_conductivity_copper = 136
+
