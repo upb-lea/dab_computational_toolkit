@@ -35,7 +35,7 @@ output_range = dct.CircuitOutputRange(
 
 dab_config = dct.CircuitParetoDabDesign(
     circuit_study_name='circuit_01',
-    project_directory=os.path.abspath(os.path.join(os.curdir, "2025-01-31_example")),
+    project_directory=os.path.abspath(os.path.join(os.curdir, "2025-03-11_debug")),
 
     design_space=design_space,
     output_range=output_range
@@ -43,8 +43,9 @@ dab_config = dct.CircuitParetoDabDesign(
 
 # action = 'run_new_study'
 # action = 'show_study_results'
-action = 'filter_study_results_and_run_gecko'
+# action = 'filter_study_results_and_run_gecko'
 # action = 'custom'
+action = 'compare_currents'
 
 if action == 'run_new_study':
     dct.Optimization.start_proceed_study(dab_config, 1000)
@@ -71,7 +72,7 @@ elif action == 'filter_study_results_and_run_gecko':
     smallest_dto_list.append(dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
     print(f"{np.shape(df)=}")
 
-    for count in np.arange(0, 3):
+    for count in np.arange(0, 0):
         print("------------------")
         print(f"{count=}")
         n_suggest = df_smallest['params_n_suggest'].item()
@@ -154,3 +155,26 @@ elif action == 'custom':
     print(f"{np.mean(error_matrix_hf_2)=}")
 
     dct.HandleDabDto.save(dab_dto, "results", "", "~/Downloads", False)
+
+elif action == 'compare_currents':
+    circuit_trial_number = 636
+    circuit_filepath = os.path.join(dab_config.project_directory, "01_circuit", dab_config.circuit_study_name,
+                                    "filtered_results", f"{circuit_trial_number}.pkl")
+    circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
+
+    # re-calculate the analytical calculated currents
+    # i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct.calc_rms_currents(
+    #     circuit_dto.input_config, circuit_dto.calc_config, circuit_dto.calc_modulation)
+    #
+    # i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted = dct.calc_hf_currents(
+    #     angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, circuit_dto.input_config.n)
+    #
+    # i_m1_rms = dct.calc_transistor_rms_currents(i_hf_1_rms)
+    # i_m2_rms = dct.calc_transistor_rms_currents(i_hf_2_rms)
+    #
+    # calc_currents = dct.CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
+    #                                        'angles_rad_unsorted': angles_rad_unsorted, 'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted,
+    #                                        'i_l_2_sorted': i_l_2_sorted, 'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms,
+    #                                        'i_m1_rms': i_m1_rms, 'i_m2_rms': i_m2_rms, 'i_hf_1_sorted': i_hf_1_sorted, 'i_hf_2_sorted': i_hf_2_sorted})
+
+    dct.plot_calc_waveforms(circuit_dto, compare_gecko_waveforms=True)
