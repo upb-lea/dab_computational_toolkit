@@ -18,3 +18,4 @@ from dct.datasets_dtos import *
 from dct.heat_sink import *
 from dct.heat_sink_dtos import *
 from dct.plot_masks import *
+from dct.losses import *
