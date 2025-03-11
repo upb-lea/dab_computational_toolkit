@@ -27,18 +27,18 @@ class DctMainCtl:
     const_circuit_folder = "01_circuit"
     const_inductor_folder = "02_inductor"
     const_transformer_folder = "03_transformer"
-    const_heatsink_folder = "04_heat_sink"
+    const_heat_sink_folder = "04_heat_sink"
 
     @staticmethod
-    def load_conf_file(targetfile: str, toml_data: dict) -> bool:
+    def load_conf_file(target_file: str, toml_data: dict) -> bool:
         """
         Load the toml configuration data to dict.
 
-        :param targetfile : File name of the toml-file
-        :type  targetfile : str:
+        :param target_file : File name of the toml-file
+        :type  target_file : str
         :param toml_data: Reference to the variable for the toml-data
-        :type  toml_data: bool:
-        :return: True, if the data could be loaded sucessfull
+        :type  toml_data: bool
+        :return: True, if the data could be loaded successful
         :rtype: bool
 
         """
@@ -46,14 +46,14 @@ class DctMainCtl:
         retval = False
 
         # Separate filename and path
-        dirname = os.path.dirname(targetfile)
-        filename = os.path.basename(targetfile)
+        dirname = os.path.dirname(target_file)
+        filename = os.path.basename(target_file)
 
         # check path
         if os.path.exists(dirname) or dirname == "":
             # check filename
-            if os.path.isfile(targetfile):
-                new_dict_data = toml.load(targetfile)
+            if os.path.isfile(target_file):
+                new_dict_data = toml.load(target_file)
                 # Delete old data and copy new data to tomlData
                 toml_data.clear()
                 toml_data.update(new_dict_data)
@@ -82,13 +82,13 @@ class DctMainCtl:
         return False
 
     @staticmethod
-    def userInput_BrkPt(breakpointkey: str, info: str):
+    def user_input_break_point(break_point_key: str, info: str):
         """
-        Continue, wait for user input or stop the programm according breakpoint configuration.
+        Continue, wait for user input or stop the program according breakpoint configuration.
 
-        :param  breakpointkey: Breakpoint configuration keyword
-        :type   breakpointkey: str
-        :param info: Information text displayed at this breakpoint (if programm waits or stops).
+        :param  break_point_key: Breakpoint configuration keyword
+        :type   break_point_key: str
+        :param info: Information text displayed at this breakpoint (if program waits or stops).
         :type  info: str
         """
         # Still not defined
@@ -119,43 +119,43 @@ class DctMainCtl:
         # Check, if heatsink study name uses the circuit name
         if act_config_program_flow["heatsink"]["CircuitStudyNameFlag"] == "True":
             act_ginfo.heatsink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                         DctMainCtl.const_heatsink_folder, act_ginfo.circuit_study_name)
+                                                         DctMainCtl.const_heat_sink_folder, act_ginfo.circuit_study_name)
         else:
             act_ginfo.heatsink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                         DctMainCtl.const_heatsink_folder)
+                                                         DctMainCtl.const_heat_sink_folder)
 
     @staticmethod
-    def check_study_data(studypath: str, studyname: str) -> bool:
+    def check_study_data(study_path: str, study_name: str) -> bool:
         """
-        Verify if the study path and sqlite3-databasefile exists.
+        Verify if the study path and sqlite3-database file exists.
 
-        :param studypath: drive location path to the study
-        :type  studypath: str
-        :param studyname: Name of the study
-        :type  studyname: str
-        :return: True, if the optimization could be performed sucessfull
+        :param study_path: drive location path to the study
+        :type  study_path: str
+        :param study_name: Name of the study
+        :type  study_name: str
+        :return: True, if the optimization could be performed successful
         :rtype: bool
         """
         # return value init to false
         retval = False
 
         # check path
-        if os.path.exists(studypath) or studypath == "":
+        if os.path.exists(study_path) or study_path == "":
             # Assemble file name
-            studyname = studyname+".sqlite3"
-            targetfile = os.path.join(studypath, studyname)
+            study_name = study_name + ".sqlite3"
+            target_file = os.path.join(study_path, study_name)
             # check filename
-            if os.path.isfile(targetfile):
+            if os.path.isfile(target_file):
                 retval = True
             else:
-                print(f"File {targetfile} does not exists!")
+                print(f"File {target_file} does not exists!")
         else:
-            print(f"Path {studypath} does not exists!")
+            print(f"Path {study_path} does not exists!")
         # True = file exists
         return {retval}
 
     @staticmethod
-    def load_elec_config(act_ginfo: dct.GeneralInformation, act_config_electric: dict, act_esim: Elecsimclass.Elecsim) -> bool:
+    def load_elec_config(act_ginfo: dct.GeneralInformation, act_config_electric: dict, act_esim: Elecsimclass.CircuitSim) -> bool:
         """
         Load and initialize the electric circuit optimization configuration.
 
@@ -165,7 +165,7 @@ class DctMainCtl:
         :type  act_config_electric: dict : dictionary with the necessary configuration parameter
         :param act_esim: electric optimization object reference
         :type  act_esim: Elecsimclass.Elecsim:
-        :return: True, if the configuration is sucessfull
+        :return: True, if the configuration is successful
         :rtype: bool
         """
         # Design space
@@ -196,12 +196,12 @@ class DctMainCtl:
             output_range=output_range
         )
 
-        # Initialize configuration and return, if this is successfull
+        # Initialize configuration and return, if this is successful
 
         return act_esim.init_configuration(dab_config)
 
     @staticmethod
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.Inductorsim) -> bool:
+    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.InductorSim) -> bool:
         """
         Load and initialize the inductor optimization configuration.
 
@@ -211,12 +211,12 @@ class DctMainCtl:
         :type  act_config_inductor: dict: dictionary with the necessary configuration parameter
         :param act_isim: inductor optimization object reference
         :type  act_isim: Inductsimclass.Inductorsim:
-        :return: True, if the configuration is sucessfull
+        :return: True, if the configuration is successful
         :rtype: bool
         """
         #   Variable initialisation
 
-        # Designspace
+        # design space
         designspace_dict = {"core_name_list": act_config_inductor["Designspace"]["core_name_list"],
                             "material_name_list": act_config_inductor["Designspace"]["material_name_list"],
                             "litz_wire_list": act_config_inductor["Designspace"]["litz_wire_list"]}
@@ -242,7 +242,7 @@ class DctMainCtl:
         :type  act_config_transformer: dict: dictionary with the necessary configuration parameter
         :param act_tsim: transformer optimization object reference
         :type  act_tsim: Transformersimclass.Transfsim:
-        :return: True, if the configuration is sucessfull
+        :return: True, if the configuration is successful
         :rtype: bool
         """
         #   Variable initialisation
@@ -280,64 +280,66 @@ class DctMainCtl:
                                            act_ginfo, designspace_dict, transformer_data_dict)
 
     @staticmethod
-    def load_heatsink_config(act_ginfo: dct.GeneralInformation, act_config_heatsink: dict, act_hsim: Heatsinksimclass.Heatsinksim) -> bool:
+    def load_heat_sink_config(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_hsim: Heatsinksimclass.HeatSinkSim) -> bool:
         """
         Load and initialize the transformer optimization configuration.
 
         :param act_ginfo : General information about the study
         :type  act_ginfo : dct.GeneralInformation:
-        :param act_config_heatsink: actual heatsink configuration information
-        :type  act_config_heatsink: dict: heatsink with the necessary configuration parameter
-        :param act_hsim: heatsink optimization object reference
-        :type  act_hsim: Heatsinksimclass.Heatsinksim
-        :return: True, if the configuration is sucessfull
+        :param act_config_heat_sink: actual heat sink configuration information
+        :type  act_config_heat_sink: dict: heat sink with the necessary configuration parameter
+        :param act_hsim: heat sink optimization object reference
+        :type  act_hsim: Heatsinksimclass.HeatSinkSim
+        :return: True, if the configuration is successful
         :rtype: bool
         """
         # def init_configuration(act_hct_config_name: str, act_ginfo: dct.GeneralInformation, act_designspace_dict: dict,
         #                       act_hctdimension_dict: dict) -> bool:
         #   Variable initialisation
 
-        # Get designspace path
-        designspace_path = act_config_heatsink["Designspace"]["heatsink_designspace_path"]
+        # Get design space path
+        design_space_path = act_config_heat_sink["Designspace"]["heatsink_designspace_path"]
 
-        # Get heatsink dimension data
-        hctdimension_dict = {"height_c_list": act_config_heatsink["DimensionData"]["height_c_list"],
-                             "width_b_list": act_config_heatsink["DimensionData"]["width_b_list"],
-                             "length_l_list": act_config_heatsink["DimensionData"]["length_l_list"],
-                             "height_d_list": act_config_heatsink["DimensionData"]["height_d_list"],
-                             "number_fins_n_list": act_config_heatsink["DimensionData"]["number_fins_n_list"],
-                             "thickness_fin_t_list": act_config_heatsink["DimensionData"]["thickness_fin_t_list"],
-                             "t_ambient": act_config_heatsink["DimensionData"]["t_ambient"],
-                             "area_min": act_config_heatsink["DimensionData"]["area_min"],
-                             "number_directions": act_config_heatsink["DimensionData"]["number_directions"],
-                             "factor_pcb_area_copper_coin": act_config_heatsink["DimensionData"]["factor_pcb_area_copper_coin"],
-                             "factor_bottom_area_copper_coin": act_config_heatsink["DimensionData"]["factor_bottom_area_copper_coin"],
-                             # W/(m*K)
-                             "thermal_conductivity_copper": act_config_heatsink["DimensionData"]["thermal_conductivity_copper"]}
+        # Get heat sink dimension data
+        hct_dimension_dict = {
+            "height_c_list": act_config_heat_sink["DimensionData"]["height_c_list"],
+            "width_b_list": act_config_heat_sink["DimensionData"]["width_b_list"],
+            "length_l_list": act_config_heat_sink["DimensionData"]["length_l_list"],
+            "height_d_list": act_config_heat_sink["DimensionData"]["height_d_list"],
+            "number_fins_n_list": act_config_heat_sink["DimensionData"]["number_fins_n_list"],
+            "thickness_fin_t_list": act_config_heat_sink["DimensionData"]["thickness_fin_t_list"],
+            "t_ambient": act_config_heat_sink["DimensionData"]["t_ambient"],
+            "area_min": act_config_heat_sink["DimensionData"]["area_min"],
+            "number_directions": act_config_heat_sink["DimensionData"]["number_directions"],
+            "factor_pcb_area_copper_coin": act_config_heat_sink["DimensionData"]["factor_pcb_area_copper_coin"],
+            "factor_bottom_area_copper_coin": act_config_heat_sink["DimensionData"]["factor_bottom_area_copper_coin"],
+            # W/(m*K)
+            "thermal_conductivity_copper": act_config_heat_sink["DimensionData"]["thermal_conductivity_copper"]
+        }
 
         # Initialize inductor optimization and return, if it was successful (true)
-        return act_hsim.init_configuration(act_config_heatsink["HeatsinkConfigName"]["heatsink_config_name"], act_ginfo, designspace_path, hctdimension_dict)
+        return act_hsim.init_configuration(act_config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"], act_ginfo, design_space_path, hct_dimension_dict)
 
     @staticmethod
-    def check_breakpoint(breakpointkey: str, info: str):
+    def check_breakpoint(break_point_key: str, info: str):
         """
-        Continue, wait for user input or stop the programm according breakpoint configuration.
+        Continue, wait for user input or stop the program according breakpoint configuration.
 
-        :param  breakpointkey: Breakpoint configuration keyword
-        :type  breakpointkey: str
-        :param info: Information text displayed at this breakpoint (if programm waits or stops).
+        :param  break_point_key: Breakpoint configuration keyword
+        :type  break_point_key: str
+        :param info: Information text displayed at this breakpoint (if program waits or stops).
         :type  info: str
         """
-        # Check if breakpoint stops the programm
-        if breakpointkey == "Stop":
+        # Check if breakpoint stops the program
+        if break_point_key == "Stop":
             print("Program stops cause by breakpoint at: '"+info+"'!")
             # stop program
             sys.exit()
 
-        elif breakpointkey == "Pause":
+        elif break_point_key == "Pause":
             # Information
             print("Active breakpoint at: '"+info+"'!\n")
-            print("'C'=continue, 'S'=stop the program. Please enter your choise")
+            print("'C'=continue, 'S'=stop the program. Please enter your choice")
             key_inp = "x"
             # Wait for keyboard entry
             while key_inp != "c" and key_inp != "C" and key_inp != "s" and key_inp != "S":
@@ -353,7 +355,7 @@ class DctMainCtl:
 
     @staticmethod
     def executeProgram(workspace_path: str):
-        """Perform the main programm.
+        """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
 
@@ -365,19 +367,19 @@ class DctMainCtl:
         ginfo = dct.GeneralInformation
         # program flow parameter
         config_program_flow = {}
-        # Electric, inductor, transformer and heatsink configuration files
+        # Electric, inductor, transformer and heat sink configuration files
         config_electric = {}
         config_inductor = {}
         config_transformer = {}
-        config_heatsink = {}
+        config_heat_sink = {}
         # Electrical simulation
-        esim = Elecsimclass.Elecsim
+        esim = Elecsimclass.CircuitSim
         # Inductor simulation
-        isim = Inductsimclass.Inductorsim
+        isim = Inductsimclass.InductorSim
         # Transformer simulation
         tsim = Transfsimclass.Transfsim
-        # heatsink simulation
-        hsim = Heatsinksimclass.Heatsinksim
+        # heat sink simulation
+        hsim = Heatsinksimclass.HeatSinkSim
         # Flag for available filtered results
         filtered_resultFlag = False
 
@@ -403,9 +405,9 @@ class DctMainCtl:
 
         # Init dab-configuration
         # Load the dab-configuration and electrical parameter
-        targetfile = config_program_flow["configurationdatafiles"]["ElectricalConfFile"]
-        if not DctMainCtl.load_conf_file(targetfile, config_electric):
-            raise ValueError(f"Electrical configuration file: {targetfile} does not exist.")
+        target_file = config_program_flow["configurationdatafiles"]["ElectricalConfFile"]
+        if not DctMainCtl.load_conf_file(target_file, config_electric):
+            raise ValueError(f"Electrical configuration file: {target_file} does not exist.")
 
         # Add project directory and study name
         DctMainCtl.init_general_info(ginfo, config_program_flow)
@@ -438,9 +440,9 @@ class DctMainCtl:
                 )
 
         # Load the inductor-configuration parameter
-        targetfile = config_program_flow["configurationdatafiles"]["InductorConfFile"]
-        if not DctMainCtl.load_conf_file(targetfile, config_inductor):
-            raise ValueError(f"Inductor configuration file: {targetfile} does not exist.")
+        target_file = config_program_flow["configurationdatafiles"]["InductorConfFile"]
+        if not DctMainCtl.load_conf_file(target_file, config_inductor):
+            raise ValueError(f"Inductor configuration file: {target_file} does not exist.")
 
         # Check, if inductor optimization is to skip
         if config_program_flow["inductor"]["ReCalculation"] == "skip":
@@ -457,9 +459,9 @@ class DctMainCtl:
                     raise ValueError(f"Study {config_program_flow['general']['StudyName']} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the transformer-configuration parameter
-        targetfile = config_program_flow["configurationdatafiles"]["TransformerConfFile"]
-        if not DctMainCtl.load_conf_file(targetfile, config_transformer):
-            raise ValueError(f"Transformer configuration file: {targetfile} does not exist.")
+        target_file = config_program_flow["configurationdatafiles"]["TransformerConfFile"]
+        if not DctMainCtl.load_conf_file(target_file, config_transformer):
+            raise ValueError(f"Transformer configuration file: {target_file} does not exist.")
 
         # Check, if transformer optimization is to skip
         if config_program_flow["transformer"]["ReCalculation"] == "skip":
@@ -475,15 +477,15 @@ class DctMainCtl:
                 if not DctMainCtl.check_study_data(datapath, "transformer_01"):
                     raise ValueError(f"Study {config_program_flow['general']['StudyName']} in path {datapath} does not exist. No sqlite3-database found!")
 
-        # Load the heatsink-configuration parameter
-        targetfile = config_program_flow["configurationdatafiles"]["HeatsinkConfFile"]
-        if not DctMainCtl.load_conf_file(targetfile, config_heatsink):
-            raise ValueError(f"Heatsink configuration file: {targetfile} does not exist.")
+        # Load the heat sink-configuration parameter
+        target_file = config_program_flow["configurationdatafiles"]["HeatsinkConfFile"]
+        if not DctMainCtl.load_conf_file(target_file, config_heat_sink):
+            raise ValueError(f"Heat sink configuration file: {target_file} does not exist.")
 
-        # Check, if heatsink optimization is to skip
+        # Check, if heat sink optimization is to skip
         if config_program_flow["heatsink"]["ReCalculation"] == "skip":
             # Assemble pathname
-            datapath = os.path.join(ginfo.heatsink_study_path, config_heatsink["HeatsinkConfigName"]["heatsink_config_name"])
+            datapath = os.path.join(ginfo.heatsink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(datapath, "heatsink_01"):
                 raise ValueError(f"Study {config_program_flow['general']['StudyName']} in path {datapath} does not exist. No sqlite3-database found!")
@@ -491,7 +493,7 @@ class DctMainCtl:
         # Warning, no data are available
         # Check, if transformer optimization is to skip
         # Warning, no data are available
-        # Check, if heatsink optimization is to skip
+        # Check, if heat sink optimization is to skip
         # Warning, no data are available
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
@@ -513,7 +515,7 @@ class DctMainCtl:
             esim.run_new_study(config_program_flow["electrical"]["NumberOfTrials"], new_study_flag)
 
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Electrical_pareto"], "Electric paretofront calculated")
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Electrical_pareto"], "Electric Pareto front calculated")
 
         # Check if filter results are not available
         if not filtered_resultFlag:
@@ -527,7 +529,7 @@ class DctMainCtl:
                     ginfo.filtered_list_id.append(os.path.splitext(pareto_entry)[0])
 
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Electrical_filtered"], "Filtered value of electric paretofront calculated")
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Electrical_filtered"], "Filtered value of electric Pareto front calculated")
 
         # Check, if inductor optimization is not to skip
         if not config_program_flow["inductor"]["ReCalculation"] == "skip":
@@ -546,7 +548,7 @@ class DctMainCtl:
             isim.simulation_handler(ginfo, config_program_flow["inductor"]["NumberOfTrials"], 1.0, new_study_flag)
 
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Inductor"], "Inductor paretofront calculated")
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Inductor"], "Inductor Pareto front calculated")
 
         # Check, if transformer optimization is not to skip
         if not config_program_flow["transformer"]["ReCalculation"] == "skip":
@@ -565,13 +567,13 @@ class DctMainCtl:
             tsim.simulation_handler(ginfo, config_program_flow["transformer"]["NumberOfTrials"], 1.0, new_study_flag)
 
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Transformer"], "Transformer paretofront calculated")
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Transformer"], "Transformer Pareto front calculated")
 
-        # Check, if heatsink optimization is to skip
+        # Check, if heat sink optimization is to skip
         if not config_program_flow["heatsink"]["ReCalculation"] == "skip":
-            # Load initialisation data of heatsink simulation and initialize
-            if not DctMainCtl.load_heatsink_config(ginfo, config_heatsink, hsim):
-                raise ValueError("Heatsink configuration not initialized!")
+            # Load initialisation data of heat sink simulation and initialize
+            if not DctMainCtl.load_heat_sink_config(ginfo, config_heat_sink, hsim):
+                raise ValueError("Heat sink configuration not initialized!")
             # Check, if old study is to delete, if available
             if config_program_flow["heatsink"]["ReCalculation"] == "new":
                 # delete old study
@@ -584,12 +586,12 @@ class DctMainCtl:
             hsim.simulation_handler(ginfo, config_program_flow["heatsink"]["NumberOfTrials"], new_study_flag)
 
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Heatsink"], "Heatsink paretofront calculated")
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Heatsink"], "Heat sink Pareto front calculated")
 
         # Calculate the combination of components inductor and transformer with same electrical pareto point
         # Filter the pareto front data of inductor and transformer
         # Create a setup of the three components
-        # Define the headsink
+        # Define the heat sink
         # Add this to the summary pareto list (no optimization?)
 
         # Check, if electrical optimization is to skip
@@ -608,7 +610,7 @@ if __name__ == "__main__":
     # Variable declaration
     arg1 = ""
 
-    # Create an mainctl-instance
+    # Create a main control instance
     dct_mctl = DctMainCtl()
     # Read the command line
     arguments = sys.argv
@@ -618,12 +620,12 @@ if __name__ == "__main__":
         arg1 = arguments[1]
         # Check if this corresponds to the workspace path
         arg1 = os.path.join(arg1, "workspace")
-        print(f"Pfad={arg1}")
+        print(f"file path={arg1}")
         # Check if the path not exist (absolute or relative path)
         if not os.path.exists(arg1):
             # Consider it as relative path and create the absolute path
             arg1 = os.path.abspath(arg1)
-            print(f"Neuer Pfad={arg1}")
+            print(f"new file path={arg1}")
             # Check if the path does not exist
             if not os.path.exists(arg1):
                 print(f"Provides argument {arguments[1]} does not corresponds to the path to subfolder 'workspace'.\n")

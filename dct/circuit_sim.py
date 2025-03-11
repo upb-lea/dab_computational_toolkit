@@ -17,13 +17,13 @@ import dct
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
 
 
-class Elecsim:
-    """Optimation of the electrical circuit."""
+class CircuitSim:
+    """Optimization of the electrical circuit."""
 
-    # declaration of static membervariables
+    # declaration of static member variables
     # DAB configuration
     _dab_config: dct.CircuitParetoDabDesign
-    # Initflag
+    # Initialization flag
     _initFlag = False
     # filepath
     _folders: dct.ParetoFilePaths
@@ -39,13 +39,13 @@ class Elecsim:
         :type  act_dab_config : dct.CircuitParetoDabDesign
 
 
-        :return: True, if the configuration was sucessfull
+        :return: True, if the configuration was successful
         :rtype: bool
         """
-        Elecsim._dab_config = act_dab_config
-        # Initialisation are successfull
-        Elecsim._initFlag = True        # dab config needs to be checked
-        return Elecsim._initFlag
+        CircuitSim._dab_config = act_dab_config
+        # Initialisation are successful
+        CircuitSim._initFlag = True        # dab config needs to be checked
+        return CircuitSim._initFlag
 
     @staticmethod
     def _fct_add_gecko_simulation_results(act_dto: any) -> bool:
@@ -54,23 +54,23 @@ class Elecsim:
 
         :param act_dto : actual configuration for the optimization
         :type  act_dto : any
-        :return: True, if the configuration was sucessfull
+        :return: True, if the configuration was successful
         :rtype: bool
 
         """
-        dto_directory = os.path.join(Elecsim._folders.circuit, Elecsim._dab_config.circuit_study_name, "filtered_results")
+        dto_directory = os.path.join(CircuitSim._folders.circuit, CircuitSim._dab_config.circuit_study_name, "filtered_results")
         result_list = {"DTO": dct.HandleDabDto.add_gecko_simulation_results(act_dto, get_waveforms=True), "Dir": dto_directory, "Name": act_dto.name}
         return True
 
     @staticmethod
-    def run_new_study(no_of_trials: int, deleteFlag: bool = False) -> bool:
+    def run_new_study(no_of_trials: int, delete_study: bool = False) -> bool:
         """Run the circuit optimization.
 
         :param no_of_trials : Number of trials in the genetic optimization algorithm
         :type  no_of_trials : int
-        :param deleteFlag: Indication, if the old study are to delete (True) or optimization shall be continued.
-        :type  deleteFlag: bool
-        :return: True, if the optimization could be performed sucessfull
+        :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
+        :type  delete_study: bool
+        :return: True, if the optimization could be performed successful
         :rtype: bool
 
         """
@@ -79,13 +79,13 @@ class Elecsim:
         # Check the number of trials
         if no_of_trials > 0:
             # Debug Test
-            # Verbindung zur MySQL-Datenbank
+            # Connection to MySQL-data base
             # storage_url = "mysql+pymysql://oaml_optuna:optuna@localhost/optuna_db"
-            # Create storage-Objekt for Optuna
+            # Create storage object for Optuna
             # storage = optuna.storages.RDBStorage(storage_url)
 
-            dct.Optimization.start_proceed_study(dab_config=Elecsim._dab_config, number_trials=no_of_trials, deleteStudyFlag=deleteFlag)
-            dct.Optimization.show_study_results(Elecsim._dab_config)
+            dct.Optimization.start_proceed_study(dab_config=CircuitSim._dab_config, number_trials=no_of_trials, delete_study=delete_study)
+            dct.Optimization.show_study_results(CircuitSim._dab_config)
 
             # Set result value to True (Check of optimization is necessary
             retval = True
@@ -93,19 +93,19 @@ class Elecsim:
         return retval
 
     @staticmethod
-    def show_study_results(self):
+    def show_study_results():
         """Display the result of the study."""
-        Elecsim._dab_config = dct.Optimization.load_config(Elecsim._dab_config.project_directory, Elecsim._dab_config.circuit_study_name)
-        print(f"{Elecsim._dab_config.project_directory=}")
-        Elecsim._dab_config.project_directory = Elecsim._dab_config.project_directory.replace("@uni-paderborn.de", "")
-        print(f"{Elecsim._dab_config.project_directory=}")
-        dct.Optimization.show_study_results(Elecsim._dab_config)
-        df = dct.Optimization.study_to_df(Elecsim._dab_config)
+        CircuitSim._dab_config = dct.Optimization.load_config(CircuitSim._dab_config.project_directory, CircuitSim._dab_config.circuit_study_name)
+        print(f"{CircuitSim._dab_config.project_directory=}")
+        CircuitSim._dab_config.project_directory = CircuitSim._dab_config.project_directory.replace("@uni-paderborn.de", "")
+        print(f"{CircuitSim._dab_config.project_directory=}")
+        dct.Optimization.show_study_results(CircuitSim._dab_config)
+        df = dct.Optimization.study_to_df(CircuitSim._dab_config)
 
     @staticmethod
     def filter_study_results_and_run_gecko():
         """Filter the study result and use geckocircuits for detailed calculation."""
-        df = dct.Optimization.study_to_df(Elecsim._dab_config)
+        df = dct.Optimization.study_to_df(CircuitSim._dab_config)
         df = df[df["values_0"] == 100]
 
         df_original = df.copy()
@@ -114,7 +114,7 @@ class Elecsim:
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
-        smallest_dto_list.append(dct.Optimization.df_to_dab_dto_list(Elecsim._dab_config, df_smallest))
+        smallest_dto_list.append(dct.Optimization.df_to_dab_dto_list(CircuitSim._dab_config, df_smallest))
         print(f"{np.shape(df)=}")
 
         for count in np.arange(0, 3):
@@ -144,19 +144,19 @@ class Elecsim:
             df_smallest = df.nsmallest(n=1, columns=["values_1"])
             df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
 
-        smallest_dto_list = dct.Optimization.df_to_dab_dto_list(Elecsim._dab_config, df_smallest_all)
+        smallest_dto_list = dct.Optimization.df_to_dab_dto_list(CircuitSim._dab_config, df_smallest_all)
 
         # join if necessary
-        Elecsim.join_process()
+        CircuitSim.join_process()
 
-        Elecsim.p = multiprocessing.Process(target=Elecsim.show_plot, args=(df_original, df_smallest_all))
-        Elecsim.p.start()
+        CircuitSim.p = multiprocessing.Process(target=CircuitSim.show_plot, args=(df_original, df_smallest_all))
+        CircuitSim.p.start()
 
-        Elecsim._folders = dct.Optimization.load_filepaths(Elecsim._dab_config.project_directory)
+        CircuitSim._folders = dct.Optimization.load_filepaths(CircuitSim._dab_config.project_directory)
 
         for dto in smallest_dto_list:
             print(f"{dto.name=}")
-            dto_directory = os.path.join(Elecsim._folders.circuit, Elecsim._dab_config.circuit_study_name, "filtered_results")
+            dto_directory = os.path.join(CircuitSim._folders.circuit, CircuitSim._dab_config.circuit_study_name, "filtered_results")
             os.makedirs(dto_directory, exist_ok=True)
             dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
@@ -205,9 +205,9 @@ class Elecsim:
     def join_process():
         """Wait until all parallel processes are finalized."""
         # Check if p is still a process
-        if Elecsim.p is not None:
-            Elecsim.p.join()
-            Elecsim.p = None
+        if CircuitSim.p is not None:
+            CircuitSim.p.join()
+            CircuitSim.p = None
 
     @staticmethod
     def custom(self):
