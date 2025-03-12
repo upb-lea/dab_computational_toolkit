@@ -103,7 +103,7 @@ class CircuitSim:
         df = dct.Optimization.study_to_df(CircuitSim._dab_config)
 
     @staticmethod
-    def filter_study_results_and_run_gecko():
+    def filter_study_results():
         """Filter the study result and use geckocircuits for detailed calculation."""
         df = dct.Optimization.study_to_df(CircuitSim._dab_config)
         df = df[df["values_0"] == 100]
@@ -158,7 +158,7 @@ class CircuitSim:
             print(f"{dto.name=}")
             dto_directory = os.path.join(CircuitSim._folders.circuit, CircuitSim._dab_config.circuit_study_name, "filtered_results")
             os.makedirs(dto_directory, exist_ok=True)
-            dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+            # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
 
         #    dto_list=[]
@@ -210,7 +210,7 @@ class CircuitSim:
             CircuitSim.p = None
 
     @staticmethod
-    def custom(self):
+    def custom():
         """Perform customized code currently not used."""
         pass
     #    dab_config = dct.Optimization.load_config(elecsim.__dab_config.project_directory, elecsim.__dab_config.circuit_study_name)

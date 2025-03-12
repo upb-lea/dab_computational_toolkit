@@ -520,7 +520,7 @@ class DctMainCtl:
         # Check if filter results are not available
         if not filtered_resultFlag:
             # Calculate the filtered results
-            esim.filter_study_results_and_run_gecko()
+            esim.filter_study_results()
             # Get filtered result path
             datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
             # Add filtered result list

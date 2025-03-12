@@ -12,10 +12,10 @@ from matplotlib import pyplot as plt
 import dct
 
 # specify input parameters
-project_name = "2024-10-04_dab_paper"
-circuit_study_name = "circuit_paper_trial_1"
-inductor_study_name_list = ["inductor_trial_1"]
-stacked_transformer_study_name_list = ["transformer_trial_1"]
+project_name = "2025-03-12_debug"
+circuit_study_name = "circuit_01"
+inductor_study_name_list = ["inductor_01"]
+stacked_transformer_study_name_list = ["transformer_01"]
 
 df = pd.DataFrame()
 
@@ -162,30 +162,21 @@ for circuit_number in circuit_numbers:
                             transformer_loss_matrix = transformer_dto.p_combined_losses
 
                             # get transistor results
-                            total_transistor_cond_loss_matrix = 2 * (circuit_dto.gecko_results.S11_p_cond + circuit_dto.gecko_results.S12_p_cond + \
-                                                                     circuit_dto.gecko_results.S23_p_cond + circuit_dto.gecko_results.S24_p_cond)
+                            total_transistor_cond_loss_matrix = 4 * (circuit_dto.calc_losses.p_m1_conduction + circuit_dto.calc_losses.p_m2_conduction)
 
-                            max_b1_transistor_cond_loss_matrix = circuit_dto.gecko_results.S11_p_cond
-                            max_b1_transistor_cond_loss_matrix[
-                                np.greater(circuit_dto.gecko_results.S12_p_cond, circuit_dto.gecko_results.S11_p_cond)] = (
-                                circuit_dto.gecko_results.S12_p_cond)[
-                                np.greater(circuit_dto.gecko_results.S12_p_cond, circuit_dto.gecko_results.S11_p_cond)]
+                            b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
 
-                            max_b2_transistor_cond_loss_matrix = circuit_dto.gecko_results.S23_p_cond
-                            max_b2_transistor_cond_loss_matrix[
-                                np.greater(circuit_dto.gecko_results.S24_p_cond, circuit_dto.gecko_results.S23_p_cond)] = \
-                                circuit_dto.gecko_results.S24_p_cond[
-                                np.greater(circuit_dto.gecko_results.S24_p_cond, circuit_dto.gecko_results.S23_p_cond)]
+                            b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
 
                             total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix + \
                                                  transformer_dto.p_combined_losses)
 
                             # maximum loss indices
                             max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
-                            max_loss_circuit_1_index = np.unravel_index(max_b1_transistor_cond_loss_matrix.argmax(),
-                                                                        np.shape(max_b1_transistor_cond_loss_matrix))
-                            max_loss_circuit_2_index = np.unravel_index(max_b2_transistor_cond_loss_matrix.argmax(),
-                                                                        np.shape(max_b2_transistor_cond_loss_matrix))
+                            max_loss_circuit_1_index = np.unravel_index(b1_transistor_cond_loss_matrix.argmax(),
+                                                                        np.shape(b1_transistor_cond_loss_matrix))
+                            max_loss_circuit_2_index = np.unravel_index(b2_transistor_cond_loss_matrix.argmax(),
+                                                                        np.shape(b2_transistor_cond_loss_matrix))
                             max_loss_inductor_index = np.unravel_index(inductance_loss_matrix.argmax(), np.shape(inductance_loss_matrix))
                             max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
 
@@ -200,9 +191,9 @@ for circuit_number in circuit_numbers:
                             circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
 
                             circuit_heat_sink_max_1_matrix = (
-                                circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * max_b1_transistor_cond_loss_matrix)
+                                circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
                             circuit_heat_sink_max_2_matrix = (
-                                circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * max_b2_transistor_cond_loss_matrix)
+                                circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
 
                             r_th_ind_heat_sink = 1 / inductor_cooling.tim_conductivity * inductor_cooling.tim_thickness / inductor_dto.area_to_heat_sink
                             temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix

@@ -35,7 +35,7 @@ output_range = dct.CircuitOutputRange(
 
 dab_config = dct.CircuitParetoDabDesign(
     circuit_study_name='circuit_01',
-    project_directory=os.path.abspath(os.path.join(os.curdir, "2025-03-11_debug")),
+    project_directory=os.path.abspath(os.path.join(os.curdir, "2025-03-12_debug")),
 
     design_space=design_space,
     output_range=output_range
@@ -43,12 +43,12 @@ dab_config = dct.CircuitParetoDabDesign(
 
 # action = 'run_new_study'
 # action = 'show_study_results'
-# action = 'filter_study_results_and_run_gecko'
+action = 'filter_study_results'
 # action = 'custom'
-action = 'compare_currents'
+# action = 'compare_currents'
 
 if action == 'run_new_study':
-    dct.Optimization.start_proceed_study(dab_config, 1000)
+    dct.Optimization.start_proceed_study(dab_config, 2000)
     dct.Optimization.show_study_results(dab_config)
 
 elif action == 'show_study_results':
@@ -59,7 +59,7 @@ elif action == 'show_study_results':
     dct.Optimization.show_study_results(dab_config)
     df = dct.Optimization.study_to_df(dab_config)
 
-elif action == 'filter_study_results_and_run_gecko':
+elif action == 'filter_study_results':
     df = dct.Optimization.study_to_df(dab_config)
     df = df[df["values_0"] == 100]
 
@@ -72,7 +72,7 @@ elif action == 'filter_study_results_and_run_gecko':
     smallest_dto_list.append(dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
     print(f"{np.shape(df)=}")
 
-    for count in np.arange(0, 0):
+    for count in np.arange(0, 3):
         print("------------------")
         print(f"{count=}")
         n_suggest = df_smallest['params_n_suggest'].item()
@@ -120,7 +120,7 @@ elif action == 'filter_study_results_and_run_gecko':
         print(f"{dto.name=}")
         dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
-        dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+        # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
         dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
 
 
