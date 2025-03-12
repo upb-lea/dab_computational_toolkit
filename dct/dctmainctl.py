@@ -2,6 +2,18 @@
 # python libraries
 import os
 import sys
+import base64
+import multiprocessing
+import random
+import time
+import io
+import matplotlib.pyplot as plt
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
+import threading
 
 # 3rd party libraries
 import toml
@@ -12,10 +24,13 @@ import dct
 import circuit_sim as Elecsimclass
 # Inductor simulations class
 import induct_sim as Inductsimclass
-# import transf_sim
+# Import transf_sim
 import transf_sim as Transfsimclass
-# import heatsink_sim
+# Import heatsink_sim
 import heatsink_sim as Heatsinksimclass
+# Import server control class
+import server_ctl as Serverctlclass
+
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -352,6 +367,35 @@ class DctMainCtl:
             pass
 
     @staticmethod
+    def start_dct_server(req_stop_server,stop_flag):
+        """Starts the server to control and supervice simulation.
+
+        :param req_stop_server: Shared memory flag to request server to stop
+        :type  req_stop_server: multiprocessing.Value
+        :param stop_flag: Shared memory flag which indicates that the server stops the measurment
+        :type  stop_flag: multiprocessing.Value
+        """
+        # Mounten des Stylesheetpfades
+        app.mount("/StyleSheets", StaticFiles(directory="htmltemplates/StyleSheets"), name="Stylesheets")
+
+        # Start the server process
+        server_process = multiprocessing.Process(target=srv_ctl.run_server, args=(req_stop_server, stop_flag))
+        server_process.start();
+
+    @staticmethod
+    def stop_dct_server(req_stop_server):
+        """Stop the server for the control and supervisuib of the simulation.
+
+        :param req_stop_server: Shared memory flag to request server to stop
+        :type  req_stop_server: multiprocessing.Value
+        """
+
+        # Request server to stop
+        req_stop_server.value = 1
+        # Wait for joined server process
+        server_process.join(5)
+
+    @staticmethod
     def executeProgram(workspace_path: str):
         """Perform the main programm.
 
@@ -380,6 +424,13 @@ class DctMainCtl:
         hsim = Heatsinksimclass.Heatsinksim
         # Flag for available filtered results
         filtered_resultFlag = False
+        # Server class to control the workflow
+        srv_ctl = Serverctlclass
+        # Shared Memory für das Histogramm und den Status
+        # histogram_data = multiprocessing.Array('i', [0] * 25)
+        req_stop_server = multiprocessing.Value('i', 0)
+        stop_flag = multiprocessing.Value('i', 0)
+
 
         # Check if workspace path is not provided by argument
         if workspace_path == "":
@@ -493,6 +544,8 @@ class DctMainCtl:
         # Warning, no data are available
         # Check, if heatsink optimization is to skip
         # Warning, no data are available
+        # -- Start server  --------------------------------------------------------------------------------------------
+        DctMainCtl.start_dct_server(req_stop_server,stop_flag)
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
 
@@ -599,7 +652,8 @@ class DctMainCtl:
 
         # Join process if necessary
         esim.join_process()
-
+        # Shut down server
+        DctMainCtl.stop_dct_server()
         pass
 
 
