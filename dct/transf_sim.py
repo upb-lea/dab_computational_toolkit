@@ -28,8 +28,8 @@ class Transfsim:
     sim_config_list = []
 
     @staticmethod
-    def init_configuration(act_transf_config_name: str, act_ginfo: dct.GeneralInformation, act_designspace_dict: dict,
-                           act_transformerdata_dict: dict) -> bool:
+    def init_configuration(act_transf_config_name: str, act_ginfo: dct.GeneralInformation, act_design_space_dict: dict,
+                           act_transformer_data_dict: dict) -> bool:
         """
         Initialize the configuration.
 
@@ -37,12 +37,12 @@ class Transfsim:
         :type act_transf_config_name : str
         :param act_ginfo : General information about the study
         :type  act_ginfo : dct.GeneralInformation:
-        :param act_designspace_dict : dict with data of the design space
-        :type  act_designspace_dict : dict
-        :param act_transformerdata_dict : dict with parameter of the transformer
-        :type  act_transformerdata_dict : dict
+        :param act_design_space_dict : dict with data of the design space
+        :type  act_design_space_dict : dict
+        :param act_transformer_data_dict : dict with parameter of the transformer
+        :type  act_transformer_data_dict : dict
 
-        :return: True, if the configuration was sucessfull initialized
+        :return: True, if the configuration was successful initialized
         :rtype: bool
         """
         # Variable declaration
@@ -52,19 +52,19 @@ class Transfsim:
         # Insulation parameter
         act_insulation = fmt.StoInsulation(
             # insulation for top core window
-            iso_window_top_core_top=act_transformerdata_dict["iso_window_top_core_top"],
-            iso_window_top_core_bot=act_transformerdata_dict["iso_window_top_core_bot"],
-            iso_window_top_core_left=act_transformerdata_dict["iso_window_top_core_left"],
-            iso_window_top_core_right=act_transformerdata_dict["iso_window_top_core_right"],
+            iso_window_top_core_top=act_transformer_data_dict["iso_window_top_core_top"],
+            iso_window_top_core_bot=act_transformer_data_dict["iso_window_top_core_bot"],
+            iso_window_top_core_left=act_transformer_data_dict["iso_window_top_core_left"],
+            iso_window_top_core_right=act_transformer_data_dict["iso_window_top_core_right"],
             # insulation for bottom core window
-            iso_window_bot_core_top=act_transformerdata_dict["iso_window_bot_core_top"],
-            iso_window_bot_core_bot=act_transformerdata_dict["iso_window_bot_core_bot"],
-            iso_window_bot_core_left=act_transformerdata_dict["iso_window_bot_core_left"],
-            iso_window_bot_core_right=act_transformerdata_dict["iso_window_bot_core_right"],
+            iso_window_bot_core_top=act_transformer_data_dict["iso_window_bot_core_top"],
+            iso_window_bot_core_bot=act_transformer_data_dict["iso_window_bot_core_bot"],
+            iso_window_bot_core_left=act_transformer_data_dict["iso_window_bot_core_left"],
+            iso_window_bot_core_right=act_transformer_data_dict["iso_window_bot_core_right"],
             # winding-to-winding insulation
-            iso_primary_to_primary=act_transformerdata_dict["iso_primary_to_primary"],
-            iso_secondary_to_secondary=act_transformerdata_dict["iso_secondary_to_secondary"],
-            iso_primary_to_secondary=act_transformerdata_dict["iso_primary_to_secondary"]
+            iso_primary_to_primary=act_transformer_data_dict["iso_primary_to_primary"],
+            iso_secondary_to_secondary=act_transformer_data_dict["iso_secondary_to_secondary"],
+            iso_primary_to_secondary=act_transformer_data_dict["iso_primary_to_secondary"]
         )
 
         # Init the material data source       
@@ -89,25 +89,25 @@ class Transfsim:
             time_current_2_vec=np.ndarray([]),
             temperature=100,   # ASA Later it becomes a dynamic value?
             # sweep parameters: geometry and materials
-            n_p_top_min_max_list=act_transformerdata_dict["n_p_top_min_max_list"],
-            n_p_bot_min_max_list=act_transformerdata_dict["n_p_bot_min_max_list"],
-            material_list=act_designspace_dict["material_name_list"],
-            core_name_list=act_designspace_dict["core_name_list"],
-            core_inner_diameter_min_max_list=act_designspace_dict["core_inner_diameter_min_max_list"],
-            window_w_min_max_list=act_designspace_dict["window_w_min_max_list"],
-            window_h_bot_min_max_list=act_designspace_dict["window_h_bot_min_max_list"],
-            primary_litz_wire_list=act_designspace_dict["primary_litz_wire_list"],
-            secondary_litz_wire_list=act_designspace_dict["secondary_litz_wire_list"],
+            n_p_top_min_max_list=act_transformer_data_dict["n_p_top_min_max_list"],
+            n_p_bot_min_max_list=act_transformer_data_dict["n_p_bot_min_max_list"],
+            material_list=act_design_space_dict["material_name_list"],
+            core_name_list=act_design_space_dict["core_name_list"],
+            core_inner_diameter_min_max_list=act_design_space_dict["core_inner_diameter_min_max_list"],
+            window_w_min_max_list=act_design_space_dict["window_w_min_max_list"],
+            window_h_bot_min_max_list=act_design_space_dict["window_h_bot_min_max_list"],
+            primary_litz_wire_list=act_design_space_dict["primary_litz_wire_list"],
+            secondary_litz_wire_list=act_design_space_dict["secondary_litz_wire_list"],
             # maximum limitation for transformer total height and core volume
-            max_transformer_total_height=act_transformerdata_dict["max_transformer_total_height"],
-            max_core_volume=act_transformerdata_dict["max_core_volume"],
+            max_transformer_total_height=act_transformer_data_dict["max_transformer_total_height"],
+            max_core_volume=act_transformer_data_dict["max_core_volume"],
             # fix parameters: insulations
             insulations=act_insulation,
             # misc
             stacked_transformer_optimization_directory="",
 
-            fft_filter_value_factor=act_transformerdata_dict["fft_filter_value_factor"],
-            mesh_accuracy=act_transformerdata_dict["mesh_accuracy"],
+            fft_filter_value_factor=act_transformer_data_dict["fft_filter_value_factor"],
+            mesh_accuracy=act_transformer_data_dict["mesh_accuracy"],
 
             # data sources
             material_data_sources=act_material_data_sources
@@ -290,7 +290,7 @@ class Transfsim:
         :type  target_number_trials : int
         :param filter_factor : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
         :type  filter_factor : float
-        :param re_simulate : Flag to control, if the point are to resimulate (ASA: Correct the parameter description)
+        :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :param debug : Debug mode flag
         :type  debug : bool

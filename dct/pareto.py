@@ -30,7 +30,7 @@ class Optimization:
         :param config: configuration
         :type config: InductorOptimizationDTO
         """
-        # ASA: xtodo: Merge ginfo and set_up_folder_structure
+        # ASA: TODO: Merge ginfo and set_up_folder_structure
         project_directory = os.path.abspath(config.project_directory)
         circuit_path = os.path.join(project_directory, "01_circuit")
         inductor_path = os.path.join(project_directory, "02_inductor")
@@ -60,7 +60,7 @@ class Optimization:
         :return: File path in a DTO
         :rtype: p_dtos.ParetoFilePaths
         """
-        # ASA: xtodo: Merge ginfo and set_up_folder_structure
+        # ASA: TODO: Merge ginfo and set_up_folder_structure
         filepath_config = f"{project_directory}/filepath_config.json"
         if os.path.exists(filepath_config):
             with open(filepath_config, 'r', encoding='utf8') as json_file:
@@ -198,9 +198,9 @@ class Optimization:
         )
         return fix_parameters
 
-    # Add for Parallelisation: Optimization function
+    # Add for Parallelization: Optimization function
     @staticmethod
-    def run_optimization_SQLite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
+    def run_optimization_sqlite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
                                 act_fixed_parameters: d_dtos.FixedParameters):
         """Proceed a study which is stored as sqlite database.
 
@@ -224,7 +224,7 @@ class Optimization:
             pass
 
     @staticmethod
-    def run_optimization_MySQL(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
+    def run_optimization_mysql(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
                                act_fixed_parameters: d_dtos.FixedParameters):
         """Proceed a study which is stored as sqlite database.
 
@@ -253,14 +253,14 @@ class Optimization:
             # study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
             print(f"Finished {act_number_trials} trials.")
             print(f"current time: {datetime.datetime.now()}")
-            # Save methode from RAM-Disk to whereever (Currently opend by missing RAM-DISK)
+            # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
     @staticmethod
     def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
                             # dbType: str = 'mysql',
-                            dbType: str = 'sqlite',
+                            database_type: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
-                            deleteStudyFlag: bool = False
+                            delete_study: bool = False
                             ):
         """Proceed a study which is stored as sqlite database.
 
@@ -268,12 +268,12 @@ class Optimization:
         :type dab_config: p_dtos.CircuitParetoDabDesign
         :param number_trials: Number of trials adding to the existing study
         :type number_trials: int
-        :param dbType: storage database, e.g. 'sqlite' or 'mysql'
-        :type  dbType: str
+        :param database_type: storage database, e.g. 'sqlite' or 'mysql'
+        :type  database_type: str
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
-        :param deleteStudyFlag: Indication, if the old study are to delete (True) or optimization shall be continued.
-        :type  deleteStudyFlag: bool
+        :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
+        :type  delete_study: bool
         """
         Optimization.set_up_folder_structure(dab_config)
         filepaths = Optimization.load_filepaths(dab_config.project_directory)
@@ -312,13 +312,13 @@ class Optimization:
         fixed_parameters = Optimization.calculate_fix_parameters(dab_config)
 
         # introduce study in storage, e.g. sqlite or mysql
-        if dbType == 'sqlite':
+        if database_type == 'sqlite':
             # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
             # Means, in total there are four slashes including the path itself '////home/.../database.sqlite3'
             storage = f"sqlite:///{circuit_study_sqlite_database}"
 
             # Check the deleteStudyFlag
-            if deleteStudyFlag and os.path.exists(circuit_study_sqlite_database):
+            if delete_study and os.path.exists(circuit_study_sqlite_database):
                 os.remove(circuit_study_sqlite_database)
 
             # Create study object in drive
@@ -336,19 +336,19 @@ class Optimization:
             # actual number of trials
             overtaken_no_trials = len(study_in_memory.trials)
             # Start optimization
-            Optimization.run_optimization_SQLite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            Optimization.run_optimization_sqlite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
             # Store memory to storage
             study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
             print(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials = {len(study_in_memory.trials)} trials.")
             print(f"current time: {datetime.datetime.now()}")
             Optimization.save_config(dab_config)
 
-        elif dbType == 'mysql':
+        elif database_type == 'mysql':
 
-            # Verbindung zur MySQL-Datenbank
+            # connection to MySQL-database
             storage_url = "mysql+pymysql://oaml_optuna:optuna@localhost/optuna_db"
 
-            # Create storage-Objekt for Optuna on drive (Later RAMDISK)
+            # Create storage-object for Optuna on drive (Later RAMDISK)
             storage = optuna.storages.RDBStorage(storage_url)
             # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
 
@@ -361,7 +361,7 @@ class Optimization:
             # Inform about sampler type
             print(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
             # Start optimization
-            Optimization.run_optimization_MySQL(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            Optimization.run_optimization_mysql(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
 
         # Parallelization Test with mysql
         # Number of processes
@@ -627,11 +627,11 @@ class Optimization:
         n_points = costs.shape[0]
         next_point_index = 0  # Next index in the is_efficient array to search for
         while next_point_index < len(costs):
-            nondominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
-            nondominated_point_mask[next_point_index] = True
-            is_efficient = is_efficient[nondominated_point_mask]  # Remove dominated points
-            costs = costs[nondominated_point_mask]
-            next_point_index = np.sum(nondominated_point_mask[:next_point_index]) + 1
+            non_dominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
+            non_dominated_point_mask[next_point_index] = True
+            is_efficient = is_efficient[non_dominated_point_mask]  # Remove dominated points
+            costs = costs[non_dominated_point_mask]
+            next_point_index = np.sum(non_dominated_point_mask[:next_point_index]) + 1
         if return_mask:
             is_efficient_mask = np.zeros(n_points, dtype=bool)
             is_efficient_mask[is_efficient] = True

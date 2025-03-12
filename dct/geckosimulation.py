@@ -103,14 +103,15 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                     'S23_p_sw', 'S23_p_cond', 'S24_p_sw', 'S24_p_cond',
                     'v_dc1', 'i_dc1', 'v_dc2', 'i_dc2',
                     'p_sw1', 'p_cond1', 'p_sw2', 'p_cond2']
-    l_rms_keys = ['i_HF1', 'i_Ls', 'i_Lc1', 'i_Lc2', 'i_C11', 'i_C12', 'i_C23', 'i_C24', 'i_S11', 'i_S21', 'i_HF2']
+    l_rms_keys = ['i_HF1', 'i_Ls', 'i_Lc1', 'i_Lc2', 'i_C11', 'i_C12', 'i_C23', 'i_C24',
+                  'i_S11', 'i_S12', 'i_S23', 'i_S24', 'i_HF2']
     l_min_keys = ['v_ds_S11_sw_on', 'v_ds_S23_sw_on', 'i_HF1_S11_sw_on', 'i_HF2_S23_sw_on']
     # values calculated from simulation results (only for overview of return dict keys)
     l_calc_keys = ['power_deviation', 'zvs_coverage', 'zvs_coverage1', 'zvs_coverage2',
                    'zvs_coverage_notnan', 'zvs_coverage1_notnan', 'zvs_coverage2_notnan',
                    'i_HF1_total_mean', 'I1_squared_total_mean']
 
-    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2']
+    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2', 'i_HF1', 'i_HF2']
 
     # Set a reasonable low zvs voltage limit below we assume zvs operation
     zvs_vlimit = 50
