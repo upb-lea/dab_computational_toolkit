@@ -43,7 +43,7 @@ class DctMainCtl:
 
         """
         # return value init to false and tomlData to empty
-        retval = False
+        toml_file_exists = False
 
         # Separate filename and path
         dirname = os.path.dirname(target_file)
@@ -57,13 +57,13 @@ class DctMainCtl:
                 # Delete old data and copy new data to tomlData
                 toml_data.clear()
                 toml_data.update(new_dict_data)
-                retval = True
+                toml_file_exists = True
             else:
                 print("File does not exists!")
         else:
             print("Path does not exists!")
 
-        return {retval}
+        return {toml_file_exists}
 
     @staticmethod
     def generate_conf_file(path: str) -> bool:
@@ -137,7 +137,7 @@ class DctMainCtl:
         :rtype: bool
         """
         # return value init to false
-        retval = False
+        study_exists = False
 
         # check path
         if os.path.exists(study_path) or study_path == "":
@@ -146,13 +146,13 @@ class DctMainCtl:
             target_file = os.path.join(study_path, study_name)
             # check filename
             if os.path.isfile(target_file):
-                retval = True
+                study_exists = True
             else:
                 print(f"File {target_file} does not exists!")
         else:
             print(f"Path {study_path} does not exists!")
         # True = file exists
-        return {retval}
+        return {study_exists}
 
     @staticmethod
     def load_elec_config(act_ginfo: dct.GeneralInformation, act_config_electric: dict, act_esim: Elecsimclass.CircuitSim) -> bool:
@@ -520,7 +520,7 @@ class DctMainCtl:
         # Check if filter results are not available
         if not filtered_resultFlag:
             # Calculate the filtered results
-            esim.filter_study_results_and_run_gecko()
+            esim.filter_study_results()
             # Get filtered result path
             datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
             # Add filtered result list

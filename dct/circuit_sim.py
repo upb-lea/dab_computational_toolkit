@@ -24,7 +24,7 @@ class CircuitSim:
     # DAB configuration
     _dab_config: dct.CircuitParetoDabDesign
     # Initialization flag
-    _initFlag = False
+    _successful_initialized = False
     # filepath
     _folders: dct.ParetoFilePaths
     # process
@@ -38,14 +38,13 @@ class CircuitSim:
         :param act_dab_config : actual configuration for the optimization
         :type  act_dab_config : dct.CircuitParetoDabDesign
 
-
         :return: True, if the configuration was successful
         :rtype: bool
         """
         CircuitSim._dab_config = act_dab_config
         # Initialisation are successful
-        CircuitSim._initFlag = True        # dab config needs to be checked
-        return CircuitSim._initFlag
+        CircuitSim._successful_initialized = True        # dab config needs to be checked
+        return CircuitSim._successful_initialized
 
     @staticmethod
     def _fct_add_gecko_simulation_results(act_dto: any) -> bool:
@@ -56,7 +55,6 @@ class CircuitSim:
         :type  act_dto : any
         :return: True, if the configuration was successful
         :rtype: bool
-
         """
         dto_directory = os.path.join(CircuitSim._folders.circuit, CircuitSim._dab_config.circuit_study_name, "filtered_results")
         result_list = {"DTO": dct.HandleDabDto.add_gecko_simulation_results(act_dto, get_waveforms=True), "Dir": dto_directory, "Name": act_dto.name}
@@ -72,10 +70,9 @@ class CircuitSim:
         :type  delete_study: bool
         :return: True, if the optimization could be performed successful
         :rtype: bool
-
         """
         # Variable declaration
-        retval = False
+        study_successful = False
         # Check the number of trials
         if no_of_trials > 0:
             # Debug Test
@@ -88,9 +85,9 @@ class CircuitSim:
             dct.Optimization.show_study_results(CircuitSim._dab_config)
 
             # Set result value to True (Check of optimization is necessary
-            retval = True
+            study_successful = True
         # Return if function process without errors
-        return retval
+        return study_successful
 
     @staticmethod
     def show_study_results():
@@ -103,7 +100,7 @@ class CircuitSim:
         df = dct.Optimization.study_to_df(CircuitSim._dab_config)
 
     @staticmethod
-    def filter_study_results_and_run_gecko():
+    def filter_study_results():
         """Filter the study result and use geckocircuits for detailed calculation."""
         df = dct.Optimization.study_to_df(CircuitSim._dab_config)
         df = df[df["values_0"] == 100]
@@ -158,7 +155,7 @@ class CircuitSim:
             print(f"{dto.name=}")
             dto_directory = os.path.join(CircuitSim._folders.circuit, CircuitSim._dab_config.circuit_study_name, "filtered_results")
             os.makedirs(dto_directory, exist_ok=True)
-            dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+            # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
 
         #    dto_list=[]
@@ -210,7 +207,7 @@ class CircuitSim:
             CircuitSim.p = None
 
     @staticmethod
-    def custom(self):
+    def custom():
         """Perform customized code currently not used."""
         pass
     #    dab_config = dct.Optimization.load_config(elecsim.__dab_config.project_directory, elecsim.__dab_config.circuit_study_name)
