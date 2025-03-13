@@ -4,7 +4,7 @@ pyqt5
 tqdm
 optuna
 plotly
-toml
+pydantic
 
 # libraries provided by LEA
 pygeckocircuits2

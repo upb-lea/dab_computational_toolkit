@@ -1,47 +1,46 @@
 # Path configuration
 [general]
-    ProjectDirectory = "2025-01-31_example"
-    StudyName = "circuit_01"
-    relativeFlag = 1
+    project_directory = "2025-01-31_example"
+    study_name = "circuit_01"
+    relative_flag = 1
 
 [breakpoints]
     # possible values: No/Pause/Stop
-    Electrical_pareto = "No"  # After Electrical paretofront calculation
-    Electrical_filtered = "No"  # After Electrical filtered result calculation
-    Inductor = "No"    # After inductor paretofront calculations of for all correspondent electrical points
-    Transformer = "No" # After transformer paretofront calculations of for all correspondent electrical points
-    Heatsink = "Pause"    # After heatsink paretofront calculation
+    circuit_pareto = "no"  # After Electrical paretofront calculation
+    circuit_filtered = "no"  # After Electrical filtered result calculation
+    inductor = "no"    # After inductor paretofront calculations of for all correspondent electrical points
+    transformer = "no" # After transformer paretofront calculations of for all correspondent electrical points
+    heat_sink = "pause"    # After heatsink paretofront calculation
 
-[condbreakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
-    Electrical = 100        # Number of trials with ZVS less than 70%
-    Inductor = 1000         # Number of trials which exceed a limit value?
-    Transformer = 1000      # Number of trials which exceed a limit value?
-    Heatsink = 1000         # Number of trials which exceed a limit value?
+[conditional_breakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
+    circuit = 100        # Number of trials with ZVS less than 70%
+    inductor = 1000         # Number of trials which exceed a limit value?
+    transformer = 1000      # Number of trials which exceed a limit value?
+    heat_sink = 1000         # Number of trials which exceed a limit value?
 
-[electrical]
-    NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
-    Subdirectory = "01_circuit"
+[circuit]
+    number_of_trials = 100
+    re_calculation = "continue" # (new,continue,skip)
+    subdirectory = "01_circuit"
 
 [inductor]
-    NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
-    Subdirectory = "02_inductor"
+    number_of_trials = 100
+    re_calculation = "continue" # (new,continue,skip)
+    subdirectory = "02_inductor"
 
 [transformer]
-    NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
-    Subdirectory = "03_transformer"
+    number_of_trials = 100
+    re_calculation = "continue" # (new,continue,skip)
+    subdirectory = "03_transformer"
 
-[heatsink]
-    NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
-    Subdirectory = "04_heat_sink"
-    CircuitStudyNameFlag = "True" # True=Use circuit study name, False (or any word except 'True') = Do not use ciruit study name
+[heat_sink]
+    number_of_trials = 100
+    re_calculation = "continue" # (new,continue,skip)
+    subdirectory = "04_heat_sink"
+    circuit_study_name_flag = "True" # True=Use circuit study name, False (or any word except 'True') = Do not use ciruit study name
 
-
-[configurationdatafiles]
-    ElectricalConfFile = "DabElectricalConf.toml"   # Configuration file for electrical ciruit optimization
-    InductorConfFile = "DabInductorConf.toml"     # Configuration file for inductor optimization
-    TransformerConfFile = "DabTransformerConf.toml"  # Configuration file for transformer optimization
-    HeatsinkConfFile = "DabHeatsinkConf.toml"     # Configuration file for heatsink optimization
+[configuration_data_files]
+    circuit_configuration_file = "DabElectricalConf.toml"   # Configuration file for electrical ciruit optimization
+    inductor_configuration_file = "DabInductorConf.toml"     # Configuration file for inductor optimization
+    transformer_configuration_file = "DabTransformerConf.toml"  # Configuration file for transformer optimization
+    heat_sink_configuration_file = "DabHeatsinkConf.toml"     # Configuration file for heatsink optimization
