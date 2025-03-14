@@ -5,6 +5,7 @@ import os
 
 # 3rd party libraries
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 # own libraries
@@ -13,11 +14,11 @@ import dct
 
 
 # specify input parameters
-project_name = "2024-10-04_dab_paper"
-circuit_study_name = "circuit_paper_trial_1"
-inductor_study_name_list = ["inductor_trial_1"]
-stacked_transformer_study_name_list = ["transformer_trial_1"]
-heat_sink_study_name = "heat_sink_trial_3_dimensions"
+project_name = "2025-03-12_debug"
+circuit_study_name = "circuit_01"
+inductor_study_name_list = ["inductor_01"]
+stacked_transformer_study_name_list = ["transformer_01"]
+heat_sink_study_name = "3_dimensions"
 
 # task = "generate_pareto_summary"
 task = "plot_pareto_summary"
@@ -32,6 +33,7 @@ if task == "generate_pareto_summary":
     hs_config_filepath = os.path.join(filepaths.heat_sink, f"{heat_sink_study_name}.pkl")
     hs_config = hct.Optimization.load_config(hs_config_filepath)
     df_hs = hct.Optimization.study_to_df(hs_config)
+    df_hs.to_csv(f"{filepaths.heat_sink}/df_hs.csv")
 
     # load summarized results without heat sink
     df_wo_hs = pd.read_csv(f"{filepaths.heat_sink}/result_df.csv")
@@ -40,7 +42,7 @@ if task == "generate_pareto_summary":
     print(df_hs.loc[df_hs["values_1"] < 1]["values_0"].nsmallest(n=1).values[0])
     df_wo_hs["heat_sink_volume"] = df_wo_hs["r_th_heat_sink"].apply(
         lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
-        if df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values else None)
+        if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
     df_wo_hs["total_volume"] = df_wo_hs["transformer_volume"] + df_wo_hs["inductor_volume"] + df_wo_hs["heat_sink_volume"]
 
@@ -61,8 +63,8 @@ elif task == "plot_pareto_summary":
     plt.xlabel(r"$V_\mathrm{DAB}$ / cm³")
     plt.ylabel(r"$P_\mathrm{DAB,mean}$ / W")
     plt.grid()
-    plt.xlim(140, 200)
-    plt.ylim(45, 55)
+    # plt.xlim(140, 200)
+    # plt.ylim(45, 55)
     # plt.legend(loc="upper right")
     plt.tight_layout()
     plt.show()
