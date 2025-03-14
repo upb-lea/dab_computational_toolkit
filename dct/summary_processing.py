@@ -85,10 +85,12 @@ class DctSummmaryProcessing:
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        DctSummmaryProcessing.heat_sink = dct.HeatSink(
-            t_ambient=act_thermal_configuration_dict["heat_sink"][0],
-            t_hs_max=act_thermal_configuration_dict["heat_sink"][1]
+        DctSummmaryProcessing.heat_sink = dct.HeatSinkTemp(
+           t_ambient=act_thermal_configuration_dict["heat_sink"][0],
+           t_hs_max=act_thermal_configuration_dict["heat_sink"][1]
         )
+
+
 
         return successful_init
 

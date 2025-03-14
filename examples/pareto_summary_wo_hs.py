@@ -50,7 +50,7 @@ transformer_cooling = dct.InductiveElementCooling(
 )
 
 
-heat_sink = dct.HeatSink(
+heat_sink = dct.HeatSinkTemp(
     t_ambient=40,
     t_hs_max=90,
 )

@@ -43,7 +43,7 @@ class HeatSinkSim:
         # Check if path exists
         # check path
         if not os.path.exists(act_design_space_path):
-            print("Path does not exists!")
+            print(f"Path {act_design_space_path} does not exists!")
             # Return with false
             return ret_val
 

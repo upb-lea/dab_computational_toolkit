@@ -49,20 +49,20 @@ class DctMainCtl:
         toml_file_exists = False
 
         # Separate filename and path
-        dirname = os.path.dirname(target_file)
+        dir_name = os.path.dirname(target_file)
         filename = os.path.basename(target_file)
 
         # check path
-        if os.path.exists(dirname) or dirname == "":
+        if os.path.exists(dir_name) or dir_name == "":
             # check filename
             if os.path.isfile(target_file):
                 with open(target_file, "rb") as f:
                     config = tomllib.load(f)
                 toml_file_exists = True
             else:
-                print("File does not exists!")
+                print(f"File {target_file} does not exists!")
         else:
-            print("Path does not exists!")
+            print(f"Path {dir_name} does not exists!")
 
         return toml_file_exists, tc.FlowControl(**config)
 
@@ -83,11 +83,11 @@ class DctMainCtl:
         toml_file_exists = False
 
         # Separate filename and path
-        dirname = os.path.dirname(target_file)
+        dir_name = os.path.dirname(target_file)
         filename = os.path.basename(target_file)
 
         # check path
-        if os.path.exists(dirname) or dirname == "":
+        if os.path.exists(dir_name) or dir_name == "":
             # check filename
             if os.path.isfile(target_file):
                 new_dict_data = toml.load(target_file)
@@ -96,9 +96,9 @@ class DctMainCtl:
                 toml_data.update(new_dict_data)
                 toml_file_exists = True
             else:
-                print("File does not exists!")
+                print(f"File does not exists!")
         else:
-            print("Path does not exists!")
+            print(f"Path {dir_name} does not exists!")
 
         return {toml_file_exists}
 
@@ -394,12 +394,12 @@ class DctMainCtl:
         :type  info: str
         """
         # Check if breakpoint stops the program
-        if break_point_key == "Stop":
+        if break_point_key == "stop":
             print("Program stops cause by breakpoint at: '"+info+"'!")
             # stop program
             sys.exit()
 
-        elif break_point_key == "Pause":
+        elif break_point_key == "pause":
             # Information
             print("Active breakpoint at: '"+info+"'!\n")
             print("'C'=continue, 'S'=stop the program. Please enter your choice")
@@ -498,7 +498,7 @@ class DctMainCtl:
 
             # Assemble pathname
             datapath = os.path.join(config_program_flow.general.project_directory,
-                                    config_program_flow.general.subdirectory,
+                                    config_program_flow.circuit.subdirectory,
                                     config_program_flow.general.study_name)
 
             # Check, if data are available (skip case)
@@ -667,7 +667,7 @@ class DctMainCtl:
         spro.select_heatsink_configuration(ginfo, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"], s_df)
 
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Summary"], "Calculation is complete")
+        DctMainCtl.check_breakpoint(config_program_flow.breakpoints.summary, "Calculation is complete")
 
         # Join process if necessary
         esim.join_process()

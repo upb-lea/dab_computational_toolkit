@@ -5,7 +5,7 @@ import dataclasses
 
 
 @dataclasses.dataclass
-class HeatSink:
+class HeatSinkTemp:
     """Fix parameters for the heat sink cooling."""
 
     t_ambient: float

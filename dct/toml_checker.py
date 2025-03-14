@@ -19,6 +19,7 @@ class Breakpoints(BaseModel):
     inductor: Literal['no', 'pause', 'stop']
     transformer: Literal['no', 'pause', 'stop']
     heat_sink: Literal['no', 'pause', 'stop']
+    summary: Literal['no', 'pause', 'stop']
 
 class CondBreakpoints(BaseModel):
     """Flow control conditional breakpoints."""
