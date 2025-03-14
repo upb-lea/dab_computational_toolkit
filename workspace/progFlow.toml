@@ -10,7 +10,8 @@
     Electrical_filtered = "No"  # After Electrical filtered result calculation
     Inductor = "No"    # After inductor paretofront calculations of for all correspondent electrical points
     Transformer = "No" # After transformer paretofront calculations of for all correspondent electrical points
-    Heatsink = "Pause"    # After heatsink paretofront calculation
+    Heatsink = "No"    # After heatsink paretofront calculation
+    Summary = "Pause"
 
 [condbreakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
     Electrical = 100        # Number of trials with ZVS less than 70%
@@ -20,22 +21,22 @@
 
 [electrical]
     NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
+    ReCalculation = "skip" # (new,continue,skip)
     Subdirectory = "01_circuit"
 
 [inductor]
     NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
+    ReCalculation = "skip" # (new,continue,skip)
     Subdirectory = "02_inductor"
 
 [transformer]
     NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
+    ReCalculation = "skip" # (new,continue,skip)
     Subdirectory = "03_transformer"
 
 [heatsink]
     NumberOfTrials = 100
-    ReCalculation = "continue" # (new,continue,skip)
+    ReCalculation = "skip" # (new,continue,skip)
     Subdirectory = "04_heat_sink"
     CircuitStudyNameFlag = "True" # True=Use circuit study name, False (or any word except 'True') = Do not use ciruit study name
 

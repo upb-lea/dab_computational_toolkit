@@ -2,18 +2,7 @@
 # python libraries
 import os
 import sys
-import base64
 import multiprocessing
-import random
-import time
-import io
-import matplotlib.pyplot as plt
-import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse, Response
-from fastapi.staticfiles import StaticFiles
-import threading
 
 # 3rd party libraries
 import toml
@@ -27,10 +16,10 @@ import induct_sim as Inductsimclass
 # Import transf_sim
 import transf_sim as Transfsimclass
 # Import heatsink_sim
-import heatsink_sim as Heatsinksimclass
+from heatsink_sim import HeatSinkSim as Heatsinksimclass
 # Import server control class
-import server_ctl as Serverctlclass
-
+import summary_processing as SumProcessing
+# Import server control class
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -295,7 +284,7 @@ class DctMainCtl:
                                            act_ginfo, designspace_dict, transformer_data_dict)
 
     @staticmethod
-    def load_heat_sink_config(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_hsim: Heatsinksimclass.HeatSinkSim) -> bool:
+    def load_heat_sink_config(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_hsim: Heatsinksimclass) -> bool:
         """
         Load and initialize the transformer optimization configuration.
 
@@ -308,8 +297,6 @@ class DctMainCtl:
         :return: True, if the configuration is successful
         :rtype: bool
         """
-        # def init_configuration(act_hct_config_name: str, act_ginfo: dct.GeneralInformation, act_designspace_dict: dict,
-        #                       act_hctdimension_dict: dict) -> bool:
         #   Variable initialisation
 
         # Get design space path
@@ -334,6 +321,34 @@ class DctMainCtl:
 
         # Initialize inductor optimization and return, if it was successful (true)
         return act_hsim.init_configuration(act_config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"], act_ginfo, design_space_path, hct_dimension_dict)
+
+    @staticmethod  # (ginfo, config_heat_sink, spro)
+    def init_summary_thermal_data(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_spro: SumProcessing.DctSummmaryProcessing) -> bool:
+        """
+        Initialize thermal data for summary processing.
+
+        :param act_ginfo : General information about the study
+        :type  act_ginfo : dct.GeneralInformation:
+        :param act_config_heat_sink: actual heat sink configuration information
+        :type  act_config_heat_sink: dict: heat sink with the necessary configuration parameter
+        :param act_spro: summary processing object reference
+        :type  act_spro: SumProcessing.DctSummmaryProcessing
+        :return: True, if the configuration is successful
+        :rtype: bool
+        """
+        #   Variable initialisation
+
+        # Get heat sink dimension data
+        thermal_configuration_dict = {
+            "transistor_b1_cooling": act_config_heat_sink["ThermalResistanceData"]["transistor_b1_cooling"],
+            "transistor_b2_cooling": act_config_heat_sink["ThermalResistanceData"]["transistor_b2_cooling"],
+            "inductor_cooling": act_config_heat_sink["ThermalResistanceData"]["inductor_cooling"],
+            "transformer_cooling": act_config_heat_sink["ThermalResistanceData"]["transformer_cooling"],
+            "heat_sink": act_config_heat_sink["ThermalResistanceData"]["heat_sink"],
+        }
+
+        # Initialize inductor optimization and return, if it was successful (true)
+        return act_spro.init_thermal_configuration(thermal_configuration_dict)
 
     @staticmethod
     def check_breakpoint(break_point_key: str, info: str):
@@ -369,35 +384,6 @@ class DctMainCtl:
             pass
 
     @staticmethod
-    def start_dct_server(req_stop_server,stop_flag):
-        """Starts the server to control and supervice simulation.
-
-        :param req_stop_server: Shared memory flag to request server to stop
-        :type  req_stop_server: multiprocessing.Value
-        :param stop_flag: Shared memory flag which indicates that the server stops the measurment
-        :type  stop_flag: multiprocessing.Value
-        """
-        # Mounten des Stylesheetpfades
-        app.mount("/StyleSheets", StaticFiles(directory="htmltemplates/StyleSheets"), name="Stylesheets")
-
-        # Start the server process
-        server_process = multiprocessing.Process(target=srv_ctl.run_server, args=(req_stop_server, stop_flag))
-        server_process.start();
-
-    @staticmethod
-    def stop_dct_server(req_stop_server):
-        """Stop the server for the control and supervisuib of the simulation.
-
-        :param req_stop_server: Shared memory flag to request server to stop
-        :type  req_stop_server: multiprocessing.Value
-        """
-
-        # Request server to stop
-        req_stop_server.value = 1
-        # Wait for joined server process
-        server_process.join(5)
-
-    @staticmethod
     def executeProgram(workspace_path: str):
         """Perform the main program.
 
@@ -422,17 +408,14 @@ class DctMainCtl:
         isim = Inductsimclass.InductorSim
         # Transformer simulation
         tsim = Transfsimclass.Transfsim
-        # heat sink simulation
-        hsim = Heatsinksimclass.HeatSinkSim
+        # Heat sink simulation
+        hsim = Heatsinksimclass
+        # Summary processing
+        spro = SumProcessing.DctSummmaryProcessing
         # Flag for available filtered results
         filtered_resultFlag = False
-        # Server class to control the workflow
-        srv_ctl = Serverctlclass
         # Shared Memory für das Histogramm und den Status
-        # histogram_data = multiprocessing.Array('i', [0] * 25)
-        req_stop_server = multiprocessing.Value('i', 0)
-        stop_flag = multiprocessing.Value('i', 0)
-
+        histogram_data = multiprocessing.Array('i', [0] * 25)
 
         # Check if workspace path is not provided by argument
         if workspace_path == "":
@@ -541,13 +524,9 @@ class DctMainCtl:
             if not DctMainCtl.check_study_data(datapath, "heatsink_01"):
                 raise ValueError(f"Study {config_program_flow['general']['StudyName']} in path {datapath} does not exist. No sqlite3-database found!")
 
-        # Warning, no data are available
-        # Check, if transformer optimization is to skip
-        # Warning, no data are available
-        # Check, if heat sink optimization is to skip
-        # Warning, no data are available
         # -- Start server  --------------------------------------------------------------------------------------------
-        DctMainCtl.start_dct_server(req_stop_server,stop_flag)
+        # Debug: Server switched off
+        # srv_ctl.start_dct_server(histogram_data,False)
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
 
@@ -641,21 +620,25 @@ class DctMainCtl:
         # Check breakpoint
         DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Heatsink"], "Heat sink Pareto front calculated")
 
-        # Calculate the combination of components inductor and transformer with same electrical pareto point
-        # Filter the pareto front data of inductor and transformer
-        # Create a setup of the three components
-        # Define the heat sink
-        # Add this to the summary pareto list (no optimization?)
+        # Initialisation thermal data
+        if not DctMainCtl.init_summary_thermal_data(ginfo, config_heat_sink, spro):
+            raise ValueError("Thermal data configuration not initialized!")
+        # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
+        inductor_study_names = [config_inductor["InductorConfigName"]["inductor_config_name"]]
+        stacked_transformer_study_names = [config_transformer["TransformerConfigName"]["transformer_config_name"]]
+        # Start summary processing by generating the dataframe from calculated simmulation results
+        s_df = spro.generate_result_database(ginfo, inductor_study_names, stacked_transformer_study_names)
+        #  Select the needed heatsink configuration
+        spro.select_heatsink_configuration(ginfo, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"], s_df)
 
-        # Check, if electrical optimization is to skip
-        # Initialize data
-        # Start calculation
-        # Filter the pareto front data
+        # Check breakpoint
+        DctMainCtl.check_breakpoint(config_program_flow["breakpoints"]["Summary"], "Calculation is complete")
 
         # Join process if necessary
         esim.join_process()
         # Shut down server
-        DctMainCtl.stop_dct_server()
+        # Debug: Server switched off
+        # srv_ctl.stop_dct_server()
         pass
 
 
