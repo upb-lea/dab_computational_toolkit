@@ -61,35 +61,6 @@ class CircuitSim:
         return True
 
     @staticmethod
-    def run_new_study(no_of_trials: int, delete_study: bool = False) -> bool:
-        """Run the circuit optimization.
-
-        :param no_of_trials : Number of trials in the genetic optimization algorithm
-        :type  no_of_trials : int
-        :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
-        :type  delete_study: bool
-        :return: True, if the optimization could be performed successful
-        :rtype: bool
-        """
-        # Variable declaration
-        study_successful = False
-        # Check the number of trials
-        if no_of_trials > 0:
-            # Debug Test
-            # Connection to MySQL-data base
-            # storage_url = "mysql+pymysql://oaml_optuna:optuna@localhost/optuna_db"
-            # Create storage object for Optuna
-            # storage = optuna.storages.RDBStorage(storage_url)
-
-            dct.Optimization.start_proceed_study(dab_config=CircuitSim._dab_config, number_trials=no_of_trials, delete_study=delete_study)
-            dct.Optimization.show_study_results(CircuitSim._dab_config)
-
-            # Set result value to True (Check of optimization is necessary
-            study_successful = True
-        # Return if function process without errors
-        return study_successful
-
-    @staticmethod
     def show_study_results():
         """Display the result of the study."""
         CircuitSim._dab_config = dct.Optimization.load_config(CircuitSim._dab_config.project_directory, CircuitSim._dab_config.circuit_study_name)
