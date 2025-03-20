@@ -77,8 +77,6 @@ class FlowControl(BaseModel):
     heat_sink: HeatSink
     configuration_data_files: ConfigurationDataFiles
 
-
-
 class TomlCircuitParetoDesignSpace(BaseModel):
     """Definition of the hardware design space for electronic components."""
 
@@ -102,6 +100,8 @@ class TomlCircuitOutputRange(BaseModel):
     steps_per_direction: int
 
 class TomlCircuitFilterDistance(BaseModel):
+    """Toml checker class for CircuitFilterDistance."""
+
     delta: list
     range: list[list]
     deep: list

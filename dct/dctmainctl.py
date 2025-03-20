@@ -94,8 +94,6 @@ class DctMainCtl:
 
         return toml_file_exists, dct.TomlCircuitParetoDabDesign(**config)
 
-
-
     @staticmethod
     def load_conf_file(target_file: str, toml_data: dict) -> bool:
         """
@@ -376,6 +374,16 @@ class DctMainCtl:
 
     @staticmethod
     def circuit_toml_2_dto(toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
+        """
+        Circuit toml file to dto file.
+
+        :param toml_circuit: toml file class for the circuit
+        :type toml_circuit: tc.TomlCircuitParetoDabDesign
+        :param toml_prog_flow: toml file class for the flow control
+        :type toml_prog_flow: tc.FlowControl
+        :return: circuit DTO
+        :rtype: p_dtos.CircuitParetoDabDesign
+        """
         design_space = p_dtos.CircuitParetoDesignSpace(
             f_s_min_max_list=toml_circuit.design_space.f_s_min_max_list,
             l_s_min_max_list=toml_circuit.design_space.l_s_min_max_list,
@@ -400,14 +408,7 @@ class DctMainCtl:
             design_space=design_space,
             output_range=output_range)
 
-
-
         return dto
-
-
-
-
-
 
     @staticmethod
     def executeProgram(workspace_path: str):
@@ -463,12 +464,8 @@ class DctMainCtl:
         # Init circuit configuration
         circuit_loaded, toml_circuit = DctMainCtl.load_circuit_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         # generate
-
-
-
         config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
         esim.init_configuration(config_circuit)
-
 
         if not circuit_loaded:
             raise ValueError(f"Electrical configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
