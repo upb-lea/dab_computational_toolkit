@@ -1,7 +1,6 @@
 # Path configuration
 [general]
     project_directory = "2025-01-31_example"
-    study_name = "circuit_01"
     relative_flag = 1
 
 [breakpoints]
@@ -19,7 +18,7 @@
     heat_sink = 1000         # Number of trials which exceed a limit value?
 
 [circuit]
-    number_of_trials = 1000
+    number_of_trials = 100
     re_calculation = "continue" # (new,continue,skip)
     subdirectory = "01_circuit"
 

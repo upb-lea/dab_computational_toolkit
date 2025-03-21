@@ -127,7 +127,7 @@ elif action == 'filter_study_results':
 elif action == 'custom':
     dab_config = dct.CircuitOptimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
     df = dct.CircuitOptimization.load_csv_to_df(os.path.join(dab_config.project_directory, "01_circuit", dab_config.circuit_study_name,
-                                         f"{dab_config.circuit_study_name}.csv"))
+                                                f"{dab_config.circuit_study_name}.csv"))
     df = df[df["number"] == 79030]
     print(df.head())
 

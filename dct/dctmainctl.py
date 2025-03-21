@@ -142,7 +142,7 @@ class DctMainCtl:
         abs_path = os.getcwd()
         # Store project directory and study name
         act_ginfo.project_directory = act_config_program_flow.general.project_directory
-        act_ginfo.circuit_study_name = act_config_program_flow.general.study_name
+        act_ginfo.circuit_study_name = act_config_program_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
         # Create path names
         act_ginfo.circuit_study_path = os.path.join(abs_path, act_ginfo.project_directory,
                                                     DctMainCtl.const_circuit_folder, act_ginfo.circuit_study_name)
@@ -150,7 +150,7 @@ class DctMainCtl:
                                                      DctMainCtl.const_inductor_folder, act_ginfo.circuit_study_name)
         act_ginfo.transformer_study_path = os.path.join(abs_path, act_ginfo.project_directory,
                                                         DctMainCtl.const_transformer_folder, act_ginfo.circuit_study_name)
-        # Check, if heatsink study name uses the circuit name
+        # Check, if heat sink study name uses the circuit name
         if act_config_program_flow.heat_sink.circuit_study_name_flag == "True":
             act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
                                                           DctMainCtl.const_heat_sink_folder, act_ginfo.circuit_study_name)
@@ -372,7 +372,7 @@ class DctMainCtl:
             steps_per_direction=toml_circuit.output_range.steps_per_direction)
 
         dto = p_dtos.CircuitParetoDabDesign(
-            circuit_study_name=toml_prog_flow.general.study_name,
+            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             project_directory=toml_prog_flow.general.project_directory,
             design_space=design_space,
             output_range=output_range)

@@ -708,7 +708,12 @@ class CircuitOptimization:
 
     @staticmethod
     def filter_study_results(dab_config: p_dtos.CircuitParetoDabDesign):
-        """Filter the study result and use geckocircuits for detailed calculation."""
+        """
+        Filter the study result and use geckocircuits for detailed calculation.
+
+        :param dab_config: DAB configuration DTO
+        :type dab_config: p_dtos.CircuitParetoDabDesign
+        """
         df = CircuitOptimization.study_to_df(dab_config)
         df = df[df["values_0"] == 100]
 

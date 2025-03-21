@@ -8,7 +8,6 @@ class General(BaseModel):
     """General flow control information."""
 
     project_directory: str
-    study_name: str
     relative_flag: int
 
 class Breakpoints(BaseModel):
