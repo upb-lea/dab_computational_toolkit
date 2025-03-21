@@ -9,8 +9,6 @@ import toml
 
 # own libraries
 import dct
-# Electrical circuit simulations class
-import circuit_sim as Elecsimclass
 # Inductor simulations class
 import induct_sim as Inductsimclass
 # import transf_sim
@@ -19,6 +17,8 @@ import transf_sim as Transfsimclass
 import heatsink_sim as Heatsinksimclass
 import toml_checker as tc
 import pareto_dtos as p_dtos
+from dct import CircuitOptimization
+
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -429,8 +429,6 @@ class DctMainCtl:
         config_inductor = {}
         config_transformer = {}
         config_heat_sink = {}
-        # Electrical simulation
-        esim = Elecsimclass.CircuitSim
         # Inductor simulation
         isim = Inductsimclass.InductorSim
         # Transformer simulation
@@ -465,7 +463,6 @@ class DctMainCtl:
         circuit_loaded, toml_circuit = DctMainCtl.load_circuit_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         # generate
         config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
-        esim.init_configuration(config_circuit)
 
         if not circuit_loaded:
             raise ValueError(f"Electrical configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
@@ -578,7 +575,7 @@ class DctMainCtl:
                 new_study_flag = False
 
             # Start calculation
-            dct.Optimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials, delete_study=new_study_flag)
+            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials, delete_study=new_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
@@ -586,7 +583,7 @@ class DctMainCtl:
         # Check if filter results are not available
         if not filtered_resultFlag:
             # Calculate the filtered results
-            esim.filter_study_results()
+            CircuitOptimization.filter_study_results(dab_config=config_circuit)
             # Get filtered result path
             datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
             # Add filtered result list
@@ -664,9 +661,6 @@ class DctMainCtl:
         # Initialize data
         # Start calculation
         # Filter the pareto front data
-
-        # Join process if necessary
-        esim.join_process()
 
         pass
 

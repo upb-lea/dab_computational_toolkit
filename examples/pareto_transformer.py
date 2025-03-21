@@ -63,7 +63,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
     :param debug: True to debug, defaults to False
     :type debug: bool
     """
-    filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+    filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
     for circuit_trial_number in circuit_trial_numbers:
         circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     # inductor optimization
     process_circuit_trial_numbers = []
 
-    filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+    filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
     objects = os.scandir(circuit_filepath)
     all_circuit_trial_numbers = [entity.name.replace(".pkl", "") for entity in objects]
