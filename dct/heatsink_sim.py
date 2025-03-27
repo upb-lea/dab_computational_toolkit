@@ -59,7 +59,7 @@ class HeatSinkSim:
         # Heat sink parameter
         act_hct_config = hopt.OptimizationParameters(
             heat_sink_study_name=act_hct_config_name,
-            heat_sink_optimization_directory=os.path.join(act_ginfo.heatsink_study_path, act_hct_config_name),
+            heat_sink_optimization_directory=os.path.join(act_ginfo.heat_sink_study_path, act_hct_config_name),
             height_c_list=act_hct_dimension_dict["height_c_list"],
             width_b_list=act_hct_dimension_dict["width_b_list"],
             length_l_list=act_hct_dimension_dict["length_l_list"],

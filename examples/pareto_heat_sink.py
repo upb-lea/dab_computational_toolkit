@@ -14,7 +14,7 @@ import dct
 project_name = "2025-01-31_example"
 
 # load project file paths
-filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
 for (_, _, file_name_list) in os.walk('../../HCT_heat_sink_computation_toolbox/hct/data'):
     fan_list = file_name_list

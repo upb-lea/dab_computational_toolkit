@@ -48,19 +48,19 @@ action = 'filter_study_results'
 # action = 'compare_currents'
 
 if action == 'run_new_study':
-    dct.Optimization.start_proceed_study(dab_config, 2000)
-    dct.Optimization.show_study_results(dab_config)
+    dct.CircuitOptimization.start_proceed_study(dab_config, 2000)
+    dct.CircuitOptimization.show_study_results(dab_config)
 
 elif action == 'show_study_results':
-    dab_config = dct.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
+    dab_config = dct.CircuitOptimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
     print(f"{dab_config.project_directory=}")
     dab_config.project_directory = dab_config.project_directory.replace("@uni-paderborn.de", "")
     print(f"{dab_config.project_directory=}")
-    dct.Optimization.show_study_results(dab_config)
-    df = dct.Optimization.study_to_df(dab_config)
+    dct.CircuitOptimization.show_study_results(dab_config)
+    df = dct.CircuitOptimization.study_to_df(dab_config)
 
 elif action == 'filter_study_results':
-    df = dct.Optimization.study_to_df(dab_config)
+    df = dct.CircuitOptimization.study_to_df(dab_config)
     df = df[df["values_0"] == 100]
 
     df_original = df.copy()
@@ -69,7 +69,7 @@ elif action == 'filter_study_results':
     df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
     df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
-    smallest_dto_list.append(dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest))
+    smallest_dto_list.append(dct.CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
     print(f"{np.shape(df)=}")
 
     for count in np.arange(0, 3):
@@ -99,7 +99,7 @@ elif action == 'filter_study_results':
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
         df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
 
-    smallest_dto_list = dct.Optimization.df_to_dab_dto_list(dab_config, df_smallest_all)
+    smallest_dto_list = dct.CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest_all)
 
     dct.global_plot_settings_font_latex()
     fig = plt.figure(figsize=(80/25.4, 80/25.4), dpi=350)
@@ -115,7 +115,7 @@ elif action == 'filter_study_results':
     plt.tight_layout()
     plt.show()
 
-    folders = dct.Optimization.load_filepaths(dab_config.project_directory)
+    folders = dct.CircuitOptimization.load_filepaths(dab_config.project_directory)
     for dto in smallest_dto_list:
         print(f"{dto.name=}")
         dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
@@ -125,13 +125,13 @@ elif action == 'filter_study_results':
 
 
 elif action == 'custom':
-    dab_config = dct.Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
-    df = dct.Optimization.load_csv_to_df(os.path.join(dab_config.project_directory, "01_circuit", dab_config.circuit_study_name,
-                                         f"{dab_config.circuit_study_name}.csv"))
+    dab_config = dct.CircuitOptimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
+    df = dct.CircuitOptimization.load_csv_to_df(os.path.join(dab_config.project_directory, "01_circuit", dab_config.circuit_study_name,
+                                                f"{dab_config.circuit_study_name}.csv"))
     df = df[df["number"] == 79030]
     print(df.head())
 
-    [dab_dto] = dct.Optimization.df_to_dab_dto_list(dab_config, df)
+    [dab_dto] = dct.CircuitOptimization.df_to_dab_dto_list(dab_config, df)
 
     i_cost = dab_dto.calc_currents.i_hf_1_rms ** 2 + dab_dto.calc_currents.i_hf_2_rms ** 2
 

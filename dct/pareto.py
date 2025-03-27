@@ -13,13 +13,14 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
 
+import dct.datasets_dtos
 # own libraries
 import dct.datasets_dtos as d_dtos
 import dct.pareto_dtos as p_dtos
 import dct.datasets as d_sets
 
 
-class Optimization:
+class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     @staticmethod
@@ -84,7 +85,7 @@ class Optimization:
         :param config: configuration
         :type config: InductorOptimizationDTO
         """
-        filepaths = Optimization.load_filepaths(config.project_directory)
+        filepaths = CircuitOptimization.load_filepaths(config.project_directory)
 
         os.makedirs(config.project_directory, exist_ok=True)
         with open(f"{filepaths.circuit}/{config.circuit_study_name}/{config.circuit_study_name}.pkl", 'wb') as output:
@@ -102,7 +103,7 @@ class Optimization:
         :return: Configuration file as p_dtos.DabDesign
         :rtype: p_dtos.CircuitParetoDabDesign
         """
-        filepaths = Optimization.load_filepaths(circuit_project_directory)
+        filepaths = CircuitOptimization.load_filepaths(circuit_project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
 
         with open(config_pickle_filepath, 'rb') as pickle_file_data:
@@ -216,7 +217,7 @@ class Optimization:
         :type act_fixed_parameters: d_dtos.FixedParameters
         """
         # Function to execute
-        func = lambda trial: Optimization.objective(trial, act_dab_config, act_fixed_parameters)
+        func = lambda trial: CircuitOptimization.objective(trial, act_dab_config, act_fixed_parameters)
 
         try:
             act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
@@ -240,7 +241,7 @@ class Optimization:
         :type act_fixed_parameters: d_dtos.FixedParameters
         """
         # Function to execute
-        func = lambda trial: Optimization.objective(trial, act_dab_config, act_fixed_parameters)
+        func = lambda trial: CircuitOptimization.objective(trial, act_dab_config, act_fixed_parameters)
 
         # Each process create his own study instance with the same database and study name
         act_study = optuna.load_study(storage=act_storage_url, study_name=act_study_name)
@@ -275,8 +276,8 @@ class Optimization:
         :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
         :type  delete_study: bool
         """
-        Optimization.set_up_folder_structure(dab_config)
-        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+        CircuitOptimization.set_up_folder_structure(dab_config)
+        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
 
         circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.circuit_study_name)
         circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.circuit_study_name}.sqlite3")
@@ -295,7 +296,7 @@ class Optimization:
         # check for differences with the old configuration file
         config_on_disk_filepath = f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
-            config_on_disk = Optimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
+            config_on_disk = CircuitOptimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
             difference = deepdiff.DeepDiff(config_on_disk, dab_config, ignore_order=True, significant_digits=10)
             if difference:
                 print("Configuration file has changed from previous simulation. Do you want to proceed?")
@@ -309,7 +310,7 @@ class Optimization:
 
         directions = ['maximize', 'minimize']
 
-        fixed_parameters = Optimization.calculate_fix_parameters(dab_config)
+        fixed_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
 
         # introduce study in storage, e.g. sqlite or mysql
         if database_type == 'sqlite':
@@ -336,12 +337,12 @@ class Optimization:
             # actual number of trials
             overtaken_no_trials = len(study_in_memory.trials)
             # Start optimization
-            Optimization.run_optimization_sqlite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            CircuitOptimization.run_optimization_sqlite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
             # Store memory to storage
             study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
             print(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials = {len(study_in_memory.trials)} trials.")
             print(f"current time: {datetime.datetime.now()}")
-            Optimization.save_config(dab_config)
+            CircuitOptimization.save_config(dab_config)
 
         elif database_type == 'mysql':
 
@@ -361,7 +362,7 @@ class Optimization:
             # Inform about sampler type
             print(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
             # Start optimization
-            Optimization.run_optimization_mysql(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            CircuitOptimization.run_optimization_mysql(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
 
         # Parallelization Test with mysql
         # Number of processes
@@ -408,8 +409,8 @@ class Optimization:
         :param dab_config: DAB optimization configuration file
         :type dab_config: p_dtos.CircuitParetoDabDesign
         """
-        filepaths = Optimization.load_filepaths(dab_config.project_directory)
-        database_url = Optimization.create_sqlite_database_url(dab_config)
+        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
+        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
         study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
 
         fig = optuna.visualization.plot_pareto_front(study, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
@@ -433,8 +434,8 @@ class Optimization:
         if trial_number is None:
             raise NotImplementedError("needs to be implemented")
 
-        filepaths = Optimization.load_filepaths(dab_config.project_directory)
-        database_url = Optimization.create_sqlite_database_url(dab_config)
+        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
+        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
 
         loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name,
                                            storage=database_url, load_if_exists=True)
@@ -522,8 +523,8 @@ class Optimization:
         :param dab_config: DAB optimization configuration file
         :type dab_config: p_dtos.CircuitParetoDabDesign
         """
-        filepaths = Optimization.load_filepaths(dab_config.project_directory)
-        database_url = Optimization.create_sqlite_database_url(dab_config)
+        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
+        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
         loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
         df = loaded_study.trials_dataframe()
         df.to_csv(f'{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.csv')
@@ -539,7 +540,7 @@ class Optimization:
         :return: SQLite URL
         :rtype: str
         """
-        filepaths = Optimization.load_filepaths(dab_config.project_directory)
+        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
         sqlite_storage_url = f"sqlite:///{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.sqlite3"
         return sqlite_storage_url
 
@@ -656,7 +657,7 @@ class Optimization:
         x_vec = df[x][~np.isnan(df[x])]
         y_vec = df[y][~np.isnan(df[x])]
         numpy_zip = np.column_stack((x_vec, y_vec))
-        pareto_tuple_mask_vec = Optimization.is_pareto_efficient(numpy_zip)
+        pareto_tuple_mask_vec = CircuitOptimization.is_pareto_efficient(numpy_zip)
         pareto_df = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
         return pareto_df
 
@@ -682,7 +683,7 @@ class Optimization:
         # figure out pareto front
         # pareto_volume_list, pareto_core_hyst_list, pareto_dto_list = self.pareto_front(volume_list, core_hyst_loss_list, valid_design_list)
 
-        pareto_df: pd.DataFrame = Optimization.pareto_front_from_df(df, x, y)
+        pareto_df: pd.DataFrame = CircuitOptimization.pareto_front_from_df(df, x, y)
 
         vector_to_sort = np.array([pareto_df[x], pareto_df[y]])
 
@@ -704,3 +705,62 @@ class Optimization:
         pareto_df_offset = df[df[y] < ref_loss_max]
 
         return pareto_df_offset
+
+    @staticmethod
+    def filter_study_results(dab_config: p_dtos.CircuitParetoDabDesign):
+        """
+        Filter the study result and use geckocircuits for detailed calculation.
+
+        :param dab_config: DAB configuration DTO
+        :type dab_config: p_dtos.CircuitParetoDabDesign
+        """
+        df = CircuitOptimization.study_to_df(dab_config)
+        df = df[df["values_0"] == 100]
+
+        df_original = df.copy()
+
+        smallest_dto_list = []
+        df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
+        df_smallest = df.nsmallest(n=1, columns=["values_1"])
+
+        smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
+        print(f"{np.shape(df)=}")
+
+        for count in np.arange(0, 3):
+            print("------------------")
+            print(f"{count=}")
+            n_suggest = df_smallest['params_n_suggest'].item()
+            f_s_suggest = df_smallest['params_f_s_suggest'].item()
+            l_s_suggest = df_smallest['params_l_s_suggest'].item()
+            l_1_suggest = df_smallest['params_l_1_suggest'].item()
+            l_2__suggest = df_smallest['params_l_2__suggest'].item()
+            transistor_1_name_suggest = df_smallest['params_transistor_1_name_suggest'].item()
+            transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
+
+            # make sure to use parameters with minimum x % difference.
+            difference = 0.05
+
+            df = df.loc[
+                ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \
+                  (df["params_f_s_suggest"].ge(f_s_suggest * (1 - difference)) & df["params_f_s_suggest"].le(f_s_suggest * (1 + difference))) & \
+                  (df["params_l_s_suggest"].ge(l_s_suggest * (1 - difference)) & df["params_l_s_suggest"].le(l_s_suggest * (1 + difference))) & \
+                  (df["params_l_1_suggest"].ge(l_1_suggest * (1 - difference)) & df["params_l_1_suggest"].le(l_1_suggest * (1 + difference))) & \
+                  (df["params_l_2__suggest"].ge(l_2__suggest * (1 - difference)) & df["params_l_2__suggest"].le(l_2__suggest * (1 + difference))) & \
+                  df["params_transistor_1_name_suggest"].isin([transistor_1_name_suggest]) & \
+                  df["params_transistor_2_name_suggest"].isin([transistor_2_name_suggest])
+                  )]
+
+            df_smallest = df.nsmallest(n=1, columns=["values_1"])
+            df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
+
+        smallest_dto_list = CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest_all)
+
+        # join if necessary
+        folders = dct.CircuitOptimization.load_filepaths(dab_config.project_directory)
+
+        dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
+        os.makedirs(dto_directory, exist_ok=True)
+        for dto in smallest_dto_list:
+            print(f"{dto.name=}")
+            # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+            dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)

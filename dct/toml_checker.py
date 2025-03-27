@@ -8,7 +8,6 @@ class General(BaseModel):
     """General flow control information."""
 
     project_directory: str
-    study_name: str
     relative_flag: int
 
 class Breakpoints(BaseModel):
@@ -77,4 +76,38 @@ class FlowControl(BaseModel):
     heat_sink: HeatSink
     configuration_data_files: ConfigurationDataFiles
 
-# circuit
+class TomlCircuitParetoDesignSpace(BaseModel):
+    """Definition of the hardware design space for electronic components."""
+
+    # DAB optimization parameters
+    f_s_min_max_list: list
+    l_s_min_max_list: list
+    l_1_min_max_list: list
+    l_2__min_max_list: list
+    n_min_max_list: list
+    transistor_1_name_list: list[str]
+    transistor_2_name_list: list[str]
+    c_par_1: float
+    c_par_2: float
+
+class TomlCircuitOutputRange(BaseModel):
+    """Definition of the DAB operating area."""
+
+    v_1_min_nom_max_list: list
+    v_2_min_nom_max_list: list
+    p_min_nom_max_list: list
+    steps_per_direction: int
+
+class TomlCircuitFilterDistance(BaseModel):
+    """Toml checker class for CircuitFilterDistance."""
+
+    delta: list
+    range: list[list]
+    deep: list
+
+class TomlCircuitParetoDabDesign(BaseModel):
+    """Config to optimize the Dual-Active Bridge (DAB) converter."""
+
+    design_space: TomlCircuitParetoDesignSpace
+    output_range: TomlCircuitOutputRange
+    filter_distance: TomlCircuitFilterDistance
