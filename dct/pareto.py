@@ -758,9 +758,9 @@ class CircuitOptimization:
         # join if necessary
         folders = dct.CircuitOptimization.load_filepaths(dab_config.project_directory)
 
+        dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
+        os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
             print(f"{dto.name=}")
-            dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
-            os.makedirs(dto_directory, exist_ok=True)
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
