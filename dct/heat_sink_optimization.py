@@ -13,7 +13,7 @@ from dct.heat_sink_dtos import *
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger().setLevel(logging.ERROR)
 
-class HeatSinkSim:
+class HeatSinkOptimization:
     """Optimation support class for heat sink optimation."""
 
     # Simulation configuration list
@@ -73,9 +73,9 @@ class HeatSinkSim:
         )
 
         # Empty the list
-        HeatSinkSim.sim_config_list = []
+        HeatSinkOptimization.sim_config_list = []
         # Add configuration to list
-        HeatSinkSim.sim_config_list.append(act_hct_config)
+        HeatSinkOptimization.sim_config_list.append(act_hct_config)
         # Set return value to true and return
         ret_val = True
 
@@ -176,7 +176,7 @@ class HeatSinkSim:
         :type  debug : bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in HeatSinkSim.sim_config_list:
+        for act_sim_config in HeatSinkOptimization.sim_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -184,7 +184,7 @@ class HeatSinkSim:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            HeatSinkSim._simulation(act_sim_config, act_ginfo, target_number_trials, re_simulate, debug)
+            HeatSinkOptimization._simulation(act_sim_config, act_ginfo, target_number_trials, re_simulate, debug)
             if debug:
                 # stop after one circuit run
                 break

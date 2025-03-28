@@ -14,9 +14,9 @@ import dct
 # Inductor simulations class
 import inductor_optimization as Inductsimclass
 # import transf_sim
-import transf_sim as Transfsimclass
+import transformer_optimization as Transfsimclass
 # import heatsink_sim
-import heatsink_sim as Heatsinksimclass
+import heat_sink_optimization as Heatsinksimclass
 import toml_checker as tc
 import pareto_dtos as p_dtos
 from dct import CircuitOptimization
@@ -211,7 +211,7 @@ class DctMainCtl:
         return act_isim.init_configuration(toml_inductor, toml_prog_flow, act_ginfo)
 
     @staticmethod
-    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.Transfsim) -> bool:
+    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.TransformerOptimization) -> bool:
         """
         Load and initialize the transformer optimization configuration.
 
@@ -259,7 +259,7 @@ class DctMainCtl:
                                            act_ginfo, designspace_dict, transformer_data_dict)
 
     @staticmethod
-    def load_heat_sink_config(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_hsim: Heatsinksimclass.HeatSinkSim) -> bool:
+    def load_heat_sink_config(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_hsim: Heatsinksimclass.HeatSinkOptimization) -> bool:
         """
         Load and initialize the transformer optimization configuration.
 
@@ -268,7 +268,7 @@ class DctMainCtl:
         :param act_config_heat_sink: actual heat sink configuration information
         :type  act_config_heat_sink: dict: heat sink with the necessary configuration parameter
         :param act_hsim: heat sink optimization object reference
-        :type  act_hsim: Heatsinksimclass.HeatSinkSim
+        :type  act_hsim: Heatsinksimclass.HeatSinkOptimization
         :return: True, if the configuration is successful
         :rtype: bool
         """
@@ -392,9 +392,9 @@ class DctMainCtl:
         # Inductor simulation
         isim = Inductsimclass.InductorOptimization
         # Transformer simulation
-        tsim = Transfsimclass.Transfsim
+        tsim = Transfsimclass.TransformerOptimization
         # heat sink simulation
-        hsim = Heatsinksimclass.HeatSinkSim
+        hsim = Heatsinksimclass.HeatSinkOptimization
         # Flag for available filtered results
         filtered_resultFlag = False
 
