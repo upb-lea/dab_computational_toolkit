@@ -173,3 +173,50 @@ class TomlInductor(BaseModel):
     boundary_conditions: TomlInductorBoundaryConditions
     filter_distance: TomlFilterDistance
     material_data_sources: TomlMaterialDataSources
+
+# ######################################################
+# transformer
+# ######################################################
+
+
+# ######################################################
+# heat sink
+# ######################################################
+
+
+class TomlHeatSinkBoundaryConditions(BaseModel):
+    """Toml checker for HeatSinkBoundaryConditions."""
+
+    t_ambient: float
+    area_min: float
+
+class TomlHeatSinkSettings(BaseModel):
+    """Toml checker for HeatSinkSettings."""
+
+    number_directions: int
+    factor_pcb_area_copper_coin: float
+    factor_bottom_area_copper_coin: float
+    thermal_conductivity_copper: float
+
+class TomlHeatSinkFanData(BaseModel):
+    """Toml checker for HeatSinkFanData."""
+
+    heat_sink_fan_path: str
+
+class TomlHeatSinkDesignSpace(BaseModel):
+    """Toml checker for HeatSinkDesignSpace."""
+
+    height_c_list: list[float]
+    width_b_list: list[float]
+    length_l_list: list[float]
+    height_d_list: list[float]
+    number_fins_n_list: list[int]
+    thickness_fin_t_list: list[float]
+
+class TomlHeatSink(BaseModel):
+    """Toml checker for HeatSink."""
+
+    fan_data: TomlHeatSinkFanData
+    design_space: TomlHeatSinkDesignSpace
+    settings: TomlHeatSinkSettings
+    boundary_conditions: TomlHeatSinkBoundaryConditions

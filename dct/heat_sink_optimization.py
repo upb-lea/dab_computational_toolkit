@@ -5,7 +5,7 @@ import os
 # 3rd party libraries
 
 # own libraries
-import hct as hopt
+import hct
 import dct
 from dct.heat_sink_dtos import *
 
@@ -57,7 +57,7 @@ class HeatSinkOptimization:
             return ret_val
 
         # Heat sink parameter
-        act_hct_config = hopt.OptimizationParameters(
+        act_hct_config = hct.OptimizationParameters(
             heat_sink_study_name=act_hct_config_name,
             heat_sink_optimization_directory=os.path.join(act_ginfo.heat_sink_study_path, act_hct_config_name),
             height_c_list=act_hct_dimension_dict["height_c_list"],
@@ -129,7 +129,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(act_hct_config: hopt.OptimizationParameters, act_ginfo: dct.GeneralInformation,
+    def _simulation(act_hct_config: hct.OptimizationParameters, act_ginfo: dct.GeneralInformation,
                     target_number_trials: int, re_simulate: bool, debug: bool):
         """
         Perform the simulation.
@@ -151,7 +151,7 @@ class HeatSinkOptimization:
 
         # Check number of trials
         if target_number_trials > 0:
-            hopt.Optimization.start_proceed_study(config=act_hct_config, number_trials=1000)
+            hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=1000)
         else:
             print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 

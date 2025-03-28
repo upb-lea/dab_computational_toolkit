@@ -11,6 +11,7 @@ import toml
 
 # own libraries
 import dct
+import hct
 # Inductor simulations class
 import inductor_optimization as Inductsimclass
 # import transf_sim
@@ -257,47 +258,6 @@ class DctMainCtl:
         # Initialize inductor optimization and return, if it was successful (true)
         return act_tsim.init_configuration(act_config_transformer["TransformerConfigName"]["transformer_config_name"],
                                            act_ginfo, designspace_dict, transformer_data_dict)
-
-    @staticmethod
-    def load_heat_sink_config(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_hsim: Heatsinksimclass.HeatSinkOptimization) -> bool:
-        """
-        Load and initialize the transformer optimization configuration.
-
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_config_heat_sink: actual heat sink configuration information
-        :type  act_config_heat_sink: dict: heat sink with the necessary configuration parameter
-        :param act_hsim: heat sink optimization object reference
-        :type  act_hsim: Heatsinksimclass.HeatSinkOptimization
-        :return: True, if the configuration is successful
-        :rtype: bool
-        """
-        # def init_configuration(act_hct_config_name: str, act_ginfo: dct.GeneralInformation, act_designspace_dict: dict,
-        #                       act_hctdimension_dict: dict) -> bool:
-        #   Variable initialisation
-
-        # Get design space path
-        design_space_path = act_config_heat_sink["Designspace"]["heatsink_designspace_path"]
-
-        # Get heat sink dimension data
-        hct_dimension_dict = {
-            "height_c_list": act_config_heat_sink["DimensionData"]["height_c_list"],
-            "width_b_list": act_config_heat_sink["DimensionData"]["width_b_list"],
-            "length_l_list": act_config_heat_sink["DimensionData"]["length_l_list"],
-            "height_d_list": act_config_heat_sink["DimensionData"]["height_d_list"],
-            "number_fins_n_list": act_config_heat_sink["DimensionData"]["number_fins_n_list"],
-            "thickness_fin_t_list": act_config_heat_sink["DimensionData"]["thickness_fin_t_list"],
-            "t_ambient": act_config_heat_sink["DimensionData"]["t_ambient"],
-            "area_min": act_config_heat_sink["DimensionData"]["area_min"],
-            "number_directions": act_config_heat_sink["DimensionData"]["number_directions"],
-            "factor_pcb_area_copper_coin": act_config_heat_sink["DimensionData"]["factor_pcb_area_copper_coin"],
-            "factor_bottom_area_copper_coin": act_config_heat_sink["DimensionData"]["factor_bottom_area_copper_coin"],
-            # W/(m*K)
-            "thermal_conductivity_copper": act_config_heat_sink["DimensionData"]["thermal_conductivity_copper"]
-        }
-
-        # Initialize inductor optimization and return, if it was successful (true)
-        return act_hsim.init_configuration(act_config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"], act_ginfo, design_space_path, hct_dimension_dict)
 
     @staticmethod
     def check_breakpoint(break_point_key: str, info: str):
@@ -601,8 +561,12 @@ class DctMainCtl:
 
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.re_calculation == "skip":
+
+            heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
+            toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
+
             # Load initialisation data of heat sink simulation and initialize
-            if not DctMainCtl.load_heat_sink_config(ginfo, config_heat_sink, hsim):
+            if not heat_sink_loaded:
                 raise ValueError("Heat sink configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.re_calculation == "new":
@@ -612,8 +576,38 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 new_study_flag = False
 
+            for (_, _, file_name_list) in os.walk(toml_heat_sink.fan_data.heat_sink_fan_path):
+                fan_list = file_name_list
+
+            hct_config = hct.OptimizationParameters(
+
+                # general parameters
+                heat_sink_study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
+                heat_sink_optimization_directory=os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
+                                                              toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
+
+                # geometry parameters
+                height_c_list=toml_heat_sink.design_space.height_c_list,
+                width_b_list=toml_heat_sink.design_space.width_b_list,
+                length_l_list=toml_heat_sink.design_space.length_l_list,
+                height_d_list=toml_heat_sink.design_space.height_d_list,
+                number_fins_n_list=toml_heat_sink.design_space.number_fins_n_list,
+                thickness_fin_t_list=toml_heat_sink.design_space.thickness_fin_t_list,
+                fan_list=fan_list,
+
+                # boundary conditions
+                t_ambient=toml_heat_sink.boundary_conditions.t_ambient,
+                area_min=toml_heat_sink.boundary_conditions.area_min,
+
+                # constraints
+                number_directions=toml_heat_sink.settings.number_directions
+            )
+
+            hct.Optimization.start_proceed_study(config=hct_config, number_trials=toml_prog_flow.heat_sink.number_of_trials)
+
             # Start simulation ASA: Filter_factor to correct
-            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_study_flag)
+            # ToDo: Enable simulation handler again, once the things like parallel processes are implemented!
+            # hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
