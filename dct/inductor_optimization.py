@@ -18,39 +18,36 @@ logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='ut
 logging.getLogger().setLevel(logging.ERROR)
 
 
-class InductorSim:
+class InductorOptimization:
     """Optimation of the inductor."""
 
     # Simulation configuration list
     sim_config_list = []
 
     @staticmethod
-    def init_configuration(act_ind_config_name: str, act_ginfo: dct.GeneralInformation, act_design_space_dict: dict, act_insulations_dict: dict) -> bool:
+    def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
         """
         Initialize the configuration.
 
-        :param act_ind_config_name : Name of the inductor study
-        :type act_ind_config_name : str
+        :param toml_inductor: toml inductor configuration
+        :type toml_inductor: dct.TomlInductor
+        :param toml_prog_flow: toml program flow configuration
+        :type toml_prog_flow: dct.FlowControl
         :param act_ginfo : General information about the study
         :type  act_ginfo : dct.GeneralInformation:
-        :param act_design_space_dict : dict with data of the design space
-        :type  act_design_space_dict : dict
-        :param act_insulations_dict : dict with data of the insulation
-        :type  act_insulations_dict : dict
-
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
         # Variable declaration
         # Return variable initialized to True (ASA: Usage is to add later, currently not used
-        ret_val = True
+        initialization_successful = True
 
         # Insulation parameter
-        act_insulations = fmt.InductorInsulationDTO(primary_to_primary=act_insulations_dict["primary_to_primary"],
-                                                    core_bot=act_insulations_dict["core_bot"],
-                                                    core_top=act_insulations_dict["core_top"],
-                                                    core_right=act_insulations_dict["core_right"],
-                                                    core_left=act_insulations_dict["core_left"])
+        act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
+                                                    core_bot=toml_inductor.insulations.core_bot,
+                                                    core_top=toml_inductor.insulations.core_top,
+                                                    core_right=toml_inductor.insulations.core_right,
+                                                    core_left=toml_inductor.insulations.core_left)
 
         # Init the material data source
         act_material_data_sources = fmt.InductorMaterialDataSources(
@@ -63,22 +60,23 @@ class InductorSim:
         )
 
         # Create fix part of io_config
-        io_config_gen = fmt.InductorOptimizationDTO(inductor_study_name=act_ind_config_name,
-                                                    core_name_list=act_design_space_dict["core_name_list"],
-                                                    material_name_list=act_design_space_dict["material_name_list"],
-                                                    core_inner_diameter_list=[],
-                                                    window_h_list=[],
-                                                    window_w_list=[],
-                                                    litz_wire_list=act_design_space_dict["litz_wire_list"],
-                                                    insulations=act_insulations,
-                                                    target_inductance=0.0,
-                                                    temperature=100,
-                                                    time_current_vec=[np.array([0]), np.array([0])],
-                                                    inductor_optimization_directory="",
-                                                    material_data_sources=act_material_data_sources)
+        io_config_gen = fmt.InductorOptimizationDTO(
+            inductor_study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
+            core_name_list=toml_inductor.design_space.core_name_list,
+            material_name_list=toml_inductor.design_space.material_name_list,
+            core_inner_diameter_list=toml_inductor.design_space.core_inner_diameter_list,
+            window_h_list=toml_inductor.design_space.window_h_list,
+            window_w_list=toml_inductor.design_space.window_w_list,
+            litz_wire_list=toml_inductor.design_space.litz_wire_list,
+            insulations=act_insulations,
+            target_inductance=0.0,
+            temperature=toml_inductor.boundary_conditions.temperature,
+            time_current_vec=[np.array([0]), np.array([0])],
+            inductor_optimization_directory="",
+            material_data_sources=act_material_data_sources)
 
         # Empty the list
-        InductorSim.sim_config_list = []
+        InductorOptimization.sim_config_list = []
 
         # Create the io_config_list for all trials
         for circuit_trial_number in act_ginfo.filtered_list_id:
@@ -99,12 +97,14 @@ class InductorSim:
 
                 next_io_config.target_inductance = circuit_dto.input_config.Lc1
                 next_io_config.time_current_vec = act_time_current_vec
-                next_io_config.inductor_optimization_directory = os.path.join(act_ginfo.inductor_study_path, circuit_trial_number, act_ind_config_name)
-                InductorSim.sim_config_list.append([circuit_trial_number, next_io_config])
+                next_io_config.inductor_optimization_directory = os.path.join(
+                    act_ginfo.inductor_study_path, circuit_trial_number,
+                    toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""))
+                InductorOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
-        return ret_val
+        return initialization_successful
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
@@ -254,7 +254,7 @@ class InductorSim:
         :type  debug : bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in InductorSim.sim_config_list:
+        for act_sim_config in InductorOptimization.sim_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -262,7 +262,7 @@ class InductorSim:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            InductorSim._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
+            InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
             if debug:
                 # stop after one circuit run
                 break

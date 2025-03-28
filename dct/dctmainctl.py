@@ -7,10 +7,12 @@ import toml
 
 # 3rd party libraries
 
+# 3rd party libraries
+
 # own libraries
 import dct
 # Inductor simulations class
-import induct_sim as Inductsimclass
+import inductor_optimization as Inductsimclass
 # import transf_sim
 import transf_sim as Transfsimclass
 # import heatsink_sim
@@ -18,7 +20,6 @@ import heatsink_sim as Heatsinksimclass
 import toml_checker as tc
 import pareto_dtos as p_dtos
 from dct import CircuitOptimization
-
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -189,14 +190,16 @@ class DctMainCtl:
         return {study_exists}
 
     @staticmethod
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, act_config_inductor: dict, act_isim: Inductsimclass.InductorSim) -> bool:
+    def load_inductor_config(act_ginfo: dct.GeneralInformation, toml_inductor, toml_prog_flow, act_isim: Inductsimclass.InductorOptimization) -> bool:
         """
         Load and initialize the inductor optimization configuration.
 
         :param act_ginfo : General information about the study
         :type  act_ginfo : dct.GeneralInformation:
-        :param act_config_inductor: actual inductor configuration information
-        :type  act_config_inductor: dict: dictionary with the necessary configuration parameter
+        :param toml_inductor: toml inductor configuration
+        :type toml_inductor: dct.TomlInductor
+        :param toml_prog_flow: toml program flow configuration
+        :type toml_prog_flow: dct.FlowControl
         :param act_isim: inductor optimization object reference
         :type  act_isim: Inductsimclass.Inductorsim:
         :return: True, if the configuration is successful
@@ -204,20 +207,8 @@ class DctMainCtl:
         """
         #   Variable initialisation
 
-        # design space
-        designspace_dict = {"core_name_list": act_config_inductor["Designspace"]["core_name_list"],
-                            "material_name_list": act_config_inductor["Designspace"]["material_name_list"],
-                            "litz_wire_list": act_config_inductor["Designspace"]["litz_wire_list"]}
-
-        #   Insulation Dto
-        insulations_dict = {"primary_to_primary": act_config_inductor["InsulationData"]["primary_to_primary"],
-                            "core_bot": act_config_inductor["InsulationData"]["core_bot"],
-                            "core_top": act_config_inductor["InsulationData"]["core_top"],
-                            "core_right": act_config_inductor["InsulationData"]["core_right"],
-                            "core_left": act_config_inductor["InsulationData"]["core_left"]}
-
         # Initialize inductor optimization and return, if it was successful (true)
-        return act_isim.init_configuration(act_config_inductor["InductorConfigName"]["inductor_config_name"], act_ginfo, designspace_dict, insulations_dict)
+        return act_isim.init_configuration(toml_inductor, toml_prog_flow, act_ginfo)
 
     @staticmethod
     def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.Transfsim) -> bool:
@@ -344,7 +335,7 @@ class DctMainCtl:
     @staticmethod
     def circuit_toml_2_dto(toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
         """
-        Circuit toml file to dto file.
+        Circuit toml file to circuit_dto file.
 
         :param toml_circuit: toml file class for the circuit
         :type toml_circuit: tc.TomlCircuitParetoDabDesign
@@ -371,13 +362,13 @@ class DctMainCtl:
             p_min_nom_max_list=toml_circuit.output_range.p_min_nom_max_list,
             steps_per_direction=toml_circuit.output_range.steps_per_direction)
 
-        dto = p_dtos.CircuitParetoDabDesign(
+        circuit_dto = p_dtos.CircuitParetoDabDesign(
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             project_directory=toml_prog_flow.general.project_directory,
             design_space=design_space,
             output_range=output_range)
 
-        return dto
+        return circuit_dto
 
     @staticmethod
     def executeProgram(workspace_path: str):
@@ -399,7 +390,7 @@ class DctMainCtl:
         config_transformer = {}
         config_heat_sink = {}
         # Inductor simulation
-        isim = Inductsimclass.InductorSim
+        isim = Inductsimclass.InductorOptimization
         # Transformer simulation
         tsim = Transfsimclass.Transfsim
         # heat sink simulation
@@ -459,11 +450,11 @@ class DctMainCtl:
 
             # Assemble pathname
             datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                    toml_prog_flow.general.subdirectory,
-                                    toml_prog_flow.general.study_name)
+                                    toml_prog_flow.circuit.subdirectory,
+                                    toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
 
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, toml_prog_flow.general.study_name):
+            if not DctMainCtl.check_study_data(datapath, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")):
                 raise ValueError(
                     f"Study {toml_prog_flow.general.study_name} in path {datapath} "
                     "does not exist. No sqlite3-database found!"
@@ -471,7 +462,10 @@ class DctMainCtl:
 
         # Load the inductor-configuration parameter
         target_file = toml_prog_flow.configuration_data_files.inductor_configuration_file
-        if not DctMainCtl.load_conf_file_deprecated(target_file, config_inductor):
+        inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
+        toml_inductor = dct.TomlInductor(**inductor_dict)
+
+        if not inductor_loaded:
             raise ValueError(f"Inductor configuration file: {target_file} does not exist.")
 
         # Check, if inductor optimization is to skip
@@ -481,11 +475,11 @@ class DctMainCtl:
                 # Assemble pathname
                 datapath = os.path.join(toml_prog_flow.general.project_directory,
                                         toml_prog_flow.inductor.subdirectory,
-                                        toml_prog_flow.general.study_name,
+                                        toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
                                         id_entry,
-                                        config_inductor["InductorConfigName"]["inductor_config_name"])
+                                        toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""))
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, "inductor_01"):
+                if not DctMainCtl.check_study_data(datapath, toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")):
                     raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the transformer-configuration parameter
@@ -500,7 +494,7 @@ class DctMainCtl:
                 # Assemble pathname
                 datapath = os.path.join(toml_prog_flow.general.project_directory,
                                         toml_prog_flow.transformer.subdirectory,
-                                        toml_prog_flow.general.study_name,
+                                        toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
                                         id_entry,
                                         config_transformer["TransformerConfigName"]["transformer_config_name"])
                 # Check, if data are available (skip case)
@@ -570,7 +564,7 @@ class DctMainCtl:
         # Check, if inductor optimization is not to skip
         if not toml_prog_flow.inductor.re_calculation == "skip":
             # Load initialisation data of inductor simulation and initialize
-            if not DctMainCtl.load_inductor_config(ginfo, config_inductor, isim):
+            if not DctMainCtl.load_inductor_config(ginfo, toml_inductor, toml_prog_flow, isim):
                 raise ValueError("Inductor configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.inductor.re_calculation == "new":

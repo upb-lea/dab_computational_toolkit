@@ -2,7 +2,9 @@
 from pydantic import BaseModel
 from typing import Literal
 
+# ######################################################
 # flow control
+# ######################################################
 
 class General(BaseModel):
     """General flow control information."""
@@ -76,6 +78,11 @@ class FlowControl(BaseModel):
     heat_sink: HeatSink
     configuration_data_files: ConfigurationDataFiles
 
+
+# ######################################################
+# circuit
+# ######################################################
+
 class TomlCircuitParetoDesignSpace(BaseModel):
     """Definition of the hardware design space for electronic components."""
 
@@ -111,3 +118,58 @@ class TomlCircuitParetoDabDesign(BaseModel):
     design_space: TomlCircuitParetoDesignSpace
     output_range: TomlCircuitOutputRange
     filter_distance: TomlCircuitFilterDistance
+
+# ######################################################
+# inductor
+# ######################################################
+
+class TomlInductorDesignSpace(BaseModel):
+    """Toml checker class for InductorDesignSpace."""
+
+    core_name_list: list[str]
+    material_name_list: list[str]
+    litz_wire_list: list[str]
+    core_inner_diameter_list: list[float]
+    window_h_list: list[float]
+    window_w_list: list[float]
+
+class TomlInductorInsulation(BaseModel):
+    """Toml checker class for InductorInsulation."""
+
+    primary_to_primary: float
+    core_bot: float
+    core_top: float
+    core_right: float
+    core_left: float
+
+class TomlMaterialDataSources(BaseModel):
+    """Toml checker class for MaterialDataSources."""
+
+    permeability_datasource: str
+    permeability_datatype: str
+    permeability_measurement_setup: str
+    permittivity_datasource: str
+    permittivity_datatype: str
+    permittivity_measurement_setup: str
+
+class TomlInductorBoundaryConditions(BaseModel):
+    """Toml checker class for InductorBoundaryConditions."""
+
+    temperature: float
+
+
+class TomlFilterDistance(BaseModel):
+    """Toml checker class for FilterDistance."""
+
+    delta: list[float]
+    range: list[list[float]]
+    deep: list[float]
+
+class TomlInductor(BaseModel):
+    """Toml checker class for Inductor."""
+
+    design_space: TomlInductorDesignSpace
+    insulations: TomlInductorInsulation
+    boundary_conditions: TomlInductorBoundaryConditions
+    filter_distance: TomlFilterDistance
+    material_data_sources: TomlMaterialDataSources
