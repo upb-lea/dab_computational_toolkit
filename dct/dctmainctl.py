@@ -191,7 +191,8 @@ class DctMainCtl:
         return {study_exists}
 
     @staticmethod
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, toml_inductor, toml_prog_flow, act_isim: Inductsimclass.InductorOptimization) -> bool:
+    def load_inductor_config(act_ginfo: dct.GeneralInformation, toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl,
+                             act_isim: Inductsimclass.InductorOptimization) -> bool:
         """
         Load and initialize the inductor optimization configuration.
 
