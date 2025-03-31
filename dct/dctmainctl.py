@@ -391,6 +391,8 @@ class DctMainCtl:
         if not circuit_loaded:
             raise ValueError(f"Electrical configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
+        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
+
         # Add project directory and study name
         DctMainCtl.init_general_info(ginfo, toml_prog_flow)
 
@@ -412,10 +414,10 @@ class DctMainCtl:
             # Assemble pathname
             datapath = os.path.join(toml_prog_flow.general.project_directory,
                                     toml_prog_flow.circuit.subdirectory,
-                                    toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+                                    circuit_study_name)
 
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")):
+            if not DctMainCtl.check_study_data(datapath, circuit_study_name):
                 raise ValueError(
                     f"Study {toml_prog_flow.general.study_name} in path {datapath} "
                     "does not exist. No sqlite3-database found!"
@@ -426,21 +428,24 @@ class DctMainCtl:
         inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
+        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
+
         if not inductor_loaded:
             raise ValueError(f"Inductor configuration file: {target_file} does not exist.")
 
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.re_calculation == "skip":
             # For loop to check, if all filtered values are available
+
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 datapath = os.path.join(toml_prog_flow.general.project_directory,
                                         toml_prog_flow.inductor.subdirectory,
-                                        toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+                                        circuit_study_name,
                                         id_entry,
-                                        toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""))
+                                        )
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")):
+                if not DctMainCtl.check_study_data(datapath, inductor_study_name):
                     raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the transformer-configuration parameter
@@ -455,7 +460,7 @@ class DctMainCtl:
                 # Assemble pathname
                 datapath = os.path.join(toml_prog_flow.general.project_directory,
                                         toml_prog_flow.transformer.subdirectory,
-                                        toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+                                        circuit_study_name,
                                         id_entry,
                                         config_transformer["TransformerConfigName"]["transformer_config_name"])
                 # Check, if data are available (skip case)
@@ -580,10 +585,13 @@ class DctMainCtl:
             for (_, _, file_name_list) in os.walk(toml_heat_sink.fan_data.heat_sink_fan_path):
                 fan_list = file_name_list
 
+            heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
+
             hct_config = hct.OptimizationParameters(
 
+
                 # general parameters
-                heat_sink_study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
+                heat_sink_study_name=heat_sink_study_name,
                 heat_sink_optimization_directory=os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
                                                               toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
 
