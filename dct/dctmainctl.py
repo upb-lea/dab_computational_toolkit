@@ -3,7 +3,6 @@
 import os
 import sys
 import tomllib
-import toml
 
 # 3rd party libraries
 import numpy as np
