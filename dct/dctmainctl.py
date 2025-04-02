@@ -65,42 +65,6 @@ class DctMainCtl:
         return toml_file_exists, config
 
     @staticmethod
-    def load_conf_file_deprecated(target_file: str, toml_data: dict) -> bool:
-        """
-        Load the toml configuration data to dict.
-
-        :param target_file : File name of the toml-file
-        :type  target_file : str
-        :param toml_data: Reference to the variable for the toml-data
-        :type  toml_data: bool
-        :return: True, if the data could be loaded successful
-        :rtype: bool
-
-        """
-        # return value init to false and tomlData to empty
-        toml_file_exists = False
-
-        # Separate filename and path
-        dirname = os.path.dirname(target_file)
-        filename = os.path.basename(target_file)
-
-        # check path
-        if os.path.exists(dirname) or dirname == "":
-            # check filename
-            if os.path.isfile(target_file):
-                new_dict_data = toml.load(target_file)
-                # Delete old data and copy new data to tomlData
-                toml_data.clear()
-                toml_data.update(new_dict_data)
-                toml_file_exists = True
-            else:
-                print("File does not exists!")
-        else:
-            print("Path does not exists!")
-
-        return {toml_file_exists}
-
-    @staticmethod
     def generate_conf_file(path: str) -> bool:
         """
         Create and save the configuration file.
@@ -433,14 +397,14 @@ class DctMainCtl:
         # --------------------------
 
         # Load the inductor-configuration parameter
-        target_file = toml_prog_flow.configuration_data_files.inductor_configuration_file
+        transformer_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
         inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
         inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
 
         if not inductor_loaded:
-            raise ValueError(f"Inductor configuration file: {target_file} does not exist.")
+            raise ValueError(f"Inductor configuration file: {transformer_toml_filepath} does not exist.")
 
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.re_calculation == "skip":
@@ -464,9 +428,12 @@ class DctMainCtl:
         transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
 
         # Load the transformer-configuration parameter
-        target_file = toml_prog_flow.configuration_data_files.transformer_configuration_file
-        if not DctMainCtl.load_conf_file_deprecated(target_file, config_transformer):
-            raise ValueError(f"Transformer configuration file: {target_file} does not exist.")
+        transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
+        transformer_loaded, transformer_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
+        toml_transformer = dct.TomlTransformer(**transformer_dict)
+
+        if not transformer_loaded:
+            raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.re_calculation == "skip":
@@ -487,9 +454,13 @@ class DctMainCtl:
         # --------------------------
 
         # Load the heat sink-configuration parameter
-        target_file = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
-        if not DctMainCtl.load_conf_file_deprecated(target_file, config_heat_sink):
-            raise ValueError(f"Heat sink configuration file: {target_file} does not exist.")
+        # Load the transformer-configuration parameter
+
+        heat_sink_toml_filepath = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
+        heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(heat_sink_toml_filepath)
+        toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
+        if not heat_sink_loaded:
+            raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
 
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.re_calculation == "skip":
