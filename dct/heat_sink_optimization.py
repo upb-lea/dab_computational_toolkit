@@ -20,66 +20,71 @@ class HeatSinkOptimization:
     sim_config_list = []
 
     @staticmethod
-    def init_configuration(act_hct_config_name: str, act_ginfo: dct.GeneralInformation, act_design_space_path: str, act_hct_dimension_dict: dict) -> bool:
+    def init_configuration(toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
         """
         Initialize the configuration.
 
-        :param act_hct_config_name : Name of the heat sink study
-        :type act_hct_config_name : str
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_design_space_path : dict with data of the design space
-        :type  act_design_space_path : str
-        :param act_hct_dimension_dict : dict with data of the insulation
-        :type  act_hct_dimension_dict : dict
-
+        :param toml_heat_sink: toml heat sink class
+        :type toml_heat_sink: dct.TomlHeatSink
+        :param toml_prog_flow: toml program flow class
+        :type toml_prog_flow: dct.FlowControl
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
         # Variable declaration
         # Return variable initialized to False
-        ret_val = False
+        heat_sink_optimization_successful = False
 
         # Check if path exists
-        # check path
-        if not os.path.exists(act_design_space_path):
-            print("Path does not exists!")
-            # Return with false
-            return ret_val
+        if not os.path.exists(toml_heat_sink.fan_data.heat_sink_fan_path):
+            print(f"Fan data path {toml_heat_sink.fan_data.heat_sink_fan_path} does not exists!")
+            # Return with false if path does not exist
+            return heat_sink_optimization_successful
 
         # Generate the fan-list
-        for (_, _, file_name_list) in os.walk(act_design_space_path):
+        for (_, _, file_name_list) in os.walk(toml_heat_sink.fan_data.heat_sink_fan_path):
             fan_list = file_name_list
 
         if len(fan_list) == 0:
-            print(f"No fan design data found in path {act_design_space_path}!")
+            print(f"No fan design data found in path {toml_heat_sink.fan_data.heat_sink_fan_path}!")
             # Return with false
-            return ret_val
+            return heat_sink_optimization_successful
 
-        # Heat sink parameter
-        act_hct_config = hct.OptimizationParameters(
-            heat_sink_study_name=act_hct_config_name,
-            heat_sink_optimization_directory=os.path.join(act_ginfo.heat_sink_study_path, act_hct_config_name),
-            height_c_list=act_hct_dimension_dict["height_c_list"],
-            width_b_list=act_hct_dimension_dict["width_b_list"],
-            length_l_list=act_hct_dimension_dict["length_l_list"],
-            height_d_list=act_hct_dimension_dict["height_d_list"],
-            number_fins_n_list=act_hct_dimension_dict["number_fins_n_list"],
-            thickness_fin_t_list=act_hct_dimension_dict["thickness_fin_t_list"],
+        heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
+
+        hct_config = hct.OptimizationParameters(
+
+            # general parameters
+            heat_sink_study_name=heat_sink_study_name,
+            heat_sink_optimization_directory=os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
+                                                          toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
+
+            # geometry parameters
+            height_c_list=toml_heat_sink.design_space.height_c_list,
+            width_b_list=toml_heat_sink.design_space.width_b_list,
+            length_l_list=toml_heat_sink.design_space.length_l_list,
+            height_d_list=toml_heat_sink.design_space.height_d_list,
+            number_fins_n_list=toml_heat_sink.design_space.number_fins_n_list,
+            thickness_fin_t_list=toml_heat_sink.design_space.thickness_fin_t_list,
             fan_list=fan_list,
-            t_ambient=act_hct_dimension_dict["t_ambient"],
-            area_min=act_hct_dimension_dict["area_min"],
-            number_directions=act_hct_dimension_dict["number_directions"]
+
+            # boundary conditions
+            t_ambient=toml_heat_sink.boundary_conditions.t_ambient,
+            area_min=toml_heat_sink.boundary_conditions.area_min,
+
+            # constraints
+            number_directions=toml_heat_sink.settings.number_directions
         )
 
         # Empty the list
         HeatSinkOptimization.sim_config_list = []
         # Add configuration to list
-        HeatSinkOptimization.sim_config_list.append(act_hct_config)
+        HeatSinkOptimization.sim_config_list.append(hct_config)
+        print(f"{HeatSinkOptimization.sim_config_list=}")
         # Set return value to true and return
-        ret_val = True
+        heat_sink_optimization_successful = True
 
-        return ret_val
+        return heat_sink_optimization_successful
 
     @staticmethod
     def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55e-3,
@@ -134,24 +139,25 @@ class HeatSinkOptimization:
         """
         Perform the simulation.
 
-        :param circuit_id : Name of the filtered optimal electrical circuit
-        :type  circuit_id : int
-        :param act_io_config : inductor configuration for the optimization
-        :type  act_io_config : fmt.InductorOptimizationDTO
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param target_number_trials : Number of trials for the optimization
-        :type  target_number_trials : int
-        :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-        :type  re_simulate : bool
-        :debug : Debug mode flag
-        :type bool
+        :param circuit_id: Name of the filtered optimal electrical circuit
+        :type  circuit_id: int
+        :param act_io_config: inductor configuration for the optimization
+        :type  act_io_config: fmt.InductorOptimizationDTO
+        :param act_ginfo: General information about the study
+        :type  act_ginfo: dct.GeneralInformation:
+        :param target_number_trials: Number of trials for the optimization
+        :type  target_number_trials: int
+        :param re_simulate: Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
+        :type  re_simulate: bool
+        :param debug: Debug mode flag
+        :type debug: bool
         """
         # Variable declaration
 
         # Check number of trials
         if target_number_trials > 0:
-            hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=1000)
+            print(f"{HeatSinkOptimization.sim_config_list=}")
+            hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=target_number_trials)
         else:
             print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 
@@ -176,6 +182,7 @@ class HeatSinkOptimization:
         :type  debug : bool
         """
         # Later this is to parallelize with multiple processes
+        print(f"{HeatSinkOptimization.sim_config_list=}")
         for act_sim_config in HeatSinkOptimization.sim_config_list:
             # Debug switch
             if target_number_trials != 0:

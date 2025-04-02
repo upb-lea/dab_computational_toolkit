@@ -582,41 +582,11 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 new_study_flag = False
 
-            for (_, _, file_name_list) in os.walk(toml_heat_sink.fan_data.heat_sink_fan_path):
-                fan_list = file_name_list
-
-            heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
-
-            hct_config = hct.OptimizationParameters(
-
-
-                # general parameters
-                heat_sink_study_name=heat_sink_study_name,
-                heat_sink_optimization_directory=os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
-                                                              toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
-
-                # geometry parameters
-                height_c_list=toml_heat_sink.design_space.height_c_list,
-                width_b_list=toml_heat_sink.design_space.width_b_list,
-                length_l_list=toml_heat_sink.design_space.length_l_list,
-                height_d_list=toml_heat_sink.design_space.height_d_list,
-                number_fins_n_list=toml_heat_sink.design_space.number_fins_n_list,
-                thickness_fin_t_list=toml_heat_sink.design_space.thickness_fin_t_list,
-                fan_list=fan_list,
-
-                # boundary conditions
-                t_ambient=toml_heat_sink.boundary_conditions.t_ambient,
-                area_min=toml_heat_sink.boundary_conditions.area_min,
-
-                # constraints
-                number_directions=toml_heat_sink.settings.number_directions
-            )
-
-            hct.Optimization.start_proceed_study(config=hct_config, number_trials=toml_prog_flow.heat_sink.number_of_trials)
+            print(f"init config")
+            hsim.init_configuration(toml_heat_sink, toml_prog_flow)
 
             # Start simulation ASA: Filter_factor to correct
-            # ToDo: Enable simulation handler again, once the things like parallel processes are implemented!
-            # hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_study_flag)
+            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
