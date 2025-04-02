@@ -190,76 +190,6 @@ class DctMainCtl:
         return {study_exists}
 
     @staticmethod
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl,
-                             act_isim: Inductsimclass.InductorOptimization) -> bool:
-        """
-        Load and initialize the inductor optimization configuration.
-
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param toml_inductor: toml inductor configuration
-        :type toml_inductor: dct.TomlInductor
-        :param toml_prog_flow: toml program flow configuration
-        :type toml_prog_flow: dct.FlowControl
-        :param act_isim: inductor optimization object reference
-        :type  act_isim: Inductsimclass.Inductorsim:
-        :return: True, if the configuration is successful
-        :rtype: bool
-        """
-        #   Variable initialisation
-
-        # Initialize inductor optimization and return, if it was successful (true)
-        return act_isim.init_configuration(toml_inductor, toml_prog_flow, act_ginfo)
-
-    @staticmethod
-    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.TransformerOptimization) -> bool:
-        """
-        Load and initialize the transformer optimization configuration.
-
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_config_transformer: actual inductor configuration information
-        :type  act_config_transformer: dict: dictionary with the necessary configuration parameter
-        :param act_tsim: transformer optimization object reference
-        :type  act_tsim: Transformersimclass.Transfsim:
-        :return: True, if the configuration is successful
-        :rtype: bool
-        """
-        #   Variable initialisation
-
-        # design space
-        designspace_dict = {"core_name_list": act_config_transformer["Designspace"]["core_name_list"],
-                            "material_name_list": act_config_transformer["Designspace"]["material_name_list"],
-                            "core_inner_diameter_min_max_list": act_config_transformer["Designspace"]["core_inner_diameter_min_max_list"],
-                            "window_w_min_max_list": act_config_transformer["Designspace"]["window_w_min_max_list"],
-                            "window_h_bot_min_max_list": act_config_transformer["Designspace"]["window_h_bot_min_max_list"],
-                            "primary_litz_wire_list": act_config_transformer["Designspace"]["primary_litz_wire_list"],
-                            "secondary_litz_wire_list": act_config_transformer["Designspace"]["secondary_litz_wire_list"]}
-
-        # Transformer data
-        transformer_data_dict = {"max_transformer_total_height": act_config_transformer["TransformerData"]["max_transformer_total_height"],
-                                 "max_core_volume": act_config_transformer["TransformerData"]["max_core_volume"],
-                                 "n_p_top_min_max_list": act_config_transformer["TransformerData"]["n_p_top_min_max_list"],
-                                 "n_p_bot_min_max_list": act_config_transformer["TransformerData"]["n_p_bot_min_max_list"],
-                                 "iso_window_top_core_top": act_config_transformer["TransformerData"]["iso_window_top_core_top"],
-                                 "iso_window_top_core_bot": act_config_transformer["TransformerData"]["iso_window_top_core_bot"],
-                                 "iso_window_top_core_left": act_config_transformer["TransformerData"]["iso_window_top_core_left"],
-                                 "iso_window_top_core_right": act_config_transformer["TransformerData"]["iso_window_top_core_right"],
-                                 "iso_window_bot_core_top": act_config_transformer["TransformerData"]["iso_window_bot_core_top"],
-                                 "iso_window_bot_core_bot": act_config_transformer["TransformerData"]["iso_window_bot_core_bot"],
-                                 "iso_window_bot_core_left": act_config_transformer["TransformerData"]["iso_window_bot_core_left"],
-                                 "iso_window_bot_core_right": act_config_transformer["TransformerData"]["iso_window_bot_core_right"],
-                                 "iso_primary_to_primary": act_config_transformer["TransformerData"]["iso_primary_to_primary"],
-                                 "iso_secondary_to_secondary": act_config_transformer["TransformerData"]["iso_secondary_to_secondary"],
-                                 "iso_primary_to_secondary": act_config_transformer["TransformerData"]["iso_primary_to_secondary"],
-                                 "fft_filter_value_factor": act_config_transformer["TransformerData"]["fft_filter_value_factor"],
-                                 "mesh_accuracy": act_config_transformer["TransformerData"]["mesh_accuracy"]}
-
-        # Initialize inductor optimization and return, if it was successful (true)
-        return act_tsim.init_configuration(act_config_transformer["TransformerConfigName"]["transformer_config_name"],
-                                           act_ginfo, designspace_dict, transformer_data_dict)
-
-    @staticmethod
     def check_breakpoint(break_point_key: str, info: str):
         """
         Continue, wait for user input or stop the program according breakpoint configuration.
@@ -624,9 +554,11 @@ class DctMainCtl:
 
         # Check, if inductor optimization is not to skip
         if not toml_prog_flow.inductor.re_calculation == "skip":
+            Inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
+            toml_inductor = dct.TomlInductor(**inductor_dict)
 
             # Load initialisation data of inductor simulation and initialize
-            if not DctMainCtl.load_inductor_config(ginfo, toml_inductor, toml_prog_flow, isim):
+            if not Inductor_loaded:
                 raise ValueError("Inductor configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.inductor.re_calculation == "new":
