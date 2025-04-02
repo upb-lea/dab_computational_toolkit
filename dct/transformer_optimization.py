@@ -28,90 +28,23 @@ class TransformerOptimization:
     sim_config_list = []
 
     @staticmethod
-    def init_configuration(act_transf_config_name: str, act_ginfo: dct.GeneralInformation, act_design_space_dict: dict,
-                           act_transformer_data_dict: dict) -> bool:
+    def init_configuration(sto_config: fmt.StoSingleInputConfig, act_ginfo: dct.GeneralInformation) -> bool:
         """
         Initialize the configuration.
 
-        :param act_transf_config_name : Name of the transformer study
-        :type act_transf_config_name : str
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_design_space_dict : dict with data of the design space
-        :type  act_design_space_dict : dict
-        :param act_transformer_data_dict : dict with parameter of the transformer
-        :type  act_transformer_data_dict : dict
+        :param sto_config: Stacked transformer optimization configuration
+        :type sto_config: fmt.StoSingleInputConfig
+        :param act_ginfo: General information
+        :type act_ginfo: dct.GeneralInformation
 
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
         # Variable declaration
         # Return variable initialized to True (ASA: Usage is to add later, currently not used
-        ret_val = True
+        transformer_initialization_successful = True
 
         # Insulation parameter
-        act_insulation = fmt.StoInsulation(
-            # insulation for top core window
-            iso_window_top_core_top=act_transformer_data_dict["iso_window_top_core_top"],
-            iso_window_top_core_bot=act_transformer_data_dict["iso_window_top_core_bot"],
-            iso_window_top_core_left=act_transformer_data_dict["iso_window_top_core_left"],
-            iso_window_top_core_right=act_transformer_data_dict["iso_window_top_core_right"],
-            # insulation for bottom core window
-            iso_window_bot_core_top=act_transformer_data_dict["iso_window_bot_core_top"],
-            iso_window_bot_core_bot=act_transformer_data_dict["iso_window_bot_core_bot"],
-            iso_window_bot_core_left=act_transformer_data_dict["iso_window_bot_core_left"],
-            iso_window_bot_core_right=act_transformer_data_dict["iso_window_bot_core_right"],
-            # winding-to-winding insulation
-            iso_primary_to_primary=act_transformer_data_dict["iso_primary_to_primary"],
-            iso_secondary_to_secondary=act_transformer_data_dict["iso_secondary_to_secondary"],
-            iso_primary_to_secondary=act_transformer_data_dict["iso_primary_to_secondary"]
-        )
-
-        # Init the material data source       
-        act_material_data_sources = fmt.StackedTransformerMaterialDataSources(
-            permeability_datasource=fmt.MaterialDataSource.Measurement,
-            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
-            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
-            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
-            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
-            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
-        )
-
-        # Create fix part of io_config
-        sto_config_gen = fmt.StoSingleInputConfig(
-            stacked_transformer_study_name=act_transf_config_name,
-            # target parameters  initialized with default values
-            l_s12_target=0,
-            l_h_target=0,
-            n_target=0,
-            # operating point: current waveforms and temperature initialized with default values
-            time_current_1_vec=np.ndarray([]),
-            time_current_2_vec=np.ndarray([]),
-            temperature=100,   # ASA Later it becomes a dynamic value?
-            # sweep parameters: geometry and materials
-            n_p_top_min_max_list=act_transformer_data_dict["n_p_top_min_max_list"],
-            n_p_bot_min_max_list=act_transformer_data_dict["n_p_bot_min_max_list"],
-            material_list=act_design_space_dict["material_name_list"],
-            core_name_list=act_design_space_dict["core_name_list"],
-            core_inner_diameter_min_max_list=act_design_space_dict["core_inner_diameter_min_max_list"],
-            window_w_min_max_list=act_design_space_dict["window_w_min_max_list"],
-            window_h_bot_min_max_list=act_design_space_dict["window_h_bot_min_max_list"],
-            primary_litz_wire_list=act_design_space_dict["primary_litz_wire_list"],
-            secondary_litz_wire_list=act_design_space_dict["secondary_litz_wire_list"],
-            # maximum limitation for transformer total height and core volume
-            max_transformer_total_height=act_transformer_data_dict["max_transformer_total_height"],
-            max_core_volume=act_transformer_data_dict["max_core_volume"],
-            # fix parameters: insulations
-            insulations=act_insulation,
-            # misc
-            stacked_transformer_optimization_directory="",
-
-            fft_filter_value_factor=act_transformer_data_dict["fft_filter_value_factor"],
-            mesh_accuracy=act_transformer_data_dict["mesh_accuracy"],
-
-            # data sources
-            material_data_sources=act_material_data_sources
-        )
 
         # Empty the list
         TransformerOptimization.sim_config_list = []
@@ -131,7 +64,7 @@ class TransformerOptimization:
                 transformer_target_params = dct.HandleDabDto.export_transformer_target_parameters_dto(dab_dto=circuit_dto)
 
                 # Generate new sto_config
-                next_io_config = copy.deepcopy(sto_config_gen)
+                next_io_config = copy.deepcopy(sto_config)
                 # Add dynamic values to next_io_config
                 # target parameters
                 next_io_config.l_s12_target = float(transformer_target_params.l_s12_target)
@@ -142,12 +75,12 @@ class TransformerOptimization:
                 next_io_config.time_current_2_vec = transformer_target_params.time_current_2_vec
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
-                    = os.path.join(act_ginfo.transformer_study_path, circuit_trial_number, act_transf_config_name)
+                    = os.path.join(act_ginfo.transformer_study_path, circuit_trial_number, sto_config.stacked_transformer_study_name)
                 TransformerOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
-        return ret_val
+        return transformer_initialization_successful
 
     @staticmethod
     def _simulation(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, act_ginfo: dct.GeneralInformation,

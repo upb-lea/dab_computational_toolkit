@@ -6,8 +6,7 @@ import tomllib
 import toml
 
 # 3rd party libraries
-
-# 3rd party libraries
+import numpy as np
 
 # own libraries
 import dct
@@ -20,6 +19,7 @@ import heat_sink_optimization as Heatsinksimclass
 import toml_checker as tc
 import pareto_dtos as p_dtos
 from dct import CircuitOptimization
+import femmt as fmt
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -331,6 +331,82 @@ class DctMainCtl:
         return circuit_dto
 
     @staticmethod
+    def transformer_toml_2_dto(toml_transformer: tc.TomlTransformer, toml_prog_flow: tc.FlowControl) -> fmt.StoSingleInputConfig:
+        """
+        Transform transformer toml file to transformer DTO file.
+
+        :param toml_transformer: toml file class for the transfomer
+        :type toml_transformer: tc.TomlTransfomer
+        :param toml_prog_flow: toml file class for the flow control
+        :type toml_prog_flow: tc.FlowControl
+        :return: circuit DTO
+        :rtype: p_dtos.CircuitParetoDabDesign
+        """
+        act_insulation = fmt.StoInsulation(
+            # insulation for top core window
+            iso_window_top_core_top=toml_transformer.insulation.iso_window_top_core_top,
+            iso_window_top_core_bot=toml_transformer.insulation.iso_window_top_core_bot,
+            iso_window_top_core_left=toml_transformer.insulation.iso_window_top_core_left,
+            iso_window_top_core_right=toml_transformer.insulation.iso_window_top_core_right,
+            # insulation for bottom core window
+            iso_window_bot_core_top=toml_transformer.insulation.iso_window_bot_core_top,
+            iso_window_bot_core_bot=toml_transformer.insulation.iso_window_bot_core_bot,
+            iso_window_bot_core_left=toml_transformer.insulation.iso_window_bot_core_left,
+            iso_window_bot_core_right=toml_transformer.insulation.iso_window_bot_core_right,
+            # winding-to-winding insulation
+            iso_primary_to_primary=toml_transformer.insulation.iso_primary_to_primary,
+            iso_secondary_to_secondary=toml_transformer.insulation.iso_secondary_to_secondary,
+            iso_primary_to_secondary=toml_transformer.insulation.iso_primary_to_secondary
+        )
+
+        # Init the material data source
+        material_data_sources = fmt.StackedTransformerMaterialDataSources(
+            permeability_datasource=fmt.MaterialDataSource.Measurement,
+            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
+            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
+            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
+            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
+            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
+        )
+
+        # Create fix part of io_config
+        sto_config_generated = fmt.StoSingleInputConfig(
+            stacked_transformer_study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
+            # target parameters  initialized with default values
+            l_s12_target=0,
+            l_h_target=0,
+            n_target=0,
+            # operating point: current waveforms and temperature initialized with default values
+            time_current_1_vec=np.ndarray([]),
+            time_current_2_vec=np.ndarray([]),
+            temperature=toml_transformer.boundary_conditions.temperature,   # ASA Later it becomes a dynamic value?
+            # sweep parameters: geometry and materials
+            n_p_top_min_max_list=toml_transformer.design_space.n_p_top_min_max_list,
+            n_p_bot_min_max_list=toml_transformer.design_space.n_p_bot_min_max_list,
+            material_list=toml_transformer.design_space.material_name_list,
+            core_name_list=toml_transformer.design_space.core_name_list,
+            core_inner_diameter_min_max_list=toml_transformer.design_space.core_inner_diameter_min_max_list,
+            window_w_min_max_list=toml_transformer.design_space.window_w_min_max_list,
+            window_h_bot_min_max_list=toml_transformer.design_space.window_h_bot_min_max_list,
+            primary_litz_wire_list=toml_transformer.design_space.primary_litz_wire_list,
+            secondary_litz_wire_list=toml_transformer.design_space.secondary_litz_wire_list,
+            # maximum limitation for transformer total height and core volume
+            max_transformer_total_height=toml_transformer.boundary_conditions.max_transformer_total_height,
+            max_core_volume=toml_transformer.boundary_conditions.max_core_volume,
+            # fix parameters: insulations
+            insulations=act_insulation,
+            # misc
+            stacked_transformer_optimization_directory="",
+
+            fft_filter_value_factor=toml_transformer.settings.fft_filter_value_factor,
+            mesh_accuracy=toml_transformer.settings.mesh_accuracy,
+
+            # data sources
+            material_data_sources=material_data_sources
+        )
+        return sto_config_generated
+
+    @staticmethod
     def executeProgram(workspace_path: str):
         """Perform the main program.
 
@@ -422,6 +498,10 @@ class DctMainCtl:
                     "does not exist. No sqlite3-database found!"
                 )
 
+        # --------------------------
+        # Inductor flow control
+        # --------------------------
+
         # Load the inductor-configuration parameter
         target_file = toml_prog_flow.configuration_data_files.inductor_configuration_file
         inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
@@ -447,6 +527,12 @@ class DctMainCtl:
                 if not DctMainCtl.check_study_data(datapath, inductor_study_name):
                     raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
 
+        # --------------------------
+        # Transformer flow control
+        # --------------------------
+
+        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
+
         # Load the transformer-configuration parameter
         target_file = toml_prog_flow.configuration_data_files.transformer_configuration_file
         if not DctMainCtl.load_conf_file_deprecated(target_file, config_transformer):
@@ -465,6 +551,10 @@ class DctMainCtl:
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(datapath, "transformer_01"):
                     raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+
+        # --------------------------
+        # Heat sink flow control
+        # --------------------------
 
         # Load the heat sink-configuration parameter
         target_file = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
@@ -486,7 +576,9 @@ class DctMainCtl:
         # Warning, no data are available
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
-
+        # --------------------------
+        # Circuit optimization
+        # --------------------------
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.re_calculation == "skip":
             # Load initialisation data of electrical simulation and initialize
@@ -526,8 +618,13 @@ class DctMainCtl:
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
 
+        # --------------------------
+        # Inductor optimization
+        # --------------------------
+
         # Check, if inductor optimization is not to skip
         if not toml_prog_flow.inductor.re_calculation == "skip":
+
             # Load initialisation data of inductor simulation and initialize
             if not DctMainCtl.load_inductor_config(ginfo, toml_inductor, toml_prog_flow, isim):
                 raise ValueError("Inductor configuration not initialized!")
@@ -545,10 +642,20 @@ class DctMainCtl:
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
 
+        # --------------------------
+        # Transformer optimization
+        # --------------------------
+
         # Check, if transformer optimization is not to skip
         if not toml_prog_flow.transformer.re_calculation == "skip":
+
+            transformer_loaded, transformer_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
+            toml_transformer = dct.TomlTransformer(**transformer_dict)
+
+            config_transformer = DctMainCtl.transformer_toml_2_dto(toml_transformer, toml_prog_flow)
+
             # Load initialisation data of transformer simulation and initialize
-            if not DctMainCtl.load_transformer_config(ginfo, config_transformer, tsim):
+            if not transformer_loaded:
                 raise ValueError("Transformer configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.transformer.re_calculation == "new":
@@ -558,11 +665,19 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 new_study_flag = False
 
+            transformer_dto = DctMainCtl.transformer_toml_2_dto(toml_transformer, toml_prog_flow)
+
+            tsim.init_configuration(transformer_dto, ginfo)
+
             # Start simulation ASA: Filter_factor to correct
             tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
+
+        # --------------------------
+        # Heat sink optimization
+        # --------------------------
 
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.re_calculation == "skip":
