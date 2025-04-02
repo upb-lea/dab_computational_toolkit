@@ -11,7 +11,6 @@ import toml
 
 # own libraries
 import dct
-import hct
 # Inductor simulations class
 import inductor_optimization as Inductsimclass
 # import transf_sim
@@ -582,7 +581,7 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 new_study_flag = False
 
-            print(f"init config")
+            print("init config")
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
 
             # Start simulation ASA: Filter_factor to correct
