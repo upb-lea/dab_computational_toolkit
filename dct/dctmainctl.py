@@ -404,13 +404,6 @@ class DctMainCtl:
                                     toml_prog_flow.circuit.subdirectory,
                                     circuit_study_name)
 
-            # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, circuit_study_name):
-                raise ValueError(
-                    f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} "
-                    "does not exist. No sqlite3-database found!"
-                )
-
         # --------------------------
         # Inductor flow control
         # --------------------------
