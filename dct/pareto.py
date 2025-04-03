@@ -230,7 +230,6 @@ class CircuitOptimization:
 
     @staticmethod
     def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
-                            # dbType: str = 'mysql',
                             database_type: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
                             delete_study: bool = False

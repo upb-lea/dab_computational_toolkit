@@ -492,8 +492,6 @@ class DctMainCtl:
             # Load initialisation data of electrical simulation and initialize
             circuit_loaded, circuit_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
             toml_circuit = dct.TomlCircuitParetoDabDesign(**circuit_dict)
-            # generate
-
             config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
             if not circuit_loaded:
@@ -501,13 +499,13 @@ class DctMainCtl:
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.re_calculation == "new":
                 # delete old study
-                new_study_flag = True
+                new_circuit_study_flag = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                new_circuit_study_flag = False
 
             # Start calculation
-            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials, delete_study=new_study_flag)
+            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials, delete_study=new_circuit_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
@@ -532,22 +530,16 @@ class DctMainCtl:
 
         # Check, if inductor optimization is not to skip
         if not toml_prog_flow.inductor.re_calculation == "skip":
-            Inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
-            toml_inductor = dct.TomlInductor(**inductor_dict)
-
-            # Load initialisation data of inductor simulation and initialize
-            if not Inductor_loaded:
-                raise ValueError("Inductor configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.inductor.re_calculation == "new":
                 # delete old study
-                new_study_flag = True
+                new_inductor_study_flag = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                new_inductor_study_flag = False
 
             # Start simulation ASA: Filter_factor to correct
-            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, 1.0, new_study_flag)
+            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, 1.0, new_inductor_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
@@ -558,29 +550,20 @@ class DctMainCtl:
 
         # Check, if transformer optimization is not to skip
         if not toml_prog_flow.transformer.re_calculation == "skip":
-
-            transformer_loaded, transformer_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
-            toml_transformer = dct.TomlTransformer(**transformer_dict)
-
-            config_transformer = DctMainCtl.transformer_toml_2_dto(toml_transformer, toml_prog_flow)
-
-            # Load initialisation data of transformer simulation and initialize
-            if not transformer_loaded:
-                raise ValueError("Transformer configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.transformer.re_calculation == "new":
                 # delete old study
-                new_study_flag = True
+                new_transformer_study_flag = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                new_transformer_study_flag = False
 
             transformer_dto = DctMainCtl.transformer_toml_2_dto(toml_transformer, toml_prog_flow)
 
             tsim.init_configuration(transformer_dto, ginfo)
 
             # Start simulation ASA: Filter_factor to correct
-            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_study_flag)
+            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_transformer_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
@@ -591,26 +574,19 @@ class DctMainCtl:
 
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.re_calculation == "skip":
-
-            heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
-            toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
-
-            # Load initialisation data of heat sink simulation and initialize
-            if not heat_sink_loaded:
-                raise ValueError("Heat sink configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.re_calculation == "new":
                 # delete old study
-                new_study_flag = True
+                new_heat_sink_study_flag = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                new_heat_sink_study_flag = False
 
             print("init config")
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
 
             # Start simulation ASA: Filter_factor to correct
-            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_study_flag)
+            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_heat_sink_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
