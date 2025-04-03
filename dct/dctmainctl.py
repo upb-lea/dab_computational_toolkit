@@ -150,6 +150,7 @@ class DctMainCtl:
         """
         Verify if the study path and sqlite3-database file exists.
 
+        Works for all types of studies (circuit, inductor, transformer, heat sink).
         :param study_path: drive location path to the study
         :type  study_path: str
         :param study_name: Name of the study
@@ -172,8 +173,8 @@ class DctMainCtl:
                 print(f"File {target_file} does not exists!")
         else:
             print(f"Path {study_path} does not exists!")
-        # True = file exists
-        return {study_exists}
+        # True = study exists
+        return study_exists
 
     @staticmethod
     def check_breakpoint(break_point_key: str, info: str):
@@ -342,7 +343,7 @@ class DctMainCtl:
         # heat sink simulation
         hsim = Heatsinksimclass.HeatSinkOptimization
         # Flag for available filtered results
-        filtered_resultFlag = False
+        filtered_circuit_result_folder_exists = False
 
         # Check if workspace path is not provided by argument
         if workspace_path == "":
@@ -376,7 +377,7 @@ class DctMainCtl:
         config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
         if not circuit_loaded:
-            raise ValueError(f"Electrical configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
+            raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
         circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
 
@@ -389,24 +390,24 @@ class DctMainCtl:
             if not DctMainCtl.check_study_data(ginfo.circuit_study_path, ginfo.circuit_study_name):
                 raise ValueError(f"Study {ginfo.circuit_study_name} in path {ginfo.circuit_study_path} does not exist. No sqlite3-database found!")
             # Check if filtered results folder exists
-            datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
-            if os.path.exists(datapath):
+            filtered_circuit_results_datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
+            if os.path.exists(filtered_circuit_results_datapath):
                 # Set Flag to false
-                filtered_resultFlag = True
+                filtered_circuit_result_folder_exists = True
                 # Add filtered result list
-                for pareto_entry in os.listdir(datapath):
-                    if os.path.isfile(os.path.join(datapath, pareto_entry)):
-                        ginfo.filtered_list_id.append(os.path.splitext(pareto_entry)[0])
+                for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
+                    if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
+                        ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
 
             # Assemble pathname
-            datapath = os.path.join(toml_prog_flow.general.project_directory,
+            filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
                                     toml_prog_flow.circuit.subdirectory,
                                     circuit_study_name)
 
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, circuit_study_name):
+            if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, circuit_study_name):
                 raise ValueError(
-                    f"Study {toml_prog_flow.general.study_name} in path {datapath} "
+                    f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} "
                     "does not exist. No sqlite3-database found!"
                 )
 
@@ -430,14 +431,14 @@ class DctMainCtl:
 
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                datapath = os.path.join(toml_prog_flow.general.project_directory,
+                filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
                                         toml_prog_flow.inductor.subdirectory,
                                         circuit_study_name,
                                         id_entry,
                                         )
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, inductor_study_name):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+                if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, inductor_study_name):
+                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Transformer flow control
@@ -458,14 +459,14 @@ class DctMainCtl:
             # For loop to check, if all filtered values are available
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                datapath = os.path.join(toml_prog_flow.general.project_directory,
+                filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
                                         toml_prog_flow.transformer.subdirectory,
                                         circuit_study_name,
                                         id_entry,
                                         config_transformer["TransformerConfigName"]["transformer_config_name"])
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, "transformer_01"):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+                if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "transformer_01"):
+                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Heat sink flow control
@@ -483,10 +484,10 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.re_calculation == "skip":
             # Assemble pathname
-            datapath = os.path.join(ginfo.heat_sink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
+            filtered_circuit_results_datapath = os.path.join(ginfo.heat_sink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, "heatsink_01"):
-                raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+            if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "heatsink_01"):
+                raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
 
         # Warning, no data are available
         # Check, if transformer optimization is to skip
@@ -524,15 +525,15 @@ class DctMainCtl:
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
 
         # Check if filter results are not available
-        if not filtered_resultFlag:
+        if not filtered_circuit_result_folder_exists:
             # Calculate the filtered results
             CircuitOptimization.filter_study_results(dab_config=config_circuit)
             # Get filtered result path
-            datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
+            filtered_circuit_results_datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
             # Add filtered result list
-            for pareto_entry in os.listdir(datapath):
-                if os.path.isfile(os.path.join(datapath, pareto_entry)):
-                    ginfo.filtered_list_id.append(os.path.splitext(pareto_entry)[0])
+            for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
+                if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
+                    ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
