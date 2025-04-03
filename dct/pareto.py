@@ -24,34 +24,6 @@ class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     @staticmethod
-    def set_up_folder_structure(config: p_dtos.CircuitParetoDabDesign) -> None:
-        """
-        Set up the folder structure for the subprojects.
-
-        :param config: configuration
-        :type config: InductorOptimizationDTO
-        """
-        # ASA: TODO: Merge ginfo and set_up_folder_structure
-        project_directory = os.path.abspath(config.project_directory)
-        circuit_path = os.path.join(project_directory, "01_circuit")
-        inductor_path = os.path.join(project_directory, "02_inductor")
-        transformer_path = os.path.join(project_directory, "03_transformer")
-        heat_sink_path = os.path.join(project_directory, "04_heat_sink")
-
-        path_dict = {'circuit': circuit_path,
-                     'inductor': inductor_path,
-                     'transformer': transformer_path,
-                     'heat_sink': heat_sink_path}
-
-        for _, value in path_dict.items():
-            os.makedirs(value, exist_ok=True)
-
-        json_filepath = os.path.join(project_directory, "filepath_config.json")
-
-        with open(json_filepath, 'w', encoding='utf8') as json_file:
-            json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
-
-    @staticmethod
     def load_filepaths(project_directory: str) -> p_dtos.ParetoFilePaths:
         """
         Load file path of the subdirectories of the project.
@@ -276,7 +248,6 @@ class CircuitOptimization:
         :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
         :type  delete_study: bool
         """
-        CircuitOptimization.set_up_folder_structure(dab_config)
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
 
         circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.circuit_study_name)

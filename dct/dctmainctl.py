@@ -3,6 +3,7 @@
 import os
 import sys
 import tomllib
+import json
 
 # 3rd party libraries
 import numpy as np
@@ -26,11 +27,33 @@ import femmt as fmt
 class DctMainCtl:
     """Main class for control dab-optimization."""
 
-    # Fix folder names
-    const_circuit_folder = "01_circuit"
-    const_inductor_folder = "02_inductor"
-    const_transformer_folder = "03_transformer"
-    const_heat_sink_folder = "04_heat_sink"
+    @staticmethod
+    def set_up_folder_structure(toml_prog_flow: tc.FlowControl) -> None:
+        """
+        Set up the folder structure for the subprojects.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        # ASA: TODO: Merge ginfo and set_up_folder_structure
+        project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
+        circuit_path = os.path.join(project_directory, toml_prog_flow.circuit.subdirectory)
+        inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
+        transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
+        heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+
+        path_dict = {'circuit': circuit_path,
+                     'inductor': inductor_path,
+                     'transformer': transformer_path,
+                     'heat_sink': heat_sink_path}
+
+        for _, value in path_dict.items():
+            os.makedirs(value, exist_ok=True)
+
+        json_filepath = os.path.join(project_directory, "filepath_config.json")
+
+        with open(json_filepath, 'w', encoding='utf8') as json_file:
+            json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
     def load_conf_file(target_file: str) -> tuple[bool, dict]:
@@ -109,18 +132,18 @@ class DctMainCtl:
         act_ginfo.circuit_study_name = act_config_program_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
         # Create path names
         act_ginfo.circuit_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                    DctMainCtl.const_circuit_folder, act_ginfo.circuit_study_name)
+                                                    act_config_program_flow.circuit.subdirectory, act_ginfo.circuit_study_name)
         act_ginfo.inductor_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                     DctMainCtl.const_inductor_folder, act_ginfo.circuit_study_name)
+                                                     act_config_program_flow.inductor.subdirectory, act_ginfo.circuit_study_name)
         act_ginfo.transformer_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                        DctMainCtl.const_transformer_folder, act_ginfo.circuit_study_name)
+                                                        act_config_program_flow.transformer.subdirectory, act_ginfo.circuit_study_name)
         # Check, if heat sink study name uses the circuit name
         if act_config_program_flow.heat_sink.circuit_study_name_flag == "True":
             act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          DctMainCtl.const_heat_sink_folder, act_ginfo.circuit_study_name)
+                                                          act_config_program_flow.heat_sink.subdirectory, act_ginfo.circuit_study_name)
         else:
             act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          DctMainCtl.const_heat_sink_folder)
+                                                          act_config_program_flow.heat_sink.subdirectory)
 
     @staticmethod
     def check_study_data(study_path: str, study_name: str) -> bool:
@@ -228,8 +251,8 @@ class DctMainCtl:
         """
         Transform transformer toml file to transformer DTO file.
 
-        :param toml_transformer: toml file class for the transfomer
-        :type toml_transformer: tc.TomlTransfomer
+        :param toml_transformer: toml file class for the Transformer
+        :type toml_transformer: tc.TomlTransformer
         :param toml_prog_flow: toml file class for the flow control
         :type toml_prog_flow: tc.FlowControl
         :return: circuit DTO
@@ -309,13 +332,7 @@ class DctMainCtl:
         :type   workspace_path: str
         """
         # Variable declaration
-        # General information
         ginfo = dct.GeneralInformation
-        # program flow parameter
-        toml_prog_flow = {}
-        # Electric, inductor, transformer and heat sink configuration files
-        config_electric = {}
-        config_inductor = {}
         config_transformer = {}
         config_heat_sink = {}
         # Inductor simulation
@@ -349,6 +366,8 @@ class DctMainCtl:
 
         if not flow_control_loaded:
             raise ValueError("Program flow toml file does not exist.")
+
+        DctMainCtl.set_up_folder_structure(toml_prog_flow)
 
         # Init circuit configuration
         circuit_loaded, dict_circuit = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
