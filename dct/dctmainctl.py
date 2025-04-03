@@ -399,11 +399,6 @@ class DctMainCtl:
                     if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
                         ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
 
-            # Assemble pathname
-            filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                    toml_prog_flow.circuit.subdirectory,
-                                    circuit_study_name)
-
         # --------------------------
         # Inductor flow control
         # --------------------------
