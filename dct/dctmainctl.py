@@ -447,10 +447,10 @@ class DctMainCtl:
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 transformer_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                                                 toml_prog_flow.transformer.subdirectory,
-                                                                 circuit_study_name,
-                                                                 id_entry,
-                                                                 transformer_study_name)
+                                                            toml_prog_flow.transformer.subdirectory,
+                                                            circuit_study_name,
+                                                            id_entry,
+                                                            transformer_study_name)
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(transformer_results_datapath, "transformer_01"):
                     raise ValueError(
