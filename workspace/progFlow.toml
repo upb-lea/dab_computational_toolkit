@@ -1,7 +1,6 @@
 # Path configuration
 [general]
-    project_directory = "2025-01-31_example"
-    relative_flag = 1
+    project_directory = "2025-04-04_example_1"
 
 [breakpoints]
     # possible values: No/Pause/Stop
@@ -24,12 +23,12 @@
 
 [inductor]
     number_of_trials = 100
-    re_calculation = "continue" # (new,continue,skip)
+    re_calculation = "skip" # (new,continue,skip)
     subdirectory = "02_inductor"
 
 [transformer]
     number_of_trials = 100
-    re_calculation = "continue" # (new,continue,skip)
+    re_calculation = "skip" # (new,continue,skip)
     subdirectory = "03_transformer"
 
 [heat_sink]
