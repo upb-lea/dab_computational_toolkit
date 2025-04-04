@@ -20,3 +20,7 @@ from dct.heat_sink_dtos import *
 from dct.plot_masks import *
 from dct.losses import *
 from dct.toml_checker import *
+# optimization classes
+from dct.inductor_optimization import *
+from dct.transformer_optimization import *
+from dct.heat_sink_optimization import *

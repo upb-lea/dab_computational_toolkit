@@ -694,7 +694,6 @@ class CircuitOptimization:
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
         smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
-        print(f"{np.shape(df)=}")
 
         for count in np.arange(0, 3):
             print("------------------")

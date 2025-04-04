@@ -7,19 +7,16 @@ import json
 
 # 3rd party libraries
 import numpy as np
+import femmt as fmt
 
 # own libraries
 import dct
-# Inductor simulations class
-import inductor_optimization as Inductsimclass
-# import transf_sim
-import transformer_optimization as Transfsimclass
-# import heatsink_sim
-import heat_sink_optimization as Heatsinksimclass
 import toml_checker as tc
 import pareto_dtos as p_dtos
 from dct import CircuitOptimization
-import femmt as fmt
+from dct import InductorOptimization
+from dct import TransformerOptimization
+from dct import HeatSinkOptimization
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -324,7 +321,7 @@ class DctMainCtl:
         return sto_config_generated
 
     @staticmethod
-    def executeProgram(workspace_path: str):
+    def run_optimization_from_toml_configs(workspace_path: str) -> None:
         """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
@@ -334,14 +331,12 @@ class DctMainCtl:
         """
         # Variable declaration
         ginfo = dct.GeneralInformation
-        config_transformer = {}
-        config_heat_sink = {}
         # Inductor simulation
-        isim = Inductsimclass.InductorOptimization
+        isim = InductorOptimization
         # Transformer simulation
-        tsim = Transfsimclass.TransformerOptimization
+        tsim = TransformerOptimization
         # heat sink simulation
-        hsim = Heatsinksimclass.HeatSinkOptimization
+        hsim = HeatSinkOptimization
         # Flag for available filtered results
         filtered_circuit_result_folder_exists = False
 
@@ -370,6 +365,16 @@ class DctMainCtl:
 
         DctMainCtl.set_up_folder_structure(toml_prog_flow)
 
+        # read study names from toml file names
+        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
+        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
+        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
+        heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
+
+        # --------------------------
+        # Circuit flow control
+        # --------------------------
+
         # Init circuit configuration
         circuit_loaded, dict_circuit = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
@@ -378,8 +383,6 @@ class DctMainCtl:
 
         if not circuit_loaded:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
-
-        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
 
         # Add project directory and study name
         DctMainCtl.init_general_info(ginfo, toml_prog_flow)
@@ -408,8 +411,6 @@ class DctMainCtl:
         inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
-        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
-
         if not inductor_loaded:
             raise ValueError(f"Inductor configuration file: {transformer_toml_filepath} does not exist.")
 
@@ -432,8 +433,6 @@ class DctMainCtl:
         # Transformer flow control
         # --------------------------
 
-        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
-
         # Load the transformer-configuration parameter
         transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
         transformer_loaded, transformer_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
@@ -447,22 +446,19 @@ class DctMainCtl:
             # For loop to check, if all filtered values are available
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
+                transformer_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
                                                                  toml_prog_flow.transformer.subdirectory,
                                                                  circuit_study_name,
                                                                  id_entry,
-                                                                 config_transformer["TransformerConfigName"]["transformer_config_name"])
+                                                                 transformer_study_name)
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "transformer_01"):
+                if not DctMainCtl.check_study_data(transformer_results_datapath, "transformer_01"):
                     raise ValueError(
-                        f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
+                        f"Study {toml_prog_flow.general.study_name} in path {transformer_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Heat sink flow control
         # --------------------------
-
-        # Load the heat sink-configuration parameter
-        # Load the transformer-configuration parameter
 
         heat_sink_toml_filepath = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
         heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(heat_sink_toml_filepath)
@@ -473,7 +469,7 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.re_calculation == "skip":
             # Assemble pathname
-            filtered_circuit_results_datapath = os.path.join(ginfo.heat_sink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
+            filtered_circuit_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "heatsink_01"):
                 raise ValueError(
@@ -585,7 +581,6 @@ class DctMainCtl:
                 # overtake the trails of the old study
                 new_heat_sink_study_flag = False
 
-            print("init config")
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
 
             # Start simulation ASA: Filter_factor to correct
@@ -639,4 +634,4 @@ if __name__ == "__main__":
         # Convert it to the absolute path
         arg1 = os.path.abspath(arg1)
     # Execute program
-    dct_mctl.executeProgram(arg1)
+    dct_mctl.run_optimization_from_toml_configs(arg1)
