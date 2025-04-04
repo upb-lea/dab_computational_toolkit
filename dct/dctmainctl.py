@@ -420,13 +420,13 @@ class DctMainCtl:
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                        toml_prog_flow.inductor.subdirectory,
-                                        circuit_study_name,
-                                        id_entry,
-                                        )
+                                                                 toml_prog_flow.inductor.subdirectory,
+                                                                 circuit_study_name,
+                                                                 id_entry)
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, inductor_study_name):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
+                    raise ValueError(
+                        f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Transformer flow control
@@ -448,13 +448,14 @@ class DctMainCtl:
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 filtered_circuit_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                        toml_prog_flow.transformer.subdirectory,
-                                        circuit_study_name,
-                                        id_entry,
-                                        config_transformer["TransformerConfigName"]["transformer_config_name"])
+                                                                 toml_prog_flow.transformer.subdirectory,
+                                                                 circuit_study_name,
+                                                                 id_entry,
+                                                                 config_transformer["TransformerConfigName"]["transformer_config_name"])
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "transformer_01"):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
+                    raise ValueError(
+                        f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Heat sink flow control
@@ -475,7 +476,8 @@ class DctMainCtl:
             filtered_circuit_results_datapath = os.path.join(ginfo.heat_sink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "heatsink_01"):
-                raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
+                raise ValueError(
+                    f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
 
         # Warning, no data are available
         # Check, if transformer optimization is to skip
@@ -505,7 +507,8 @@ class DctMainCtl:
                 new_circuit_study_flag = False
 
             # Start calculation
-            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials, delete_study=new_circuit_study_flag)
+            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials,
+                                                        delete_study=new_circuit_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
