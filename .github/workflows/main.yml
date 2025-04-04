@@ -71,6 +71,21 @@ jobs:
             echo show folder structure:
             ls 
 
+      - name: install HCT developer version
+        run: |
+            pwd
+            ls
+            wget https://github.com/upb-lea/HCT_heat_sink_computation_toolbox/archive/refs/heads/main.zip
+            unzip main.zip
+            rm main.zip
+            cd HCT_heat_sink_computation_toolbox-main
+            pip install -e .
+            cd ..
+            echo show folder path
+            pwd
+            echo show folder structure:
+            ls 
+
       - name: install the package
         run: |
             pip install -e .
