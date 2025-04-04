@@ -236,11 +236,17 @@ class DctMainCtl:
             p_min_nom_max_list=toml_circuit.output_range.p_min_nom_max_list,
             steps_per_direction=toml_circuit.output_range.steps_per_direction)
 
+        filter = p_dtos.CircuitFilter(
+            number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
+            difference_percentage=toml_circuit.filter_distance.difference_percentage
+        )
+
         circuit_dto = p_dtos.CircuitParetoDabDesign(
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             project_directory=toml_prog_flow.general.project_directory,
             design_space=design_space,
-            output_range=output_range)
+            output_range=output_range,
+            filter=filter)
 
         return circuit_dto
 
@@ -469,11 +475,11 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.re_calculation == "skip":
             # Assemble pathname
-            filtered_circuit_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
+            heat_sink_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(filtered_circuit_results_datapath, "heatsink_01"):
+            if not DctMainCtl.check_study_data(heat_sink_results_datapath, "heatsink_01"):
                 raise ValueError(
-                    f"Study {toml_prog_flow.general.study_name} in path {filtered_circuit_results_datapath} does not exist. No sqlite3-database found!")
+                    f"Study {heat_sink_study_name} in path {heat_sink_results_datapath} does not exist. No sqlite3-database found!")
 
         # Warning, no data are available
         # Check, if transformer optimization is to skip

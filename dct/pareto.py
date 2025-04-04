@@ -695,7 +695,7 @@ class CircuitOptimization:
 
         smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
 
-        for count in np.arange(0, 3):
+        for count in np.arange(0, dab_config.filter.number_filtered_designs - 1):
             print("------------------")
             print(f"{count=}")
             n_suggest = df_smallest['params_n_suggest'].item()
@@ -707,7 +707,7 @@ class CircuitOptimization:
             transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
 
             # make sure to use parameters with minimum x % difference.
-            difference = 0.05
+            difference = dab_config.filter.difference_percentage / 100
 
             df = df.loc[
                 ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \

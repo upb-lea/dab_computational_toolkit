@@ -53,6 +53,13 @@ class CircuitOutputRange:
     steps_per_direction: int
 
 @dataclasses.dataclass
+class CircuitFilter:
+    """Filter the results."""
+
+    number_filtered_designs: int
+    difference_percentage: float
+
+@dataclasses.dataclass
 class CircuitParetoDabDesign:
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
 
@@ -61,3 +68,4 @@ class CircuitParetoDabDesign:
 
     design_space: CircuitParetoDesignSpace
     output_range: CircuitOutputRange
+    filter: CircuitFilter

@@ -108,9 +108,8 @@ class TomlCircuitOutputRange(BaseModel):
 class TomlCircuitFilterDistance(BaseModel):
     """Toml checker class for CircuitFilterDistance."""
 
-    delta: list
-    range: list[list]
-    deep: list
+    number_filtered_designs: int
+    difference_percentage: float
 
 class TomlCircuitParetoDabDesign(BaseModel):
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
