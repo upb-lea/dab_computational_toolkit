@@ -84,7 +84,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _simulation(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, act_ginfo: dct.GeneralInformation,
-                    act_target_number_trials: int, act_filter_factor: float, act_re_simulate: bool, debug: bool):
+                    act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool):
         """
         Simulate.
 
@@ -116,10 +116,10 @@ class TransformerOptimization:
             return
 
         # perform FEM simulations
-        if act_filter_factor != 0:
+        if factor_dc_min_losses != 0:
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
             df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=act_filter_factor, factor_max_dc_losses=100)
+                df, factor_min_dc_losses=factor_dc_min_losses, factor_max_dc_losses=factor_dc_max_losses)
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
@@ -136,7 +136,7 @@ class TransformerOptimization:
                                                    "02_fem_simulation_results")
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
             df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=act_filter_factor, factor_max_dc_losses=100)
+                df, factor_min_dc_losses=factor_dc_min_losses, factor_max_dc_losses=100)
             df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(
                 df_filtered, fem_results_folder_path)
             # Assemble configuration path
@@ -213,7 +213,8 @@ class TransformerOptimization:
     @staticmethod
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
-                           filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False):
+                           factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
+                           re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -221,8 +222,10 @@ class TransformerOptimization:
         :type  act_ginfo : dct.GeneralInformation:
         :param target_number_trials : Number of trials for the optimization
         :type  target_number_trials : int
-        :param filter_factor : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-        :type  filter_factor : float
+        :param factor_dc_min_losses : Filter factor for the offset, related to the minimum DC losses
+        :type  factor_dc_min_losses : float
+        :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
+        :type factor_dc_max_losses: float
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :param debug : Debug mode flag
@@ -237,7 +240,8 @@ class TransformerOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            TransformerOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
+            TransformerOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, factor_dc_min_losses,
+                                                factor_dc_max_losses, re_simulate, debug)
 
             if debug:
                 # stop after one circuit run

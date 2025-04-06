@@ -221,9 +221,8 @@ class TomlTransformerInsulation(BaseModel):
 class TomlTransformerFilterDistance(BaseModel):
     """Toml checker class for TransformerFilterDistance."""
 
-    delta: list[float]
-    range: list[list[float]]
-    deep: list[float]
+    factor_min_dc_losses: float
+    factor_max_dc_losses: float
 
 class TomlTransformer(BaseModel):
     """Toml checker class for Transformer."""

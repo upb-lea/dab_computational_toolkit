@@ -427,10 +427,10 @@ class DctMainCtl:
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                                            toml_prog_flow.inductor.subdirectory,
-                                                            circuit_study_name,
-                                                            id_entry,
-                                                            inductor_study_name)
+                                                         toml_prog_flow.inductor.subdirectory,
+                                                         circuit_study_name,
+                                                         id_entry,
+                                                         inductor_study_name)
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(inductor_results_datapath, inductor_study_name):
                     raise ValueError(
@@ -571,7 +571,8 @@ class DctMainCtl:
             tsim.init_configuration(transformer_dto, ginfo)
 
             # Start simulation ASA: Filter_factor to correct
-            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_transformer_study_flag)
+            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
+                                    toml_transformer.filter_distance.factor_max_dc_losses, new_transformer_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")

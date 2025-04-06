@@ -37,6 +37,5 @@
     mesh_accuracy=0.8
 
 [filter_distance]
-    delta = [0.1,0.1] # difference (x ,y) 1 = difference between minimal and maximal result value
-    range  = [[0.1,0.9],[0.1,0.9]] # Used range of X und Y-axe
-    deep = [0.01,0.01] # Max difference to real pareto points (X und Y-direction)
+    factor_min_dc_losses=1
+    factor_max_dc_losses=100

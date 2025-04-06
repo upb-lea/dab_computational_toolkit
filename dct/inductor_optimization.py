@@ -238,7 +238,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
-                           factor_min_dc_losses: float = 1.0, factor_max_dc_losses: float = 100, re_simulate: bool = False, debug: bool = False):
+                           factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100, re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -248,6 +248,8 @@ class InductorOptimization:
         :type  target_number_trials : int
         :param factor_min_dc_losses : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
         :type  factor_min_dc_losses : float
+        :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
+        :type factor_dc_max_losses: float
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :param debug : Debug mode flag
@@ -263,7 +265,7 @@ class InductorOptimization:
                         target_number_trials = 100
 
             InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials,
-                                             factor_min_dc_losses, factor_max_dc_losses, re_simulate, debug)
+                                             factor_min_dc_losses, factor_dc_max_losses, re_simulate, debug)
             if debug:
                 # stop after one circuit run
                 break
