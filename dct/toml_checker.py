@@ -159,9 +159,8 @@ class TomlInductorBoundaryConditions(BaseModel):
 class TomlFilterDistance(BaseModel):
     """Toml checker class for FilterDistance."""
 
-    delta: list[float]
-    range: list[list[float]]
-    deep: list[float]
+    factor_min_dc_losses: float
+    factor_max_dc_losses: float
 
 class TomlInductor(BaseModel):
     """Toml checker class for Inductor."""
