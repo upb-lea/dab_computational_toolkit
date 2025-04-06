@@ -394,7 +394,7 @@ class DctMainCtl:
         DctMainCtl.init_general_info(ginfo, toml_prog_flow)
 
         # Check, if electrical optimization is to skip
-        if toml_prog_flow.circuit.re_calculation == "skip":
+        if toml_prog_flow.circuit.calculation_mode == "skip":
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(ginfo.circuit_study_path, ginfo.circuit_study_name):
                 raise ValueError(f"Study {ginfo.circuit_study_name} in path {ginfo.circuit_study_path} does not exist. No sqlite3-database found!")
@@ -421,7 +421,7 @@ class DctMainCtl:
             raise ValueError(f"Inductor configuration file: {transformer_toml_filepath} does not exist.")
 
         # Check, if inductor optimization is to skip
-        if toml_prog_flow.inductor.re_calculation == "skip":
+        if toml_prog_flow.inductor.calculation_mode == "skip":
             # For loop to check, if all filtered values are available
 
             for id_entry in ginfo.filtered_list_id:
@@ -449,7 +449,7 @@ class DctMainCtl:
             raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
         # Check, if transformer optimization is to skip
-        if toml_prog_flow.transformer.re_calculation == "skip":
+        if toml_prog_flow.transformer.calculation_mode == "skip":
             # For loop to check, if all filtered values are available
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
@@ -474,7 +474,7 @@ class DctMainCtl:
             raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
 
         # Check, if heat sink optimization is to skip
-        if toml_prog_flow.heat_sink.re_calculation == "skip":
+        if toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Assemble pathname
             heat_sink_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
             # Check, if data are available (skip case)
@@ -493,7 +493,7 @@ class DctMainCtl:
         # Circuit optimization
         # --------------------------
         # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.circuit.re_calculation == "skip":
+        if not toml_prog_flow.circuit.calculation_mode == "skip":
             # Load initialisation data of electrical simulation and initialize
             is_circuit_loaded, circuit_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
             toml_circuit = dct.TomlCircuitParetoDabDesign(**circuit_dict)
@@ -502,7 +502,7 @@ class DctMainCtl:
             if not is_circuit_loaded:
                 raise ValueError("Electrical configuration not initialized!")
             # Check, if old study is to delete, if available
-            if toml_prog_flow.circuit.re_calculation == "new":
+            if toml_prog_flow.circuit.calculation_mode == "new":
                 # delete old study
                 is_new_circuit_study = True
             else:
@@ -535,19 +535,19 @@ class DctMainCtl:
         # --------------------------
 
         # Check, if inductor optimization is not to skip
-        if not toml_prog_flow.inductor.re_calculation == "skip":
+        if not toml_prog_flow.inductor.calculation_mode == "skip":
             # Check, if old study is to delete, if available
-            if toml_prog_flow.inductor.re_calculation == "new":
+            if toml_prog_flow.inductor.calculation_mode == "new":
                 # delete old study
-                new_inductor_study_flag = True
+                is_new_inductor_study = True
             else:
                 # overtake the trails of the old study
-                new_inductor_study_flag = False
+                is_new_inductor_study = False
 
             # Start simulation ASA: Filter_factor to correct
             isim.init_configuration(toml_inductor, toml_prog_flow, ginfo)
             isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
-                                    new_inductor_study_flag)
+                                    is_new_inductor_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
@@ -557,14 +557,14 @@ class DctMainCtl:
         # --------------------------
 
         # Check, if transformer optimization is not to skip
-        if not toml_prog_flow.transformer.re_calculation == "skip":
+        if not toml_prog_flow.transformer.calculation_mode == "skip":
             # Check, if old study is to delete, if available
-            if toml_prog_flow.transformer.re_calculation == "new":
+            if toml_prog_flow.transformer.calculation_mode == "new":
                 # delete old study
-                new_transformer_study_flag = True
+                is_new_transformer_study = True
             else:
                 # overtake the trails of the old study
-                new_transformer_study_flag = False
+                is_new_transformer_study = False
 
             transformer_dto = DctMainCtl.transformer_toml_2_dto(toml_transformer, toml_prog_flow)
 
@@ -572,7 +572,7 @@ class DctMainCtl:
 
             # Start simulation ASA: Filter_factor to correct
             tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
-                                    toml_transformer.filter_distance.factor_max_dc_losses, new_transformer_study_flag)
+                                    toml_transformer.filter_distance.factor_max_dc_losses, is_new_transformer_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
@@ -582,9 +582,9 @@ class DctMainCtl:
         # --------------------------
 
         # Check, if heat sink optimization is to skip
-        if not toml_prog_flow.heat_sink.re_calculation == "skip":
+        if not toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if old study is to delete, if available
-            if toml_prog_flow.heat_sink.re_calculation == "new":
+            if toml_prog_flow.heat_sink.calculation_mode == "new":
                 # delete old study
                 new_heat_sink_study_flag = True
             else:

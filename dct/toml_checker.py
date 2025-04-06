@@ -32,28 +32,28 @@ class Circuit(BaseModel):
     """Flow control for the circuit."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class Inductor(BaseModel):
     """Flow control for the inductor."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class Transformer(BaseModel):
     """Flow control for the transformer."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class HeatSink(BaseModel):
     """Flow control for the heat sink."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
     circuit_study_name_flag: bool
 
