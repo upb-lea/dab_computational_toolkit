@@ -131,13 +131,6 @@ class DctMainCtl:
                                                      act_config_program_flow.inductor.subdirectory, act_ginfo.circuit_study_name)
         act_ginfo.transformer_study_path = os.path.join(abs_path, act_ginfo.project_directory,
                                                         act_config_program_flow.transformer.subdirectory, act_ginfo.circuit_study_name)
-        # Check, if heat sink study name uses the circuit name
-        if act_config_program_flow.heat_sink.circuit_study_name_flag == "True":
-            act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          act_config_program_flow.heat_sink.subdirectory, act_ginfo.circuit_study_name)
-        else:
-            act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          act_config_program_flow.heat_sink.subdirectory)
 
     @staticmethod
     def check_study_data(study_path: str, study_name: str) -> bool:
@@ -402,7 +395,7 @@ class DctMainCtl:
             # Assemble pathname
             heat_sink_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(heat_sink_results_datapath, "heatsink_01"):
+            if not DctMainCtl.check_study_data(heat_sink_results_datapath, heat_sink_study_name):
                 raise ValueError(
                     f"Study {heat_sink_study_name} in path {heat_sink_results_datapath} does not exist. No sqlite3-database found!")
 
@@ -508,15 +501,14 @@ class DctMainCtl:
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.calculation_mode == "new":
                 # delete old study
-                new_heat_sink_study_flag = True
+                is_new_heat_sink_study = True
             else:
                 # overtake the trails of the old study
-                new_heat_sink_study_flag = False
+                is_new_heat_sink_study = False
 
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
 
-            # Start simulation ASA: Filter_factor to correct
-            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_heat_sink_study_flag)
+            hsim.optimization_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, is_new_heat_sink_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")

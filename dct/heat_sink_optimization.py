@@ -1,6 +1,7 @@
 """Inductor optimization class."""
 # python libraries
 import os
+import shutil
 
 # 3rd party libraries
 
@@ -17,7 +18,7 @@ class HeatSinkOptimization:
     """Optimation support class for heat sink optimation."""
 
     # Simulation configuration list
-    sim_config_list = []
+    optimization_config_list = []
 
     @staticmethod
     def init_configuration(toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
@@ -78,10 +79,10 @@ class HeatSinkOptimization:
         )
 
         # Empty the list
-        HeatSinkOptimization.sim_config_list = []
+        HeatSinkOptimization.optimization_config_list = []
         # Add configuration to list
-        HeatSinkOptimization.sim_config_list.append(hct_config)
-        print(f"{HeatSinkOptimization.sim_config_list=}")
+        HeatSinkOptimization.optimization_config_list.append(hct_config)
+        print(f"{HeatSinkOptimization.optimization_config_list=}")
         # Set return value to true and return
         heat_sink_optimization_successful = True
 
@@ -135,29 +136,30 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(act_hct_config: hct.OptimizationParameters, act_ginfo: dct.GeneralInformation,
-                    target_number_trials: int, re_simulate: bool, debug: bool):
+    def _simulation(act_hct_config: hct.OptimizationParameters,
+                    target_number_trials: int, delete_study: bool, debug: bool):
         """
         Perform the simulation.
 
-        :param circuit_id: Name of the filtered optimal electrical circuit
-        :type  circuit_id: int
-        :param act_io_config: inductor configuration for the optimization
-        :type  act_io_config: fmt.InductorOptimizationDTO
-        :param act_ginfo: General information about the study
-        :type  act_ginfo: dct.GeneralInformation:
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param re_simulate: Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-        :type  re_simulate: bool
+        :param delete_study: True to delete the existing study and start a new one
+        :type  delete_study: bool
         :param debug: Debug mode flag
         :type debug: bool
         """
-        # Variable declaration
+        # delete existing study
+        if delete_study and os.path.exists(act_hct_config.heat_sink_optimization_directory):
+            with os.scandir(act_hct_config.heat_sink_optimization_directory) as entries:
+                for entry in entries:
+                    if entry.is_dir() and not entry.is_symlink():
+                        shutil.rmtree(entry.path)
+                    else:
+                        os.remove(entry.path)
 
         # Check number of trials
         if target_number_trials > 0:
-            print(f"{HeatSinkOptimization.sim_config_list=}")
+            print(f"{HeatSinkOptimization.optimization_config_list=}")
             hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=target_number_trials)
         else:
             print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
@@ -168,23 +170,23 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
-                           re_simulate: bool = False, debug: bool = False):
+    def optimization_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
+                             delete_study: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param target_number_trials : Number of trials for the optimization
-        :type  target_number_trials : int
-        :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-        :type  re_simulate : bool
-        :param debug : Debug mode flag
-        :type  debug : bool
+        :param act_ginfo: General information about the study
+        :type  act_ginfo: dct.GeneralInformation:
+        :param target_number_trials: Number of trials for the optimization
+        :type  target_number_trials: int
+        :param delete_study: True to delete the existing study and start a new one
+        :type  delete_study: bool
+        :param debug: Debug mode flag
+        :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        print(f"{HeatSinkOptimization.sim_config_list=}")
-        for act_sim_config in HeatSinkOptimization.sim_config_list:
+        print(f"{HeatSinkOptimization.optimization_config_list=}")
+        for act_sim_config in HeatSinkOptimization.optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -192,7 +194,7 @@ class HeatSinkOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            HeatSinkOptimization._simulation(act_sim_config, act_ginfo, target_number_trials, re_simulate, debug)
+            HeatSinkOptimization._simulation(act_sim_config, target_number_trials, delete_study, debug)
             if debug:
                 # stop after one circuit run
                 break

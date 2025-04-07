@@ -18,11 +18,11 @@
 
 [circuit]
     number_of_trials = 10
-    calculation_mode = "continue" # (new,continue,skip)
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "01_circuit"
 
 [inductor]
-    number_of_trials = 2000
+    number_of_trials = 100
     calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "02_inductor"
 
@@ -32,10 +32,9 @@
     subdirectory = "03_transformer"
 
 [heat_sink]
-    number_of_trials = 100
+    number_of_trials = 10
     calculation_mode = "new" # (new,continue,skip)
     subdirectory = "04_heat_sink"
-    circuit_study_name_flag = "True" # True=Use circuit study name, False (or any word except 'True') = Do not use ciruit study name
 
 [configuration_data_files]
     circuit_configuration_file = "DabCircuitConf.toml"

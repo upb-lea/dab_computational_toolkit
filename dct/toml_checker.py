@@ -55,7 +55,6 @@ class HeatSink(BaseModel):
     number_of_trials: int
     calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
-    circuit_study_name_flag: bool
 
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
