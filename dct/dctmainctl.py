@@ -53,12 +53,12 @@ class DctMainCtl:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
-    def load_conf_file(target_file: str) -> tuple[bool, dict]:
+    def load_toml_file(toml_file: str) -> tuple[bool, dict]:
         """
         Load the toml configuration data to a dictionary.
 
-        :param target_file : File name of the toml-file
-        :type  target_file : str
+        :param toml_file : File name of the toml-file
+        :type  toml_file : str
         :return: True, if the data could be loaded successful and the loaded dictionary
         :rtype: bool, dict
         """
@@ -66,20 +66,19 @@ class DctMainCtl:
         is_toml_file_existing = False
 
         # Separate filename and path
-        dirname = os.path.dirname(target_file)
-        filename = os.path.basename(target_file)
+        toml_file_direction = os.path.dirname(toml_file)
 
         # check path
-        if os.path.exists(dirname) or dirname == "":
+        if os.path.exists(toml_file_direction) or toml_file_direction == "":
             # check filename
-            if os.path.isfile(target_file):
-                with open(target_file, "rb") as f:
+            if os.path.isfile(toml_file):
+                with open(toml_file, "rb") as f:
                     config = tomllib.load(f)
                 is_toml_file_existing = True
             else:
-                print("File does not exists!")
+                print(f"File {toml_file} does not exists!")
         else:
-            print("Path does not exists!")
+            print(f"Path {toml_file_direction} does not exists!")
 
         return is_toml_file_existing, config
 
@@ -363,7 +362,7 @@ class DctMainCtl:
             raise ValueError("Error: No permission to change the folder!") from exc
 
         # Load the configuration for program flow and check the validity
-        flow_control_loaded, dict_prog_flow = DctMainCtl.load_conf_file("progFlow.toml")
+        flow_control_loaded, dict_prog_flow = DctMainCtl.load_toml_file("progFlow.toml")
         toml_prog_flow = tc.FlowControl(**dict_prog_flow)
 
         if not flow_control_loaded:
@@ -382,7 +381,7 @@ class DctMainCtl:
         # --------------------------
 
         # Init circuit configuration
-        is_circuit_loaded, dict_circuit = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
+        is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
         # generate
         config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
@@ -413,7 +412,7 @@ class DctMainCtl:
 
         # Load the inductor-configuration parameter
         transformer_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
-        is_inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
+        is_inductor_loaded, inductor_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
         if not is_inductor_loaded:
@@ -441,7 +440,7 @@ class DctMainCtl:
 
         # Load the transformer-configuration parameter
         transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
-        is_transformer_loaded, transformer_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
+        is_transformer_loaded, transformer_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
         toml_transformer = dct.TomlTransformer(**transformer_dict)
 
         if not is_transformer_loaded:
@@ -467,7 +466,7 @@ class DctMainCtl:
         # --------------------------
 
         heat_sink_toml_filepath = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
-        is_heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(heat_sink_toml_filepath)
+        is_heat_sink_loaded, heat_sink_dict = DctMainCtl.load_toml_file(heat_sink_toml_filepath)
         toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
         if not is_heat_sink_loaded:
             raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
@@ -494,7 +493,7 @@ class DctMainCtl:
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
             # Load initialisation data of electrical simulation and initialize
-            is_circuit_loaded, circuit_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
+            is_circuit_loaded, circuit_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
             toml_circuit = dct.TomlCircuitParetoDabDesign(**circuit_dict)
             config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
