@@ -28,12 +28,14 @@ class TransformerOptimization:
     sim_config_list = []
 
     @staticmethod
-    def init_configuration(sto_config: fmt.StoSingleInputConfig, act_ginfo: dct.GeneralInformation) -> bool:
+    def init_configuration(toml_transformer: dct.TomlTransformer, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
         """
         Initialize the configuration.
 
-        :param sto_config: Stacked transformer optimization configuration
-        :type sto_config: fmt.StoSingleInputConfig
+        :param toml_transformer: transformer toml file
+        :type toml_transformer: dct.TomlTransformer
+        :param toml_prog_flow: flow control toml file
+        :type toml_prog_flow: dct.FlowControl
         :param act_ginfo: General information
         :type act_ginfo: dct.GeneralInformation
 
@@ -44,7 +46,68 @@ class TransformerOptimization:
         # Return variable initialized to True (ASA: Usage is to add later, currently not used
         transformer_initialization_successful = True
 
-        # Insulation parameter
+        act_insulation = fmt.StoInsulation(
+            # insulation for top core window
+            iso_window_top_core_top=toml_transformer.insulation.iso_window_top_core_top,
+            iso_window_top_core_bot=toml_transformer.insulation.iso_window_top_core_bot,
+            iso_window_top_core_left=toml_transformer.insulation.iso_window_top_core_left,
+            iso_window_top_core_right=toml_transformer.insulation.iso_window_top_core_right,
+            # insulation for bottom core window
+            iso_window_bot_core_top=toml_transformer.insulation.iso_window_bot_core_top,
+            iso_window_bot_core_bot=toml_transformer.insulation.iso_window_bot_core_bot,
+            iso_window_bot_core_left=toml_transformer.insulation.iso_window_bot_core_left,
+            iso_window_bot_core_right=toml_transformer.insulation.iso_window_bot_core_right,
+            # winding-to-winding insulation
+            iso_primary_to_primary=toml_transformer.insulation.iso_primary_to_primary,
+            iso_secondary_to_secondary=toml_transformer.insulation.iso_secondary_to_secondary,
+            iso_primary_to_secondary=toml_transformer.insulation.iso_primary_to_secondary
+        )
+
+        # Init the material data source
+        material_data_sources = fmt.StackedTransformerMaterialDataSources(
+            permeability_datasource=fmt.MaterialDataSource.Measurement,
+            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
+            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
+            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
+            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
+            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
+        )
+
+        # Create fix part of io_config
+        sto_config = fmt.StoSingleInputConfig(
+            stacked_transformer_study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
+            # target parameters  initialized with default values
+            l_s12_target=0,
+            l_h_target=0,
+            n_target=0,
+            # operating point: current waveforms and temperature initialized with default values
+            time_current_1_vec=np.ndarray([]),
+            time_current_2_vec=np.ndarray([]),
+            temperature=toml_transformer.boundary_conditions.temperature,  # ASA Later it becomes a dynamic value?
+            # sweep parameters: geometry and materials
+            n_p_top_min_max_list=toml_transformer.design_space.n_p_top_min_max_list,
+            n_p_bot_min_max_list=toml_transformer.design_space.n_p_bot_min_max_list,
+            material_list=toml_transformer.design_space.material_name_list,
+            core_name_list=toml_transformer.design_space.core_name_list,
+            core_inner_diameter_min_max_list=toml_transformer.design_space.core_inner_diameter_min_max_list,
+            window_w_min_max_list=toml_transformer.design_space.window_w_min_max_list,
+            window_h_bot_min_max_list=toml_transformer.design_space.window_h_bot_min_max_list,
+            primary_litz_wire_list=toml_transformer.design_space.primary_litz_wire_list,
+            secondary_litz_wire_list=toml_transformer.design_space.secondary_litz_wire_list,
+            # maximum limitation for transformer total height and core volume
+            max_transformer_total_height=toml_transformer.boundary_conditions.max_transformer_total_height,
+            max_core_volume=toml_transformer.boundary_conditions.max_core_volume,
+            # fix parameters: insulations
+            insulations=act_insulation,
+            # misc
+            stacked_transformer_optimization_directory="",
+
+            fft_filter_value_factor=toml_transformer.settings.fft_filter_value_factor,
+            mesh_accuracy=toml_transformer.settings.mesh_accuracy,
+
+            # data sources
+            material_data_sources=material_data_sources
+        )
 
         # Empty the list
         TransformerOptimization.sim_config_list = []
