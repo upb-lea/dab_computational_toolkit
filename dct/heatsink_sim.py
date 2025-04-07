@@ -104,7 +104,7 @@ class HeatSinkSim:
 
         # Check number of trials
         if target_number_trials > 0:
-            hopt.Optimization.start_proceed_study(config=act_hct_config, number_trials=1000)
+            hopt.Optimization.start_proceed_study(config=act_hct_config, number_trials=target_number_trials)
         else:
             print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 

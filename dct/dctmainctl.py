@@ -20,8 +20,10 @@ import transf_sim as Transfsimclass
 from heatsink_sim import HeatSinkSim as Heatsinksimclass
 # Import server control class
 import summary_processing as SumProcessing
-# Import server control class
+# Import toml-checker
 import toml_checker as tc
+# import server contol class
+from server_ctl import Dct_server as srv_ctl
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -561,7 +563,7 @@ class DctMainCtl:
 
         # -- Start server  --------------------------------------------------------------------------------------------
         # Debug: Server switched off
-        # srv_ctl.start_dct_server(histogram_data,False)
+        srv_ctl.start_dct_server(histogram_data,False)
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
 
@@ -673,7 +675,7 @@ class DctMainCtl:
         esim.join_process()
         # Shut down server
         # Debug: Server switched off
-        # srv_ctl.stop_dct_server()
+        srv_ctl.stop_dct_server()
         pass
 
 

@@ -369,7 +369,8 @@ class DctSummmaryProcessing:
         hs_config_filepath = os.path.join(act_ginfo.heatsink_study_path, f"{act_heat_sink_study_name}.pkl")
         hs_config = hct.Optimization.load_config(hs_config_filepath)
         # Debug ASA Missing true simulations for remaining function
-        """
+
+        hs_config.heat_sink_optimization_directory="/home/andreas/Workspace/Projekt/dab_computational_toolkit/workspace/2025-01-31_example/04_heat_sink/heatsink_01"
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation
@@ -382,5 +383,4 @@ class DctSummmaryProcessing:
         + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        df_wo_hs.to_csv(f"{act_ginfo.heatsink_study_path}/df_summary.csv")
-        """
+        # df_wo_hs.to_csv(f"{act_ginfo.heatsink_study_path}/df_summary.csv")

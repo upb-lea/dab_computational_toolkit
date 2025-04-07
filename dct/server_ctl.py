@@ -10,9 +10,15 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import optuna
+from optuna.visualization import plot_pareto_front
 
 # own libraries
 
+
+# Debug server
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 class Dct_server:
     """server class to supervise the simulation."""
@@ -20,7 +26,7 @@ class Dct_server:
     # Variable declaration
     # FastAPI-Server definieren
     app = FastAPI()
-    templates = Jinja2Templates(directory="htmltemplates")
+    templates = Jinja2Templates(directory="/home/andreas/Workspace/Projekt/dab_computational_toolkit/dct/htmltemplates")
     status_message = "Warte auf Knopfdruck"  # Initialer Text
     # Serverobject
     srv_obj = None
@@ -103,7 +109,7 @@ class Dct_server:
         # Overtake the shared memory variable
         Dct_server.shared_histogram = shared_histogram
         # Start the server (blocking call)
-        config = uvicorn.Config(Dct_server.app, host="127.0.0.1", port=8004, log_level="info")
+        config = uvicorn.Config(Dct_server.app, host="127.0.0.1", port=8005, log_level="info")
         Dct_server.srv_obj = uvicorn.Server(config)
         # Create thread for the server and start it
         Dct_server.srv_thread = threading.Thread(target=Dct_server.dct_server_thread)
@@ -133,6 +139,20 @@ class Dct_server:
         # Start the server in a blocking call
         Dct_server.srv_obj.run()
 
+    @staticmethod
+    def LoadActualParetofront():
+        # Verbinde dich mit der bestehenden Optuna-Datenbank
+        study = optuna.load_study(study_name="circuit_01", storage="sqlite:////home/andreas/Workspace/Projekt/dab_computational_toolkit/workspace/2025-01-31_example/01_circuit/circuit_01/circuit_01.sqlite3")
+
+        # Erzeuge die aktuelle Paretofront
+        fig = plot_pareto_front(study)
+
+        # Speichere die HTML-Darstellung des Plots in einer Variablen
+        html_variable = fig.to_html(full_html=False)
+
+        return html_variable
+
+
     @app.get("/", response_class=HTMLResponse)
     async def main_page(request: Request, action: str = None):
         """Provide the answer on client requests.
@@ -153,9 +173,10 @@ class Dct_server:
             Dct_server.status_message = "Stoppt den Server und die Simulation (wenn prog_exit_flag==true)"
             Dct_server.req_stop.value = 1
 
-        return Dct_server.templates.TemplateResponse("html_main.html", {"request": request, "textvariable": Dct_server.status_message})
+        return Dct_server.templates.TemplateResponse("html_main.html",{"request": request, "textvariable": Dct_server.status_message})
 
-    @app.get("/histogram")
+
+    @app.get("/histogram", response_class=HTMLResponse)
     def get_histogram(request: Request):
         """Provide the answer on client histogram request.
 
@@ -165,22 +186,12 @@ class Dct_server:
         :return: Html- page based on html-template with Histogram information
         :rtype: _TemplateResponse
         """
-        """
-        plt.figure()
-        plt.bar(range(25), Dct_server.shared_histogram[:25], color='blue', edgecolor='black')
-        plt.xlabel("Schritte bis zur 5")
-        plt.ylabel("Häufigkeit")
-        plt.title("Histogramm der Wartezeiten bis zur 5")
 
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        plt.close()
-        buf.seek(0)
-
-        img_str = base64.b64encode(buf.read()).decode('utf-8')
-        """
+        # Return the html-page with updated image data
+        html_page = Dct_server.LoadActualParetofront()
+        return HTMLResponse(content=html_page)
 
         # Return the html-page with updated image data
         # return Dct_server.templates.TemplateResponse( "html_histogram.html", {"request": request, "imagedata": img_str})
-        imagepath = "StyleSheets/Dummytrafo.png"
-        return Dct_server.templates.TemplateResponse("html_histogram.html", {"request": request, "image_path": imagepath})
+        # imagepath = "StyleSheets/Dummytrafo.png"
+        # return Dct_server.templates.TemplateResponse("html_histogram.html", {"request": request, "image_path": imagepath})
