@@ -1,7 +1,6 @@
 # Path configuration
 [general]
     project_directory = "2025-01-31_example"
-    study_name = "circuit_01"
     relative_flag = 1
 
 [breakpoints]
@@ -14,7 +13,7 @@
     summary = "pause"    # After heatsink paretofront calculation
 
 [conditional_breakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
-    circuit = 100        # Number of trials with ZVS less than 70%
+    circuit = 1000        # Number of trials with ZVS less than 70%
     inductor = 1000         # Number of trials which exceed a limit value?
     transformer = 1000      # Number of trials which exceed a limit value?
     heat_sink = 1000         # Number of trials which exceed a limit value?
@@ -44,4 +43,4 @@
     circuit_configuration_file = "DabElectricalConf.toml"   # Configuration file for electrical ciruit optimization
     inductor_configuration_file = "DabInductorConf.toml"     # Configuration file for inductor optimization
     transformer_configuration_file = "DabTransformerConf.toml"  # Configuration file for transformer optimization
-    heat_sink_configuration_file = "DabHeatsinkConf.toml"     # Configuration file for heatsink optimization
+    heat_sink_configuration_file = "DabHeatSinkConf.toml"     # Configuration file for heatsink optimization

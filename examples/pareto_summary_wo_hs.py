@@ -20,7 +20,7 @@ stacked_transformer_study_name_list = ["transformer_01"]
 df = pd.DataFrame()
 
 # load project file paths
-filepaths = dct.Optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
 circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
 circuit_objects = os.scandir(circuit_filepath_results)

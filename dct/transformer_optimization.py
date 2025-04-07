@@ -21,7 +21,7 @@ logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='ut
 logging.getLogger().setLevel(logging.ERROR)
 
 
-class Transfsim:
+class TransformerOptimization:
     """Optimation of the transformer."""
 
     # Configuration list
@@ -114,7 +114,7 @@ class Transfsim:
         )
 
         # Empty the list
-        Transfsim.sim_config_list = []
+        TransformerOptimization.sim_config_list = []
 
         # Create the sto_config_list for all trials
         for circuit_trial_number in act_ginfo.filtered_list_id:
@@ -143,7 +143,7 @@ class Transfsim:
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
                     = os.path.join(act_ginfo.transformer_study_path, circuit_trial_number, act_transf_config_name)
-                Transfsim.sim_config_list.append([circuit_trial_number, next_io_config])
+                TransformerOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
@@ -296,7 +296,7 @@ class Transfsim:
         :type  debug : bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in Transfsim.sim_config_list:
+        for act_sim_config in TransformerOptimization.sim_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -304,7 +304,7 @@ class Transfsim:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            Transfsim._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
+            TransformerOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
 
             if debug:
                 # stop after one circuit run

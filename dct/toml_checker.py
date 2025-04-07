@@ -2,13 +2,14 @@
 from pydantic import BaseModel
 from typing import Literal
 
+# ######################################################
 # flow control
+# ######################################################
 
 class General(BaseModel):
     """General flow control information."""
 
     project_directory: str
-    study_name: str
     relative_flag: int
 
 class Breakpoints(BaseModel):
@@ -78,4 +79,145 @@ class FlowControl(BaseModel):
     heat_sink: HeatSink
     configuration_data_files: ConfigurationDataFiles
 
+
+# ######################################################
 # circuit
+# ######################################################
+
+class TomlCircuitParetoDesignSpace(BaseModel):
+    """Definition of the hardware design space for electronic components."""
+
+    # DAB optimization parameters
+    f_s_min_max_list: list
+    l_s_min_max_list: list
+    l_1_min_max_list: list
+    l_2__min_max_list: list
+    n_min_max_list: list
+    transistor_1_name_list: list[str]
+    transistor_2_name_list: list[str]
+    c_par_1: float
+    c_par_2: float
+
+class TomlCircuitOutputRange(BaseModel):
+    """Definition of the DAB operating area."""
+
+    v_1_min_nom_max_list: list
+    v_2_min_nom_max_list: list
+    p_min_nom_max_list: list
+    steps_per_direction: int
+
+class TomlCircuitFilterDistance(BaseModel):
+    """Toml checker class for CircuitFilterDistance."""
+
+    delta: list
+    range: list[list]
+    deep: list
+
+class TomlCircuitParetoDabDesign(BaseModel):
+    """Config to optimize the Dual-Active Bridge (DAB) converter."""
+
+    design_space: TomlCircuitParetoDesignSpace
+    output_range: TomlCircuitOutputRange
+    filter_distance: TomlCircuitFilterDistance
+
+# ######################################################
+# inductor
+# ######################################################
+
+class TomlInductorDesignSpace(BaseModel):
+    """Toml checker class for InductorDesignSpace."""
+
+    core_name_list: list[str]
+    material_name_list: list[str]
+    litz_wire_list: list[str]
+    core_inner_diameter_list: list[float]
+    window_h_list: list[float]
+    window_w_list: list[float]
+
+class TomlInductorInsulation(BaseModel):
+    """Toml checker class for InductorInsulation."""
+
+    primary_to_primary: float
+    core_bot: float
+    core_top: float
+    core_right: float
+    core_left: float
+
+class TomlMaterialDataSources(BaseModel):
+    """Toml checker class for MaterialDataSources."""
+
+    permeability_datasource: str
+    permeability_datatype: str
+    permeability_measurement_setup: str
+    permittivity_datasource: str
+    permittivity_datatype: str
+    permittivity_measurement_setup: str
+
+class TomlInductorBoundaryConditions(BaseModel):
+    """Toml checker class for InductorBoundaryConditions."""
+
+    temperature: float
+
+
+class TomlFilterDistance(BaseModel):
+    """Toml checker class for FilterDistance."""
+
+    delta: list[float]
+    range: list[list[float]]
+    deep: list[float]
+
+class TomlInductor(BaseModel):
+    """Toml checker class for Inductor."""
+
+    design_space: TomlInductorDesignSpace
+    insulations: TomlInductorInsulation
+    boundary_conditions: TomlInductorBoundaryConditions
+    filter_distance: TomlFilterDistance
+    material_data_sources: TomlMaterialDataSources
+
+# ######################################################
+# transformer
+# ######################################################
+
+
+# ######################################################
+# heat sink
+# ######################################################
+
+
+class TomlHeatSinkBoundaryConditions(BaseModel):
+    """Toml checker for HeatSinkBoundaryConditions."""
+
+    t_ambient: float
+    area_min: float
+
+class TomlHeatSinkSettings(BaseModel):
+    """Toml checker for HeatSinkSettings."""
+
+    number_directions: int
+    factor_pcb_area_copper_coin: float
+    factor_bottom_area_copper_coin: float
+    thermal_conductivity_copper: float
+
+class TomlHeatSinkFanData(BaseModel):
+    """Toml checker for HeatSinkFanData."""
+
+    heat_sink_fan_path: str
+
+class TomlHeatSinkDesignSpace(BaseModel):
+    """Toml checker for HeatSinkDesignSpace."""
+
+    height_c_list: list[float]
+    width_b_list: list[float]
+    length_l_list: list[float]
+    height_d_list: list[float]
+    number_fins_n_list: list[int]
+    thickness_fin_t_list: list[float]
+
+class TomlHeatSink(BaseModel):
+    """Toml checker for HeatSink."""
+
+    fan_data: TomlHeatSinkFanData
+    design_space: TomlHeatSinkDesignSpace
+    settings: TomlHeatSinkSettings
+    boundary_conditions: TomlHeatSinkBoundaryConditions
