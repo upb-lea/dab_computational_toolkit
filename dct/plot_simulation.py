@@ -4,7 +4,7 @@ import logging
 
 # own libraries
 from dct.debug_tools import timeit
-from dct import CircuitDabDTO
+import dct.datasets_dtos as d_sets
 from dct import Plot_DAB
 
 # 3rd party libraries
@@ -12,7 +12,7 @@ import numpy as np
 
 
 @timeit
-def plot_gecko_simulation_results(dab_config: CircuitDabDTO, simulation_name: str, comment: str, directory: str,
+def plot_gecko_simulation_results(dab_config: d_sets.CircuitDabDTO, simulation_name: str, comment: str, directory: str,
                                   show_plot: bool = True, logfile=str()):
     """
     Plot the results from the GeckoCIRCUITS simulation.
@@ -30,6 +30,8 @@ def plot_gecko_simulation_results(dab_config: CircuitDabDTO, simulation_name: st
     :param logfile: Logfile name
     :type logfile: str
     """
+    if not isinstance(dab_config.gecko_results, d_sets.GeckoResults):
+        raise TypeError(f"{dab_config.gecko_results} is not of Type GeckoResults.")
     # Plot a cross-section through the V1 plane
     v1_middle = int(np.shape(dab_config.calc_config.mesh_P)[1] / 2)
     logging.info('View plane: U_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0]))

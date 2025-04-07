@@ -11,13 +11,13 @@ class TransistorDTO:
     """Contains constant transistor information."""
 
     name: str
-    t_j_max_op: np.array
-    c_oss: np.array
-    q_oss: np.array
-    housing_area: np.array
-    cooling_area: np.array
-    r_th_jc: np.array
-    r_channel: np.array
+    t_j_max_op: np.ndarray
+    c_oss: np.ndarray
+    q_oss: np.ndarray
+    housing_area: np.ndarray
+    cooling_area: np.ndarray
+    r_th_jc: np.ndarray
+    r_channel: np.ndarray
 
 @dataclasses.dataclass
 class FixedParameters:
@@ -30,27 +30,27 @@ class FixedParameters:
 class CircuitConfig:
     """Input configuration DTO for the DAB converter."""
 
-    V1_nom: np.array
-    V1_min: np.array
-    V1_max: np.array
-    V1_step: np.array
-    V2_nom: np.array
-    V2_min: np.array
-    V2_max: np.array
-    V2_step: np.array
-    P_min: np.array
-    P_max: np.array
-    P_nom: np.array
-    P_step: np.array
-    n: np.array
-    Ls: np.array
-    Lc1: np.array
-    Lc2: np.array
-    fs: np.array
+    V1_nom: np.ndarray
+    V1_min: np.ndarray
+    V1_max: np.ndarray
+    V1_step: np.ndarray
+    V2_nom: np.ndarray
+    V2_min: np.ndarray
+    V2_max: np.ndarray
+    V2_step: np.ndarray
+    P_min: np.ndarray
+    P_max: np.ndarray
+    P_nom: np.ndarray
+    P_step: np.ndarray
+    n: np.ndarray
+    Ls: np.ndarray
+    Lc1: np.ndarray
+    Lc2: np.ndarray
+    fs: np.ndarray
     transistor_dto_1: TransistorDTO
     transistor_dto_2: TransistorDTO
-    c_par_1: np.array
-    c_par_2: np.array
+    c_par_1: np.ndarray
+    c_par_2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -63,14 +63,14 @@ class CircuitConfig:
 class GeckoAdditionalParameters:
     """Additional parameters for the GeckoCIRCUITs simulation, like simulation time or some file paths."""
 
-    t_dead1: np.array
-    t_dead2: np.array
-    timestep: np.array
-    number_sim_periods: np.array
-    timestep_pre: np.array
-    number_pre_sim_periods: np.array
-    simfilepath: np.array
-    lossfilepath: np.array
+    t_dead1: np.ndarray
+    t_dead2: np.ndarray
+    timestep: np.ndarray
+    number_sim_periods: np.ndarray
+    timestep_pre: np.ndarray
+    number_pre_sim_periods: np.ndarray
+    simfilepath: np.ndarray
+    lossfilepath: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -83,18 +83,18 @@ class GeckoAdditionalParameters:
 class CalcFromCircuitConfig:
     """DTO calculates parameters for the next simulations, which can be derived from the input values."""
 
-    mesh_V1: np.array
-    mesh_V2: np.array
-    mesh_P: np.array
-    Lc2_: np.array
-    t_j_1: np.array
-    t_j_2: np.array
-    c_oss_par_1: np.array
-    c_oss_par_2: np.array
-    c_oss_1: np.array
-    c_oss_2: np.array
-    q_oss_1: np.array
-    q_oss_2: np.array
+    mesh_V1: np.ndarray
+    mesh_V2: np.ndarray
+    mesh_P: np.ndarray
+    Lc2_: np.ndarray
+    t_j_1: np.ndarray
+    t_j_2: np.ndarray
+    c_oss_par_1: np.ndarray
+    c_oss_par_2: np.ndarray
+    c_oss_1: np.ndarray
+    c_oss_2: np.ndarray
+    q_oss_1: np.ndarray
+    q_oss_2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -106,17 +106,17 @@ class CalcFromCircuitConfig:
 class CalcModulation:
     """DTO contains calculated modulation parameters."""
 
-    phi: np.array
-    tau1: np.array
-    tau2: np.array
-    mask_zvs: np.array
-    mask_Im2: np.array
-    mask_IIm2: np.array
-    mask_IIIm1: np.array
-    mask_zvs_coverage: np.array
-    mask_zvs_coverage_notnan: np.array
-    mask_m1n: np.array
-    mask_m1p: np.array
+    phi: np.ndarray
+    tau1: np.ndarray
+    tau2: np.ndarray
+    mask_zvs: np.ndarray
+    mask_Im2: np.ndarray
+    mask_IIm2: np.ndarray
+    mask_IIIm1: np.ndarray
+    mask_zvs_coverage: np.ndarray
+    mask_zvs_coverage_notnan: np.ndarray
+    mask_m1n: np.ndarray
+    mask_m1p: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -130,22 +130,22 @@ class CalcCurrents:
     """DTO contains calculated RMS currents."""
 
     # RMS values
-    i_l_s_rms: np.array
-    i_l_1_rms: np.array
-    i_l_2_rms: np.array
-    i_hf_1_rms: np.array
-    i_hf_2_rms: np.array
-    i_m1_rms: np.array
-    i_m2_rms: np.array
+    i_l_s_rms: np.ndarray
+    i_l_1_rms: np.ndarray
+    i_l_2_rms: np.ndarray
+    i_hf_1_rms: np.ndarray
+    i_hf_2_rms: np.ndarray
+    i_m1_rms: np.ndarray
+    i_m2_rms: np.ndarray
 
     # sorted values: angles (alpha, beta, gamma, delta) and currents.
-    angles_rad_sorted: np.array
-    angles_rad_unsorted: np.array
-    i_l_s_sorted: np.array
-    i_l_1_sorted: np.array
-    i_l_2_sorted: np.array
-    i_hf_1_sorted: np.array
-    i_hf_2_sorted: np.array
+    angles_rad_sorted: np.ndarray
+    angles_rad_unsorted: np.ndarray
+    i_l_s_sorted: np.ndarray
+    i_l_1_sorted: np.ndarray
+    i_l_2_sorted: np.ndarray
+    i_hf_1_sorted: np.ndarray
+    i_hf_2_sorted: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -157,9 +157,9 @@ class CalcCurrents:
 class CalcLosses:
     """DTO contains te calculated losses."""
 
-    p_m1_conduction: np.array
-    p_m2_conduction: np.array
-    p_dab_conduction: np.array
+    p_m1_conduction: np.ndarray
+    p_m2_conduction: np.ndarray
+    p_dab_conduction: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -171,7 +171,7 @@ class CalcLosses:
 class InductorResults:
     """DTO contains the inductor losses."""
 
-    p_combined_losses: np.array
+    p_combined_losses: np.ndarray
     volume: float
     area_to_heat_sink: float
     circuit_trial_number: int
@@ -187,7 +187,7 @@ class InductorResults:
 class StackedTransformerResults:
     """DTO contains the stacked transformer losses."""
 
-    p_combined_losses: np.array
+    p_combined_losses: np.ndarray
     volume: float
     area_to_heat_sink: float
     circuit_trial_number: int
@@ -204,50 +204,50 @@ class StackedTransformerResults:
 class GeckoResults:
     """DTO contains the result of the GeckoCIRCUITS simulation."""
 
-    p_dc1: np.array
-    p_dc2: np.array
-    S11_p_sw: np.array
-    S11_p_cond: np.array
-    S12_p_sw: np.array
-    S12_p_cond: np.array
-    S23_p_sw: np.array
-    S23_p_cond: np.array
-    S24_p_sw: np.array
-    S24_p_cond: np.array
-    v_dc1: np.array
-    i_dc1: np.array
-    v_dc2: np.array
-    i_dc2: np.array
-    p_sw1: np.array
-    p_cond1: np.array
-    p_sw2: np.array
-    p_cond2: np.array
-    i_HF1: np.array
-    i_HF2: np.array
-    i_Ls: np.array
-    i_Lc1: np.array
-    i_Lc2: np.array
-    i_C11: np.array
-    i_C12: np.array
-    i_C23: np.array
-    i_C24: np.array
-    i_S11: np.array
-    i_S12: np.array
-    i_S23: np.array
-    i_S24: np.array
-    v_ds_S11_sw_on: np.array
-    v_ds_S23_sw_on: np.array
-    i_HF1_S11_sw_on: np.array
-    i_HF2_S23_sw_on: np.array
-    power_deviation: np.array
-    zvs_coverage: np.array
-    zvs_coverage1: np.array
-    zvs_coverage2: np.array
-    zvs_coverage_notnan: np.array
-    zvs_coverage1_notnan: np.array
-    zvs_coverage2_notnan: np.array
-    i_HF1_total_mean: np.array
-    I1_squared_total_mean: np.array
+    p_dc1: np.ndarray
+    p_dc2: np.ndarray
+    S11_p_sw: np.ndarray
+    S11_p_cond: np.ndarray
+    S12_p_sw: np.ndarray
+    S12_p_cond: np.ndarray
+    S23_p_sw: np.ndarray
+    S23_p_cond: np.ndarray
+    S24_p_sw: np.ndarray
+    S24_p_cond: np.ndarray
+    v_dc1: np.ndarray
+    i_dc1: np.ndarray
+    v_dc2: np.ndarray
+    i_dc2: np.ndarray
+    p_sw1: np.ndarray
+    p_cond1: np.ndarray
+    p_sw2: np.ndarray
+    p_cond2: np.ndarray
+    i_HF1: np.ndarray
+    i_HF2: np.ndarray
+    i_Ls: np.ndarray
+    i_Lc1: np.ndarray
+    i_Lc2: np.ndarray
+    i_C11: np.ndarray
+    i_C12: np.ndarray
+    i_C23: np.ndarray
+    i_C24: np.ndarray
+    i_S11: np.ndarray
+    i_S12: np.ndarray
+    i_S23: np.ndarray
+    i_S24: np.ndarray
+    v_ds_S11_sw_on: np.ndarray
+    v_ds_S23_sw_on: np.ndarray
+    i_HF1_S11_sw_on: np.ndarray
+    i_HF2_S23_sw_on: np.ndarray
+    power_deviation: np.ndarray
+    zvs_coverage: np.ndarray
+    zvs_coverage1: np.ndarray
+    zvs_coverage2: np.ndarray
+    zvs_coverage_notnan: np.ndarray
+    zvs_coverage1_notnan: np.ndarray
+    zvs_coverage2_notnan: np.ndarray
+    i_HF1_total_mean: np.ndarray
+    I1_squared_total_mean: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -260,12 +260,12 @@ class GeckoResults:
 class GeckoWaveforms:
     """DTO contains the waveform result of the GeckoCIRCUITS simulation."""
 
-    time: np.array
-    i_Ls: np.array
-    i_Lc1: np.array
-    i_Lc2: np.array
-    i_HF1: np.array
-    i_HF2: np.array
+    time: np.ndarray
+    i_Ls: np.ndarray
+    i_Lc1: np.ndarray
+    i_Lc2: np.ndarray
+    i_HF1: np.ndarray
+    i_HF2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -277,9 +277,9 @@ class GeckoWaveforms:
 class CircuitDabDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
-    timestamp: np.array
+    timestamp: np.ndarray
     name: str
-    metadata: np.array
+    metadata: np.ndarray
     input_config: CircuitConfig
     calc_config: CalcFromCircuitConfig
     calc_modulation: CalcModulation

@@ -178,7 +178,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     return da_mod_results
 
 def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
-                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
+                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     Mode 2 Modulation (interval I) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad.
 
@@ -230,7 +230,7 @@ def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_
 
 
 def _calc_interval_2(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
-                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
+                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     Mode 2 Modulation (interval II) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad.
 
@@ -278,7 +278,7 @@ def _calc_interval_2(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float,
 
 
 def _calc_interval_3(n, l_s, l_c_b1, l_c_b2_, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
-                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> [np.ndarray, np.ndarray, np.ndarray]:
+                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad.
 

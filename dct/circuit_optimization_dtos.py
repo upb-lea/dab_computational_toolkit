@@ -12,7 +12,6 @@ class GeneralInformation:
 
     project_directory: str
     circuit_study_name: str
-    # filtered_list_id: List[int]
     filtered_list_id = []
     circuit_study_path: str
     inductor_study_path: str
@@ -33,15 +32,15 @@ class CircuitParetoDesignSpace:
     """Definition of the hardware design space for electronic components."""
 
     # DAB optimization parameters
-    f_s_min_max_list: np.array
-    l_s_min_max_list: np.array
-    l_1_min_max_list: np.array
-    l_2__min_max_list: np.array
-    n_min_max_list: np.array
+    f_s_min_max_list: np.ndarray
+    l_s_min_max_list: np.ndarray
+    l_1_min_max_list: np.ndarray
+    l_2__min_max_list: np.ndarray
+    n_min_max_list: np.ndarray
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
-    c_par_1: np.array
-    c_par_2: np.array
+    c_par_1: np.ndarray
+    c_par_2: np.ndarray
 
 @dataclasses.dataclass
 class CircuitOutputRange:
