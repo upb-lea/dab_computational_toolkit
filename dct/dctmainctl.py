@@ -12,7 +12,7 @@ import femmt as fmt
 # own libraries
 import dct
 import toml_checker as tc
-import pareto_dtos as p_dtos
+import circuit_optimization_dtos as p_dtos
 from dct import CircuitOptimization
 from dct import InductorOptimization
 from dct import TransformerOptimization
@@ -406,7 +406,6 @@ class DctMainCtl:
                 for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
                     if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
                         ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
-            print(f"{ginfo.filtered_list_id=}")
 
         # --------------------------
         # Inductor flow control

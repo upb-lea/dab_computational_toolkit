@@ -5,6 +5,7 @@ import datetime
 import logging
 import json
 import pickle
+import shutil
 
 # 3rd party libraries
 import optuna
@@ -16,7 +17,7 @@ import deepdiff
 import dct.datasets_dtos
 # own libraries
 import dct.datasets_dtos as d_dtos
-import dct.pareto_dtos as p_dtos
+import dct.circuit_optimization_dtos as p_dtos
 import dct.datasets as d_sets
 
 
@@ -290,7 +291,12 @@ class CircuitOptimization:
 
             # Check the deleteStudyFlag
             if delete_study and os.path.exists(circuit_study_sqlite_database):
-                os.remove(circuit_study_sqlite_database)
+                with os.scandir(circuit_study_working_directory) as entries:
+                    for entry in entries:
+                        if entry.is_dir() and not entry.is_symlink():
+                            shutil.rmtree(entry.path)
+                        else:
+                            os.remove(entry.path)
 
             # Create study object in drive
             study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,

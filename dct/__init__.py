@@ -10,8 +10,8 @@ from dct.plot_window import *
 from dct.plot_calculation import *
 from dct.plot_simulation import *
 from dct.plot_waveforms import *
-from dct.pareto_dtos import *
-from dct.pareto import *
+from dct.circuit_optimization_dtos import *
+from dct.circuit_optimization import *
 from dct.generalplotsettings import *
 from dct.functions_waveforms import *
 from dct.datasets_dtos import *
