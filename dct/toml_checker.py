@@ -251,11 +251,6 @@ class TomlHeatSinkSettings(BaseModel):
     factor_bottom_area_copper_coin: float
     thermal_conductivity_copper: float
 
-class TomlHeatSinkFanData(BaseModel):
-    """Toml checker for HeatSinkFanData."""
-
-    heat_sink_fan_path: str
-
 class TomlHeatSinkDesignSpace(BaseModel):
     """Toml checker for HeatSinkDesignSpace."""
 
@@ -269,7 +264,6 @@ class TomlHeatSinkDesignSpace(BaseModel):
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
 
-    fan_data: TomlHeatSinkFanData
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions

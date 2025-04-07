@@ -35,18 +35,19 @@ class HeatSinkOptimization:
         # Return variable initialized to False
         heat_sink_optimization_successful = False
 
+        heat_sink_fan_datapath = os.path.join(os.path.dirname(hct.__file__), "data")
+
         # Check if path exists
-        if not os.path.exists(toml_heat_sink.fan_data.heat_sink_fan_path):
-            print(f"Fan data path {toml_heat_sink.fan_data.heat_sink_fan_path} does not exists!")
+        if not os.path.exists(heat_sink_fan_datapath):
+            print(f"Fan data path {heat_sink_fan_datapath} does not exists!")
             # Return with false if path does not exist
             return heat_sink_optimization_successful
 
-        # Generate the fan-list
-        for (_, _, file_name_list) in os.walk(toml_heat_sink.fan_data.heat_sink_fan_path):
+        for (_, _, file_name_list) in os.walk(heat_sink_fan_datapath):
             fan_list = file_name_list
 
-        if len(fan_list) == 0:
-            print(f"No fan design data found in path {toml_heat_sink.fan_data.heat_sink_fan_path}!")
+        if not fan_list:
+            print(f"No fan design data found in path {heat_sink_fan_datapath}!")
             # Return with false
             return heat_sink_optimization_successful
 
