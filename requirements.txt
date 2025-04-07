@@ -10,3 +10,4 @@ pydantic
 pygeckocircuits2
 transistordatabase
 femmt
+hct
