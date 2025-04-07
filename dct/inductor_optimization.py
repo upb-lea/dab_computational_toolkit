@@ -109,7 +109,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: dct.GeneralInformation,
-                    target_number_trials: int, filter_factor: float, re_simulate: bool, debug: bool):
+                    target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float, re_simulate: bool, debug: bool):
         """
         Perform the simulation.
 
@@ -121,8 +121,8 @@ class InductorOptimization:
         :type  act_ginfo : dct.GeneralInformation:
         :param target_number_trials : Number of trials for the optimization
         :type  target_number_trials : int
-        :param filter_factor : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-        :type  filter_factor : float
+        :param factor_min_dc_losses : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
+        :type  factor_min_dc_losses : float
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :debug : Debug mode flag
@@ -145,11 +145,11 @@ class InductorOptimization:
         # fmt.optimization.InductorOptimization.ReluctanceModel.df_plot_pareto_front(df, df_filtered, label_list=["all", "front"], interactive=False)
 
         # perform FEM simulations
-        if filter_factor != 0:
+        if factor_min_dc_losses != 0:
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
             df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df,
-                                                                                                    factor_min_dc_losses=filter_factor,
-                                                                                                    factor_max_dc_losses=100)
+                                                                                                    factor_min_dc_losses=factor_min_dc_losses,
+                                                                                                    factor_max_dc_losses=factor_max_dc_losses)
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
@@ -162,7 +162,7 @@ class InductorOptimization:
                                                    "02_fem_simulation_results")
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
             df_filtered = (fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df
-                           (df, factor_min_dc_losses=filter_factor, factor_max_dc_losses=100))
+                           (df, factor_min_dc_losses=factor_min_dc_losses, factor_max_dc_losses=factor_max_dc_losses))
             df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
             # fmt.InductorOptimization.FemSimulation.fem_vs_reluctance_pareto(df_fem_reluctance)
 
@@ -238,7 +238,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
-                           filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False):
+                           factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100, re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -246,8 +246,10 @@ class InductorOptimization:
         :type  act_ginfo : dct.GeneralInformation:
         :param target_number_trials : Number of trials for the optimization
         :type  target_number_trials : int
-        :param filter_factor : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-        :type  filter_factor : float
+        :param factor_min_dc_losses : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
+        :type  factor_min_dc_losses : float
+        :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
+        :type factor_dc_max_losses: float
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :param debug : Debug mode flag
@@ -262,7 +264,8 @@ class InductorOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
+            InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials,
+                                             factor_min_dc_losses, factor_dc_max_losses, re_simulate, debug)
             if debug:
                 # stop after one circuit run
                 break

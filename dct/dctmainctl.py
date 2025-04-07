@@ -3,23 +3,18 @@
 import os
 import sys
 import tomllib
-import toml
-
-# 3rd party libraries
+import json
 
 # 3rd party libraries
 
 # own libraries
 import dct
-# Inductor simulations class
-import inductor_optimization as Inductsimclass
-# import transf_sim
-import transformer_optimization as Transfsimclass
-# import heatsink_sim
-import heat_sink_optimization as Heatsinksimclass
 import toml_checker as tc
-import pareto_dtos as p_dtos
+import circuit_optimization_dtos as p_dtos
 from dct import CircuitOptimization
+from dct import InductorOptimization
+from dct import TransformerOptimization
+from dct import HeatSinkOptimization
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -27,78 +22,63 @@ from dct import CircuitOptimization
 class DctMainCtl:
     """Main class for control dab-optimization."""
 
-    # Fix folder names
-    const_circuit_folder = "01_circuit"
-    const_inductor_folder = "02_inductor"
-    const_transformer_folder = "03_transformer"
-    const_heat_sink_folder = "04_heat_sink"
+    @staticmethod
+    def set_up_folder_structure(toml_prog_flow: tc.FlowControl) -> None:
+        """
+        Set up the folder structure for the subprojects.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        # ASA: TODO: Merge ginfo and set_up_folder_structure
+        project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
+        circuit_path = os.path.join(project_directory, toml_prog_flow.circuit.subdirectory)
+        inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
+        transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
+        heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+
+        path_dict = {'circuit': circuit_path,
+                     'inductor': inductor_path,
+                     'transformer': transformer_path,
+                     'heat_sink': heat_sink_path}
+
+        for _, value in path_dict.items():
+            os.makedirs(value, exist_ok=True)
+
+        json_filepath = os.path.join(project_directory, "filepath_config.json")
+
+        with open(json_filepath, 'w', encoding='utf8') as json_file:
+            json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
-    def load_conf_file(target_file: str) -> tuple[bool, dict]:
+    def load_toml_file(toml_file: str) -> tuple[bool, dict]:
         """
         Load the toml configuration data to a dictionary.
 
-        :param target_file : File name of the toml-file
-        :type  target_file : str
+        :param toml_file : File name of the toml-file
+        :type  toml_file : str
         :return: True, if the data could be loaded successful and the loaded dictionary
         :rtype: bool, dict
         """
         # return value init to false and tomlData to empty
-        toml_file_exists = False
+        is_toml_file_existing = False
 
         # Separate filename and path
-        dirname = os.path.dirname(target_file)
-        filename = os.path.basename(target_file)
+        toml_file_direction = os.path.dirname(toml_file)
 
         # check path
-        if os.path.exists(dirname) or dirname == "":
+        if os.path.exists(toml_file_direction) or toml_file_direction == "":
             # check filename
-            if os.path.isfile(target_file):
-                with open(target_file, "rb") as f:
+            if os.path.isfile(toml_file):
+                with open(toml_file, "rb") as f:
                     config = tomllib.load(f)
-                toml_file_exists = True
+                is_toml_file_existing = True
             else:
-                print("File does not exists!")
+                print(f"File {toml_file} does not exists!")
         else:
-            print("Path does not exists!")
+            print(f"Path {toml_file_direction} does not exists!")
 
-        return toml_file_exists, config
-
-    @staticmethod
-    def load_conf_file_deprecated(target_file: str, toml_data: dict) -> bool:
-        """
-        Load the toml configuration data to dict.
-
-        :param target_file : File name of the toml-file
-        :type  target_file : str
-        :param toml_data: Reference to the variable for the toml-data
-        :type  toml_data: bool
-        :return: True, if the data could be loaded successful
-        :rtype: bool
-
-        """
-        # return value init to false and tomlData to empty
-        toml_file_exists = False
-
-        # Separate filename and path
-        dirname = os.path.dirname(target_file)
-        filename = os.path.basename(target_file)
-
-        # check path
-        if os.path.exists(dirname) or dirname == "":
-            # check filename
-            if os.path.isfile(target_file):
-                new_dict_data = toml.load(target_file)
-                # Delete old data and copy new data to tomlData
-                toml_data.clear()
-                toml_data.update(new_dict_data)
-                toml_file_exists = True
-            else:
-                print("File does not exists!")
-        else:
-            print("Path does not exists!")
-
-        return {toml_file_exists}
+        return is_toml_file_existing, config
 
     @staticmethod
     def generate_conf_file(path: str) -> bool:
@@ -146,24 +126,25 @@ class DctMainCtl:
         act_ginfo.circuit_study_name = act_config_program_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
         # Create path names
         act_ginfo.circuit_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                    DctMainCtl.const_circuit_folder, act_ginfo.circuit_study_name)
+                                                    act_config_program_flow.circuit.subdirectory, act_ginfo.circuit_study_name)
         act_ginfo.inductor_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                     DctMainCtl.const_inductor_folder, act_ginfo.circuit_study_name)
+                                                     act_config_program_flow.inductor.subdirectory, act_ginfo.circuit_study_name)
         act_ginfo.transformer_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                        DctMainCtl.const_transformer_folder, act_ginfo.circuit_study_name)
+                                                        act_config_program_flow.transformer.subdirectory, act_ginfo.circuit_study_name)
         # Check, if heat sink study name uses the circuit name
         if act_config_program_flow.heat_sink.circuit_study_name_flag == "True":
             act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          DctMainCtl.const_heat_sink_folder, act_ginfo.circuit_study_name)
+                                                          act_config_program_flow.heat_sink.subdirectory, act_ginfo.circuit_study_name)
         else:
             act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          DctMainCtl.const_heat_sink_folder)
+                                                          act_config_program_flow.heat_sink.subdirectory)
 
     @staticmethod
     def check_study_data(study_path: str, study_name: str) -> bool:
         """
         Verify if the study path and sqlite3-database file exists.
 
+        Works for all types of studies (circuit, inductor, transformer, heat sink).
         :param study_path: drive location path to the study
         :type  study_path: str
         :param study_name: Name of the study
@@ -172,7 +153,7 @@ class DctMainCtl:
         :rtype: bool
         """
         # return value init to false
-        study_exists = False
+        is_study_existing = False
 
         # check path
         if os.path.exists(study_path) or study_path == "":
@@ -181,83 +162,13 @@ class DctMainCtl:
             target_file = os.path.join(study_path, study_name)
             # check filename
             if os.path.isfile(target_file):
-                study_exists = True
+                is_study_existing = True
             else:
                 print(f"File {target_file} does not exists!")
         else:
             print(f"Path {study_path} does not exists!")
-        # True = file exists
-        return {study_exists}
-
-    @staticmethod
-    def load_inductor_config(act_ginfo: dct.GeneralInformation, toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl,
-                             act_isim: Inductsimclass.InductorOptimization) -> bool:
-        """
-        Load and initialize the inductor optimization configuration.
-
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param toml_inductor: toml inductor configuration
-        :type toml_inductor: dct.TomlInductor
-        :param toml_prog_flow: toml program flow configuration
-        :type toml_prog_flow: dct.FlowControl
-        :param act_isim: inductor optimization object reference
-        :type  act_isim: Inductsimclass.Inductorsim:
-        :return: True, if the configuration is successful
-        :rtype: bool
-        """
-        #   Variable initialisation
-
-        # Initialize inductor optimization and return, if it was successful (true)
-        return act_isim.init_configuration(toml_inductor, toml_prog_flow, act_ginfo)
-
-    @staticmethod
-    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.TransformerOptimization) -> bool:
-        """
-        Load and initialize the transformer optimization configuration.
-
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_config_transformer: actual inductor configuration information
-        :type  act_config_transformer: dict: dictionary with the necessary configuration parameter
-        :param act_tsim: transformer optimization object reference
-        :type  act_tsim: Transformersimclass.Transfsim:
-        :return: True, if the configuration is successful
-        :rtype: bool
-        """
-        #   Variable initialisation
-
-        # design space
-        designspace_dict = {"core_name_list": act_config_transformer["Designspace"]["core_name_list"],
-                            "material_name_list": act_config_transformer["Designspace"]["material_name_list"],
-                            "core_inner_diameter_min_max_list": act_config_transformer["Designspace"]["core_inner_diameter_min_max_list"],
-                            "window_w_min_max_list": act_config_transformer["Designspace"]["window_w_min_max_list"],
-                            "window_h_bot_min_max_list": act_config_transformer["Designspace"]["window_h_bot_min_max_list"],
-                            "primary_litz_wire_list": act_config_transformer["Designspace"]["primary_litz_wire_list"],
-                            "secondary_litz_wire_list": act_config_transformer["Designspace"]["secondary_litz_wire_list"]}
-
-        # Transformer data
-        transformer_data_dict = {"max_transformer_total_height": act_config_transformer["TransformerData"]["max_transformer_total_height"],
-                                 "max_core_volume": act_config_transformer["TransformerData"]["max_core_volume"],
-                                 "n_p_top_min_max_list": act_config_transformer["TransformerData"]["n_p_top_min_max_list"],
-                                 "n_p_bot_min_max_list": act_config_transformer["TransformerData"]["n_p_bot_min_max_list"],
-                                 "iso_window_top_core_top": act_config_transformer["TransformerData"]["iso_window_top_core_top"],
-                                 "iso_window_top_core_bot": act_config_transformer["TransformerData"]["iso_window_top_core_bot"],
-                                 "iso_window_top_core_left": act_config_transformer["TransformerData"]["iso_window_top_core_left"],
-                                 "iso_window_top_core_right": act_config_transformer["TransformerData"]["iso_window_top_core_right"],
-                                 "iso_window_bot_core_top": act_config_transformer["TransformerData"]["iso_window_bot_core_top"],
-                                 "iso_window_bot_core_bot": act_config_transformer["TransformerData"]["iso_window_bot_core_bot"],
-                                 "iso_window_bot_core_left": act_config_transformer["TransformerData"]["iso_window_bot_core_left"],
-                                 "iso_window_bot_core_right": act_config_transformer["TransformerData"]["iso_window_bot_core_right"],
-                                 "iso_primary_to_primary": act_config_transformer["TransformerData"]["iso_primary_to_primary"],
-                                 "iso_secondary_to_secondary": act_config_transformer["TransformerData"]["iso_secondary_to_secondary"],
-                                 "iso_primary_to_secondary": act_config_transformer["TransformerData"]["iso_primary_to_secondary"],
-                                 "fft_filter_value_factor": act_config_transformer["TransformerData"]["fft_filter_value_factor"],
-                                 "mesh_accuracy": act_config_transformer["TransformerData"]["mesh_accuracy"]}
-
-        # Initialize inductor optimization and return, if it was successful (true)
-        return act_tsim.init_configuration(act_config_transformer["TransformerConfigName"]["transformer_config_name"],
-                                           act_ginfo, designspace_dict, transformer_data_dict)
+        # True = study exists
+        return is_study_existing
 
     @staticmethod
     def check_breakpoint(break_point_key: str, info: str):
@@ -322,16 +233,22 @@ class DctMainCtl:
             p_min_nom_max_list=toml_circuit.output_range.p_min_nom_max_list,
             steps_per_direction=toml_circuit.output_range.steps_per_direction)
 
+        filter = p_dtos.CircuitFilter(
+            number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
+            difference_percentage=toml_circuit.filter_distance.difference_percentage
+        )
+
         circuit_dto = p_dtos.CircuitParetoDabDesign(
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             project_directory=toml_prog_flow.general.project_directory,
             design_space=design_space,
-            output_range=output_range)
+            output_range=output_range,
+            filter=filter)
 
         return circuit_dto
 
     @staticmethod
-    def executeProgram(workspace_path: str):
+    def run_optimization_from_toml_configs(workspace_path: str) -> None:
         """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
@@ -340,23 +257,15 @@ class DctMainCtl:
         :type   workspace_path: str
         """
         # Variable declaration
-        # General information
         ginfo = dct.GeneralInformation
-        # program flow parameter
-        toml_prog_flow = {}
-        # Electric, inductor, transformer and heat sink configuration files
-        config_electric = {}
-        config_inductor = {}
-        config_transformer = {}
-        config_heat_sink = {}
         # Inductor simulation
-        isim = Inductsimclass.InductorOptimization
+        isim = InductorOptimization
         # Transformer simulation
-        tsim = Transfsimclass.TransformerOptimization
+        tsim = TransformerOptimization
         # heat sink simulation
-        hsim = Heatsinksimclass.HeatSinkOptimization
+        hsim = HeatSinkOptimization
         # Flag for available filtered results
-        filtered_resultFlag = False
+        filtered_circuit_result_folder_exists = False
 
         # Check if workspace path is not provided by argument
         if workspace_path == "":
@@ -375,109 +284,127 @@ class DctMainCtl:
             raise ValueError("Error: No permission to change the folder!") from exc
 
         # Load the configuration for program flow and check the validity
-        flow_control_loaded, dict_prog_flow = DctMainCtl.load_conf_file("progFlow.toml")
+        flow_control_loaded, dict_prog_flow = DctMainCtl.load_toml_file("progFlow.toml")
         toml_prog_flow = tc.FlowControl(**dict_prog_flow)
 
         if not flow_control_loaded:
             raise ValueError("Program flow toml file does not exist.")
 
+        DctMainCtl.set_up_folder_structure(toml_prog_flow)
+
+        # read study names from toml file names
+        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
+        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
+        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
+        heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
+
+        # --------------------------
+        # Circuit flow control
+        # --------------------------
+
         # Init circuit configuration
-        circuit_loaded, dict_circuit = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
+        is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
         # generate
         config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
-        if not circuit_loaded:
-            raise ValueError(f"Electrical configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
-
-        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
+        if not is_circuit_loaded:
+            raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
         # Add project directory and study name
         DctMainCtl.init_general_info(ginfo, toml_prog_flow)
 
         # Check, if electrical optimization is to skip
-        if toml_prog_flow.circuit.re_calculation == "skip":
+        if toml_prog_flow.circuit.calculation_mode == "skip":
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(ginfo.circuit_study_path, ginfo.circuit_study_name):
                 raise ValueError(f"Study {ginfo.circuit_study_name} in path {ginfo.circuit_study_path} does not exist. No sqlite3-database found!")
             # Check if filtered results folder exists
-            datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
-            if os.path.exists(datapath):
-                # Set Flag to false
-                filtered_resultFlag = True
+            filtered_circuit_results_datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
+            if os.path.exists(filtered_circuit_results_datapath):
+                filtered_circuit_result_folder_exists = True
                 # Add filtered result list
-                for pareto_entry in os.listdir(datapath):
-                    if os.path.isfile(os.path.join(datapath, pareto_entry)):
-                        ginfo.filtered_list_id.append(os.path.splitext(pareto_entry)[0])
+                for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
+                    if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
+                        ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
+                if not ginfo.filtered_list_id:
+                    raise ValueError(f"Filtered results folder {filtered_circuit_results_datapath} is empty.")
+            else:
+                raise ValueError(f"Filtered circuit results folder {filtered_circuit_results_datapath} does not exist.")
 
-            # Assemble pathname
-            datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                    toml_prog_flow.circuit.subdirectory,
-                                    circuit_study_name)
-
-            # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, circuit_study_name):
-                raise ValueError(
-                    f"Study {toml_prog_flow.general.study_name} in path {datapath} "
-                    "does not exist. No sqlite3-database found!"
-                )
+        # --------------------------
+        # Inductor flow control
+        # --------------------------
 
         # Load the inductor-configuration parameter
-        target_file = toml_prog_flow.configuration_data_files.inductor_configuration_file
-        inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
+        transformer_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
+        is_inductor_loaded, inductor_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
-        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
-
-        if not inductor_loaded:
-            raise ValueError(f"Inductor configuration file: {target_file} does not exist.")
+        if not is_inductor_loaded:
+            raise ValueError(f"Inductor configuration file: {transformer_toml_filepath} does not exist.")
 
         # Check, if inductor optimization is to skip
-        if toml_prog_flow.inductor.re_calculation == "skip":
+        if toml_prog_flow.inductor.calculation_mode == "skip":
             # For loop to check, if all filtered values are available
 
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                        toml_prog_flow.inductor.subdirectory,
-                                        circuit_study_name,
-                                        id_entry,
-                                        )
+                inductor_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
+                                                         toml_prog_flow.inductor.subdirectory,
+                                                         circuit_study_name,
+                                                         id_entry,
+                                                         inductor_study_name)
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, inductor_study_name):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+                if not DctMainCtl.check_study_data(inductor_results_datapath, inductor_study_name):
+                    raise ValueError(
+                        f"Study {inductor_study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
+
+        # --------------------------
+        # Transformer flow control
+        # --------------------------
 
         # Load the transformer-configuration parameter
-        target_file = toml_prog_flow.configuration_data_files.transformer_configuration_file
-        if not DctMainCtl.load_conf_file_deprecated(target_file, config_transformer):
-            raise ValueError(f"Transformer configuration file: {target_file} does not exist.")
+        transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
+        is_transformer_loaded, transformer_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
+        toml_transformer = dct.TomlTransformer(**transformer_dict)
+
+        if not is_transformer_loaded:
+            raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
         # Check, if transformer optimization is to skip
-        if toml_prog_flow.transformer.re_calculation == "skip":
+        if toml_prog_flow.transformer.calculation_mode == "skip":
             # For loop to check, if all filtered values are available
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                        toml_prog_flow.transformer.subdirectory,
-                                        circuit_study_name,
-                                        id_entry,
-                                        config_transformer["TransformerConfigName"]["transformer_config_name"])
+                transformer_results_datapath = os.path.join(toml_prog_flow.general.project_directory,
+                                                            toml_prog_flow.transformer.subdirectory,
+                                                            circuit_study_name,
+                                                            id_entry,
+                                                            transformer_study_name)
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, "transformer_01"):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+                if not DctMainCtl.check_study_data(transformer_results_datapath, transformer_study_name):
+                    raise ValueError(
+                        f"Study {transformer_study_name} in path {transformer_results_datapath} does not exist. No sqlite3-database found!")
 
-        # Load the heat sink-configuration parameter
-        target_file = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
-        if not DctMainCtl.load_conf_file_deprecated(target_file, config_heat_sink):
-            raise ValueError(f"Heat sink configuration file: {target_file} does not exist.")
+        # --------------------------
+        # Heat sink flow control
+        # --------------------------
+
+        heat_sink_toml_filepath = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
+        is_heat_sink_loaded, heat_sink_dict = DctMainCtl.load_toml_file(heat_sink_toml_filepath)
+        toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
+        if not is_heat_sink_loaded:
+            raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
 
         # Check, if heat sink optimization is to skip
-        if toml_prog_flow.heat_sink.re_calculation == "skip":
+        if toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Assemble pathname
-            datapath = os.path.join(ginfo.heat_sink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
+            heat_sink_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, "heatsink_01"):
-                raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+            if not DctMainCtl.check_study_data(heat_sink_results_datapath, "heatsink_01"):
+                raise ValueError(
+                    f"Study {heat_sink_study_name} in path {heat_sink_results_datapath} does not exist. No sqlite3-database found!")
 
         # Warning, no data are available
         # Check, if transformer optimization is to skip
@@ -486,106 +413,110 @@ class DctMainCtl:
         # Warning, no data are available
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
-
+        # --------------------------
+        # Circuit optimization
+        # --------------------------
         # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.circuit.re_calculation == "skip":
+        if not toml_prog_flow.circuit.calculation_mode == "skip":
             # Load initialisation data of electrical simulation and initialize
-            circuit_loaded, circuit_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
+            is_circuit_loaded, circuit_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
             toml_circuit = dct.TomlCircuitParetoDabDesign(**circuit_dict)
-            # generate
-
             config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
-            if not circuit_loaded:
+            if not is_circuit_loaded:
                 raise ValueError("Electrical configuration not initialized!")
             # Check, if old study is to delete, if available
-            if toml_prog_flow.circuit.re_calculation == "new":
+            if toml_prog_flow.circuit.calculation_mode == "new":
                 # delete old study
-                new_study_flag = True
+                is_new_circuit_study = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                is_new_circuit_study = False
 
             # Start calculation
-            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials, delete_study=new_study_flag)
+            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials,
+                                                        delete_study=is_new_circuit_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
 
         # Check if filter results are not available
-        if not filtered_resultFlag:
+        if not filtered_circuit_result_folder_exists:
             # Calculate the filtered results
             CircuitOptimization.filter_study_results(dab_config=config_circuit)
             # Get filtered result path
-            datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
+            filtered_circuit_results_datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
             # Add filtered result list
-            for pareto_entry in os.listdir(datapath):
-                if os.path.isfile(os.path.join(datapath, pareto_entry)):
-                    ginfo.filtered_list_id.append(os.path.splitext(pareto_entry)[0])
+            for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
+                if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
+                    ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
 
+        # --------------------------
+        # Inductor optimization
+        # --------------------------
+
         # Check, if inductor optimization is not to skip
-        if not toml_prog_flow.inductor.re_calculation == "skip":
-            # Load initialisation data of inductor simulation and initialize
-            if not DctMainCtl.load_inductor_config(ginfo, toml_inductor, toml_prog_flow, isim):
-                raise ValueError("Inductor configuration not initialized!")
+        if not toml_prog_flow.inductor.calculation_mode == "skip":
             # Check, if old study is to delete, if available
-            if toml_prog_flow.inductor.re_calculation == "new":
+            if toml_prog_flow.inductor.calculation_mode == "new":
                 # delete old study
-                new_study_flag = True
+                is_new_inductor_study = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                is_new_inductor_study = False
 
             # Start simulation ASA: Filter_factor to correct
-            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, 1.0, new_study_flag)
+            isim.init_configuration(toml_inductor, toml_prog_flow, ginfo)
+            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
+                                    is_new_inductor_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
 
+        # --------------------------
+        # Transformer optimization
+        # --------------------------
+
         # Check, if transformer optimization is not to skip
-        if not toml_prog_flow.transformer.re_calculation == "skip":
-            # Load initialisation data of transformer simulation and initialize
-            if not DctMainCtl.load_transformer_config(ginfo, config_transformer, tsim):
-                raise ValueError("Transformer configuration not initialized!")
+        if not toml_prog_flow.transformer.calculation_mode == "skip":
             # Check, if old study is to delete, if available
-            if toml_prog_flow.transformer.re_calculation == "new":
+            if toml_prog_flow.transformer.calculation_mode == "new":
                 # delete old study
-                new_study_flag = True
+                is_new_transformer_study = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                is_new_transformer_study = False
+
+            tsim.init_configuration(toml_transformer, toml_prog_flow, ginfo)
 
             # Start simulation ASA: Filter_factor to correct
-            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_study_flag)
+            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
+                                    toml_transformer.filter_distance.factor_max_dc_losses, is_new_transformer_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
 
+        # --------------------------
+        # Heat sink optimization
+        # --------------------------
+
         # Check, if heat sink optimization is to skip
-        if not toml_prog_flow.heat_sink.re_calculation == "skip":
-
-            heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
-            toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
-
-            # Load initialisation data of heat sink simulation and initialize
-            if not heat_sink_loaded:
-                raise ValueError("Heat sink configuration not initialized!")
+        if not toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if old study is to delete, if available
-            if toml_prog_flow.heat_sink.re_calculation == "new":
+            if toml_prog_flow.heat_sink.calculation_mode == "new":
                 # delete old study
-                new_study_flag = True
+                new_heat_sink_study_flag = True
             else:
                 # overtake the trails of the old study
-                new_study_flag = False
+                new_heat_sink_study_flag = False
 
-            print("init config")
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
 
             # Start simulation ASA: Filter_factor to correct
-            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_study_flag)
+            hsim.simulation_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, new_heat_sink_study_flag)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
@@ -635,4 +566,4 @@ if __name__ == "__main__":
         # Convert it to the absolute path
         arg1 = os.path.abspath(arg1)
     # Execute program
-    dct_mctl.executeProgram(arg1)
+    dct_mctl.run_optimization_from_toml_configs(arg1)

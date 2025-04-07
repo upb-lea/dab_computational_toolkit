@@ -5,6 +5,7 @@ import datetime
 import logging
 import json
 import pickle
+import shutil
 
 # 3rd party libraries
 import optuna
@@ -16,40 +17,12 @@ import deepdiff
 import dct.datasets_dtos
 # own libraries
 import dct.datasets_dtos as d_dtos
-import dct.pareto_dtos as p_dtos
+import dct.circuit_optimization_dtos as p_dtos
 import dct.datasets as d_sets
 
 
 class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
-
-    @staticmethod
-    def set_up_folder_structure(config: p_dtos.CircuitParetoDabDesign) -> None:
-        """
-        Set up the folder structure for the subprojects.
-
-        :param config: configuration
-        :type config: InductorOptimizationDTO
-        """
-        # ASA: TODO: Merge ginfo and set_up_folder_structure
-        project_directory = os.path.abspath(config.project_directory)
-        circuit_path = os.path.join(project_directory, "01_circuit")
-        inductor_path = os.path.join(project_directory, "02_inductor")
-        transformer_path = os.path.join(project_directory, "03_transformer")
-        heat_sink_path = os.path.join(project_directory, "04_heat_sink")
-
-        path_dict = {'circuit': circuit_path,
-                     'inductor': inductor_path,
-                     'transformer': transformer_path,
-                     'heat_sink': heat_sink_path}
-
-        for _, value in path_dict.items():
-            os.makedirs(value, exist_ok=True)
-
-        json_filepath = os.path.join(project_directory, "filepath_config.json")
-
-        with open(json_filepath, 'w', encoding='utf8') as json_file:
-            json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
     def load_filepaths(project_directory: str) -> p_dtos.ParetoFilePaths:
@@ -258,7 +231,6 @@ class CircuitOptimization:
 
     @staticmethod
     def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
-                            # dbType: str = 'mysql',
                             database_type: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
                             delete_study: bool = False
@@ -276,7 +248,6 @@ class CircuitOptimization:
         :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
         :type  delete_study: bool
         """
-        CircuitOptimization.set_up_folder_structure(dab_config)
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
 
         circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.circuit_study_name)
@@ -320,7 +291,12 @@ class CircuitOptimization:
 
             # Check the deleteStudyFlag
             if delete_study and os.path.exists(circuit_study_sqlite_database):
-                os.remove(circuit_study_sqlite_database)
+                with os.scandir(circuit_study_working_directory) as entries:
+                    for entry in entries:
+                        if entry.is_dir() and not entry.is_symlink():
+                            shutil.rmtree(entry.path)
+                        else:
+                            os.remove(entry.path)
 
             # Create study object in drive
             study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
@@ -724,9 +700,8 @@ class CircuitOptimization:
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
         smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
-        print(f"{np.shape(df)=}")
 
-        for count in np.arange(0, 3):
+        for count in np.arange(0, dab_config.filter.number_filtered_designs - 1):
             print("------------------")
             print(f"{count=}")
             n_suggest = df_smallest['params_n_suggest'].item()
@@ -738,7 +713,7 @@ class CircuitOptimization:
             transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
 
             # make sure to use parameters with minimum x % difference.
-            difference = 0.05
+            difference = dab_config.filter.difference_percentage / 100
 
             df = df.loc[
                 ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \

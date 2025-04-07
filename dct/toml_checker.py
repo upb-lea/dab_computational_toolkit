@@ -10,7 +10,6 @@ class General(BaseModel):
     """General flow control information."""
 
     project_directory: str
-    relative_flag: int
 
 class Breakpoints(BaseModel):
     """Flow control breakpoints."""
@@ -33,28 +32,28 @@ class Circuit(BaseModel):
     """Flow control for the circuit."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class Inductor(BaseModel):
     """Flow control for the inductor."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class Transformer(BaseModel):
     """Flow control for the transformer."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class HeatSink(BaseModel):
     """Flow control for the heat sink."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
     circuit_study_name_flag: bool
 
@@ -108,9 +107,8 @@ class TomlCircuitOutputRange(BaseModel):
 class TomlCircuitFilterDistance(BaseModel):
     """Toml checker class for CircuitFilterDistance."""
 
-    delta: list
-    range: list[list]
-    deep: list
+    number_filtered_designs: int
+    difference_percentage: float
 
 class TomlCircuitParetoDabDesign(BaseModel):
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
@@ -161,9 +159,8 @@ class TomlInductorBoundaryConditions(BaseModel):
 class TomlFilterDistance(BaseModel):
     """Toml checker class for FilterDistance."""
 
-    delta: list[float]
-    range: list[list[float]]
-    deep: list[float]
+    factor_min_dc_losses: float
+    factor_max_dc_losses: float
 
 class TomlInductor(BaseModel):
     """Toml checker class for Inductor."""
@@ -177,12 +174,68 @@ class TomlInductor(BaseModel):
 # ######################################################
 # transformer
 # ######################################################
+class TomlTransformerDesignSpace(BaseModel):
+    """Toml checker class for TransformerDesignSpace."""
 
+    material_name_list: list[str]
+    core_name_list: list[str]
+    core_inner_diameter_min_max_list: list[float]
+    window_w_min_max_list: list[float]
+    window_h_bot_min_max_list: list[float]
+    primary_litz_wire_list: list[str]
+    secondary_litz_wire_list: list[str]
+    n_p_top_min_max_list: list[int]
+    n_p_bot_min_max_list: list[int]
+
+class TomlTransformerSettings(BaseModel):
+    """Toml checker class for TransfomerSettings."""
+
+    fft_filter_value_factor: float
+    mesh_accuracy: float
+
+class TomlTransformerBoundaryConditions(BaseModel):
+    """Toml checker class for TransformerBondaryConditions."""
+
+    max_transformer_total_height: float
+    max_core_volume: float
+    temperature: float
+
+class TomlTransformerInsulation(BaseModel):
+    """Toml checker class for TransformerInsulation."""
+
+    # insulation for top core window
+    iso_window_top_core_top: float
+    iso_window_top_core_bot: float
+    iso_window_top_core_left: float
+    iso_window_top_core_right: float
+    # insulation for bottom core window
+    iso_window_bot_core_top: float
+    iso_window_bot_core_bot: float
+    iso_window_bot_core_left: float
+    iso_window_bot_core_right: float
+    # winding-to-winding insulation
+    iso_primary_to_primary: float
+    iso_secondary_to_secondary: float
+    iso_primary_to_secondary: float
+
+class TomlTransformerFilterDistance(BaseModel):
+    """Toml checker class for TransformerFilterDistance."""
+
+    factor_min_dc_losses: float
+    factor_max_dc_losses: float
+
+class TomlTransformer(BaseModel):
+    """Toml checker class for Transformer."""
+
+    design_space: TomlTransformerDesignSpace
+    insulation: TomlTransformerInsulation
+    filter_distance: TomlTransformerFilterDistance
+    settings: TomlTransformerSettings
+    boundary_conditions: TomlTransformerBoundaryConditions
 
 # ######################################################
 # heat sink
 # ######################################################
-
 
 class TomlHeatSinkBoundaryConditions(BaseModel):
     """Toml checker for HeatSinkBoundaryConditions."""
