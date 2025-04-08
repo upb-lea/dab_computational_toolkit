@@ -587,7 +587,7 @@ class CircuitOptimization:
         return df
 
     @staticmethod
-    def is_pareto_efficient(costs: np.array, return_mask: bool = True):
+    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True):
         """
         Find the pareto-efficient points.
 

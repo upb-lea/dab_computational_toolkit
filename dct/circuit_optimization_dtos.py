@@ -39,8 +39,8 @@ class CircuitParetoDesignSpace:
     n_min_max_list: np.ndarray
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
-    c_par_1: np.ndarray
-    c_par_2: np.ndarray
+    c_par_1: float
+    c_par_2: float
 
 @dataclasses.dataclass
 class CircuitOutputRange:

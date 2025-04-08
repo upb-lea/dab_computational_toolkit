@@ -467,7 +467,7 @@ class Plot_DAB:
         fig.canvas.flush_events()
 
     @timeit
-    def plot_rms_current(self, mesh_V2: np.array, mesh_P: np.array, mvvp_iLs: np.array):
+    def plot_rms_current(self, mesh_V2: np.ndarray, mesh_P: np.ndarray, mvvp_iLs: np.ndarray):
         """
         Plot RMS currents.
 
@@ -957,7 +957,7 @@ class Plot_DAB:
 
 @timeit
 def plot_modulation(x: np.array, y: np.array, z1: np.array, z2: np.array, z3: np.array, title: str = '', mask1=None, mask2=None, mask3=None,
-                    maskZVS: np.array = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
+                    maskZVS: np.ndarray = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
     """
     Plot three contourf plots with a shared colorbar.
 

@@ -263,8 +263,8 @@ def _int_square_line_between_angles(angle_1_rad, angle_2_rad, y_1, y_2):
 
     return int_square
 
-def calc_rms(alpha_rad: np.array, beta_rad: np.array, gamma_rad: np.array, delta_rad: np.array,
-             i_alpha: np.array, i_beta: np.array, i_gamma: np.array, i_delta: np.array) -> np.array:
+def calc_rms(alpha_rad: np.ndarray, beta_rad: np.ndarray, gamma_rad: np.ndarray, delta_rad: np.ndarray,
+             i_alpha: np.ndarray, i_beta: np.ndarray, i_gamma: np.ndarray, i_delta: np.ndarray) -> np.ndarray:
     """
     Calculate a single RMS current for some single points, with a linear current between them.
 
@@ -277,21 +277,21 @@ def calc_rms(alpha_rad: np.array, beta_rad: np.array, gamma_rad: np.array, delta
     Everything must be numpy!
 
     :param alpha_rad: angle alpha in rad
-    :type alpha_rad: np.array
+    :type alpha_rad: np.ndarray
     :param beta_rad: angle beta in rad
-    :type beta_rad: np.array
+    :type beta_rad: np.ndarray
     :param gamma_rad: angle gamma in rad
-    :type gamma_rad: np.array
+    :type gamma_rad: np.ndarray
     :param delta_rad: angle delta in rad
-    :type delta_rad: np.array
+    :type delta_rad: np.ndarray
     :param i_alpha: current at angle alpha
-    :type i_alpha: np.array
+    :type i_alpha: np.ndarray
     :param i_beta: current at angle beta
-    :type i_beta: np.array
+    :type i_beta: np.ndarray
     :param i_gamma: current at angle gamma
-    :type i_gamma: np.array
+    :type i_gamma: np.ndarray
     :param i_delta: current at angle delta
-    :type i_delta: np.array
+    :type i_delta: np.ndarray
     :return: rms current
     """
     if not (isinstance(alpha_rad, np.ndarray) | isinstance(beta_rad, np.ndarray) | isinstance(gamma_rad, np.ndarray) | isinstance(delta_rad, np.ndarray)):
@@ -453,20 +453,20 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
 
     return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
 
-def calc_hf_currents(angles_sorted: np.array, i_l_s_sorted: np.array, i_l_1_sorted: np.array, i_l_2_sorted: np.array, n: np.array) -> tuple:
+def calc_hf_currents(angles_sorted: np.ndarray, i_l_s_sorted: np.ndarray, i_l_1_sorted: np.ndarray, i_l_2_sorted: np.ndarray, n: np.ndarray) -> tuple:
     """
     Calculate i_hf_1_rms and i_hf_2_rms from i_l_s, i_l_1 and i_l_2.
 
     :param angles_sorted: sorted angles
-    :type angles_sorted: np.array
+    :type angles_sorted: np.ndarray
     :param i_l_s_sorted: sorted currents i_l_s
-    :type i_l_s_sorted: np.array
+    :type i_l_s_sorted: np.ndarray
     :param i_l_1_sorted: sorted currents i_l_1
-    :type i_l_1_sorted: np.array
+    :type i_l_1_sorted: np.ndarray
     :param i_l_2_sorted: sorted currents i_l_2
-    :type i_l_2_sorted: np.array
+    :type i_l_2_sorted: np.ndarray
     :param n: transfer ratio
-    :type n: np.array
+    :type n: np.ndarray
     :return: (i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted)
     :rtype: tuple
     """
