@@ -26,7 +26,7 @@ class HandleDabDto:
     def init_config(name: str, V1_nom: float, V1_min: float, V1_max: float, V1_step: int, V2_nom: float, V2_min: float,
                     V2_max: float, V2_step: int, P_min: float, P_max: float, P_nom: float, P_step: int,
                     n: float, Ls: float, Lc1: float, Lc2: float, fs: float,
-                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1, c_par_2):
+                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1, c_par_2) -> d_dtos.CircuitDabDTO:
         """
         Initialize the DAB structure.
 

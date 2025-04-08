@@ -65,7 +65,7 @@ elif action == 'filter_study_results':
 
     df_original = df.copy()
 
-    smallest_dto_list = []
+    smallest_dto_list: list[dct.CircuitDabDTO] = []
     df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
     df_smallest = df.nsmallest(n=1, columns=["values_1"])
 

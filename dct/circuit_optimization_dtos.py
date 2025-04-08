@@ -3,7 +3,6 @@
 import dataclasses
 
 # 3rd party libraries
-import numpy as np
 
 # General information about names and path
 @dataclasses.dataclass
@@ -32,11 +31,11 @@ class CircuitParetoDesignSpace:
     """Definition of the hardware design space for electronic components."""
 
     # DAB optimization parameters
-    f_s_min_max_list: np.ndarray
-    l_s_min_max_list: np.ndarray
-    l_1_min_max_list: np.ndarray
-    l_2__min_max_list: np.ndarray
-    n_min_max_list: np.ndarray
+    f_s_min_max_list: list[int]
+    l_s_min_max_list: list[float]
+    l_1_min_max_list: list[float]
+    l_2__min_max_list: list[float]
+    n_min_max_list: list[float]
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
     c_par_1: float
