@@ -30,27 +30,27 @@ class FixedParameters:
 class CircuitConfig:
     """Input configuration DTO for the DAB converter."""
 
-    V1_nom: np.ndarray
-    V1_min: np.ndarray
-    V1_max: np.ndarray
-    V1_step: np.ndarray
-    V2_nom: np.ndarray
-    V2_min: np.ndarray
-    V2_max: np.ndarray
-    V2_step: np.ndarray
-    P_min: np.ndarray
-    P_max: np.ndarray
-    P_nom: np.ndarray
-    P_step: np.ndarray
-    n: np.ndarray
-    Ls: np.ndarray
-    Lc1: np.ndarray
-    Lc2: np.ndarray
-    fs: np.ndarray
+    V1_nom: np.float64
+    V1_min: np.float64
+    V1_max: np.float64
+    V1_step: np.float64
+    V2_nom: np.float64
+    V2_min: np.float64
+    V2_max: np.float64
+    V2_step: np.float64
+    P_min: np.float64
+    P_max: np.float64
+    P_nom: np.float64
+    P_step: np.float64
+    n: np.float64
+    Ls: np.float64
+    Lc1: np.float64
+    Lc2: np.float64
+    fs: np.float64
     transistor_dto_1: TransistorDTO
     transistor_dto_2: TransistorDTO
-    c_par_1: np.ndarray
-    c_par_2: np.ndarray
+    c_par_1: np.float64
+    c_par_2: np.float64
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

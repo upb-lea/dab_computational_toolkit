@@ -5,7 +5,7 @@ import logging
 # own libraries
 from dct.debug_tools import timeit
 import dct.datasets_dtos as d_sets
-from dct import Plot_DAB
+from dct import PlotDAB
 
 # 3rd party libraries
 import numpy as np
@@ -38,7 +38,7 @@ def plot_gecko_simulation_results(dab_config: d_sets.CircuitDabDTO, simulation_n
     simulation_name += '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
     comment += ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
 
-    plt = Plot_DAB(latex=False, show=show_plot, figsize=(15, 5), fontsize=22)
+    plt = PlotDAB(latex=False, show=show_plot, figsize=(15, 5), fontsize=22)
 
     modulation_name = 'zvs'
 

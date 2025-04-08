@@ -1,17 +1,21 @@
 """Plot the DAB calculations."""
+# python libraries
 import os
-import sys
-
+from datetime import datetime
+import warnings
 import math
+
+# 3rd party libraries
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.axes
 
+# own libraries
 from dct.debug_tools import *
 from dct.plot_window import *
 
-
-class Plot_DAB:
+class PlotDAB:
     """Class storing and managing the plot window, figs and axes."""
 
     pw: PlotWindow
@@ -85,7 +89,7 @@ class Plot_DAB:
             if self.figsize == (15, 5):
                 fig.subplots_adjust(left=0.065, right=0.975, bottom=0.15, top=0.93, wspace=0.17, hspace=0.25)
 
-    def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: str = True, sharey: str = True,
+    def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: str = "yes", sharey: str = "yes",
                 tab_title='add Plot title'):
         """
         Create a new fig in a new tab with the amount of subplots specified.
@@ -160,7 +164,7 @@ class Plot_DAB:
         directory = os.path.expandvars(directory)
         directory = os.path.abspath(directory)
         if not os.path.isdir(directory):
-            warning("Directory does not exist!")
+            warnings.warn("Directory does not exist!", stacklevel=2)
             sys.exit(1)
 
         # Save plots
@@ -183,15 +187,15 @@ class Plot_DAB:
         :param fig_axes: Provide the tuple (fig, axs)
         :type fig_axes: tuple
         :param x: x mesh, e.g. P
-        :type x: np.array
+        :type x: np.ndarray
         :param y: y mesh, e.g. V2
-        :type y: np.array
+        :type y: np.ndarray
         :param z1: z for subplot 1, e.g. phi
-        :type z1: np.array
+        :type z1: np.ndarray
         :param z2: z for subplot 2, e.g. tau1
-        :type z2: np.array
+        :type z2: np.ndarray
         :param z3: z for subplot 3, e.g. tau2
-        :type z3: np.array
+        :type z3: np.ndarray
         :param t1: title for plot 1
         :type t1: str
         :param t2: title for plot 2
@@ -220,7 +224,7 @@ class Plot_DAB:
         # Only add colorbar if there was none
         if fig.axes[-1].get_label() == '<colorbar>':
             # TODO update colorbar
-            debug("update colorbar")
+            print("update colorbar")
             cbar = fig.axes[-1]
         else:
             cbar = fig.colorbar(cf, ax=axs)
@@ -235,27 +239,27 @@ class Plot_DAB:
         Plot three contourf plots with a shared colorbar.
 
         :param x: x mesh, e.g. P
-        :type x: np.array
+        :type x: np.ndarray
         :param y: y mesh, e.g. V2
-        :type y: np.array
+        :type y: np.ndarray
         :param z1: z for subplot 1, e.g. phi
-        :type z1: np.array
+        :type z1: np.ndarray
         :param z2: z for subplot 2, e.g. tau1
-        :type z2: np.array
+        :type z2: np.ndarray
         :param z3: z for subplot 3, e.g. tau2
-        :type z3: np.array
+        :type z3: np.ndarray
         :param mask1: optional mask contour line
-        :type mask1: np.array
+        :type mask1: np.ndarray
         :param mask2: optional mask contour line
-        :type mask2: np.array
+        :type mask2: np.ndarray
         :param mask3: optional mask contour line
-        :type mask3: np.array
+        :type mask3: np.ndarray
         :param Vnum: Voltage number of y-axis {1, 2}
         :type Vnum: int
         :param tab_title: Set the title of the tab-selector
         :type tab_title: str
         :param maskZVS: mask for ZVS
-        :type maskZVS: np.array
+        :type maskZVS: np.ndarray
         :param title: title of plot
         :type title: str
         """
@@ -344,7 +348,7 @@ class Plot_DAB:
         # if fig.axes[-1].get_label() == '<colorbar>':
         if False:
             # TODO update colorbar
-            warning("update colorbar not implemented")
+            print("update colorbar not implemented")
             cbar = fig.axes[-1]
         else:
             cbar = fig.colorbar(mappable=mappable, ax=axs, fraction=0.05, pad=0.02,
@@ -372,25 +376,25 @@ class Plot_DAB:
         :param fig_axes: Provide the tuple (fig, axs)
         :type fig_axes: tuple
         :param x: x mesh, e.g. P
-        :type x: np.array
+        :type x: np.ndarray
         :param y: y mesh, e.g. V2
-        :type y: np.array
+        :type y: np.ndarray
         :param z1: z for subplot 1, e.g. phi
-        :type z1: np.array
+        :type z1: np.ndarray
         :param z2: z for subplot 2, e.g. tau1
-        :type z2: np.array
+        :type z2: np.ndarray
         :param z3: z for subplot 3, e.g. tau2
-        :type z3: np.array
+        :type z3: np.ndarray
         :param mask1: optional mask contour line
-        :type mask1: np.array
+        :type mask1: np.ndarray
         :param mask2: optional mask contour line
-        :type mask2: np.array
+        :type mask2: np.ndarray
         :param mask3: optional mask contour line
-        :type mask3: np.array
+        :type mask3: np.ndarray
         :param title: title of plot
         :type title: str
         :param maskZVS: mask for ZVS
-        :type maskZVS: np.array
+        :type maskZVS: np.ndarray
         """
         # Some defaults
         fig = fig_axes[0]
@@ -448,7 +452,7 @@ class Plot_DAB:
         # Only add colorbar if there was none
         if fig.axes[-1].get_label() == '<colorbar>':
             # TODO update colorbar
-            warning("update colorbar not implemented")
+            warnings.warn("update colorbar not implemented", stacklevel=2)
             cbar = fig.axes[-1]
         else:
             cbar = fig.colorbar(mappable=mappable, ax=axs, fraction=0.05, pad=0.02,
@@ -472,11 +476,11 @@ class Plot_DAB:
         Plot RMS currents.
 
         :param mesh_V2: mesh of voltage v2 in V
-        :type mesh_V2: np.array
+        :type mesh_V2: np.ndarray
         :param mesh_P: mesh of the power P in W
-        :type mesh_P: np.array
+        :type mesh_P: np.ndarray
         :param mvvp_iLs: current i_Ls in A
-        :type mvvp_iLs: np.array
+        :type mvvp_iLs: np.ndarray
         """
         # plot
         fig, axs = plt.subplots(1, 3, sharey=True)
@@ -496,13 +500,13 @@ class Plot_DAB:
         # plt.show()
         return fig
 
-    def subplot_contourf(self, x: np.array, y: np.array, z: np.array, mask1=None, mask2=None, mask3=None,
-                         nan_matrix=None, ax: str = None,
+    def subplot_contourf(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, mask1=None, mask2=None, mask3=None,
+                         nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
                          num_cont_lines: int = 12, alpha: float = 0.75, cmap: str = 'viridis',
-                         axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float = None, wp_y: float = None,
+                         axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None,
                          inlinespacing: int = -10, xlabel='', ylabel: str = '', title: str = "", clabel: bool = False,
                          markerstyle: str = 'star',
-                         z_min: float = None, z_max: float = None,
+                         z_min: float | None = None, z_max: float | None = None,
                          square: bool = False, same_xy_ticks: bool = False) -> None:
         """
         Draw a subplot contourf.
@@ -510,13 +514,13 @@ class Plot_DAB:
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
-        :type x: np.array
+        :type x: np.ndarray
         :param y: y-coordinate
-        :type y: np.array
+        :type y: np.ndarray
         :param z: z-coordinate
-        :type z: np.array
+        :type z: np.ndarray
         :param nan_matrix: [optional] z-values where a nan is in nan_matrix will be plotted shaded
-        :type nan_matrix: np.array
+        :type nan_matrix: np.ndarray
         :param ax: choose the axis to draw this plot
         :type ax: str
         :param num_cont_lines: [optional] number of contour lines, default to 20
@@ -550,11 +554,11 @@ class Plot_DAB:
         :param z_max: [optional] clip to maximum z-value
         :type z_max: float
         :param mask1: optional mask contour line
-        :type mask1: np.array
+        :type mask1: np.ndarray
         :param mask2: optional mask contour line
-        :type mask2: np.array
+        :type mask2: np.ndarray
         :param mask3: optional mask contour line
-        :type mask3: np.array
+        :type mask3: np.ndarray
         :param square:
         :type square: bool
         :param same_xy_ticks:
@@ -570,7 +574,7 @@ class Plot_DAB:
         # if np.sum(search_nones) == np.size(search_nones):
         #     raise Exception("in subplot_contourf(), z input out of None's only is not allowed")
         if np.all(np.isnan(z)):
-            warning('subplot_contourf(): z input out of NaN only is not allowed!', z)
+            warnings.warn(f'subplot_contourf(): z input {z} out of NaN only is not allowed!', stacklevel=2)
 
         if ax is None:
             ax = plt.gca()
@@ -580,7 +584,7 @@ class Plot_DAB:
         if z_max is None or z_max < np.nanmin(z):
             z_max = np.nanmax(z)
         # To prevent error in cbar and get at least a plot even it is one color
-        if z_min == z_max:
+        if z_min == z_max and z_min is not None and z_max is not None:
             z_min = z_min - z_min * 0.1
             z_max = z_max + z_max * 0.1
         # Try to round min/max to sane values
@@ -661,25 +665,25 @@ class Plot_DAB:
             ax.set_yticks(ax.get_xticks())
 
     def subplot_contourf_fixedz(self, x, y, z, mask1=None, mask2=None, mask3=None,
-                                nan_matrix=None, ax: str = None,
+                                nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
                                 num_cont_lines: int = 12, alpha: float = 0.75, cmap: str = 'viridis',
-                                axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float = None, wp_y: float = None,
+                                axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None,
                                 inlinespacing: int = -10, xlabel='', ylabel: str = '', title: str = "",
                                 clabel: bool = False, markerstyle: str = 'star',
-                                z_min: float = None, z_max: float = None) -> None:
+                                z_min: float | None = None, z_max: float | None = None) -> None:
         """
         Draw a subplot contourf.
 
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
-        :type x: np.array
+        :type x: np.ndarray
         :param y: y-coordinate
-        :type y: np.array
+        :type y: np.ndarray
         :param z: z-coordinate
-        :type z: np.array
+        :type z: np.ndarray
         :param nan_matrix: [optional] z-values where a nan is in nan_matrix will be plotted shaded
-        :type nan_matrix: np.array
+        :type nan_matrix: np.ndarray
         :param ax: choose the axis to draw this plot
         :type ax: str
         :param num_cont_lines: [optional] number of contour lines, default to 20
@@ -713,11 +717,11 @@ class Plot_DAB:
         :param z_max: [optional] clip to maximum z-value
         :type z_max: float
         :param mask1: optional mask contour line
-        :type mask1: np.array
+        :type mask1: np.ndarray
         :param mask2: optional mask contour line
-        :type mask2: np.array
+        :type mask2: np.ndarray
         :param mask3: optional mask contour line
-        :type mask3: np.array
+        :type mask3: np.ndarray
         """
         fontsize_axis = self.fontsize
         fontsize_title = self.fontsize
@@ -729,7 +733,7 @@ class Plot_DAB:
         # if np.sum(search_nones) == np.size(search_nones):
         #     raise Exception("in subplot_contourf(), z input out of None's only is not allowed")
         if np.all(np.isnan(z)):
-            warning('subplot_contourf(): z input out of NaN only is not allowed!', z)
+            warnings.warn(f'subplot_contourf(): z input {z} out of NaN only is not allowed!', stacklevel=2)
 
         if ax is None:
             ax = plt.gca()
@@ -793,25 +797,25 @@ class Plot_DAB:
             ax.plot(wp_x, wp_y, marker="*", color=axlinecolor)
 
     @timeit
-    def subplot_contourf_nan(self, x, y, z, nan_matrix=None, ax: str = None,
+    def subplot_contourf_nan(self, x, y, z, nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
                              num_cont_lines: int = 20, alpha: float = 0.75, cmap: str = 'inferno', axlinewidth=0.5,
                              axlinecolor: str = 'r', wp_x: float = None, wp_y: float = None, inlinespacing: int = -10,
                              xlabel='Lambda = f * L', ylabel: str = 'Turns ratio n', fontsize_axis: int = 9,
                              fontsize_title: int = 9, title: str = "", clabel: bool = False, markerstyle: str = 'star',
-                             z_min: float = None, z_max: float = None) -> None:
+                             z_min: float | None = None, z_max: float | None = None) -> None:
         """
         Draw a subplot contourf.
 
         The area of z where a nan can be found in nan_matrix will be shaded.
 
         :param x: x-coordinate
-        :type x: np.array
+        :type x: np.ndarray
         :param y: y-coordinate
-        :type y: np.array
+        :type y: np.ndarray
         :param z: z-coordinate
-        :type z: np.array
+        :type z: np.ndarray
         :param nan_matrix: [optional] z-values where a nan is in nan_matrix will be plotted shaded
-        :type nan_matrix: np.array
+        :type nan_matrix: np.ndarray
         :param ax: choose the axis to draw this plot
         :type ax: str
         :param num_cont_lines: [optional] number of contour lines, default to 20
@@ -895,16 +899,16 @@ class Plot_DAB:
         if wp_x is not None and wp_y is not None and markerstyle.lower() == 'star':
             ax.plot(wp_x, wp_y, marker="*", color=axlinecolor)
 
-    def subplot(self, x: np.array, y: np.array, ax: str = None,
+    def subplot(self, x: np.ndarray, y: np.ndarray, ax: matplotlib.axes.Axes | None = None,
                 xlabel: str = 'x', ylabel: str = 'y', title: str = '',
                 xscale: str = 'linear', yscale: str = 'linear') -> None:
         """
         Plot a simple line plot in a subplot.
 
         :param x:
-        :type x: np.array
+        :type x: np.ndarray
         :param y:
-        :type y: np.array
+        :type y: np.ndarray
         :param ax: axis
         :type ax: str
         :param xlabel: x label
@@ -956,31 +960,31 @@ class Plot_DAB:
 
 
 @timeit
-def plot_modulation(x: np.array, y: np.array, z1: np.array, z2: np.array, z3: np.array, title: str = '', mask1=None, mask2=None, mask3=None,
+def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '', mask1=None, mask2=None, mask3=None,
                     maskZVS: np.ndarray = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
     """
     Plot three contourf plots with a shared colorbar.
 
     :param x: x mesh, e.g. P
-    :type x: np.array
+    :type x: np.ndarray
     :param y: y mesh, e.g. V2
-    :type y: np.array
+    :type y: np.ndarray
     :param z1: z for subplot 1, e.g. phi
-    :type z1: np.array
+    :type z1: np.ndarray
     :param z2: z for subplot 2, e.g. tau1
-    :type z2: np.array
+    :type z2: np.ndarray
     :param z3: z for subplot 3, e.g. tau2
-    :type z3: np.array
+    :type z3: np.ndarray
     :param mask1: optional mask contour line
-    :type mask1: np.array
+    :type mask1: np.ndarray
     :param mask2: optional mask contour line
-    :type mask2: np.array
+    :type mask2: np.ndarray
     :param mask3: optional mask contour line
-    :type mask3: np.array
+    :type mask3: np.ndarray
     :param Vnum: Voltage number of y-axis {1, 2}
     :type Vnum: int
     :param maskZVS: ZVS mask
-    :type maskZVS: np.array
+    :type maskZVS: np.ndarray
     :param Vnum:
     :type Vnum: int
     :param filename: name of the file
@@ -1107,16 +1111,16 @@ def plot_modulation(x: np.array, y: np.array, z1: np.array, z2: np.array, z3: np
 
 
 @timeit
-def plot_rms_current(mesh_V2: np.array, mesh_P: np.array, mvvp_iLs: np.array):
+def plot_rms_current(mesh_V2: np.ndarray, mesh_P: np.ndarray, mvvp_iLs: np.ndarray):
     """
     Plot the RMS currents.
 
     :param mesh_V2: mesh of voltage v2 in V
-    :type mesh_V2: np.array
+    :type mesh_V2: np.ndarray
     :param mesh_P: mesh of the power P in W
-    :type mesh_P: np.array
+    :type mesh_P: np.ndarray
     :param mvvp_iLs: current i_Ls in A
-    :type mvvp_iLs: np.array
+    :type mvvp_iLs: np.ndarray
     """
     # plot
     fig, axs = plt.subplots(1, 3, sharey=True)

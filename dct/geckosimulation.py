@@ -20,10 +20,10 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
                            t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray,
                            Ls: float, Lc1: float, Lc2: float, n: float,
                            t_j_1: float, t_j_2: float,
-                           simfilepath: str, timestep: float, number_sim_periods: int,
+                           simfilepath: str, timestep: float, number_sim_periods: int, transistor_1_name: str, transistor_2_name: str, lossfilepath: str,
                            timestep_pre: float = 0, number_pre_sim_periods: int = 0, geckoport: int = 43036,
-                           c_par_1: float | None = None, c_par_2: float | None = None, transistor_1_name: str | None = None, transistor_2_name: str | None = None,
-                           lossfilepath: str | None = None, get_waveforms: bool = False,
+                           c_par_1: float | None = None, c_par_2: float | None = None,
+                           get_waveforms: bool = False,
                            i_ls_start: np.ndarray = 0, i_lc1_start: np.ndarray = 0, i_lc2_start: np.ndarray = 0) -> tuple[dict, defaultdict]:
     """
     Start the GeckoCIRCUITS simulation.

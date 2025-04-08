@@ -28,7 +28,7 @@ class TransformerOptimization:
     sim_config_list = []
 
     @staticmethod
-    def init_configuration(toml_transformer: dct.TomlTransformer, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
+    def init_configuration(toml_transformer: dct.TomlTransformer, toml_prog_flow: dct.FlowControl, act_ginfo: type[dct.GeneralInformation]) -> bool:
         """
         Initialize the configuration.
 
@@ -275,7 +275,7 @@ class TransformerOptimization:
 
     @staticmethod
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
+    def simulation_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
                            factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
                            re_simulate: bool = False, debug: bool = False):
         """

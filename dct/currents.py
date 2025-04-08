@@ -264,7 +264,7 @@ def _int_square_line_between_angles(angle_1_rad, angle_2_rad, y_1, y_2):
     return int_square
 
 def calc_rms(alpha_rad: np.ndarray, beta_rad: np.ndarray, gamma_rad: np.ndarray, delta_rad: np.ndarray,
-             i_alpha: np.ndarray, i_beta: np.ndarray, i_gamma: np.ndarray, i_delta: np.ndarray) -> np.ndarray:
+             i_alpha: np.ndarray, i_beta: np.ndarray, i_gamma: np.ndarray, i_delta: np.ndarray) -> tuple[object, np.ndarray, np.ndarray]:
     """
     Calculate a single RMS current for some single points, with a linear current between them.
 

@@ -23,9 +23,9 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, V1_nom: np.array, V1_min: np.array, V1_max: np.array, V1_step: np.array, V2_nom: np.array, V2_min: np.array,
-                    V2_max: np.array, V2_step: np.array, P_min: np.array, P_max: np.array, P_nom: np.array, P_step: np.array,
-                    n: np.array, Ls: np.array, Lc1: np.array, Lc2: np.array, fs: np.array,
+    def init_config(name: str, V1_nom: float, V1_min: float, V1_max: float, V1_step: int, V2_nom: float, V2_min: float,
+                    V2_max: float, V2_step: int, P_min: float, P_max: float, P_nom: float, P_step: int,
+                    n: float, Ls: float, Lc1: float, Lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1, c_par_2):
         """
         Initialize the DAB structure.
@@ -33,47 +33,47 @@ class HandleDabDto:
         :param name: name of the simulation
         :type name: str
         :param V1_nom: V1 nominal voltage
-        :type V1_nom: np.array
+        :type V1_nom: float
         :param V1_min: V1 minimum voltage
-        :type V1_min: np.array
+        :type V1_min: float
         :param V1_max: V1 maximum voltage
-        :type V1_max: np.array
+        :type V1_max: float
         :param V1_step: V1 voltage steps
-        :type V1_step: np.array
+        :type V1_step: int
         :param V2_nom: V2 nominal voltage
-        :type V2_nom: np.array
+        :type V2_nom: float
         :param V2_min: V2 minimum voltage
-        :type V2_min: np.array
+        :type V2_min: float
         :param V2_max: V2 maximum voltage
-        :type V2_max: np.array
+        :type V2_max: float
         :param V2_step: V2 voltage steps
-        :type V2_step: np.array
+        :type V2_step: int
         :param P_min: P minimum power
-        :type P_min: np.array
+        :type P_min: float
         :param P_max: P maximum power
-        :type P_max: np.array
+        :type P_max: float
         :param P_nom: P nominal power
-        :type P_nom: np.array
+        :type P_nom: float
         :param P_step: P power steps
-        :type P_step:
+        :type P_step: int
         :param n: transformer transfer ratio
-        :type n: np.array
+        :type n: float
         :param Ls: series inductance
-        :type Ls: np.array
+        :type Ls: float
         :param Lc1: Commutation inductance Lc1
-        :type Lc1: np.array
+        :type Lc1: float
         :param Lc2: Commutation inductance Lc2
-        :type Lc2: np.array
+        :type Lc2: float
         :param fs: Switching frequency
-        :type fs: np.array
+        :type fs: float
         :param transistor_dto_1: Transistor DTO for transistor bridge 1. Must match with transistordatbase available transistors.
         :type transistor_dto_1: TransistorDTO
         :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatbase available transistors.
         :type transistor_dto_2: TransistorDTO
         :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
-        :type c_par_1: np.array
+        :type c_par_1: float
         :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
-        :type c_par_2: np.array
+        :type c_par_2: float
         :return:
         """
         input_configuration = d_dtos.CircuitConfig(V1_nom=np.array(V1_nom),
@@ -430,7 +430,7 @@ class HandleDabDto:
         # return dab_dto
 
     @staticmethod
-    def get_max_peak_waveform_transformer(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array, np.array]:
+    def get_max_peak_waveform_transformer(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Get the transformer waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -439,7 +439,7 @@ class HandleDabDto:
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform. All as a numpy array.
-        :rtype: List[np.array]
+        :rtype: List[np.ndarray]
         """
         i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted * dab_dto.input_config.n - dab_dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
@@ -469,7 +469,7 @@ class HandleDabDto:
         return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
 
     @staticmethod
-    def get_max_peak_waveform_inductor(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.array, np.array]:
+    def get_max_peak_waveform_inductor(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -478,7 +478,7 @@ class HandleDabDto:
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_l1_max_current_waveform. All as a numpy array.
-        :rtype: List[np.array]
+        :rtype: List[np.ndarray]
         """
         i_l1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))

@@ -281,7 +281,7 @@ ax[0].grid()
 
 ax[1].scatter(df["total_area"], df["total_mean_loss"])
 ax[1].set_xlabel(r"$A_\mathrm{HS}$ / m²")
-ax[1].set_ylabel("$P_\mathrm{DAB,mean}$ / W")
+ax[1].set_ylabel(r"$P_\mathrm{DAB,mean}$ / W")
 ax[1].grid()
 
 ax[2].scatter(df["volume_wo_heat_sink"], df["r_th_heat_sink"])

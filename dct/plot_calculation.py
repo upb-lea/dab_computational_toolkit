@@ -33,7 +33,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO):
         int(dab_config.input_config.V2_step),
         int(dab_config.input_config.P_step))
 
-    plt = dct.plot_dab.Plot_DAB(latex=False)
+    plt = dct.plotdab.PlotDAB(latex=False)
 
     # Plot OptZVS mod results
     # Plot a cross-section through the V1 plane

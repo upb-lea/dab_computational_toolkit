@@ -106,11 +106,11 @@ class CircuitOptimization:
 
         for _, transistor_dto in enumerate(fixed_parameters.transistor_1_dto_list):
             if transistor_dto.name == transistor_1_name_suggest:
-                transistor_1_dto: p_dtos.TransistorDTO = transistor_dto
+                transistor_1_dto: d_dtos.TransistorDTO = transistor_dto
 
         for _, transistor_dto in enumerate(fixed_parameters.transistor_2_dto_list):
             if transistor_dto.name == transistor_2_name_suggest:
-                transistor_2_dto: p_dtos.TransistorDTO = transistor_dto
+                transistor_2_dto: d_dtos.TransistorDTO = transistor_dto
 
         dab_config = d_sets.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
@@ -692,8 +692,6 @@ class CircuitOptimization:
         """
         df = CircuitOptimization.study_to_df(dab_config)
         df = df[df["values_0"] == 100]
-
-        df_original = df.copy()
 
         smallest_dto_list = []
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
