@@ -170,7 +170,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def optimization_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
+    def optimization_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
                              delete_study: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.

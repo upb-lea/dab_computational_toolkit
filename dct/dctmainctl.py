@@ -110,7 +110,7 @@ class DctMainCtl:
         pass
 
     @staticmethod
-    def init_general_info(act_ginfo: dct.GeneralInformation, act_config_program_flow: tc.FlowControl):
+    def init_general_info(act_ginfo: type[dct.GeneralInformation], act_config_program_flow: tc.FlowControl):
         """
         Init the general information variable.
 

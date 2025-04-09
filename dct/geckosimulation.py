@@ -17,14 +17,14 @@ import pandas as pd
 
 def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
                            mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
-                           t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray,
+                           t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray | np.float64,
                            Ls: float, Lc1: float, Lc2: float, n: float,
                            t_j_1: float, t_j_2: float,
-                           simfilepath: str, timestep: float, number_sim_periods: int,
+                           simfilepath: str, timestep: float, number_sim_periods: int, transistor_1_name: str, transistor_2_name: str, lossfilepath: str,
+                           i_ls_start: np.ndarray, i_lc1_start: np.ndarray, i_lc2_start: np.ndarray,
                            timestep_pre: float = 0, number_pre_sim_periods: int = 0, geckoport: int = 43036,
-                           c_par_1: float = None, c_par_2: float = None, transistor_1_name: str = None, transistor_2_name: str = None,
-                           lossfilepath: str = None, get_waveforms: bool = False,
-                           i_ls_start: np.array = 0, i_lc1_start: np.array = 0, i_lc2_start: np.array = 0) -> tuple[dict, defaultdict]:
+                           c_par_1: float | None = None, c_par_2: float | None = None,
+                           get_waveforms: bool = False) -> tuple[dict, defaultdict]:
     """
     Start the GeckoCIRCUITS simulation.
 
@@ -206,7 +206,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
             )
 
             if get_waveforms:
-                result_df: pd.DataFrame = gecko_dab_converter.get_scope_data(waveform_keys, "results")
+                result_df = gecko_dab_converter.get_scope_data(waveform_keys, "results")
 
                 for key in waveform_keys:
                     gecko_waveforms_single_simulation[key] = result_df[key].to_numpy()

@@ -106,13 +106,13 @@ class CircuitOptimization:
 
         for _, transistor_dto in enumerate(fixed_parameters.transistor_1_dto_list):
             if transistor_dto.name == transistor_1_name_suggest:
-                transistor_1_dto: p_dtos.TransistorDTO = transistor_dto
+                transistor_1_dto: d_dtos.TransistorDTO = transistor_dto
 
         for _, transistor_dto in enumerate(fixed_parameters.transistor_2_dto_list):
             if transistor_dto.name == transistor_2_name_suggest:
-                transistor_2_dto: p_dtos.TransistorDTO = transistor_dto
+                transistor_2_dto: d_dtos.TransistorDTO = transistor_dto
 
-        dab_config = d_sets.HandleDabDto.init_config(
+        dab_calc = d_sets.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
             V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
             V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
@@ -137,15 +137,15 @@ class CircuitOptimization:
             transistor_dto_2=transistor_2_dto
         )
 
-        if (np.any(np.isnan(dab_config.calc_modulation.phi)) or np.any(np.isnan(dab_config.calc_modulation.tau1)) \
-                or np.any(np.isnan(dab_config.calc_modulation.tau2))):
+        if (np.any(np.isnan(dab_calc.calc_modulation.phi)) or np.any(np.isnan(dab_calc.calc_modulation.tau1)) \
+                or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
         # Calculate the cost function. Mean for not-NaN values, as there will be too many NaN results.
-        i_cost_matrix = dab_config.calc_currents.i_hf_1_rms ** 2 + dab_config.calc_currents.i_hf_2_rms ** 2
+        i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
         i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
 
-        return dab_config.calc_modulation.mask_zvs_coverage * 100, i_cost
+        return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
     def calculate_fix_parameters(dab_config: p_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
@@ -587,7 +587,7 @@ class CircuitOptimization:
         return df
 
     @staticmethod
-    def is_pareto_efficient(costs: np.array, return_mask: bool = True):
+    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True):
         """
         Find the pareto-efficient points.
 
@@ -693,9 +693,7 @@ class CircuitOptimization:
         df = CircuitOptimization.study_to_df(dab_config)
         df = df[df["values_0"] == 100]
 
-        df_original = df.copy()
-
-        smallest_dto_list = []
+        smallest_dto_list: list[d_dtos.CircuitDabDTO] = []
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
@@ -736,6 +734,5 @@ class CircuitOptimization:
         dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            print(f"{dto.name=}")
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
