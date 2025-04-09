@@ -4,6 +4,8 @@ import os
 import sys
 import multiprocessing
 import tomllib
+from os.path import abspath
+
 import toml
 
 # 3rd party libraries
@@ -18,9 +20,12 @@ import inductor_optimization as Inductsimclass
 import transformer_optimization as Transfsimclass
 # import heatsink_sim
 import heat_sink_optimization as Heatsinksimclass
+# Import server control class
+import summary_processing as SumProcessing
 import toml_checker as tc
 import pareto_dtos as p_dtos
 from dct import CircuitOptimization
+from server_ctl import Dct_server as srv_ctl
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -131,34 +136,40 @@ class DctMainCtl:
         pass
 
     @staticmethod
-    def init_general_info(act_ginfo: dct.GeneralInformation, act_config_program_flow: tc.FlowControl):
+    def init_general_info(act_config_program_flow: tc.FlowControl)-> dct.GeneralInformation:
         """
         Init the general information variable.
 
-        :param act_ginfo: reference to the general information variable
-        :type  act_ginfo: dct.GeneralInformation
         :param act_config_program_flow: toml data of the program flow
         :type  act_config_program_flow: dict
+        :return: general information variable containing general information for the optimization
+        :rtype: dct.GeneralInformation
         """
-        # Read the current directory name
-        abs_path = os.getcwd()
-        # Store project directory and study name
-        act_ginfo.project_directory = act_config_program_flow.general.project_directory
-        act_ginfo.circuit_study_name = act_config_program_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
-        # Create path names
-        act_ginfo.circuit_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                    DctMainCtl.const_circuit_folder, act_ginfo.circuit_study_name)
-        act_ginfo.inductor_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                     DctMainCtl.const_inductor_folder, act_ginfo.circuit_study_name)
-        act_ginfo.transformer_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                        DctMainCtl.const_transformer_folder, act_ginfo.circuit_study_name)
-        # Check, if heat sink study name uses the circuit name
-        if act_config_program_flow.heat_sink.circuit_study_name_flag == "True":
-            act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          DctMainCtl.const_heat_sink_folder, act_ginfo.circuit_study_name)
-        else:
-            act_ginfo.heat_sink_study_path = os.path.join(abs_path, act_ginfo.project_directory,
-                                                          DctMainCtl.const_heat_sink_folder)
+        # Set projektdirectory
+        act_project_directory = act_config_program_flow.general.project_directory
+
+        # Setup variable by set study names
+        r_ginfo = dct.GeneralInformation(
+         project_directory=act_project_directory,
+         circuit_study_name=
+          act_config_program_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+         filtered_list_id=[],
+         inductor_study_name=
+          act_config_program_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
+         transformer_study_name=
+          act_config_program_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
+         heat_sink_study_name=
+          act_config_program_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
+         # Set remaining elements with dummy names
+         circuit_study_path=os.path.join(act_project_directory, "01_circuit"),
+         inductor_study_path=os.path.join(act_project_directory, "02_inductor"),
+         transformer_study_path=os.path.join(act_project_directory, "03_transformer"),
+         heat_sink_study_path=os.path.join(act_project_directory,  "04_heat_sink")
+        )
+
+        # Return the result
+        return r_ginfo
+
 
     @staticmethod
     def check_study_data(study_path: str, study_name: str) -> bool:
@@ -213,7 +224,8 @@ class DctMainCtl:
         return act_isim.init_configuration(toml_inductor, toml_prog_flow, act_ginfo)
 
     @staticmethod
-    def load_transformer_config(act_ginfo: dct.GeneralInformation, act_config_transformer: dict, act_tsim: Transfsimclass.TransformerOptimization) -> bool:
+    def load_transformer_config(act_ginfo: dct.GeneralInformation, toml_transformer: dct.TomlInductor, toml_prog_flow: dct.FlowControl,
+                                act_tsim: Transfsimclass.TransformerOptimization) -> bool:
         """
         Load and initialize the transformer optimization configuration.
 
@@ -228,65 +240,9 @@ class DctMainCtl:
         """
         #   Variable initialisation
 
-        # design space
-        designspace_dict = {"core_name_list": act_config_transformer["Designspace"]["core_name_list"],
-                            "material_name_list": act_config_transformer["Designspace"]["material_name_list"],
-                            "core_inner_diameter_min_max_list": act_config_transformer["Designspace"]["core_inner_diameter_min_max_list"],
-                            "window_w_min_max_list": act_config_transformer["Designspace"]["window_w_min_max_list"],
-                            "window_h_bot_min_max_list": act_config_transformer["Designspace"]["window_h_bot_min_max_list"],
-                            "primary_litz_wire_list": act_config_transformer["Designspace"]["primary_litz_wire_list"],
-                            "secondary_litz_wire_list": act_config_transformer["Designspace"]["secondary_litz_wire_list"]}
-
-        # Transformer data
-        transformer_data_dict = {"max_transformer_total_height": act_config_transformer["TransformerData"]["max_transformer_total_height"],
-                                 "max_core_volume": act_config_transformer["TransformerData"]["max_core_volume"],
-                                 "n_p_top_min_max_list": act_config_transformer["TransformerData"]["n_p_top_min_max_list"],
-                                 "n_p_bot_min_max_list": act_config_transformer["TransformerData"]["n_p_bot_min_max_list"],
-                                 "iso_window_top_core_top": act_config_transformer["TransformerData"]["iso_window_top_core_top"],
-                                 "iso_window_top_core_bot": act_config_transformer["TransformerData"]["iso_window_top_core_bot"],
-                                 "iso_window_top_core_left": act_config_transformer["TransformerData"]["iso_window_top_core_left"],
-                                 "iso_window_top_core_right": act_config_transformer["TransformerData"]["iso_window_top_core_right"],
-                                 "iso_window_bot_core_top": act_config_transformer["TransformerData"]["iso_window_bot_core_top"],
-                                 "iso_window_bot_core_bot": act_config_transformer["TransformerData"]["iso_window_bot_core_bot"],
-                                 "iso_window_bot_core_left": act_config_transformer["TransformerData"]["iso_window_bot_core_left"],
-                                 "iso_window_bot_core_right": act_config_transformer["TransformerData"]["iso_window_bot_core_right"],
-                                 "iso_primary_to_primary": act_config_transformer["TransformerData"]["iso_primary_to_primary"],
-                                 "iso_secondary_to_secondary": act_config_transformer["TransformerData"]["iso_secondary_to_secondary"],
-                                 "iso_primary_to_secondary": act_config_transformer["TransformerData"]["iso_primary_to_secondary"],
-                                 "fft_filter_value_factor": act_config_transformer["TransformerData"]["fft_filter_value_factor"],
-                                 "mesh_accuracy": act_config_transformer["TransformerData"]["mesh_accuracy"]}
-
         # Initialize inductor optimization and return, if it was successful (true)
-        return act_tsim.init_configuration(act_config_transformer["TransformerConfigName"]["transformer_config_name"],
-                                           act_ginfo, designspace_dict, transformer_data_dict)
+        return act_tsim.init_configuration(toml_transformer, toml_prog_flow, act_ginfo)
 
-    @staticmethod  # (ginfo, config_heat_sink, spro)
-    def init_summary_thermal_data(act_ginfo: dct.GeneralInformation, act_config_heat_sink: dict, act_spro: SumProcessing.DctSummmaryProcessing) -> bool:
-        """
-        Initialize thermal data for summary processing.
-
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_config_heat_sink: actual heat sink configuration information
-        :type  act_config_heat_sink: dict: heat sink with the necessary configuration parameter
-        :param act_spro: summary processing object reference
-        :type  act_spro: SumProcessing.DctSummmaryProcessing
-        :return: True, if the configuration is successful
-        :rtype: bool
-        """
-        #   Variable initialisation
-
-        # Get heat sink dimension data
-        thermal_configuration_dict = {
-            "transistor_b1_cooling": act_config_heat_sink["ThermalResistanceData"]["transistor_b1_cooling"],
-            "transistor_b2_cooling": act_config_heat_sink["ThermalResistanceData"]["transistor_b2_cooling"],
-            "inductor_cooling": act_config_heat_sink["ThermalResistanceData"]["inductor_cooling"],
-            "transformer_cooling": act_config_heat_sink["ThermalResistanceData"]["transformer_cooling"],
-            "heat_sink": act_config_heat_sink["ThermalResistanceData"]["heat_sink"],
-        }
-
-        # Initialize inductor optimization and return, if it was successful (true)
-        return act_spro.init_thermal_configuration(thermal_configuration_dict)
 
     @staticmethod
     def check_breakpoint(break_point_key: str, info: str):
@@ -415,6 +371,13 @@ class DctMainCtl:
         if not flow_control_loaded:
             raise ValueError("Program flow toml file does not exist.")
 
+        # Add absolute path to project data path
+        workspace_path=abspath(workspace_path)
+        toml_prog_flow.general.project_directory=os.path.join(workspace_path,toml_prog_flow.general.project_directory)
+
+        # Init general information: Project directory, study names and corresponding paths
+        ginfo = DctMainCtl.init_general_info(toml_prog_flow)
+
         # Init circuit configuration
         circuit_loaded, dict_circuit = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
@@ -426,16 +389,13 @@ class DctMainCtl:
 
         circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
 
-        # Add project directory and study name
-        DctMainCtl.init_general_info(ginfo, toml_prog_flow)
-
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.re_calculation == "skip":
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(ginfo.circuit_study_path, ginfo.circuit_study_name):
                 raise ValueError(f"Study {ginfo.circuit_study_name} in path {ginfo.circuit_study_path} does not exist. No sqlite3-database found!")
             # Check if filtered results folder exists
-            datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
+            datapath = os.path.join(ginfo.circuit_study_path,ginfo.circuit_study_name,"filtered_results")
             if os.path.exists(datapath):
                 # Set Flag to false
                 filtered_resultFlag = True
@@ -444,13 +404,8 @@ class DctMainCtl:
                     if os.path.isfile(os.path.join(datapath, pareto_entry)):
                         ginfo.filtered_list_id.append(os.path.splitext(pareto_entry)[0])
 
-            # Assemble pathname
-            datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                    toml_prog_flow.circuit.subdirectory,
-                                    circuit_study_name)
-
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, circuit_study_name):
+            if not DctMainCtl.check_study_data(ginfo.circuit_study_path, circuit_study_name):
                 raise ValueError(
                     f"Study {toml_prog_flow.general.study_name} in path {datapath} "
                     "does not exist. No sqlite3-database found!"
@@ -461,8 +416,6 @@ class DctMainCtl:
         inductor_loaded, inductor_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
-        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
-
         if not inductor_loaded:
             raise ValueError(f"Inductor configuration file: {target_file} does not exist.")
 
@@ -472,18 +425,20 @@ class DctMainCtl:
 
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                        toml_prog_flow.inductor.subdirectory,
-                                        circuit_study_name,
+                datapath = os.path.join(ginfo.inductor_study_path,
+                                        ginfo.circuit_study_name,
                                         id_entry,
-                                        )
+                                        ginfo.inductor_study_name)
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, inductor_study_name):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+                if not DctMainCtl.check_study_data(datapath, ginfo.inductor_study_name):
+                    raise ValueError(f"Study {ginfo.inductor_study_name} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the transformer-configuration parameter
         target_file = toml_prog_flow.configuration_data_files.transformer_configuration_file
-        if not DctMainCtl.load_conf_file_deprecated(target_file, config_transformer):
+        transformer_loaded, transformer_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
+        toml_transformer = dct.TomlTransformer(**transformer_dict)
+
+        if not transformer_loaded:
             raise ValueError(f"Transformer configuration file: {target_file} does not exist.")
 
         # Check, if transformer optimization is to skip
@@ -491,14 +446,13 @@ class DctMainCtl:
             # For loop to check, if all filtered values are available
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
-                datapath = os.path.join(toml_prog_flow.general.project_directory,
-                                        toml_prog_flow.transformer.subdirectory,
-                                        circuit_study_name,
+                datapath = os.path.join(ginfo.transformer_study_path,
+                                        ginfo.circuit_study_name,
                                         id_entry,
-                                        config_transformer["TransformerConfigName"]["transformer_config_name"])
+                                        ginfo.transformer_study_name)
                 # Check, if data are available (skip case)
-                if not DctMainCtl.check_study_data(datapath, "transformer_01"):
-                    raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+                if not DctMainCtl.check_study_data(datapath, ginfo.transformer_study_name):
+                    raise ValueError(f"Study {ginfo.transformer_study_name} in path {datapath} does not exist. No sqlite3-database found!")
 
         # Load the heat sink-configuration parameter
         target_file = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
@@ -508,14 +462,16 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.re_calculation == "skip":
             # Assemble pathname
-            datapath = os.path.join(ginfo.heat_sink_study_path, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"])
+            datapath = os.path.join(ginfo.heat_sink_study_path,
+                                    ginfo.heat_sink_study_name)
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(datapath, "heatsink_01"):
-                raise ValueError(f"Study {toml_prog_flow.general.study_name} in path {datapath} does not exist. No sqlite3-database found!")
+            if not DctMainCtl.check_study_data(datapath, ginfo.heat_sink_study_name):
+                raise ValueError(
+                    f"Study {ginfo.heat_sink_study_name} in path {datapath} does not exist. No sqlite3-database found!")
 
         # -- Start server  --------------------------------------------------------------------------------------------
         # Debug: Server switched off
-        srv_ctl.start_dct_server(histogram_data,False)
+        # srv_ctl.start_dct_server(histogram_data,False)
 
         # -- Start simulation  ----------------------------------------------------------------------------------------
 
@@ -549,7 +505,7 @@ class DctMainCtl:
             # Calculate the filtered results
             CircuitOptimization.filter_study_results(dab_config=config_circuit)
             # Get filtered result path
-            datapath = os.path.join(ginfo.circuit_study_path, "filtered_results")
+            datapath = os.path.join(ginfo.circuit_study_path,ginfo.circuit_study_name,"filtered_results")
             # Add filtered result list
             for pareto_entry in os.listdir(datapath):
                 if os.path.isfile(os.path.join(datapath, pareto_entry)):
@@ -558,7 +514,7 @@ class DctMainCtl:
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
 
-        # Check, if inductor optimization is not to skip
+        # Check, if inductor optimization is not skipped
         if not toml_prog_flow.inductor.re_calculation == "skip":
             # Load initialisation data of inductor simulation and initialize
             if not DctMainCtl.load_inductor_config(ginfo, toml_inductor, toml_prog_flow, isim):
@@ -572,15 +528,14 @@ class DctMainCtl:
                 new_study_flag = False
 
             # Start simulation ASA: Filter_factor to correct
-            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, 1.0, new_study_flag)
-
+            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, 1.0, new_study_flag, True)
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
 
-        # Check, if transformer optimization is not to skip
+        # Check, if transformer optimization is not skipped
         if not toml_prog_flow.transformer.re_calculation == "skip":
             # Load initialisation data of transformer simulation and initialize
-            if not DctMainCtl.load_transformer_config(ginfo, config_transformer, tsim):
+            if not DctMainCtl.load_transformer_config(ginfo, toml_transformer, toml_prog_flow, tsim):
                 raise ValueError("Transformer configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.transformer.re_calculation == "new":
@@ -591,12 +546,12 @@ class DctMainCtl:
                 new_study_flag = False
 
             # Start simulation ASA: Filter_factor to correct
-            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_study_flag)
+            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, 1.0, new_study_flag, True)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
 
-        # Check, if heat sink optimization is to skip
+        # Check, if heat sink optimization is not skipped
         if not toml_prog_flow.heat_sink.re_calculation == "skip":
 
             heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
@@ -623,24 +578,27 @@ class DctMainCtl:
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
 
         # Initialisation thermal data
-        if not DctMainCtl.init_summary_thermal_data(ginfo, config_heat_sink, spro):
+        heat_sink_loaded, heat_sink_dict = DctMainCtl.load_conf_file(toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
+        toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
+
+
+        if not spro.init_thermal_configuration(toml_heat_sink.ThermalResistanceData):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
-        inductor_study_names = [config_inductor["InductorConfigName"]["inductor_config_name"]]
-        stacked_transformer_study_names = [config_transformer["TransformerConfigName"]["transformer_config_name"]]
+        inductor_study_names = [ginfo.inductor_study_name]
+        stacked_transformer_study_names = [ginfo.transformer_study_name]
         # Start summary processing by generating the dataframe from calculated simmulation results
         s_df = spro.generate_result_database(ginfo, inductor_study_names, stacked_transformer_study_names)
         #  Select the needed heatsink configuration
-        spro.select_heatsink_configuration(ginfo, config_heat_sink["HeatsinkConfigName"]["heatsink_config_name"], s_df)
-
+        spro.select_heatsink_configuration(ginfo, s_df)
         # Check breakpoint
-        DctMainCtl.check_breakpoint(config_program_flow.breakpoints.summary, "Calculation is complete")
+        DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
 
         # Join process if necessary ASA to check
         # esim.join_process()
         # Shut down server
         # Debug: Server switched off
-        srv_ctl.stop_dct_server()
+        # srv_ctl.stop_dct_server()
 
         pass
 

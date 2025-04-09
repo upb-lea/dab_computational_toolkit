@@ -178,10 +178,67 @@ class TomlInductor(BaseModel):
 # ######################################################
 # transformer
 # ######################################################
+class TomlTransformerDesignSpace(BaseModel):
+    """Toml checker class for TransformerDesignSpace."""
 
+    material_name_list: list[str]
+    core_name_list: list[str]
+    core_inner_diameter_min_max_list: list[float]
+    window_w_min_max_list: list[float]
+    window_h_bot_min_max_list: list[float]
+    primary_litz_wire_list: list[str]
+    secondary_litz_wire_list: list[str]
+    n_p_top_min_max_list: list[int]
+    n_p_bot_min_max_list: list[int]
+
+class TomlTransformerSettings(BaseModel):
+    """Toml checker class for TransfomerSettings."""
+
+    fft_filter_value_factor: float
+    mesh_accuracy: float
+
+class TomlTransformerBoundaryConditions(BaseModel):
+    """Toml checker class for TransformerBondaryConditions."""
+
+    max_transformer_total_height: float
+    max_core_volume: float
+    temperature: float
+
+class TomlTransformerInsulation(BaseModel):
+    """Toml checker class for TransformerInsulation."""
+
+    # insulation for top core window
+    iso_window_top_core_top: float
+    iso_window_top_core_bot: float
+    iso_window_top_core_left: float
+    iso_window_top_core_right: float
+    # insulation for bottom core window
+    iso_window_bot_core_top: float
+    iso_window_bot_core_bot: float
+    iso_window_bot_core_left: float
+    iso_window_bot_core_right: float
+    # winding-to-winding insulation
+    iso_primary_to_primary: float
+    iso_secondary_to_secondary: float
+    iso_primary_to_secondary: float
+
+class TomlTransformerFilterDistance(BaseModel):
+    """Toml checker class for TransformerFilterDistance."""
+
+    factor_min_dc_losses: float
+    factor_max_dc_losses: float
+
+class TomlTransformer(BaseModel):
+    """Toml checker class for Transformer."""
+
+    design_space: TomlTransformerDesignSpace
+    insulation: TomlTransformerInsulation
+    filter_distance: TomlTransformerFilterDistance
+    settings: TomlTransformerSettings
+    boundary_conditions: TomlTransformerBoundaryConditions
 
 # ######################################################
-# heat sink
+# heat sink inclusive data of summary calculation
 # ######################################################
 
 
@@ -214,6 +271,16 @@ class TomlHeatSinkDesignSpace(BaseModel):
     number_fins_n_list: list[int]
     thickness_fin_t_list: list[float]
 
+class TomlHeatSinkSummaryData(BaseModel):
+    """Toml checker for HeatSinkSummaryData."""
+    # [tim_thickness, tim_conductivity]
+    transistor_b1_cooling: list[float]
+    transistor_b2_cooling: list[float]
+    inductor_cooling: list[float]
+    transformer_cooling: list[float]
+    # [t_ambient, t_hs_max] in °C
+    heat_sink: list[float]
+
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
 
@@ -221,3 +288,4 @@ class TomlHeatSink(BaseModel):
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
+    ThermalResistanceData: TomlHeatSinkSummaryData

@@ -134,6 +134,7 @@ class HeatSinkOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _simulation(act_hct_config: hct.OptimizationParameters, act_ginfo: dct.GeneralInformation,
+                    target_number_trials: int, re_simulate: bool, debug: bool):
         """
         Perform the simulation.
 

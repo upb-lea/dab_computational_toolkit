@@ -80,7 +80,7 @@ class InductorOptimization:
 
         # Create the io_config_list for all trials
         for circuit_trial_number in act_ginfo.filtered_list_id:
-            circuit_filepath = os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_trial_number}.pkl")
+            circuit_filepath = os.path.join(act_ginfo.circuit_study_path,act_ginfo.circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
             # Check filename
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
@@ -133,7 +133,7 @@ class InductorOptimization:
         process_number = 1
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path, act_ginfo.circuit_study_name, "filtered_results", f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -238,7 +238,8 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
-                           filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False):
+                           filter_factor: float = 1.0, delete_study: bool = False,
+                           re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -253,6 +254,7 @@ class InductorOptimization:
         :param debug : Debug mode flag
         :type  debug : bool
         """
+
         # Later this is to parallelize with multiple processes
         for act_sim_config in InductorOptimization.sim_config_list:
             # Debug switch
@@ -261,6 +263,14 @@ class InductorOptimization:
                     # overwrite input number of trials with 100 for short simulation times
                     if target_number_trials > 100:
                         target_number_trials = 100
+
+            # Check the deleteStudyFlag
+            if delete_study:
+                # Create path-filename of sqlite database
+                inductor_study_sqlite_database = os.path.join(act_sim_config[1].inductor_optimization_directory,f"{act_sim_config[1].inductor_study_name}.sqlite3")
+                # Check if path-filename exists
+                if os.path.exists(inductor_study_sqlite_database):
+                    os.remove(inductor_study_sqlite_database)
 
             InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, filter_factor, re_simulate, debug)
             if debug:

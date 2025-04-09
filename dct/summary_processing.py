@@ -9,7 +9,7 @@ import numpy as np
 
 # own libraries
 import dct
-from heatsink_sim import ThermalCalcSupport as thr_sup
+from heat_sink_optimization import ThermalCalcSupport as thr_sup
 import hct
 
 
@@ -32,7 +32,7 @@ class DctSummmaryProcessing:
     heat_sink = None
 
     @staticmethod
-    def init_thermal_configuration(act_thermal_configuration_dict: dict) -> bool:
+    def init_thermal_configuration(act_thermal_data: dct.TomlHeatSinkSummaryData) -> bool:
         """Initialize the thermal parameter of the connection points for the transistors, inductor and transformer.
 
         :param act_thermal_configuration_dict : dict with data of the thermal configuration
@@ -44,50 +44,57 @@ class DctSummmaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-
+        transistor_b1_cooling: list[float]
+        transistor_b2_cooling: list[float]
+        inductor_cooling: list[float]
+        transformer_cooling: list[float]
+        # [t_ambient, t_hs_max] in °C
+        heat_sink: list[float]
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        DctSummmaryProcessing.transistor_b1_cooling = dct.TransistorCooling(
-            tim_thickness=act_thermal_configuration_dict["transistor_b1_cooling"][0],
-            tim_conductivity=act_thermal_configuration_dict["transistor_b1_cooling"][1],
+        DctSummmaryProcessing.transistor_b1_cooling = (
+            dct.TransistorCooling(
+             tim_thickness=act_thermal_data.transistor_b1_cooling[0],
+             tim_conductivity=act_thermal_data.transistor_b1_cooling[1])
         )
-
         # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        DctSummmaryProcessing.transistor_b2_cooling = dct.TransistorCooling(
-            tim_thickness=act_thermal_configuration_dict["transistor_b2_cooling"][0],
-            tim_conductivity=act_thermal_configuration_dict["transistor_b2_cooling"][1],
+        DctSummmaryProcessing.transistor_b2_cooling = (
+            dct.TransistorCooling(
+             tim_thickness=act_thermal_data.transistor_b2_cooling[0],
+             tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
         )
-
         # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
-        inductor_cooling = dct.InductiveElementCooling(
-            tim_thickness=act_thermal_configuration_dict["inductor_cooling"][0],
-            tim_conductivity=act_thermal_configuration_dict["inductor_cooling"][1]
-        )
+        tim_thickness = act_thermal_data.inductor_cooling[0]
+        tim_conductivity = act_thermal_data.inductor_cooling[1]
+
         # Check on zero
-        if inductor_cooling.tim_conductivity > 0:
+        if tim_conductivity > 0:
             # Calculate the thermal resistance area product
-            DctSummmaryProcessing.r_th_ind_heat_sink_A = inductor_cooling.tim_thickness / inductor_cooling.tim_conductivity
+            DctSummmaryProcessing.r_th_ind_heat_sink_A = tim_thickness / tim_conductivity
         else:
-            print(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_cooling.tim_conductivity}!")
+            print(f"inductor cooling tim conductivity value must be greater zero, but is {tim_conductivity}!")
             successful_init = False
 
         # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
         # ASA: Rename database class from InductiveElementCooling to MagneticElementCooling
+        tim_thickness = act_thermal_data.transformer_cooling[0]
+        tim_conductivity = act_thermal_data.transformer_cooling[1]
+
         transformer_cooling = dct.InductiveElementCooling(
-            tim_thickness=act_thermal_configuration_dict["transformer_cooling"][0],
-            tim_conductivity=act_thermal_configuration_dict["transformer_cooling"][1]
+            tim_thickness=tim_thickness,
+            tim_conductivity=tim_conductivity
         )
         # Check on zero ( ASA: Maybe in general all configurtation files are to check for validity in advanced. In this case the check can be removed.)
-        if inductor_cooling.tim_conductivity > 0:
+        if tim_conductivity > 0:
             # Calculate the thermal resistance area product
-            DctSummmaryProcessing.r_th_xfmr_heat_sink_A = transformer_cooling.tim_thickness / transformer_cooling.tim_conductivity
+            DctSummmaryProcessing.r_th_xfmr_heat_sink_A = tim_thickness / tim_conductivity
         else:
-            print(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_cooling.tim_conductivity}!")
+            print(f"transformer cooling tim conductivity value must be greater zero, but is {tim_conductivity}!")
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
         DctSummmaryProcessing.heat_sink = dct.HeatSinkTemp(
-           t_ambient=act_thermal_configuration_dict["heat_sink"][0],
-           t_hs_max=act_thermal_configuration_dict["heat_sink"][1]
+           t_ambient=act_thermal_data.heat_sink[0],
+           t_hs_max=act_thermal_data.heat_sink[1]
         )
 
 
@@ -155,7 +162,7 @@ class DctSummmaryProcessing:
         # iterate circuit numbers
         for circuit_number in act_ginfo.filtered_list_id:
             # Assemble pkl-filename
-            circuit_filepath_number = os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_number}.pkl")
+            circuit_filepath_number = os.path.join(act_ginfo.circuit_study_path,act_ginfo.circuit_study_name, "filtered_results", f"{circuit_number}.pkl")
 
             # Get circuit results
             circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
@@ -343,17 +350,18 @@ class DctSummmaryProcessing:
                             df = pd.concat([df, local_df], axis=0)
 
         # Calculate the total area as sum of circuit,  inductor and transformer area df-comand is like vector sum v1[:]=v2[:]+v3[:])
-        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
-        df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
-        df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
+        # df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
+        df["total_area"] = df["inductor_area"] + df["transformer_area"]
+        # df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
+        # df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
         # Save results to file (ASA : later to store only on demand)
-        df.to_csv(f"{act_ginfo.heatsink_study_path}/result_df.csv")
+        df.to_csv(f"{act_ginfo.heat_sink_study_path}/result_df.csv")
 
         # return the data base
         return df
 
     @staticmethod
-    def select_heatsink_configuration(act_ginfo: dct.GeneralInformation, act_heat_sink_study_name: str, act_df_for_hs: pd.DataFrame):
+    def select_heatsink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
         """Select the heatsink configuration from calculated heatsink pareto front.
 
         :param act_ginfo : General information about the study
@@ -366,11 +374,11 @@ class DctSummmaryProcessing:
         # Variable declaration
 
         # load heat sink
-        hs_config_filepath = os.path.join(act_ginfo.heatsink_study_path, f"{act_heat_sink_study_name}.pkl")
+        hs_config_filepath = os.path.join(act_ginfo.heat_sink_study_path, act_ginfo.heat_sink_study_name, f"{act_ginfo.heat_sink_study_name}.pkl")
         hs_config = hct.Optimization.load_config(hs_config_filepath)
         # Debug ASA Missing true simulations for remaining function
 
-        hs_config.heat_sink_optimization_directory="/home/andreas/Workspace/Projekt/dab_computational_toolkit/workspace/2025-01-31_example/04_heat_sink/heatsink_01"
+        hs_config.heat_sink_optimization_directory=os.path.join(act_ginfo.heat_sink_study_path, act_ginfo.heat_sink_study_name)
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation
