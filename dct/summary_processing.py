@@ -35,8 +35,8 @@ class DctSummmaryProcessing:
     def init_thermal_configuration(act_thermal_data: dct.TomlHeatSinkSummaryData) -> bool:
         """Initialize the thermal parameter of the connection points for the transistors, inductor and transformer.
 
-        :param act_thermal_configuration_dict : dict with data of the thermal configuration
-        :type  act_thermal_configuration_dict : dict
+        :param act_thermal_data : toml file with configuration data
+        :type  act_thermal_data : dct.TomlHeatSinkSummaryData
 
         :return: True, if the thermal parameter of the connection points was successful initialized
         :rtype: bool
@@ -44,24 +44,17 @@ class DctSummmaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-        transistor_b1_cooling: list[float]
-        transistor_b2_cooling: list[float]
-        inductor_cooling: list[float]
         transformer_cooling: list[float]
-        # [t_ambient, t_hs_max] in °C
-        heat_sink: list[float]
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        DctSummmaryProcessing.transistor_b1_cooling = (
-            dct.TransistorCooling(
-             tim_thickness=act_thermal_data.transistor_b1_cooling[0],
-             tim_conductivity=act_thermal_data.transistor_b1_cooling[1])
-        )
+        DctSummmaryProcessing.transistor_b1_cooling = dct.TransistorCooling(
+            tim_thickness=act_thermal_data.transistor_b1_cooling[0],
+            tim_conductivity=act_thermal_data.transistor_b1_cooling[1])
+
         # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        DctSummmaryProcessing.transistor_b2_cooling = (
-            dct.TransistorCooling(
-             tim_thickness=act_thermal_data.transistor_b2_cooling[0],
-             tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
-        )
+        DctSummmaryProcessing.transistor_b2_cooling = dct.TransistorCooling(
+            tim_thickness=act_thermal_data.transistor_b2_cooling[0],
+            tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
+
         # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
         tim_thickness = act_thermal_data.inductor_cooling[0]
         tim_conductivity = act_thermal_data.inductor_cooling[1]
@@ -92,13 +85,9 @@ class DctSummmaryProcessing:
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        DctSummmaryProcessing.heat_sink = dct.HeatSinkTemp(
-           t_ambient=act_thermal_data.heat_sink[0],
-           t_hs_max=act_thermal_data.heat_sink[1]
-        )
-
-
-
+        DctSummmaryProcessing.heat_sink = dct.HeatSinkTemp(t_ambient=act_thermal_data.heat_sink[0],
+                                                           t_hs_max=act_thermal_data.heat_sink[1])
+        # Return if initialisation was successful performed (True)
         return successful_init
 
     @staticmethod
@@ -162,7 +151,7 @@ class DctSummmaryProcessing:
         # iterate circuit numbers
         for circuit_number in act_ginfo.filtered_list_id:
             # Assemble pkl-filename
-            circuit_filepath_number = os.path.join(act_ginfo.circuit_study_path,act_ginfo.circuit_study_name, "filtered_results", f"{circuit_number}.pkl")
+            circuit_filepath_number = os.path.join(act_ginfo.circuit_study_path, act_ginfo.circuit_study_name, "filtered_results", f"{circuit_number}.pkl")
 
             # Get circuit results
             circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
@@ -364,10 +353,8 @@ class DctSummmaryProcessing:
     def select_heatsink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
         """Select the heatsink configuration from calculated heatsink pareto front.
 
-        :param act_ginfo : General information about the study
+        :param act_ginfo : General information about the study name and study path
         :type  act_ginfo : dct.GeneralInformation:
-        :param act_heat_sink_study_name : Heatsink study name
-        :type  act_heat_sink_study_name : str
         :param act_df_for_hs : dataframe with result information of the pareto front for heatsink selection
         :type  act_df_for_hs : pd.DataFrame
         """
@@ -378,7 +365,7 @@ class DctSummmaryProcessing:
         hs_config = hct.Optimization.load_config(hs_config_filepath)
         # Debug ASA Missing true simulations for remaining function
 
-        hs_config.heat_sink_optimization_directory=os.path.join(act_ginfo.heat_sink_study_path, act_ginfo.heat_sink_study_name)
+        hs_config.heat_sink_optimization_directory = os.path.join(act_ginfo.heat_sink_study_path, act_ginfo.heat_sink_study_name)
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation

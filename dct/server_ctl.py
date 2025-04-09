@@ -141,8 +141,12 @@ class Dct_server:
 
     @staticmethod
     def LoadActualParetofront():
-        # Verbinde dich mit der bestehenden Optuna-Datenbank
-        study = optuna.load_study(study_name="circuit_01", storage="sqlite:////home/andreas/Workspace/Projekt/dab_computational_toolkit/workspace/2025-01-31_example/01_circuit/circuit_01/circuit_01.sqlite3")
+        """Load Pareto front do display."""
+        # Connect with optuna-database
+        study = optuna.load_study(study_name="circuit_01",
+                                  storage=("sqlite:////home/andreas/Workspace/Projekt"
+                                           "/dab_computational_toolkit/workspace/2025-01-31_example/"
+                                           "01_circuit/circuit_01/circuit_01.sqlite3"))
 
         # Erzeuge die aktuelle Paretofront
         fig = plot_pareto_front(study)
@@ -151,7 +155,6 @@ class Dct_server:
         html_variable = fig.to_html(full_html=False)
 
         return html_variable
-
 
     @app.get("/", response_class=HTMLResponse)
     async def main_page(request: Request, action: str = None):
@@ -173,8 +176,7 @@ class Dct_server:
             Dct_server.status_message = "Stoppt den Server und die Simulation (wenn prog_exit_flag==true)"
             Dct_server.req_stop.value = 1
 
-        return Dct_server.templates.TemplateResponse("html_main.html",{"request": request, "textvariable": Dct_server.status_message})
-
+        return Dct_server.templates.TemplateResponse("html_main.html", {"request": request, "textvariable": Dct_server.status_message})
 
     @app.get("/histogram", response_class=HTMLResponse)
     def get_histogram(request: Request):
@@ -186,7 +188,6 @@ class Dct_server:
         :return: Html- page based on html-template with Histogram information
         :rtype: _TemplateResponse
         """
-
         # Return the html-page with updated image data
         html_page = Dct_server.LoadActualParetofront()
         return HTMLResponse(content=html_page)

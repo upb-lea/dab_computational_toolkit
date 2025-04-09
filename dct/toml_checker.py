@@ -10,7 +10,6 @@ class General(BaseModel):
     """General flow control information."""
 
     project_directory: str
-    relative_flag: int
 
 class Breakpoints(BaseModel):
     """Flow control breakpoints."""
@@ -34,30 +33,29 @@ class Circuit(BaseModel):
     """Flow control for the circuit."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class Inductor(BaseModel):
     """Flow control for the inductor."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class Transformer(BaseModel):
     """Flow control for the transformer."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
 class HeatSink(BaseModel):
     """Flow control for the heat sink."""
 
     number_of_trials: int
-    re_calculation: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
-    circuit_study_name_flag: bool
 
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
@@ -109,9 +107,8 @@ class TomlCircuitOutputRange(BaseModel):
 class TomlCircuitFilterDistance(BaseModel):
     """Toml checker class for CircuitFilterDistance."""
 
-    delta: list
-    range: list[list]
-    deep: list
+    number_filtered_designs: int
+    difference_percentage: float
 
 class TomlCircuitParetoDabDesign(BaseModel):
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
@@ -162,9 +159,8 @@ class TomlInductorBoundaryConditions(BaseModel):
 class TomlFilterDistance(BaseModel):
     """Toml checker class for FilterDistance."""
 
-    delta: list[float]
-    range: list[list[float]]
-    deep: list[float]
+    factor_min_dc_losses: float
+    factor_max_dc_losses: float
 
 class TomlInductor(BaseModel):
     """Toml checker class for Inductor."""
@@ -241,7 +237,6 @@ class TomlTransformer(BaseModel):
 # heat sink inclusive data of summary calculation
 # ######################################################
 
-
 class TomlHeatSinkBoundaryConditions(BaseModel):
     """Toml checker for HeatSinkBoundaryConditions."""
 
@@ -256,11 +251,6 @@ class TomlHeatSinkSettings(BaseModel):
     factor_bottom_area_copper_coin: float
     thermal_conductivity_copper: float
 
-class TomlHeatSinkFanData(BaseModel):
-    """Toml checker for HeatSinkFanData."""
-
-    heat_sink_fan_path: str
-
 class TomlHeatSinkDesignSpace(BaseModel):
     """Toml checker for HeatSinkDesignSpace."""
 
@@ -273,6 +263,7 @@ class TomlHeatSinkDesignSpace(BaseModel):
 
 class TomlHeatSinkSummaryData(BaseModel):
     """Toml checker for HeatSinkSummaryData."""
+
     # [tim_thickness, tim_conductivity]
     transistor_b1_cooling: list[float]
     transistor_b2_cooling: list[float]
@@ -284,7 +275,6 @@ class TomlHeatSinkSummaryData(BaseModel):
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
 
-    fan_data: TomlHeatSinkFanData
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions

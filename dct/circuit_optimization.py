@@ -5,6 +5,7 @@ import datetime
 import logging
 import json
 import pickle
+import shutil
 
 # 3rd party libraries
 import optuna
@@ -16,40 +17,12 @@ import deepdiff
 import dct.datasets_dtos
 # own libraries
 import dct.datasets_dtos as d_dtos
-import dct.pareto_dtos as p_dtos
+import dct.circuit_optimization_dtos as p_dtos
 import dct.datasets as d_sets
 
 
 class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
-
-    @staticmethod
-    def set_up_folder_structure(config: p_dtos.CircuitParetoDabDesign) -> None:
-        """
-        Set up the folder structure for the subprojects.
-
-        :param config: configuration
-        :type config: InductorOptimizationDTO
-        """
-        # ASA: TODO: Merge ginfo and set_up_folder_structure
-        project_directory = os.path.abspath(config.project_directory)
-        circuit_path = os.path.join(project_directory, "01_circuit")
-        inductor_path = os.path.join(project_directory, "02_inductor")
-        transformer_path = os.path.join(project_directory, "03_transformer")
-        heat_sink_path = os.path.join(project_directory, "04_heat_sink")
-
-        path_dict = {'circuit': circuit_path,
-                     'inductor': inductor_path,
-                     'transformer': transformer_path,
-                     'heat_sink': heat_sink_path}
-
-        for _, value in path_dict.items():
-            os.makedirs(value, exist_ok=True)
-
-        json_filepath = os.path.join(project_directory, "filepath_config.json")
-
-        with open(json_filepath, 'w', encoding='utf8') as json_file:
-            json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
     @staticmethod
     def load_filepaths(project_directory: str) -> p_dtos.ParetoFilePaths:
@@ -133,13 +106,13 @@ class CircuitOptimization:
 
         for _, transistor_dto in enumerate(fixed_parameters.transistor_1_dto_list):
             if transistor_dto.name == transistor_1_name_suggest:
-                transistor_1_dto: p_dtos.TransistorDTO = transistor_dto
+                transistor_1_dto: d_dtos.TransistorDTO = transistor_dto
 
         for _, transistor_dto in enumerate(fixed_parameters.transistor_2_dto_list):
             if transistor_dto.name == transistor_2_name_suggest:
-                transistor_2_dto: p_dtos.TransistorDTO = transistor_dto
+                transistor_2_dto: d_dtos.TransistorDTO = transistor_dto
 
-        dab_config = d_sets.HandleDabDto.init_config(
+        dab_calc = d_sets.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
             V1_nom=dab_config.output_range.v_1_min_nom_max_list[1],
             V1_min=dab_config.output_range.v_1_min_nom_max_list[0],
@@ -164,15 +137,15 @@ class CircuitOptimization:
             transistor_dto_2=transistor_2_dto
         )
 
-        if (np.any(np.isnan(dab_config.calc_modulation.phi)) or np.any(np.isnan(dab_config.calc_modulation.tau1)) \
-                or np.any(np.isnan(dab_config.calc_modulation.tau2))):
+        if (np.any(np.isnan(dab_calc.calc_modulation.phi)) or np.any(np.isnan(dab_calc.calc_modulation.tau1)) \
+                or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
         # Calculate the cost function. Mean for not-NaN values, as there will be too many NaN results.
-        i_cost_matrix = dab_config.calc_currents.i_hf_1_rms ** 2 + dab_config.calc_currents.i_hf_2_rms ** 2
+        i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
         i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
 
-        return dab_config.calc_modulation.mask_zvs_coverage * 100, i_cost
+        return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
     def calculate_fix_parameters(dab_config: p_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
@@ -258,7 +231,6 @@ class CircuitOptimization:
 
     @staticmethod
     def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
-                            # dbType: str = 'mysql',
                             database_type: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler(),
                             delete_study: bool = False
@@ -276,7 +248,6 @@ class CircuitOptimization:
         :param delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
         :type  delete_study: bool
         """
-        CircuitOptimization.set_up_folder_structure(dab_config)
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
 
         circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.circuit_study_name)
@@ -320,7 +291,12 @@ class CircuitOptimization:
 
             # Check the deleteStudyFlag
             if delete_study and os.path.exists(circuit_study_sqlite_database):
-                os.remove(circuit_study_sqlite_database)
+                with os.scandir(circuit_study_working_directory) as entries:
+                    for entry in entries:
+                        if entry.is_dir() and not entry.is_symlink():
+                            shutil.rmtree(entry.path)
+                        else:
+                            os.remove(entry.path)
 
             # Create study object in drive
             study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
@@ -611,7 +587,7 @@ class CircuitOptimization:
         return df
 
     @staticmethod
-    def is_pareto_efficient(costs: np.array, return_mask: bool = True):
+    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True):
         """
         Find the pareto-efficient points.
 
@@ -717,16 +693,13 @@ class CircuitOptimization:
         df = CircuitOptimization.study_to_df(dab_config)
         df = df[df["values_0"] == 100]
 
-        df_original = df.copy()
-
-        smallest_dto_list = []
+        smallest_dto_list: list[d_dtos.CircuitDabDTO] = []
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
         smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
-        print(f"{np.shape(df)=}")
 
-        for count in np.arange(0, 3):
+        for count in np.arange(0, dab_config.filter.number_filtered_designs - 1):
             print("------------------")
             print(f"{count=}")
             n_suggest = df_smallest['params_n_suggest'].item()
@@ -738,7 +711,7 @@ class CircuitOptimization:
             transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
 
             # make sure to use parameters with minimum x % difference.
-            difference = 0.05
+            difference = dab_config.filter.difference_percentage / 100
 
             df = df.loc[
                 ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \
@@ -761,6 +734,5 @@ class CircuitOptimization:
         dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            print(f"{dto.name=}")
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)

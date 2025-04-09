@@ -3,7 +3,6 @@
 import dataclasses
 
 # 3rd party libraries
-import numpy as np
 
 # General information about names and path
 @dataclasses.dataclass
@@ -36,15 +35,15 @@ class CircuitParetoDesignSpace:
     """Definition of the hardware design space for electronic components."""
 
     # DAB optimization parameters
-    f_s_min_max_list: np.array
-    l_s_min_max_list: np.array
-    l_1_min_max_list: np.array
-    l_2__min_max_list: np.array
-    n_min_max_list: np.array
+    f_s_min_max_list: list[int]
+    l_s_min_max_list: list[float]
+    l_1_min_max_list: list[float]
+    l_2__min_max_list: list[float]
+    n_min_max_list: list[float]
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
-    c_par_1: np.array
-    c_par_2: np.array
+    c_par_1: float
+    c_par_2: float
 
 @dataclasses.dataclass
 class CircuitOutputRange:
@@ -56,6 +55,13 @@ class CircuitOutputRange:
     steps_per_direction: int
 
 @dataclasses.dataclass
+class CircuitFilter:
+    """Filter the results."""
+
+    number_filtered_designs: int
+    difference_percentage: float
+
+@dataclasses.dataclass
 class CircuitParetoDabDesign:
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
 
@@ -64,3 +70,4 @@ class CircuitParetoDabDesign:
 
     design_space: CircuitParetoDesignSpace
     output_range: CircuitOutputRange
+    filter: CircuitFilter

@@ -2,11 +2,11 @@
 name = "dct"
 version = "0.1.0"
 authors = [
-    { name = "UniSiegen+UPB-LEA" },
+    { name = "UPB-LEA" },
 ]
-description = "Client for power electroincs DAB converter optimization."
+description = "Power electroincs DAB converter optimization."
 readme = "README.rst"
-requires-python = ">=3.11"
+requires-python = "~=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -19,6 +19,8 @@ dependencies = { file = ["requirements.txt"] }
 optional-dependencies = { dev = { file = ["requirements-dev.txt"] } }
 
 [project.urls]
+Homepage = "https://github.com/upb-lea/dab_computational_toolkit"
+Issues = "https://github.com/upb-lea/dab_computational_toolkit/issues"
 
 [build-system]
 requires = ["hatchling", "hatch-requirements-txt"]
@@ -28,11 +30,12 @@ build-backend = "hatchling.build"
 files = ["requirements.txt"]
 
 [tool.hatch.build.targets.wheel]
-packages = [""]
+packages = ["dct/"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "*.py",
+    "dct/*.py",
+    "tests",
     "requirements.txt"
 ]
 

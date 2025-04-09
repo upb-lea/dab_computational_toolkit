@@ -2,14 +2,14 @@
 # python libraries
 
 # own libraries
-from dct import CircuitDabDTO
+import dct.datasets_dtos as d_sets
 import dct.functions_waveforms as fw
 
 # 3rd party libraries
 import numpy as np
 from matplotlib import pyplot as plt
 
-def plot_calc_waveforms(dab_dto: CircuitDabDTO, compare_gecko_waveforms: bool = False):
+def plot_calc_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_waveforms: bool = False):
     """
     Plot calculated current waveforms for Ls, Lc1, Lc2.
 
@@ -18,6 +18,9 @@ def plot_calc_waveforms(dab_dto: CircuitDabDTO, compare_gecko_waveforms: bool = 
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """
+    if not isinstance(dab_dto.gecko_results, d_sets.GeckoWaveforms):
+        raise TypeError(f"{dab_dto.gecko_results} is not of Type GeckoWaveforms.")
+
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
 
         # set simulation parameters and convert tau to degree for Gecko
@@ -98,7 +101,7 @@ def plot_calc_waveforms(dab_dto: CircuitDabDTO, compare_gecko_waveforms: bool = 
             plt.tight_layout()
             plt.show()
 
-def plot_calc_i_hf_waveforms(dab_dto: CircuitDabDTO, compare_gecko_waveforms: bool = False):
+def plot_calc_i_hf_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_waveforms: bool = False):
     """
     Plot calculated current waveforms for i_hf_1 and i_hf_2.
 
@@ -107,6 +110,9 @@ def plot_calc_i_hf_waveforms(dab_dto: CircuitDabDTO, compare_gecko_waveforms: bo
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """
+    if not isinstance(dab_dto.gecko_results, d_sets.GeckoWaveforms):
+        raise TypeError(f"{dab_dto.gecko_results} is not of Type GeckoWaveforms.")
+
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
         sorted_angles = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp]

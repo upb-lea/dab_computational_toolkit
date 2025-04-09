@@ -52,6 +52,40 @@ jobs:
           echo show folder structure:
           ls 
 
+      - name: install packages needed to run femmt, install femmt develop version
+        run: |
+            sudo apt-get update
+            # Problem with OSError: libGLU.so.1: cannot open shared object file
+            # Answer here: https://stackoverflow.com/questions/55313610/importerror-libgl-so-1-cannot-open-shared-object-file-no-such-file-or-directo
+            sudo apt install libsm6 libxext6 ffmpeg libfontconfig1 libxrender1 libglu1
+            pwd
+            ls
+            wget https://github.com/upb-lea/FEM_Magnetics_Toolbox/archive/refs/heads/main.zip
+            unzip main.zip
+            rm main.zip
+            cd FEM_Magnetics_Toolbox-main
+            pip install -e .
+            cd ..
+            echo show folder path
+            pwd
+            echo show folder structure:
+            ls 
+
+      - name: install HCT developer version
+        run: |
+            pwd
+            ls
+            wget https://github.com/upb-lea/HCT_heat_sink_computation_toolbox/archive/refs/heads/main.zip
+            unzip main.zip
+            rm main.zip
+            cd HCT_heat_sink_computation_toolbox-main
+            pip install -e .
+            cd ..
+            echo show folder path
+            pwd
+            echo show folder structure:
+            ls 
+
       - name: install the package
         run: |
             pip install -e .
