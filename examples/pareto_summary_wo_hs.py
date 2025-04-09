@@ -104,6 +104,7 @@ def df_plot_final_pareto_front(df: pd.DataFrame, figure_size: tuple | None = Non
     plt.show()
 
 
+
 # iterate circuit numbers
 for circuit_number in circuit_numbers:
     circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
@@ -111,6 +112,9 @@ for circuit_number in circuit_numbers:
 
     # Get circuit results
     circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
+
+    if circuit_dto.calc_losses is None:
+        raise ValueError("calc_losses is empty.")
 
     print(f"{circuit_number=}")
 

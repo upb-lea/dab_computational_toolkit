@@ -65,12 +65,12 @@ class GeckoAdditionalParameters:
 
     t_dead1: np.ndarray
     t_dead2: np.ndarray
-    timestep: np.ndarray
-    number_sim_periods: np.ndarray
-    timestep_pre: np.ndarray
-    number_pre_sim_periods: np.ndarray
-    simfilepath: np.ndarray
-    lossfilepath: np.ndarray
+    timestep: np.float64
+    number_sim_periods: int
+    timestep_pre: np.float64
+    number_pre_sim_periods: int
+    simfilepath: str
+    lossfilepath: str
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -87,8 +87,8 @@ class CalcFromCircuitConfig:
     mesh_V2: np.ndarray
     mesh_P: np.ndarray
     Lc2_: np.ndarray
-    t_j_1: np.ndarray
-    t_j_2: np.ndarray
+    t_j_1: np.float64
+    t_j_2: np.float64
     c_oss_par_1: np.ndarray
     c_oss_par_2: np.ndarray
     c_oss_1: np.ndarray
@@ -277,9 +277,9 @@ class GeckoWaveforms:
 class CircuitDabDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
-    timestamp: np.ndarray
+    timestamp: np.ndarray | None
     name: str
-    metadata: np.ndarray
+    metadata: np.ndarray | None
     input_config: CircuitConfig
     calc_config: CalcFromCircuitConfig
     calc_modulation: CalcModulation

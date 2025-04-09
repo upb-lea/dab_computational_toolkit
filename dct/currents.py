@@ -453,7 +453,7 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
 
     return i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
 
-def calc_hf_currents(angles_sorted: np.ndarray, i_l_s_sorted: np.ndarray, i_l_1_sorted: np.ndarray, i_l_2_sorted: np.ndarray, n: np.ndarray) -> tuple:
+def calc_hf_currents(angles_sorted: np.ndarray, i_l_s_sorted: np.ndarray, i_l_1_sorted: np.ndarray, i_l_2_sorted: np.ndarray, n: np.float64) -> tuple:
     """
     Calculate i_hf_1_rms and i_hf_2_rms from i_l_s, i_l_1 and i_l_2.
 
