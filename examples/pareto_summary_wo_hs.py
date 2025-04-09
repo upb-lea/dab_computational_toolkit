@@ -104,7 +104,6 @@ def df_plot_final_pareto_front(df: pd.DataFrame, figure_size: tuple | None = Non
     plt.show()
 
 
-
 # iterate circuit numbers
 for circuit_number in circuit_numbers:
     circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
