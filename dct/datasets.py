@@ -312,9 +312,6 @@ class HandleDabDto:
         # Add some descriptive data to the file
         # Adding a timestamp, it may be useful
         dab_dto.timestamp = np.asarray(datetime.datetime.now().isoformat())
-        # Adding a comment to the file, hopefully a descriptive one
-        if comment:
-            dab_dto.comment = np.asarray(comment)
 
         # Adding a timestamp to the filename if requested
         if timestamp:

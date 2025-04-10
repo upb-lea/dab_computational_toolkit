@@ -799,7 +799,7 @@ class PlotDAB:
     @timeit
     def subplot_contourf_nan(self, x, y, z, nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
                              num_cont_lines: int = 20, alpha: float = 0.75, cmap: str = 'inferno', axlinewidth=0.5,
-                             axlinecolor: str = 'r', wp_x: float = None, wp_y: float = None, inlinespacing: int = -10,
+                             axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None, inlinespacing: int = -10,
                              xlabel='Lambda = f * L', ylabel: str = 'Turns ratio n', fontsize_axis: int = 9,
                              fontsize_title: int = 9, title: str = "", clabel: bool = False, markerstyle: str = 'star',
                              z_min: float | None = None, z_max: float | None = None) -> None:

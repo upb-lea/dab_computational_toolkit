@@ -22,7 +22,7 @@ class InductorOptimization:
     """Optimation of the inductor."""
 
     # Simulation configuration list
-    sim_config_list = []
+    sim_config_list: list[int | fmt.InductorOptimizationDTO] = []
 
     @staticmethod
     def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: type[dct.GeneralInformation]) -> bool:
@@ -108,7 +108,7 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: dct.GeneralInformation,
+    def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: type[dct.GeneralInformation],
                     target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float, re_simulate: bool, debug: bool):
         """
         Perform the simulation.

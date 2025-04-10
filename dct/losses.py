@@ -1,11 +1,12 @@
 """Calculate the transistor losses."""
 
 # 3rd party libraries
+import numpy as np
 
 # own modules
 import dct.datasets_dtos as dtos
 
-def transistor_conduction_loss(transistor_rms_current: float, transistor_dto: dtos.TransistorDTO) -> float:
+def transistor_conduction_loss(transistor_rms_current: float, transistor_dto: dtos.TransistorDTO) -> np.ndarray:
     """
     Calculate the transistor conduction losses.
 

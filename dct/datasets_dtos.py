@@ -14,8 +14,8 @@ class TransistorDTO:
     t_j_max_op: np.ndarray
     c_oss: np.ndarray
     q_oss: np.ndarray
-    housing_area: np.ndarray
-    cooling_area: np.ndarray
+    housing_area: np.float64
+    cooling_area: np.float64
     r_th_jc: np.ndarray
     r_channel: np.ndarray
 

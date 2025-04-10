@@ -122,7 +122,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     gecko_waveforms_multiple_simulations = defaultdict(dict)
 
     # Init arrays to store simulation results
-    da_sim_results = dict()
+    da_sim_results: dict[str, np.ndarray] = dict()
     for k in l_means_keys:
         da_sim_results[k] = np.full_like(mod_phi, np.nan)
     for k in l_rms_keys:
