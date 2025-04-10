@@ -11,7 +11,7 @@ class GeneralInformation:
 
     project_directory: str
     circuit_study_name: str
-    filtered_list_id = []
+    filtered_list_id: list
     circuit_study_path: str
     inductor_study_path: str
     transformer_study_path: str

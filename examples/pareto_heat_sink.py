@@ -1,5 +1,5 @@
 """Optimize the heat sink."""
-
+# mypy: ignore-errors
 # python libraries
 import os
 

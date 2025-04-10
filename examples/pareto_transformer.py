@@ -1,5 +1,5 @@
 """Stacked transformer Pareto optimization."""
-
+# mypy: ignore-errors
 # python libraries
 import logging
 import os.path

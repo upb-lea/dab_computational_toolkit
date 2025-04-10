@@ -1,7 +1,6 @@
 """Pareto optimization classes and functions."""
 # Python libraries
 import os
-import datetime
 import logging
 import json
 import pickle

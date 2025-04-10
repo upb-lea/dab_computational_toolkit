@@ -152,7 +152,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi[_negative_power_mask] = phi_nP[_negative_power_mask]
 
     # Init return dict
-    da_mod_results: dict[str, np.ndarray | np.float64 | None] = dict()
+    da_mod_results: dict[str, np.ndarray | float | None] = dict()
     # Save the results in the dict
     # Convert phi because the math from the paper uses Middle-Pulse alignment, but we use First-Falling-Edge alignment!
     da_mod_results[MOD_KEYS[0]] = phi

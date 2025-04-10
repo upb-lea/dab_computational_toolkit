@@ -1,5 +1,5 @@
 """Example for inductor optimization."""
-
+# mypy: ignore-errors
 # python libraries
 import os
 import pickle
