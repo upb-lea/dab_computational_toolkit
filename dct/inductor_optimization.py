@@ -22,7 +22,7 @@ class InductorOptimization:
     """Optimation of the inductor."""
 
     # Simulation configuration list
-    sim_config_list: list[int | fmt.InductorOptimizationDTO] = []
+    sim_config_list: list[list[int | fmt.InductorOptimizationDTO]] = []
 
     @staticmethod
     def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: type[dct.GeneralInformation]) -> bool:

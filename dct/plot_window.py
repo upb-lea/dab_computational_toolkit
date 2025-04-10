@@ -19,7 +19,7 @@ class PlotWindow:
         """Initialize PlotWindow instance."""
         self.app = QApplication(sys.argv)
         self.MainWindow = QMainWindow()
-        self.MainWindow.__init__()  # mypy: ignore-errors
+        self.MainWindow.__init__()  # type: ignore
         self.MainWindow.setWindowTitle(window_title)
         self.canvases: list[FigureCanvas] = []
         self.figure_handles: list[plt.Figure] = []

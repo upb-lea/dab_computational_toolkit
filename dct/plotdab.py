@@ -89,7 +89,7 @@ class PlotDAB:
             if self.figsize == (15, 5):
                 fig.subplots_adjust(left=0.065, right=0.975, bottom=0.15, top=0.93, wspace=0.17, hspace=0.25)
 
-    def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: str = "yes", sharey: str = "yes",
+    def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: bool = True, sharey: bool = True,
                 tab_title='add Plot title'):
         """
         Create a new fig in a new tab with the amount of subplots specified.
