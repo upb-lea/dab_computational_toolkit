@@ -119,7 +119,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     # init gecko waveform simulation
     result_df = pd.DataFrame()
     gecko_waveforms_single_simulation = dict()
-    gecko_waveforms_multiple_simulations = defaultdict(dict)
+    gecko_waveforms_multiple_simulations: defaultdict = defaultdict(dict)
 
     # Init arrays to store simulation results
     da_sim_results: dict[str, np.ndarray] = dict()

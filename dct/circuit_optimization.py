@@ -326,12 +326,12 @@ class CircuitOptimization:
             storage_url = "mysql+pymysql://oaml_optuna:optuna@localhost/optuna_db"
 
             # Create storage-object for Optuna on drive (Later RAMDISK)
-            storage = optuna.storages.RDBStorage(storage_url)
+            storage_mysql = optuna.storages.RDBStorage(storage_url)
             # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
 
             # Create study object in drive
             study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
-                                                   storage=storage,
+                                                   storage=storage_mysql,
                                                    directions=directions,
                                                    load_if_exists=True, sampler=sampler)
 
@@ -608,7 +608,7 @@ class CircuitOptimization:
             non_dominated_point_mask[next_point_index] = True
             is_efficient = is_efficient[non_dominated_point_mask]  # Remove dominated points
             costs = costs[non_dominated_point_mask]
-            next_point_index = np.sum(non_dominated_point_mask[:next_point_index]) + 1
+            next_point_index = int(np.sum(non_dominated_point_mask[:next_point_index])) + 1
         if return_mask:
             is_efficient_mask = np.zeros(n_points, dtype=bool)
             is_efficient_mask[is_efficient] = True

@@ -583,6 +583,8 @@ class PlotDAB:
             z_min = np.nanmin(z)
         if z_max is None or z_max < np.nanmin(z):
             z_max = np.nanmax(z)
+        if z_min is None: # mypy issue handling
+            raise TypeError("Failure in assignment.")
         # To prevent error in cbar and get at least a plot even it is one color
         if z_min == z_max and z_min is not None and z_max is not None:
             z_min = z_min - z_min * 0.1
@@ -742,6 +744,8 @@ class PlotDAB:
             z_min = np.nanmin(z)
         if z_max is None or z_max < np.nanmin(z):
             z_max = np.nanmax(z)
+        if z_min is None:
+            raise TypeError("Failure in assignment.")
         # To prevent error in cbar and get at least a plot even it is one color
         if z_min == z_max:
             z_min = z_min - z_min * 0.1
@@ -961,7 +965,7 @@ class PlotDAB:
 
 @timeit
 def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '', mask1=None, mask2=None, mask3=None,
-                    maskZVS: np.ndarray = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
+                    maskZVS: np.ndarray | None = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
     """
     Plot three contourf plots with a shared colorbar.
 

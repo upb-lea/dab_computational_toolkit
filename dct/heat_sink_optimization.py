@@ -18,7 +18,7 @@ class HeatSinkOptimization:
     """Optimation support class for heat sink optimation."""
 
     # Simulation configuration list
-    optimization_config_list = []
+    optimization_config_list: list[tuple] = []
 
     @staticmethod
     def init_configuration(toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
