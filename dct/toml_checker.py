@@ -278,4 +278,4 @@ class TomlHeatSink(BaseModel):
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
-    ThermalResistanceData: TomlHeatSinkSummaryData
+    thermal_resistance_data: TomlHeatSinkSummaryData

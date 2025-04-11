@@ -50,7 +50,7 @@ transformer_cooling = dct.InductiveElementCooling(
 )
 
 
-heat_sink = dct.HeatSinkTemp(
+heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(
     t_ambient=40,
     t_hs_max=90,
 )
@@ -209,10 +209,10 @@ for circuit_number in circuit_numbers:
                             t_min_matrix = np.minimum(circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_inductor_heat_sink_max_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_xfmr_heat_sink_max_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, heat_sink.t_hs_max)
+                            t_min_matrix = np.minimum(t_min_matrix, heat_sink_boundary_conditions.t_hs_max)
 
                             # maximum delta temperature over the heat sink
-                            delta_t_max_heat_sink_matrix = t_min_matrix - heat_sink.t_ambient
+                            delta_t_max_heat_sink_matrix = t_min_matrix - heat_sink_boundary_conditions.t_ambient
 
                             r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
 

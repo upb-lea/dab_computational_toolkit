@@ -3,7 +3,6 @@
 import os
 import sys
 import tomllib
-from os.path import abspath
 
 # 3rd party libraries
 import json
@@ -122,8 +121,10 @@ class DctMainCtl:
         :return: general information variable containing general information for the optimization
         :rtype: dct.GeneralInformation
         """
+        # Variable declaration
+
         # Set projektdirectory
-        project_directory = abspath(act_config_program_flow.general.project_directory)
+        project_directory = os.path.abspath(act_config_program_flow.general.project_directory)
 
         # Setup variable by set study names
         r_ginfo = dct.GeneralInformation(
@@ -256,7 +257,7 @@ class DctMainCtl:
         return circuit_dto
 
     @staticmethod
-    def run_optimization_from_toml_configs(workspace_path: str) -> None:
+    def run_optimization_from_toml_configs(workspace_path: str):
         """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
@@ -274,6 +275,9 @@ class DctMainCtl:
         hsim = HeatSinkOptimization
         # Flag for available filtered results
         filtered_circuit_result_folder_exists = False
+        # Flag for resimulation  (if False the summary will failed)
+        enable_ind_re_simulation = True
+        enable_trans_re_simulation = True
 
         # Check if workspace path is not provided by argument
         if workspace_path == "":
@@ -299,7 +303,7 @@ class DctMainCtl:
             raise ValueError("Program flow toml file does not exist.")
 
         # Add absolute path to project data path (ASA: Later to remove because do not manipuase)
-        workspace_path = abspath(workspace_path)
+        workspace_path = os.path.abspath(workspace_path)
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 
         # Init general information: Project directory, study names and corresponding paths
@@ -443,7 +447,7 @@ class DctMainCtl:
 
             # Start calculation
             dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials,
-                                                        delete_study=is_new_circuit_study)
+                                                        enable_delete_study=is_new_circuit_study)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
@@ -479,7 +483,7 @@ class DctMainCtl:
             # Start simulation ASA: Filter_factor to correct
             isim.init_configuration(toml_inductor, toml_prog_flow, ginfo)
             isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
-                                    toml_inductor.filter_distance.factor_max_dc_losses, is_new_inductor_study, True)
+                                    toml_inductor.filter_distance.factor_max_dc_losses, is_new_inductor_study, enable_ind_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
@@ -502,7 +506,7 @@ class DctMainCtl:
 
             # Perform transformer optimization
             tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
-                                    toml_transformer.filter_distance.factor_max_dc_losses, is_new_transformer_study, True)
+                                    toml_transformer.filter_distance.factor_max_dc_losses, is_new_transformer_study, enable_trans_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
@@ -529,7 +533,7 @@ class DctMainCtl:
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
 
         # Initialisation thermal data
-        if not spro.init_thermal_configuration(toml_heat_sink.ThermalResistanceData):
+        if not spro.init_thermal_configuration(toml_heat_sink.thermal_resistance_data):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [ginfo.inductor_study_name]
@@ -537,17 +541,9 @@ class DctMainCtl:
         # Start summary processing by generating the dataframe from calculated simmulation results
         s_df = spro.generate_result_database(ginfo, inductor_study_names, stacked_transformer_study_names)
         #  Select the needed heatsink configuration
-        spro.select_heatsink_configuration(ginfo, s_df)
+        spro.select_heat_sink_configuration(ginfo, s_df)
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
-
-        # Join process if necessary ASA to check
-        # esim.join_process()
-        # Shut down server
-        # Debug: Server switched off
-        # srv_ctl.stop_dct_server()
-
-        pass
 
 
 # Program flow control of DAB-optimization

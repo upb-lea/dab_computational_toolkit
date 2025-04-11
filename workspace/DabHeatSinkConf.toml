@@ -17,7 +17,7 @@
     # W/(m*K)
     thermal_conductivity_copper = 136
 
-[ThermalResistanceData]
+[thermal_resistance_data]
     # [tim_thickness, tim_conductivity]
     transistor_b1_cooling = [1e-3,12.0]
     transistor_b2_cooling = [1e-3,12.0]

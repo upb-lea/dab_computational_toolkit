@@ -282,7 +282,7 @@ class TransformerOptimization:
     @staticmethod
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def simulation_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
-                           factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100, delete_study: bool = False,
+                           factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100, enable_delete_study: bool = False,
                            re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
@@ -295,8 +295,8 @@ class TransformerOptimization:
         :type  factor_dc_min_losses : float
         :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
         :type factor_dc_max_losses: float
-        :param delete_study: Flag, which indicates to delete the study
-        :type  delete_study: bool
+        :param enable_delete_study: Flag, which indicates to delete the study
+        :type  enable_delete_study: bool
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :param debug : Debug mode flag
@@ -312,7 +312,7 @@ class TransformerOptimization:
                         target_number_trials = 100
 
             # Check the deleteStudyFlag
-            if delete_study:
+            if enable_delete_study:
                 # Create path-filename of sqlite database
                 stacked_transformer_study_sqlite_database = (
                     os.path.join(act_sim_config[1].stacked_transformer_optimization_directory,

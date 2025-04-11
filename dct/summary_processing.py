@@ -19,14 +19,14 @@ class DctSummmaryProcessing:
     # Variable declaration
 
     # Areas and transistor cooling parameter
-    copper_coin_area_1 = None
-    transistor_b1_cooling = None
-    copper_coin_area_2 = None
-    transistor_b2_cooling = None
+    copper_coin_area_1: float
+    transistor_b1_cooling: float
+    copper_coin_area_2: float
+    transistor_b2_cooling: float
 
-    # Thermal resistance * area
-    r_th_ind_heat_sink_A = None
-    r_th_xfmr_heat_sink_A = None
+    # Thermal resistance
+    r_th_ind_heat_sink_a: float
+    r_th_xfmr_heat_sink_a: float
 
     # Heat sink parameter
     heat_sink = None
@@ -56,32 +56,32 @@ class DctSummmaryProcessing:
             tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
 
         # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
-        tim_thickness = act_thermal_data.inductor_cooling[0]
-        tim_conductivity = act_thermal_data.inductor_cooling[1]
+        inductor_tim_thickness = act_thermal_data.inductor_cooling[0]
+        inductor_tim_conductivity = act_thermal_data.inductor_cooling[1]
 
         # Check on zero
-        if tim_conductivity > 0:
+        if inductor_tim_conductivity > 0:
             # Calculate the thermal resistance area product
-            DctSummmaryProcessing.r_th_ind_heat_sink_A = tim_thickness / tim_conductivity
+            DctSummmaryProcessing.r_th_ind_heat_sink_a = inductor_tim_thickness / inductor_tim_conductivity
         else:
-            print(f"inductor cooling tim conductivity value must be greater zero, but is {tim_conductivity}!")
+            print(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
             successful_init = False
 
         # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
         # ASA: Rename database class from InductiveElementCooling to MagneticElementCooling
-        tim_thickness = act_thermal_data.transformer_cooling[0]
-        tim_conductivity = act_thermal_data.transformer_cooling[1]
+        transformer_tim_thickness = act_thermal_data.transformer_cooling[0]
+        transformer_tim_conductivity = act_thermal_data.transformer_cooling[1]
 
         transformer_cooling = dct.InductiveElementCooling(
-            tim_thickness=tim_thickness,
-            tim_conductivity=tim_conductivity
+            tim_thickness=transformer_tim_thickness,
+            tim_conductivity=transformer_tim_conductivity
         )
         # Check on zero ( ASA: Maybe in general all configurtation files are to check for validity in advanced. In this case the check can be removed.)
-        if tim_conductivity > 0:
+        if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance area product
-            DctSummmaryProcessing.r_th_xfmr_heat_sink_A = tim_thickness / tim_conductivity
+            DctSummmaryProcessing.r_th_xfmr_heat_sink_a = transformer_tim_thickness / transformer_tim_conductivity
         else:
-            print(f"transformer cooling tim conductivity value must be greater zero, but is {tim_conductivity}!")
+            print(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
@@ -91,17 +91,19 @@ class DctSummmaryProcessing:
         return successful_init
 
     @staticmethod
-    def _generate_number_list(act_dir_name: str, act_device_numbers: list[str]) -> bool:
+    def _generate_magnetic_number_list(act_dir_name: str) -> tuple[bool, list[str]]:
         """Generate a list of the numbers from filenames.
 
         :param act_dir_name : Name of the directory containing the files
         :type  act_dir_name : str
-        :param act_device_numbers : Reference to the device number list object
-        :type  act_device_numbers : str
 
-        :return: True, if the directory exists and contains minimum one file
-        :rtype: bool
+        :return: tuple of bool and result list. True, if the directory exists and contains minimum one file
+        :rtype: tuple
         """
+        # Variable deklaration
+        magnetic_result_numbers: list[str] = []
+        is_magnetic_list_generated = False
+
         # Check if target folder 09_circuit_dtos_incl_inductor_losses is created
         if os.path.exists(act_dir_name):
             # Create list of filespath
@@ -116,18 +118,18 @@ class DctSummmaryProcessing:
                     # Check file type
                     extension = os.path.splitext(os.path.basename(file_name))[1]
                     if extension == '.pkl':
-                        act_device_numbers.append(device_number)
+                        magnetic_result_numbers.append(device_number)
                     else:
                         print(f"File {device_number}{extension} has no extension '.pkl'!")
                 else:
                     print(f"File'{file_path}' does not exists!")
         else:
-            print("Path 'act_dir_name' does not exists!")
+            print(f"Path {act_dir_name} does not exists!")
 
-        if len(act_device_numbers) > 0:
-            return True
-        else:
-            return False
+        if not magnetic_result_numbers:
+            is_magnetic_list_generated = True
+
+        return is_magnetic_list_generated, magnetic_result_numbers
 
     @staticmethod
     def generate_result_database(act_ginfo: dct.GeneralInformation, act_inductor_study_names: list[str],
@@ -135,7 +137,7 @@ class DctSummmaryProcessing:
         """Generate a database df by summaries the calculation results.
 
         :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
+        :type  act_ginfo : dct.GeneralInformation
         :param act_inductor_study_names : List of names with inductor studies which are to process
         :type  act_inductor_study_names : list[str]
         :param act_stacked_transformer_study_names : List of names with transformer studies which are to process
@@ -200,14 +202,16 @@ class DctSummmaryProcessing:
                                                          inductor_study_name,
                                                          "09_circuit_dtos_incl_inductor_losses")
 
-                # Check, if inductor number list cannot be generated
-                if not DctSummmaryProcessing._generate_number_list(inductor_filepath_results, inductor_numbers):
+                # Generate magnetic list
+                is_inductor_list_generated, inductor_full_operating_range_list = (
+                    DctSummmaryProcessing._generate_number_list(inductor_filepath_results))
+                if not is_inductor_list_generated:
                     print(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
 
                 # iterate inductor numbers
-                for inductor_number in inductor_numbers:
+                for inductor_number in inductor_full_operating_range_list:
                     inductor_filepath_number = os.path.join(inductor_filepath_results, f"{inductor_number}.pkl")
 
                     # Get inductor results
@@ -231,14 +235,15 @@ class DctSummmaryProcessing:
                                                                             "09_circuit_dtos_incl_transformer_losses")
 
                         # Check, if stacked transformer number list cannot be generated
-                        if not DctSummmaryProcessing._generate_number_list(stacked_transformer_filepath_results,
-                                                                           stacked_transformer_numbers):
+                        is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
+                            DctSummmaryProcessing._generate_number_list(stacked_transformer_filepath_results))
+                        if not is_transformer_list_generated:
                             print(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
                             continue
 
                         # iterate transformer numbers
-                        for stacked_transformer_number in stacked_transformer_numbers:
+                        for stacked_transformer_number in stacked_transformer_full_operating_range_list:
                             stacked_transformer_filepath_number = os.path.join(stacked_transformer_filepath_results, f"{stacked_transformer_number}.pkl")
 
                             # get transformer results
@@ -266,10 +271,10 @@ class DctSummmaryProcessing:
                             max_loss_inductor_index = np.unravel_index(inductance_loss_matrix.argmax(), np.shape(inductance_loss_matrix))
                             max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
 
-                            r_th_ind_heat_sink = DctSummmaryProcessing.r_th_ind_heat_sink_A / inductor_dto.area_to_heat_sink
+                            r_th_ind_heat_sink = DctSummmaryProcessing.r_th_ind_heat_sink_a / inductor_dto.area_to_heat_sink
                             temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
 
-                            r_th_xfmr_heat_sink = DctSummmaryProcessing.r_th_xfmr_heat_sink_A / transformer_dto.area_to_heat_sink
+                            r_th_xfmr_heat_sink = DctSummmaryProcessing.r_th_xfmr_heat_sink_a / transformer_dto.area_to_heat_sink
                             temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
 
                             # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
@@ -339,10 +344,9 @@ class DctSummmaryProcessing:
                             df = pd.concat([df, local_df], axis=0)
 
         # Calculate the total area as sum of circuit,  inductor and transformer area df-comand is like vector sum v1[:]=v2[:]+v3[:])
-        # df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
-        df["total_area"] = df["inductor_area"] + df["transformer_area"]
-        # df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
-        # df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
+        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
+        df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
+        df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
         # Save results to file (ASA : later to store only on demand)
         df.to_csv(f"{act_ginfo.heat_sink_study_path}/result_df.csv")
 
@@ -350,7 +354,7 @@ class DctSummmaryProcessing:
         return df
 
     @staticmethod
-    def select_heatsink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
+    def select_heat_sink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
         """Select the heatsink configuration from calculated heatsink pareto front.
 
         :param act_ginfo : General information about the study name and study path
@@ -378,4 +382,4 @@ class DctSummmaryProcessing:
         + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        # df_wo_hs.to_csv(f"{act_ginfo.heatsink_study_path}/df_summary.csv")
+        # df_wo_hs.to_csv(f"{act_ginfo.heat_sink_study_path}/df_summary.csv")

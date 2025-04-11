@@ -137,19 +137,19 @@ class HeatSinkOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _simulation(act_hct_config: hct.OptimizationParameters,
-                    target_number_trials: int, delete_study: bool, debug: bool):
+                    target_number_trials: int, enable_delete_study: bool, debug: bool):
         """
         Perform the simulation.
 
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param delete_study: True to delete the existing study and start a new one
-        :type  delete_study: bool
+        :param enable_delete_study: True to delete the existing study and start a new one
+        :type  enable_delete_study: bool
         :param debug: Debug mode flag
         :type debug: bool
         """
         # delete existing study
-        if delete_study and os.path.exists(act_hct_config.heat_sink_optimization_directory):
+        if enable_delete_study and os.path.exists(act_hct_config.heat_sink_optimization_directory):
             with os.scandir(act_hct_config.heat_sink_optimization_directory) as entries:
                 for entry in entries:
                     if entry.is_dir() and not entry.is_symlink():
@@ -171,7 +171,7 @@ class HeatSinkOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def optimization_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
-                             delete_study: bool = False, debug: bool = False):
+                             enable_delete_study: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -179,8 +179,8 @@ class HeatSinkOptimization:
         :type  act_ginfo: dct.GeneralInformation:
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param delete_study: True to delete the existing study and start a new one
-        :type  delete_study: bool
+        :param enable_delete_study: True to delete the existing study and start a new one
+        :type  enable_delete_study: bool
         :param debug: Debug mode flag
         :type  debug: bool
         """
@@ -194,7 +194,7 @@ class HeatSinkOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            HeatSinkOptimization._simulation(act_sim_config, target_number_trials, delete_study, debug)
+            HeatSinkOptimization._simulation(act_sim_config, target_number_trials, enable_delete_study, debug)
             if debug:
                 # stop after one circuit run
                 break
