@@ -240,7 +240,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def simulation_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
-                           factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100, enable_delete_study: bool = False,
+                           factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
                            re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
@@ -253,8 +253,6 @@ class InductorOptimization:
         :type  factor_min_dc_losses : float
         :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
         :type factor_dc_max_losses: float
-        :param enable_delete_study: Flag, which indicates to delete the study
-        :type  enable_delete_study: bool
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
         :param debug : Debug mode flag
@@ -268,15 +266,6 @@ class InductorOptimization:
                     # overwrite input number of trials with 100 for short simulation times
                     if target_number_trials > 100:
                         target_number_trials = 100
-
-            # Check the deleteStudyFlag
-            if enable_delete_study:
-                # Create path-filename of sqlite database
-                inductor_study_sqlite_database = os.path.join(act_sim_config[1].inductor_optimization_directory,
-                                                              f"{act_sim_config[1].inductor_study_name}.sqlite3")
-                # Check if path-filename exists
-                if os.path.exists(inductor_study_sqlite_database):
-                    os.remove(inductor_study_sqlite_database)
 
             InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials,
                                              factor_min_dc_losses, factor_dc_max_losses, re_simulate, debug)

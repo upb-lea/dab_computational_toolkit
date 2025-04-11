@@ -1,6 +1,7 @@
 """Main control program to optimise the DAB converter."""
 # python libraries
 import os
+import shutil
 import sys
 import tomllib
 
@@ -91,12 +92,39 @@ class DctMainCtl:
         DabElectricConf.toml, DabInductorConf.toml, DabTransformerConf.toml and DabHeatSinkConf.toml,
 
         :param path : Location of the configuration
-        :type  path : str:
+        :type  path : str
         :return: true, if the files are stored successfully
         :rtype: bool
 
         """
         return False
+
+    @staticmethod
+    def delete_study_content(folder_name: str, study_file_name: str = ""):
+        """
+        Delete the study files and the femmt folders.
+
+        If a new study is to generate the old obsolete files and folders needs to be deleted.
+
+        :param folder_name : Location of the study files
+        :type  folder_name : str
+        :param study_file_name : Name of the study files (without extension)
+        :type  study_file_name : str
+        """
+        # Check if folder exists
+        if os.path.exists(folder_name):
+            # Delete all content of the folder
+            for item in os.listdir(folder_name):
+                # Create the full pathname
+                full_path = os.path.join(folder_name, item)
+                # Check if it is a folder
+                if os.path.isdir(full_path):
+                    # Delete the folder
+                    shutil.rmtree(full_path)
+                # Check if it is the target file name
+                elif os.path.isfile(full_path) and os.path.splitext(item)[0] == study_file_name:
+                    # Delete this file
+                    os.remove(full_path)
 
     @staticmethod
     def user_input_break_point(break_point_key: str, info: str):
@@ -311,12 +339,6 @@ class DctMainCtl:
 
         DctMainCtl.set_up_folder_structure(toml_prog_flow)
 
-        # read study names from toml file names
-        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
-        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
-        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
-        heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
-
         # --------------------------
         # Circuit flow control
         # --------------------------
@@ -372,7 +394,7 @@ class DctMainCtl:
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(inductor_results_datapath, ginfo.inductor_study_name):
                     raise ValueError(
-                        f"Study {inductor_study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
+                        f"Study {ginfo.inductor_study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Transformer flow control
@@ -414,7 +436,7 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Assemble pathname
-            heat_sink_results_datapath = os.path.join(ginfo.heat_sink_study_path, heat_sink_study_name)
+            heat_sink_results_datapath = os.path.join(ginfo.heat_sink_study_path, ginfo.heat_sink_study_name)
             # Check, if data are available (skip case)
             if not DctMainCtl.check_study_data(heat_sink_results_datapath, ginfo.heat_sink_study_name):
                 raise ValueError(
@@ -439,21 +461,25 @@ class DctMainCtl:
                 raise ValueError("Electrical configuration not initialized!")
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.calculation_mode == "new":
-                # delete old study
-                is_new_circuit_study = True
-            else:
-                # overtake the trails of the old study
-                is_new_circuit_study = False
+                # delete old circuit study data
+                DctMainCtl.delete_study_content(os.path.join(ginfo.circuit_study_path, ginfo.circuit_study_name), ginfo.circuit_study_name)
+                filtered_circuit_results_datapath = os.path.join(ginfo.circuit_study_path, ginfo.circuit_study_name,
+                                                                 "filtered_results")
+                # Create the filtered result folder
+                os.makedirs(filtered_circuit_results_datapath, exist_ok=True)
+                filtered_circuit_result_folder_exists = True
+                # Delete obsolete folders of inductor and transformer
+                DctMainCtl.delete_study_content(ginfo.inductor_study_path)
+                DctMainCtl.delete_study_content(ginfo.transformer_study_path)
 
             # Start calculation
-            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials,
-                                                        enable_delete_study=is_new_circuit_study)
+            dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
 
-        # Check if filter results are not available
-        if not filtered_circuit_result_folder_exists:
+        # Check, if electrical optimization is not to skip
+        if not toml_prog_flow.circuit.calculation_mode == "skip":
             # Calculate the filtered results
             CircuitOptimization.filter_study_results(dab_config=config_circuit)
             # Get filtered result path
@@ -470,20 +496,17 @@ class DctMainCtl:
         # Inductor optimization
         # --------------------------
 
-        # Check, if inductor optimization is not to skip
-        if not toml_prog_flow.inductor.calculation_mode == "skip":
+        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.inductor.calculation_mode == "skip" or toml_prog_flow.circuit.calculation_mode == "new":
             # Check, if old study is to delete, if available
             if toml_prog_flow.inductor.calculation_mode == "new":
-                # delete old study
-                is_new_inductor_study = True
-            else:
-                # overtake the trails of the old study
-                is_new_inductor_study = False
+                # Delete old inductor study
+                DctMainCtl.delete_study_content(ginfo.inductor_study_path)
 
             # Start simulation ASA: Filter_factor to correct
             isim.init_configuration(toml_inductor, toml_prog_flow, ginfo)
             isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
-                                    toml_inductor.filter_distance.factor_max_dc_losses, is_new_inductor_study, enable_ind_re_simulation)
+                                    toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
@@ -492,21 +515,19 @@ class DctMainCtl:
         # Transformer optimization
         # --------------------------
 
-        # Check, if transformer optimization is not to skip
-        if not toml_prog_flow.transformer.calculation_mode == "skip":
+        # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.transformer.calculation_mode == "skip" or toml_prog_flow.circuit.calculation_mode == "new":
             # Check, if old study is to delete, if available
             if toml_prog_flow.transformer.calculation_mode == "new":
-                # delete old study
-                is_new_transformer_study = True
-            else:
-                # overtake the trails of the old study
-                is_new_transformer_study = False
+                # Delete old transformer study
+                DctMainCtl.delete_study_content(ginfo.transformer_study_path)
 
+            # Initialize transformer configuration
             tsim.init_configuration(toml_transformer, toml_prog_flow, ginfo)
 
             # Perform transformer optimization
             tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
-                                    toml_transformer.filter_distance.factor_max_dc_losses, is_new_transformer_study, enable_trans_re_simulation)
+                                    toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
@@ -519,15 +540,12 @@ class DctMainCtl:
         if not toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.calculation_mode == "new":
-                # delete old study
-                is_new_heat_sink_study = True
-            else:
-                # overtake the trails of the old study
-                is_new_heat_sink_study = False
+                # Delete old heatsink study
+                DctMainCtl.delete_study_content(os.path.join(ginfo.heat_sink_study_path, ginfo.heat_sink_study_name), ginfo.heat_sink_study_name)
 
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
             # Perform heat sink optimization
-            hsim.optimization_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials, is_new_heat_sink_study)
+            hsim.optimization_handler(ginfo, toml_prog_flow.heat_sink.number_of_trials)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")

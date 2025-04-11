@@ -5,7 +5,6 @@ import datetime
 import logging
 import json
 import pickle
-import shutil
 
 # 3rd party libraries
 import optuna
@@ -232,8 +231,7 @@ class CircuitOptimization:
     @staticmethod
     def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
                             database_type: str = 'sqlite',
-                            sampler=optuna.samplers.NSGAIIISampler(),
-                            enable_delete_study: bool = False
+                            sampler=optuna.samplers.NSGAIIISampler()
                             ):
         """Proceed a study which is stored as sqlite database.
 
@@ -245,8 +243,6 @@ class CircuitOptimization:
         :type  database_type: str
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
-        :param enable_delete_study: Indication, if the old study are to delete (True) or optimization shall be continued.
-        :type  enable_delete_study: bool
         """
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
 
@@ -288,15 +284,6 @@ class CircuitOptimization:
             # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
             # Means, in total there are four slashes including the path itself '////home/.../database.sqlite3'
             storage = f"sqlite:///{circuit_study_sqlite_database}"
-
-            # Check the deleteStudyFlag
-            if enable_delete_study and os.path.exists(circuit_study_sqlite_database):
-                with os.scandir(circuit_study_working_directory) as entries:
-                    for entry in entries:
-                        if entry.is_dir() and not entry.is_symlink():
-                            shutil.rmtree(entry.path)
-                        else:
-                            os.remove(entry.path)
 
             # Create study object in drive
             study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,

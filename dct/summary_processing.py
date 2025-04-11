@@ -85,8 +85,8 @@ class DctSummmaryProcessing:
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        DctSummmaryProcessing.heat_sink = dct.HeatSinkTemp(t_ambient=act_thermal_data.heat_sink[0],
-                                                           t_hs_max=act_thermal_data.heat_sink[1])
+        DctSummmaryProcessing.heat_sink = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
+                                                                         t_hs_max=act_thermal_data.heat_sink[1])
         # Return if initialisation was successful performed (True)
         return successful_init
 
@@ -126,7 +126,7 @@ class DctSummmaryProcessing:
         else:
             print(f"Path {act_dir_name} does not exists!")
 
-        if not magnetic_result_numbers:
+        if magnetic_result_numbers:
             is_magnetic_list_generated = True
 
         return is_magnetic_list_generated, magnetic_result_numbers
@@ -204,7 +204,7 @@ class DctSummmaryProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummmaryProcessing._generate_number_list(inductor_filepath_results))
+                    DctSummmaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
                     print(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -236,7 +236,7 @@ class DctSummmaryProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummmaryProcessing._generate_number_list(stacked_transformer_filepath_results))
+                            DctSummmaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
                             print(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
@@ -382,4 +382,4 @@ class DctSummmaryProcessing:
         + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        # df_wo_hs.to_csv(f"{act_ginfo.heat_sink_study_path}/df_summary.csv")
+        act_df_for_hs.to_csv(f"{act_ginfo.heat_sink_study_path}/df_summary.csv")
