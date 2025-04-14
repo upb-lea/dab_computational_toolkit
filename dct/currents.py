@@ -489,4 +489,4 @@ def calc_transistor_rms_currents(i_hf_rms: float) -> float:
     :return: bridge 1 or bridge 2 transistor RMS current
     :rtype: float
     """
-    return i_hf_rms / np.sqrt(2)
+    return i_hf_rms / np.sqrt(2)  # type: ignore

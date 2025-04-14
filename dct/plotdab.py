@@ -1022,7 +1022,7 @@ def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray
         mask2 = None
     if np.all(mask3 == mask3[0]):
         mask3 = None
-    if np.all(maskZVS == maskZVS[0]):
+    if np.all(maskZVS == maskZVS[0]):  # type: ignore
         maskZVS = None
 
     # Add a new tab with subplot

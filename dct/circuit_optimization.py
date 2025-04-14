@@ -79,7 +79,10 @@ class CircuitOptimization:
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
 
         with open(config_pickle_filepath, 'rb') as pickle_file_data:
-            return pickle.load(pickle_file_data)
+            loaded_pareto_dto = pickle.load(pickle_file_data)
+            if not isinstance(loaded_pareto_dto, circuit_dtos.CircuitParetoDabDesign):
+                raise TypeError(f"Loaded pickle file {loaded_pareto_dto} not of type CircuitParetoDabDesign.")
+            return loaded_pareto_dto
 
     @staticmethod
     def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters):
@@ -592,10 +595,10 @@ class CircuitOptimization:
         next_point_index = 0  # Next index in the is_efficient array to search for
         while next_point_index < len(costs):
             non_dominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
-            non_dominated_point_mask[next_point_index] = True
+            non_dominated_point_mask[next_point_index] = True  # type: ignore
             is_efficient = is_efficient[non_dominated_point_mask]  # Remove dominated points
             costs = costs[non_dominated_point_mask]
-            next_point_index = int(np.sum(non_dominated_point_mask[:next_point_index])) + 1
+            next_point_index = int(np.sum(non_dominated_point_mask[:next_point_index])) + 1  # type: ignore
         if return_mask:
             is_efficient_mask = np.zeros(n_points, dtype=bool)
             is_efficient_mask[is_efficient] = True

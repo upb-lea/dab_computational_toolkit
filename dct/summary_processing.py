@@ -378,8 +378,7 @@ class DctSummmaryProcessing:
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
-        act_df_for_hs["total_volume"] = act_df_for_hs["transformer_volume"] + act_df_for_hs["inductor_volume"] 
-        + act_df_for_hs["heat_sink_volume"]
+        act_df_for_hs["total_volume"] = act_df_for_hs["transformer_volume"] + act_df_for_hs["inductor_volume"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
         act_df_for_hs.to_csv(f"{act_ginfo.heat_sink_study_path}/df_summary.csv")

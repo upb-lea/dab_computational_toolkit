@@ -386,7 +386,10 @@ class HandleDabDto:
         file = os.path.abspath(file)
 
         with open(file, 'rb') as pickle_file_data:
-            return pickle.load(pickle_file_data)
+            loaded_circuit_dto = pickle.load(pickle_file_data)
+            if not isinstance(loaded_circuit_dto, d_dtos.CircuitDabDTO):
+                raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type CircuitDabDTO.")
+            return loaded_circuit_dto
 
         # decoded_data = np.load(file, allow_pickle=True)
         # keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
@@ -443,7 +446,7 @@ class HandleDabDto:
 
         max_index = (0, 0, 0)
         for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
-            max_index = vec_vvp if np.max(i_hf_2_sorted[vec_vvp]) > np.max(i_hf_2_sorted[max_index]) else max_index
+            max_index = vec_vvp if np.max(i_hf_2_sorted[vec_vvp]) > np.max(i_hf_2_sorted[max_index]) else max_index  # type: ignore
             if plot:
                 plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
                          d_waveforms.full_current_waveform_from_currents(i_hf_2_sorted[vec_vvp]), color='grey')
@@ -482,7 +485,7 @@ class HandleDabDto:
 
         max_index = (0, 0, 0)
         for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
-            max_index = vec_vvp if np.max(i_l1_sorted[vec_vvp]) > np.max(i_l1_sorted[max_index]) else max_index
+            max_index = vec_vvp if np.max(i_l1_sorted[vec_vvp]) > np.max(i_l1_sorted[max_index]) else max_index  # type: ignore
             if plot:
                 plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
                          d_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp]), color='grey')

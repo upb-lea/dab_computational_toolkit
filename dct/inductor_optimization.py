@@ -25,7 +25,7 @@ class InductorOptimization:
     sim_config_list: list[list[int | fmt.InductorOptimizationDTO]] = []
 
     @staticmethod
-    def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: type[dct.GeneralInformation]) -> bool:
+    def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
         """
         Initialize the configuration.
 
@@ -108,7 +108,7 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: type[dct.GeneralInformation],
+    def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: dct.GeneralInformation,
                     target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float, re_simulate: bool, debug: bool):
         """
         Perform the simulation.
@@ -239,7 +239,7 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def simulation_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
+    def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
                            factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
                            re_simulate: bool = False, debug: bool = False):
         """

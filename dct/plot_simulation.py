@@ -72,8 +72,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
         case _:
             mask1 = None
             mask2 = None
-            mask3 = None
-            maskZVS = None
+            mask3 = None  # type: ignore
+            maskZVS = None  # type: ignore
 
     # Plot all modulation angles
     plt.plot_modulation(dab_config.calc_config.mesh_P[:, v1_middle, :],

@@ -48,6 +48,6 @@ def full_waveforms_from_angles_currents(angles_rad_sorted: np.ndarray, *sorted_c
     sorted_currents_full_waveform = sorted_angles_full_waveform,
     for sorted_current in sorted_currents:
         sorted_current_full_waveform = full_current_waveform_from_currents(sorted_current)[unique_indices]
-        sorted_currents_full_waveform = sorted_currents_full_waveform + (sorted_current_full_waveform,)
+        sorted_currents_full_waveform = sorted_currents_full_waveform + (sorted_current_full_waveform,)  # type: ignore
 
     return sorted_currents_full_waveform
