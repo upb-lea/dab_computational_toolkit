@@ -80,7 +80,7 @@ class InductorOptimization:
 
         # Create the io_config_list for all trials
         for circuit_trial_number in act_ginfo.filtered_list_id:
-            circuit_filepath = os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_trial_number}.pkl")
+            circuit_filepath = os.path.join(act_ginfo.circuit_study_path, act_ginfo.circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
             # Check filename
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
@@ -133,7 +133,9 @@ class InductorOptimization:
         process_number = 1
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path,
+                                                                   act_ginfo.circuit_study_name,
+                                                                   "filtered_results", f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -238,7 +240,8 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def simulation_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
-                           factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100, re_simulate: bool = False, debug: bool = False):
+                           factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
+                           re_simulate: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -266,6 +269,7 @@ class InductorOptimization:
 
             InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials,
                                              factor_min_dc_losses, factor_dc_max_losses, re_simulate, debug)
+
             if debug:
                 # stop after one circuit run
                 break

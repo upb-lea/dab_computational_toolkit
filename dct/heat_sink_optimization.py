@@ -1,7 +1,6 @@
 """Inductor optimization class."""
 # python libraries
 import os
-import shutil
 
 # 3rd party libraries
 
@@ -43,7 +42,7 @@ class HeatSinkOptimization:
             print(f"Fan data path {heat_sink_fan_datapath} does not exists!")
             # Return with false if path does not exist
             return heat_sink_optimization_successful
-
+        # Generate the fan-list
         for (_, _, file_name_list) in os.walk(heat_sink_fan_datapath):
             fan_list = file_name_list
 
@@ -136,27 +135,15 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(act_hct_config: hct.OptimizationParameters,
-                    target_number_trials: int, delete_study: bool, debug: bool):
+    def _simulation(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool):
         """
         Perform the simulation.
 
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param delete_study: True to delete the existing study and start a new one
-        :type  delete_study: bool
         :param debug: Debug mode flag
         :type debug: bool
         """
-        # delete existing study
-        if delete_study and os.path.exists(act_hct_config.heat_sink_optimization_directory):
-            with os.scandir(act_hct_config.heat_sink_optimization_directory) as entries:
-                for entry in entries:
-                    if entry.is_dir() and not entry.is_symlink():
-                        shutil.rmtree(entry.path)
-                    else:
-                        os.remove(entry.path)
-
         # Check number of trials
         if target_number_trials > 0:
             print(f"{HeatSinkOptimization.optimization_config_list=}")
@@ -170,8 +157,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def optimization_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
-                             delete_study: bool = False, debug: bool = False):
+    def optimization_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -179,8 +165,6 @@ class HeatSinkOptimization:
         :type  act_ginfo: dct.GeneralInformation:
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param delete_study: True to delete the existing study and start a new one
-        :type  delete_study: bool
         :param debug: Debug mode flag
         :type  debug: bool
         """
@@ -194,7 +178,56 @@ class HeatSinkOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            HeatSinkOptimization._simulation(act_sim_config, target_number_trials, delete_study, debug)
+            HeatSinkOptimization._simulation(act_sim_config, target_number_trials, debug)
             if debug:
                 # stop after one circuit run
                 break
+
+class ThermalCalcSupport:
+    """Provides functions to calculate the thermal resistance."""
+
+    @staticmethod
+    def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55e-3,
+                                   height_pcb_heat_sink: float = 3.0e-3) -> tuple[float, float]:
+        """
+        Calculate the thermal resistance of the copper coin.
+
+        Assumptions are made with some geometry factors from a real copper coin for TO263 housing.
+        :param cooling_area: cooling area in m²
+        :type cooling_area: float
+        :param height_pcb: PCB thickness, e.g. 1.55 mm
+        :type height_pcb: float
+        :param height_pcb_heat_sink: Distance from PCB to heat sink in m
+        :type height_pcb_heat_sink: float
+        :return: r_th_copper_coin, effective_copper_coin_cooling_area
+        :rtype: tuple[float, float]
+        """
+        factor_pcb_area_copper_coin = 1.42
+        factor_bottom_area_copper_coin = 0.39
+        thermal_conductivity_copper = 136  # W/(m*K)
+
+        effective_pcb_cooling_area = cooling_area / factor_pcb_area_copper_coin
+        effective_bottom_cooling_area = effective_pcb_cooling_area / factor_bottom_area_copper_coin
+
+        r_pcb = 1 / thermal_conductivity_copper * height_pcb / effective_pcb_cooling_area
+        r_bottom = 1 / thermal_conductivity_copper * height_pcb_heat_sink / effective_bottom_cooling_area
+
+        r_copper_coin = r_pcb + r_bottom
+
+        return r_copper_coin, effective_bottom_cooling_area
+
+    @staticmethod
+    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
+        """
+        Calculate the thermal resistance of the thermal interface material (TIM).
+
+        :param copper_coin_bot_area: bottom copper coin area in m²
+        :type copper_coin_bot_area: float
+        :param transistor_cooling: Transistor cooling DTO
+        :type transistor_cooling: TransistorCooling
+        :return: r_th of TIM material
+        :rtype: float
+        """
+        r_th_tim = 1 / transistor_cooling.tim_conductivity * transistor_cooling.tim_thickness / copper_coin_bot_area
+
+        return r_th_tim

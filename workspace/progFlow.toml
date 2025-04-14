@@ -1,14 +1,15 @@
 # Path configuration
 [general]
-    project_directory = "2025-04-07_example_1"
+    project_directory = "2025-01-31_example"
 
 [breakpoints]
-    # possible values: No/Pause/Stop
+    # possible values: no/pause/stop
     circuit_pareto = "no"  # After Electrical paretofront calculation
     circuit_filtered = "no"  # After Electrical filtered result calculation
     inductor = "no"    # After inductor paretofront calculations of for all correspondent electrical points
     transformer = "no" # After transformer paretofront calculations of for all correspondent electrical points
-    heat_sink = "pause"    # After heatsink paretofront calculation
+    heat_sink = "no"    # After heatsink paretofront calculation
+    summary = "no"    # After heatsink paretofront calculation
 
 [conditional_breakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
     circuit = 1000        # Number of trials with ZVS less than 70%
@@ -17,13 +18,13 @@
     heat_sink = 1000         # Number of trials which exceed a limit value?
 
 [circuit]
-    number_of_trials = 10
+    number_of_trials = 200
     calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "01_circuit"
 
 [inductor]
     number_of_trials = 100
-    calculation_mode = "skip" # (new,continue,skip)
+    calculation_mode = "new" # (new,continue,skip)
     subdirectory = "02_inductor"
 
 [transformer]
@@ -32,8 +33,8 @@
     subdirectory = "03_transformer"
 
 [heat_sink]
-    number_of_trials = 10
-    calculation_mode = "new" # (new,continue,skip)
+    number_of_trials = 100
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "04_heat_sink"
 
 [configuration_data_files]
