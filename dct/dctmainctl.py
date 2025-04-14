@@ -35,10 +35,10 @@ class DctMainCtl:
         """
         # ASA: Merge ginfo and set_up_folder_structure Fix file structure on top layer
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
-        circuit_path = os.path.join(project_directory, "01_circuit")
-        inductor_path = os.path.join(project_directory, "02_inductor")
-        transformer_path = os.path.join(project_directory, "03_transformer")
-        heat_sink_path = os.path.join(project_directory, "04_heat_sink")
+        circuit_path = os.path.join(project_directory, toml_prog_flow.circuit.subdirectory)
+        inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
+        transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
+        heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
 
         path_dict = {'circuit': circuit_path,
                      'inductor': inductor_path,
@@ -167,10 +167,10 @@ class DctMainCtl:
             heat_sink_study_name=act_config_program_flow
             .configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
             # Set remaining elements with dummy names
-            circuit_study_path=os.path.join(project_directory, "01_circuit"),
-            inductor_study_path=os.path.join(project_directory, "02_inductor"),
-            transformer_study_path=os.path.join(project_directory, "03_transformer"),
-            heat_sink_study_path=os.path.join(project_directory, "04_heat_sink"))
+            circuit_study_path=os.path.join(project_directory, act_config_program_flow.circuit.subdirectory),
+            inductor_study_path=os.path.join(project_directory, act_config_program_flow.inductor.subdirectory),
+            transformer_study_path=os.path.join(project_directory, act_config_program_flow.transformer.subdirectory),
+            heat_sink_study_path=os.path.join(project_directory, act_config_program_flow.heat_sink.subdirectory))
 
         # Return the result
         return r_ginfo

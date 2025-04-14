@@ -25,11 +25,11 @@ class DctSummmaryProcessing:
     transistor_b2_cooling: float
 
     # Thermal resistance
-    r_th_ind_heat_sink_a: float
-    r_th_xfmr_heat_sink_a: float
+    r_th_per_unit_area_ind_heat_sink: float
+    r_th_per_unit_area_xfmr_heat_sink: float
 
-    # Heat sink parameter
-    heat_sink = None
+    # Heat sink boudary condition parameter
+    heat_sink_boundary_conditions: dct.HeatSinkBoundaryConditions
 
     @staticmethod
     def init_thermal_configuration(act_thermal_data: dct.TomlHeatSinkSummaryData) -> bool:
@@ -61,8 +61,9 @@ class DctSummmaryProcessing:
 
         # Check on zero
         if inductor_tim_conductivity > 0:
-            # Calculate the thermal resistance area product
-            DctSummmaryProcessing.r_th_ind_heat_sink_a = inductor_tim_thickness / inductor_tim_conductivity
+            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
+            # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
+            DctSummmaryProcessing.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
         else:
             print(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
             successful_init = False
@@ -78,15 +79,16 @@ class DctSummmaryProcessing:
         )
         # Check on zero ( ASA: Maybe in general all configurtation files are to check for validity in advanced. In this case the check can be removed.)
         if transformer_tim_conductivity > 0:
-            # Calculate the thermal resistance area product
-            DctSummmaryProcessing.r_th_xfmr_heat_sink_a = transformer_tim_thickness / transformer_tim_conductivity
+            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
+            # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
+            DctSummmaryProcessing.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
         else:
             print(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        DctSummmaryProcessing.heat_sink = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
-                                                                         t_hs_max=act_thermal_data.heat_sink[1])
+        DctSummmaryProcessing.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
+                                                                                             t_hs_max=act_thermal_data.heat_sink[1])
         # Return if initialisation was successful performed (True)
         return successful_init
 
@@ -270,21 +272,22 @@ class DctSummmaryProcessing:
 
                             max_loss_inductor_index = np.unravel_index(inductance_loss_matrix.argmax(), np.shape(inductance_loss_matrix))
                             max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
-
-                            r_th_ind_heat_sink = DctSummmaryProcessing.r_th_ind_heat_sink_a / inductor_dto.area_to_heat_sink
+                            # Calculate the thermal resistance according r_th = 1/lambda * l / A
+                            # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
+                            r_th_ind_heat_sink = DctSummmaryProcessing.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
                             temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
-
-                            r_th_xfmr_heat_sink = DctSummmaryProcessing.r_th_xfmr_heat_sink_a / transformer_dto.area_to_heat_sink
+                            # For transformer: r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l.
+                            r_th_xfmr_heat_sink = DctSummmaryProcessing.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
                             temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
 
                             # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
                             t_min_matrix = np.minimum(circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_inductor_heat_sink_max_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_xfmr_heat_sink_max_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, DctSummmaryProcessing.heat_sink.t_hs_max)
+                            t_min_matrix = np.minimum(t_min_matrix, DctSummmaryProcessing.heat_sink_boundary_conditions.t_hs_max)
 
                             # maximum delta temperature over the heat sink
-                            delta_t_max_heat_sink_matrix = t_min_matrix - DctSummmaryProcessing.heat_sink.t_ambient
+                            delta_t_max_heat_sink_matrix = t_min_matrix - DctSummmaryProcessing.heat_sink_boundary_conditions.t_ambient
 
                             r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
 
