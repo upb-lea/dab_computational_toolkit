@@ -1,7 +1,7 @@
 """Plot the DAB calculations."""
 # python libraries
 import os
-from datetime import datetime
+import datetime
 import warnings
 import math
 
@@ -89,7 +89,7 @@ class PlotDAB:
             if self.figsize == (15, 5):
                 fig.subplots_adjust(left=0.065, right=0.975, bottom=0.15, top=0.93, wspace=0.17, hspace=0.25)
 
-    def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: str = "yes", sharey: str = "yes",
+    def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: bool = True, sharey: bool = True,
                 tab_title='add Plot title'):
         """
         Create a new fig in a new tab with the amount of subplots specified.
@@ -149,9 +149,9 @@ class PlotDAB:
         # Adding a timestamp to the filename if requested
         if timestamp:
             if name:
-                filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + name
+                filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + name
             else:
-                filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         else:
             if name:
                 filename = name
@@ -233,7 +233,7 @@ class PlotDAB:
         # Redraw the current figure
         plt.draw()
 
-    def plot_modulation(self, x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, mask3=None,
+    def plot_modulation(self, x, y, z1, z2, z3, title: str = '', mask1: np.ndarray | None = None, mask2=None, mask3=None,
                         maskZVS=None, Vnum=2, tab_title='add Plot title'):
         """
         Plot three contourf plots with a shared colorbar.
@@ -583,6 +583,10 @@ class PlotDAB:
             z_min = np.nanmin(z)
         if z_max is None or z_max < np.nanmin(z):
             z_max = np.nanmax(z)
+        if z_min is None:  # mypy issue handling
+            raise TypeError("Failure in assignment.")
+        if z_max is None:  # mypy issue handling
+            raise TypeError("Failure in assignment.")
         # To prevent error in cbar and get at least a plot even it is one color
         if z_min == z_max and z_min is not None and z_max is not None:
             z_min = z_min - z_min * 0.1
@@ -742,6 +746,10 @@ class PlotDAB:
             z_min = np.nanmin(z)
         if z_max is None or z_max < np.nanmin(z):
             z_max = np.nanmax(z)
+        if z_min is None:  # mypy issue handling
+            raise TypeError("Failure in assignment.")
+        if z_max is None:  # mypy issue handling
+            raise TypeError("Failure in assignment.")
         # To prevent error in cbar and get at least a plot even it is one color
         if z_min == z_max:
             z_min = z_min - z_min * 0.1
@@ -799,7 +807,7 @@ class PlotDAB:
     @timeit
     def subplot_contourf_nan(self, x, y, z, nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
                              num_cont_lines: int = 20, alpha: float = 0.75, cmap: str = 'inferno', axlinewidth=0.5,
-                             axlinecolor: str = 'r', wp_x: float = None, wp_y: float = None, inlinespacing: int = -10,
+                             axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None, inlinespacing: int = -10,
                              xlabel='Lambda = f * L', ylabel: str = 'Turns ratio n', fontsize_axis: int = 9,
                              fontsize_title: int = 9, title: str = "", clabel: bool = False, markerstyle: str = 'star',
                              z_min: float | None = None, z_max: float | None = None) -> None:
@@ -961,7 +969,7 @@ class PlotDAB:
 
 @timeit
 def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '', mask1=None, mask2=None, mask3=None,
-                    maskZVS: np.ndarray = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
+                    maskZVS: np.ndarray | None = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
     """
     Plot three contourf plots with a shared colorbar.
 
@@ -1014,7 +1022,7 @@ def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray
         mask2 = None
     if np.all(mask3 == mask3[0]):
         mask3 = None
-    if np.all(maskZVS == maskZVS[0]):
+    if np.all(maskZVS == maskZVS[0]):  # type: ignore
         maskZVS = None
 
     # Add a new tab with subplot

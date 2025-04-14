@@ -152,7 +152,7 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     phi[_negative_power_mask] = phi_nP[_negative_power_mask]
 
     # Init return dict
-    da_mod_results: dict[str, np.ndarray] = dict()
+    da_mod_results: dict[str, np.ndarray | float | None] = dict()
     # Save the results in the dict
     # Convert phi because the math from the paper uses Middle-Pulse alignment, but we use First-Falling-Edge alignment!
     da_mod_results[MOD_KEYS[0]] = phi
@@ -364,6 +364,6 @@ def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
         return np.interp(v, v_vec, qoss)
 
     q_meshgrid = np.vectorize(meshing_q)
-    qoss_mesh = q_meshgrid(voltage)
+    qoss_mesh: np.ndarray = q_meshgrid(voltage)
 
     return qoss_mesh

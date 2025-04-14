@@ -19,12 +19,12 @@ class PlotWindow:
         """Initialize PlotWindow instance."""
         self.app = QApplication(sys.argv)
         self.MainWindow = QMainWindow()
-        self.MainWindow.__init__()
+        self.MainWindow.__init__()  # type: ignore
         self.MainWindow.setWindowTitle(window_title)
-        self.canvases = []
-        self.figure_handles = []
-        self.toolbar_handles = []
-        self.tab_handles = []
+        self.canvases: list[FigureCanvas] = []
+        self.figure_handles: list[plt.Figure] = []
+        self.toolbar_handles: list[NavigationToolbar] = []
+        self.tab_handles: list[QWidget] = []
         self.current_window = -1
         self.tabs = QTabWidget()
         self.MainWindow.setCentralWidget(self.tabs)

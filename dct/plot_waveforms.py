@@ -2,14 +2,14 @@
 # python libraries
 
 # own libraries
-import dct.datasets_dtos as d_sets
+import dct.datasets_dtos as d_dtos
 import dct.functions_waveforms as fw
 
 # 3rd party libraries
 import numpy as np
 from matplotlib import pyplot as plt
 
-def plot_calc_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_waveforms: bool = False):
+def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False):
     """
     Plot calculated current waveforms for Ls, Lc1, Lc2.
 
@@ -18,7 +18,7 @@ def plot_calc_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_waveforms: 
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """
-    if not isinstance(dab_dto.gecko_results, d_sets.GeckoWaveforms):
+    if not isinstance(dab_dto.gecko_results, d_dtos.GeckoWaveforms):
         raise TypeError(f"{dab_dto.gecko_results} is not of Type GeckoWaveforms.")
 
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
@@ -101,7 +101,7 @@ def plot_calc_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_waveforms: 
             plt.tight_layout()
             plt.show()
 
-def plot_calc_i_hf_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_waveforms: bool = False):
+def plot_calc_i_hf_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False):
     """
     Plot calculated current waveforms for i_hf_1 and i_hf_2.
 
@@ -110,7 +110,7 @@ def plot_calc_i_hf_waveforms(dab_dto: d_sets.CircuitDabDTO, compare_gecko_wavefo
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """
-    if not isinstance(dab_dto.gecko_results, d_sets.GeckoWaveforms):
+    if not isinstance(dab_dto.gecko_results, d_dtos.GeckoWaveforms):
         raise TypeError(f"{dab_dto.gecko_results} is not of Type GeckoWaveforms.")
 
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):

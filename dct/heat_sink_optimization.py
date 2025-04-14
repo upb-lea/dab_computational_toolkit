@@ -17,7 +17,7 @@ class HeatSinkOptimization:
     """Optimation support class for heat sink optimation."""
 
     # Simulation configuration list
-    optimization_config_list = []
+    optimization_config_list: list[tuple] = []
 
     @staticmethod
     def init_configuration(toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
@@ -157,7 +157,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def optimization_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int, debug: bool = False):
+    def optimization_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int, debug: bool = False):
         """
         Control the multi simulation processes.
 

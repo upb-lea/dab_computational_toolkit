@@ -22,10 +22,10 @@ class InductorOptimization:
     """Optimation of the inductor."""
 
     # Simulation configuration list
-    sim_config_list = []
+    sim_config_list: list[list[int | fmt.InductorOptimizationDTO]] = []
 
     @staticmethod
-    def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: type[dct.GeneralInformation]) -> bool:
+    def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
         """
         Initialize the configuration.
 
@@ -98,7 +98,7 @@ class InductorOptimization:
                 next_io_config.target_inductance = circuit_dto.input_config.Lc1
                 next_io_config.time_current_vec = act_time_current_vec
                 next_io_config.inductor_optimization_directory = os.path.join(
-                    act_ginfo.inductor_study_path, circuit_trial_number,
+                    act_ginfo.inductor_study_path, str(circuit_trial_number),
                     toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""))
                 InductorOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
             else:
@@ -239,7 +239,7 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def simulation_handler(act_ginfo: type[dct.GeneralInformation], target_number_trials: int,
+    def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
                            factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
                            re_simulate: bool = False, debug: bool = False):
         """

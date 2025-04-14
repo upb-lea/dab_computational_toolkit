@@ -11,7 +11,7 @@ from dct.debug_tools import *
 # 3rd party libraries
 import numpy as np
 from collections import defaultdict
-from tqdm import tqdm
+import tqdm
 import pygeckocircuits2 as pgc
 import pandas as pd
 
@@ -119,10 +119,10 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     # init gecko waveform simulation
     result_df = pd.DataFrame()
     gecko_waveforms_single_simulation = dict()
-    gecko_waveforms_multiple_simulations = defaultdict(dict)
+    gecko_waveforms_multiple_simulations: defaultdict = defaultdict(dict)
 
     # Init arrays to store simulation results
-    da_sim_results = dict()
+    da_sim_results: dict[str, np.ndarray] = dict()
     for k in l_means_keys:
         da_sim_results[k] = np.full_like(mod_phi, np.nan)
     for k in l_rms_keys:
@@ -131,7 +131,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
         da_sim_results[k] = np.full_like(mod_phi, np.nan)
 
     # Progressbar init, calc total number of iterations to simulate
-    pbar = tqdm(total=mod_phi.size)
+    pbar = tqdm.tqdm(total=mod_phi.size)
 
     # Find a free port if zero is given as port
     if geckoport == 0:
@@ -259,25 +259,25 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     da_sim_results['zvs_coverage'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S11_sw_on'], zvs_vlimit) & np.less_equal(da_sim_results['v_ds_S23_sw_on'],
                                                                                     zvs_vlimit)) / np.size(
-        da_sim_results['v_ds_S11_sw_on'])
+        da_sim_results['v_ds_S11_sw_on'])  # type: ignore
     da_sim_results['zvs_coverage1'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S11_sw_on'], zvs_vlimit)) / np.size(
-        da_sim_results['v_ds_S11_sw_on'])
+        da_sim_results['v_ds_S11_sw_on'])  # type: ignore
     da_sim_results['zvs_coverage2'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S23_sw_on'], zvs_vlimit)) / np.size(
-        da_sim_results['v_ds_S23_sw_on'])
+        da_sim_results['v_ds_S23_sw_on'])  # type: ignore
     # Only non NaN areas:
     # Show ZVS coverage based on simulation
     da_sim_results['zvs_coverage_notnan'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S11_sw_on'], zvs_vlimit) & np.less_equal(da_sim_results['v_ds_S23_sw_on'],
                                                                                     zvs_vlimit)) / np.size(
-        da_sim_results['v_ds_S11_sw_on'][~np.isnan(mod_tau1)])
+        da_sim_results['v_ds_S11_sw_on'][~np.isnan(mod_tau1)])  # type: ignore
     da_sim_results['zvs_coverage1_notnan'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S11_sw_on'][~np.isnan(mod_tau1)], zvs_vlimit)) / np.size(
-        da_sim_results['v_ds_S11_sw_on'][~np.isnan(mod_tau1)])
+        da_sim_results['v_ds_S11_sw_on'][~np.isnan(mod_tau1)])  # type: ignore
     da_sim_results['zvs_coverage2_notnan'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S23_sw_on'][~np.isnan(mod_tau1)], zvs_vlimit)) / np.size(
-        da_sim_results['v_ds_S23_sw_on'][~np.isnan(mod_tau1)])
+        da_sim_results['v_ds_S23_sw_on'][~np.isnan(mod_tau1)])  # type: ignore
     # Total i_HF1 mean
     da_sim_results['i_HF1_total_mean'] = np.nanmean(da_sim_results['i_HF1'])
     # Square I_rms before mean, because we need the relation P ~ R*I^2
