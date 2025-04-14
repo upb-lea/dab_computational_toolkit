@@ -1,7 +1,7 @@
 """Plot the DAB calculations."""
 # python libraries
 import os
-from datetime import datetime
+import datetime
 import warnings
 import math
 
@@ -149,9 +149,9 @@ class PlotDAB:
         # Adding a timestamp to the filename if requested
         if timestamp:
             if name:
-                filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + name
+                filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + name
             else:
-                filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         else:
             if name:
                 filename = name
@@ -233,7 +233,7 @@ class PlotDAB:
         # Redraw the current figure
         plt.draw()
 
-    def plot_modulation(self, x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None, mask3=None,
+    def plot_modulation(self, x, y, z1, z2, z3, title: str = '', mask1: np.ndarray | None = None, mask2=None, mask3=None,
                         maskZVS=None, Vnum=2, tab_title='add Plot title'):
         """
         Plot three contourf plots with a shared colorbar.

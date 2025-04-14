@@ -4,6 +4,7 @@ import os
 import logging
 import json
 import pickle
+import datetime
 
 # 3rd party libraries
 import optuna
@@ -15,7 +16,7 @@ import deepdiff
 import dct.datasets_dtos
 # own libraries
 import dct.datasets_dtos as d_dtos
-import dct.circuit_optimization_dtos as p_dtos
+import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
 
 
@@ -23,7 +24,7 @@ class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     @staticmethod
-    def load_filepaths(project_directory: str) -> p_dtos.ParetoFilePaths:
+    def load_filepaths(project_directory: str) -> circuit_dtos.ParetoFilePaths:
         """
         Load file path of the subdirectories of the project.
 
@@ -40,7 +41,7 @@ class CircuitOptimization:
         else:
             raise ValueError("Project does not exist.")
 
-        file_path_dto = p_dtos.ParetoFilePaths(
+        file_path_dto = circuit_dtos.ParetoFilePaths(
             circuit=loaded_file["circuit"],
             transformer=loaded_file["transformer"],
             inductor=loaded_file["inductor"],
@@ -49,7 +50,7 @@ class CircuitOptimization:
         return file_path_dto
 
     @staticmethod
-    def save_config(config: p_dtos.CircuitParetoDabDesign) -> None:
+    def save_config(config: circuit_dtos.CircuitParetoDabDesign) -> None:
         """
         Save the configuration file as pickle file on the disk.
 
@@ -63,7 +64,7 @@ class CircuitOptimization:
             pickle.dump(config, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_config(circuit_project_directory: str, circuit_study_name: str) -> p_dtos.CircuitParetoDabDesign:
+    def load_config(circuit_project_directory: str, circuit_study_name: str) -> circuit_dtos.CircuitParetoDabDesign:
         """
         Load pickle configuration file from disk.
 
@@ -81,7 +82,7 @@ class CircuitOptimization:
             return pickle.load(pickle_file_data)
 
     @staticmethod
-    def objective(trial: optuna.Trial, dab_config: p_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters):
+    def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters):
         """
         Objective function to optimize.
 
@@ -146,7 +147,7 @@ class CircuitOptimization:
         return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
-    def calculate_fix_parameters(dab_config: p_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
+    def calculate_fix_parameters(dab_config: circuit_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
         """
         Calculate time-consuming parameters which are same for every single simulation.
 
@@ -172,7 +173,7 @@ class CircuitOptimization:
 
     # Add for Parallelization: Optimization function
     @staticmethod
-    def run_optimization_sqlite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
+    def run_optimization_sqlite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: circuit_dtos.CircuitParetoDabDesign,
                                 act_fixed_parameters: d_dtos.FixedParameters):
         """Proceed a study which is stored as sqlite database.
 
@@ -196,7 +197,7 @@ class CircuitOptimization:
             pass
 
     @staticmethod
-    def run_optimization_mysql(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: p_dtos.CircuitParetoDabDesign,
+    def run_optimization_mysql(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: circuit_dtos.CircuitParetoDabDesign,
                                act_fixed_parameters: d_dtos.FixedParameters):
         """Proceed a study which is stored as sqlite database.
 
@@ -228,7 +229,7 @@ class CircuitOptimization:
             # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
     @staticmethod
-    def start_proceed_study(dab_config: p_dtos.CircuitParetoDabDesign, number_trials: int,
+    def start_proceed_study(dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
                             database_type: str = 'sqlite',
                             sampler=optuna.samplers.NSGAIIISampler()
                             ):
@@ -363,7 +364,7 @@ class CircuitOptimization:
 #            Optimization.save_config(dab_config)
 
     @staticmethod
-    def show_study_results(dab_config: p_dtos.CircuitParetoDabDesign) -> None:
+    def show_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign) -> None:
         """Show the results of a study.
 
         A local .html file is generated under config.working_directory to store the interactive plotly plots on disk.
@@ -383,7 +384,7 @@ class CircuitOptimization:
         fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(dab_config: p_dtos.CircuitParetoDabDesign, trial_number: int | None = None):
+    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None):
         """
         Load a DAB-DTO from an optuna study.
 
@@ -432,7 +433,7 @@ class CircuitOptimization:
         return dab_dto
 
     @staticmethod
-    def df_to_dab_dto_list(dab_config: p_dtos.CircuitParetoDabDesign, df: pd.DataFrame) -> list[d_dtos.CircuitDabDTO]:
+    def df_to_dab_dto_list(dab_config: circuit_dtos.CircuitParetoDabDesign, df: pd.DataFrame) -> list[d_dtos.CircuitDabDTO]:
         """
         Load a DAB-DTO from an optuna study.
 
@@ -479,7 +480,7 @@ class CircuitOptimization:
         return dab_dto_list
 
     @staticmethod
-    def study_to_df(dab_config: p_dtos.CircuitParetoDabDesign):
+    def study_to_df(dab_config: circuit_dtos.CircuitParetoDabDesign):
         """Create a dataframe from a study.
 
         :param dab_config: DAB optimization configuration file
@@ -493,7 +494,7 @@ class CircuitOptimization:
         return df
 
     @staticmethod
-    def create_sqlite_database_url(dab_config: p_dtos.CircuitParetoDabDesign) -> str:
+    def create_sqlite_database_url(dab_config: circuit_dtos.CircuitParetoDabDesign) -> str:
         """
         Create the DAB circuit optimization sqlite URL.
 
@@ -669,7 +670,7 @@ class CircuitOptimization:
         return pareto_df_offset
 
     @staticmethod
-    def filter_study_results(dab_config: p_dtos.CircuitParetoDabDesign):
+    def filter_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign):
         """
         Filter the study result and use geckocircuits for detailed calculation.
 
@@ -683,7 +684,7 @@ class CircuitOptimization:
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
-        smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest))
+        smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest)[0])
 
         for count in np.arange(0, dab_config.filter.number_filtered_designs - 1):
             print("------------------")

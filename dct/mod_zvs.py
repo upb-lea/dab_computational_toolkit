@@ -364,6 +364,6 @@ def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
         return np.interp(v, v_vec, qoss)
 
     q_meshgrid = np.vectorize(meshing_q)
-    qoss_mesh = q_meshgrid(voltage)
+    qoss_mesh: np.ndarray = q_meshgrid(voltage)
 
     return qoss_mesh

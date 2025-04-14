@@ -20,9 +20,9 @@ class DctSummmaryProcessing:
 
     # Areas and transistor cooling parameter
     copper_coin_area_1: float
-    transistor_b1_cooling: float
+    transistor_b1_cooling: dct.TransistorCooling
     copper_coin_area_2: float
-    transistor_b2_cooling: float
+    transistor_b2_cooling: dct.TransistorCooling
 
     # Thermal resistance
     r_th_per_unit_area_ind_heat_sink: float
@@ -44,7 +44,7 @@ class DctSummmaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-        transformer_cooling: list[float]
+        transformer_cooling: dct.InductiveElementCooling
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
         DctSummmaryProcessing.transistor_b1_cooling = dct.TransistorCooling(
             tim_thickness=act_thermal_data.transistor_b1_cooling[0],
@@ -161,6 +161,8 @@ class DctSummmaryProcessing:
             circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
 
             # Calculate the thermal values
+            if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
+                raise ValueError("Incomplete loss calculation.")
 
             # Begin: ASA: No influence by inductor or transformer ################################
             # get transistor results
@@ -194,13 +196,8 @@ class DctSummmaryProcessing:
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
 
-                # Create update listfile for inductor and transformer
-                # Initialise inductor and transformer list
-                inductor_numbers = []
-                stacked_transformer_numbers = []
-
                 # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losseslosses
-                inductor_filepath_results = os.path.join(act_ginfo.inductor_study_path, circuit_number,
+                inductor_filepath_results = os.path.join(act_ginfo.inductor_study_path, str(circuit_number),
                                                          inductor_study_name,
                                                          "09_circuit_dtos_incl_inductor_losses")
 
@@ -232,7 +229,7 @@ class DctSummmaryProcessing:
 
                         # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losseslosses
                         stacked_transformer_filepath_results = os.path.join(act_ginfo.transformer_study_path,
-                                                                            circuit_number,
+                                                                            str(circuit_number),
                                                                             stacked_transformer_study_name,
                                                                             "09_circuit_dtos_incl_transformer_losses")
 

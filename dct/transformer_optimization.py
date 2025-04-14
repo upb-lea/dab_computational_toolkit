@@ -141,7 +141,7 @@ class TransformerOptimization:
                 next_io_config.time_current_2_vec = transformer_target_params.time_current_2_vec
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
-                    = os.path.join(act_ginfo.transformer_study_path, circuit_trial_number, sto_config.stacked_transformer_study_name)
+                    = os.path.join(act_ginfo.transformer_study_path, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
                 TransformerOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")

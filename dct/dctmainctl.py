@@ -293,8 +293,6 @@ class DctMainCtl:
         :param  workspace_path: Path to subfolder 'workspace' (if empty default path '../<path to this file>' is used)
         :type   workspace_path: str
         """
-        # Variable declaration
-        ginfo = dct.GeneralInformation
         # Inductor simulation
         isim = InductorOptimization
         # Transformer simulation
@@ -364,7 +362,7 @@ class DctMainCtl:
                 # Add filtered result list
                 for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
                     if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
-                        ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
+                        ginfo.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
                 if not ginfo.filtered_list_id:
                     raise ValueError(f"Filtered results folder {filtered_circuit_results_datapath} is empty.")
             else:
@@ -389,7 +387,7 @@ class DctMainCtl:
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(ginfo.inductor_study_path,
-                                                         id_entry,
+                                                         str(id_entry),
                                                          ginfo.inductor_study_name)
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(inductor_results_datapath, ginfo.inductor_study_name):
@@ -414,7 +412,7 @@ class DctMainCtl:
             for id_entry in ginfo.filtered_list_id:
                 # Assemble pathname
                 transformer_results_datapath = os.path.join(ginfo.transformer_study_path,
-                                                            id_entry,
+                                                            str(id_entry),
                                                             ginfo.transformer_study_name)
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(transformer_results_datapath, ginfo.transformer_study_name):
@@ -487,7 +485,7 @@ class DctMainCtl:
             # Add filtered result list
             for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
                 if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
-                    ginfo.filtered_list_id.append(os.path.splitext(filtered_circuit_result)[0])
+                    ginfo.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
