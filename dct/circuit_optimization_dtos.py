@@ -11,7 +11,11 @@ class GeneralInformation:
 
     project_directory: str
     circuit_study_name: str
-    filtered_list_id = []
+    inductor_study_name: str
+    transformer_study_name: str
+    heat_sink_study_name: str
+    # filtered_list_id: List[int]
+    filtered_list_id: list[int]
     circuit_study_path: str
     inductor_study_path: str
     transformer_study_path: str

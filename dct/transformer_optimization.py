@@ -114,7 +114,9 @@ class TransformerOptimization:
 
         # Create the sto_config_list for all trials
         for circuit_trial_number in act_ginfo.filtered_list_id:
-            circuit_filepath = os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_trial_number}.pkl")
+            circuit_filepath = os.path.join(act_ginfo.circuit_study_path, act_ginfo.circuit_study_name,
+                                            "filtered_results",
+                                            f"{circuit_trial_number}.pkl")
 
             # Check filename
             if os.path.isfile(circuit_filepath):
@@ -124,7 +126,8 @@ class TransformerOptimization:
                 sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_transformer(
                     circuit_dto, False)
                 time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
-                transformer_target_params = dct.HandleDabDto.export_transformer_target_parameters_dto(dab_dto=circuit_dto)
+                transformer_target_params = dct.HandleDabDto.export_transformer_target_parameters_dto(
+                    dab_dto=circuit_dto)
 
                 # Generate new sto_config
                 next_io_config = copy.deepcopy(sto_config)
@@ -169,7 +172,10 @@ class TransformerOptimization:
         process_number = 1
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path, "filtered_results", f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path,
+                                                                   act_ginfo.circuit_study_name,
+                                                                   "filtered_results",
+                                                                   f"{circuit_id}.pkl"))
         # Check number of trials
         if act_target_number_trials > 0:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(

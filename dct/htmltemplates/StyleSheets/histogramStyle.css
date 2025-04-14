@@ -1,0 +1,23 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+}
+
+h1 {
+    color: #333;
+}
+
+.image-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 80px;
+}
+
+img {
+    border: 2px solid #333;
+    border-radius: 10px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+    max-width: 80%;
+    height: auto;
+}

@@ -19,6 +19,7 @@ class Breakpoints(BaseModel):
     inductor: Literal['no', 'pause', 'stop']
     transformer: Literal['no', 'pause', 'stop']
     heat_sink: Literal['no', 'pause', 'stop']
+    summary: Literal['no', 'pause', 'stop']
 
 class CondBreakpoints(BaseModel):
     """Flow control conditional breakpoints."""
@@ -233,7 +234,7 @@ class TomlTransformer(BaseModel):
     boundary_conditions: TomlTransformerBoundaryConditions
 
 # ######################################################
-# heat sink
+# heat sink inclusive data of summary calculation
 # ######################################################
 
 class TomlHeatSinkBoundaryConditions(BaseModel):
@@ -260,9 +261,21 @@ class TomlHeatSinkDesignSpace(BaseModel):
     number_fins_n_list: list[int]
     thickness_fin_t_list: list[float]
 
+class TomlHeatSinkSummaryData(BaseModel):
+    """Toml checker for HeatSinkSummaryData."""
+
+    # [tim_thickness, tim_conductivity]
+    transistor_b1_cooling: list[float]
+    transistor_b2_cooling: list[float]
+    inductor_cooling: list[float]
+    transformer_cooling: list[float]
+    # [t_ambient, t_hs_max] in °C
+    heat_sink: list[float]
+
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
 
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
+    thermal_resistance_data: TomlHeatSinkSummaryData

@@ -27,3 +27,4 @@
 [filter_distance]
     factor_min_dc_losses = 1.0
     factor_max_dc_losses = 100
+
