@@ -44,7 +44,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro.html"><span class="sectnum">1 </span>Welcome to the Pareto DAB (Dual Active Bridge) Tool</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#pareto-dab-dual-active-bridge-tool-function-documentation"><span class="sectnum">2 </span>Pareto DAB (Dual Active Bridge) Tool function documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#module-dct"><span class="sectnum">2 </span>DAB Computational Toolbox (DCT) documentation</a></li>
 </ul>
 
         </div>
@@ -80,10 +80,641 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#installation"><span class="sectnum">1.1 </span>Installation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="intro.html#pareto-dab-dual-active-bridge-tool-function-documentation"><span class="sectnum">2 </span>Pareto DAB (Dual Active Bridge) Tool function documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#store-specifications-modulation-and-simulation-results"><span class="sectnum">2.1 </span>Store specifications, modulation and simulation results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#calculate-dab-intervals"><span class="sectnum">2.2 </span>Calculate DAB intervals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#sample-requirements"><span class="sectnum">2.3 </span>Sample requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html#module-dct"><span class="sectnum">2 </span>DAB Computational Toolbox (DCT) documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.Breakpoints"><code class="docutils literal notranslate"><span class="pre">Breakpoints</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.circuit_filtered"><code class="docutils literal notranslate"><span class="pre">Breakpoints.circuit_filtered</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.circuit_pareto"><code class="docutils literal notranslate"><span class="pre">Breakpoints.circuit_pareto</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.heat_sink"><code class="docutils literal notranslate"><span class="pre">Breakpoints.heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.inductor"><code class="docutils literal notranslate"><span class="pre">Breakpoints.inductor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.model_config"><code class="docutils literal notranslate"><span class="pre">Breakpoints.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.summary"><code class="docutils literal notranslate"><span class="pre">Breakpoints.summary</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Breakpoints.transformer"><code class="docutils literal notranslate"><span class="pre">Breakpoints.transformer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CalcCurrents"><code class="docutils literal notranslate"><span class="pre">CalcCurrents</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.angles_rad_sorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.angles_rad_sorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.angles_rad_unsorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.angles_rad_unsorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_hf_1_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_hf_1_rms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_hf_1_sorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_hf_1_sorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_hf_2_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_hf_2_rms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_hf_2_sorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_hf_2_sorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_l_1_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_l_1_rms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_l_1_sorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_l_1_sorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_l_2_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_l_2_rms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_l_2_sorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_l_2_sorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_l_s_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_l_s_rms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_l_s_sorted"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_l_s_sorted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_m1_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_m1_rms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcCurrents.i_m2_rms"><code class="docutils literal notranslate"><span class="pre">CalcCurrents.i_m2_rms</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.Lc2_"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.Lc2_</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.c_oss_1"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.c_oss_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.c_oss_2"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.c_oss_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.c_oss_par_1"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.c_oss_par_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.c_oss_par_2"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.c_oss_par_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.mesh_P"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.mesh_P</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.mesh_V1"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.mesh_V1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.mesh_V2"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.mesh_V2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.q_oss_1"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.q_oss_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.q_oss_2"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.q_oss_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.t_j_1"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.t_j_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcFromCircuitConfig.t_j_2"><code class="docutils literal notranslate"><span class="pre">CalcFromCircuitConfig.t_j_2</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CalcLosses"><code class="docutils literal notranslate"><span class="pre">CalcLosses</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcLosses.p_dab_conduction"><code class="docutils literal notranslate"><span class="pre">CalcLosses.p_dab_conduction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcLosses.p_m1_conduction"><code class="docutils literal notranslate"><span class="pre">CalcLosses.p_m1_conduction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcLosses.p_m2_conduction"><code class="docutils literal notranslate"><span class="pre">CalcLosses.p_m2_conduction</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CalcModulation"><code class="docutils literal notranslate"><span class="pre">CalcModulation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_IIIm1"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_IIIm1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_IIm2"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_IIm2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_Im2"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_Im2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_m1n"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_m1n</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_m1p"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_m1p</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_zvs"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_zvs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_zvs_coverage"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_zvs_coverage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.mask_zvs_coverage_notnan"><code class="docutils literal notranslate"><span class="pre">CalcModulation.mask_zvs_coverage_notnan</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.phi"><code class="docutils literal notranslate"><span class="pre">CalcModulation.phi</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.tau1"><code class="docutils literal notranslate"><span class="pre">CalcModulation.tau1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CalcModulation.tau2"><code class="docutils literal notranslate"><span class="pre">CalcModulation.tau2</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.Circuit"><code class="docutils literal notranslate"><span class="pre">Circuit</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Circuit.calculation_mode"><code class="docutils literal notranslate"><span class="pre">Circuit.calculation_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Circuit.model_config"><code class="docutils literal notranslate"><span class="pre">Circuit.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Circuit.number_of_trials"><code class="docutils literal notranslate"><span class="pre">Circuit.number_of_trials</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Circuit.subdirectory"><code class="docutils literal notranslate"><span class="pre">Circuit.subdirectory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitConfig"><code class="docutils literal notranslate"><span class="pre">CircuitConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.Lc1"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.Lc1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.Lc2"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.Lc2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.Ls"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.Ls</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.P_max"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_max</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.P_min"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_min</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.P_nom"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_nom</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.P_step"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_step</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V1_max"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_max</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V1_min"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_min</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V1_nom"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_nom</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V1_step"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_step</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V2_max"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_max</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V2_min"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_min</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V2_nom"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_nom</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.V2_step"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_step</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.c_par_1"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.c_par_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.c_par_2"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.c_par_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.fs"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.fs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.n"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.n</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.transistor_dto_1"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.transistor_dto_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitConfig.transistor_dto_2"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.transistor_dto_2</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitDabDTO"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.calc_config"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.calc_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.calc_currents"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.calc_currents</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.calc_losses"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.calc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.calc_modulation"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.calc_modulation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.gecko_additional_params"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.gecko_additional_params</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.gecko_results"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.gecko_results</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.gecko_waveforms"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.gecko_waveforms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.inductor_results"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.inductor_results</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.input_config"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.input_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.metadata"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.metadata</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.name"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.stacked_transformer_results"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.stacked_transformer_results</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitDabDTO.timestamp"><code class="docutils literal notranslate"><span class="pre">CircuitDabDTO.timestamp</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitFilter"><code class="docutils literal notranslate"><span class="pre">CircuitFilter</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitFilter.difference_percentage"><code class="docutils literal notranslate"><span class="pre">CircuitFilter.difference_percentage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitFilter.number_filtered_designs"><code class="docutils literal notranslate"><span class="pre">CircuitFilter.number_filtered_designs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitOptimization"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.calculate_fix_parameters"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.calculate_fix_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.create_sqlite_database_url"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.create_sqlite_database_url()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.df_plot_pareto_front"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.df_plot_pareto_front()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.df_to_dab_dto_list"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.df_to_dab_dto_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.filter_df"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.filter_df()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.filter_study_results"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.filter_study_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.is_pareto_efficient"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.is_pareto_efficient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.load_config"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.load_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.load_csv_to_df"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.load_csv_to_df()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.load_dab_dto_from_study"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.load_dab_dto_from_study()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.load_filepaths"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.load_filepaths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.objective"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.objective()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.pareto_front_from_df"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.pareto_front_from_df()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.run_optimization_mysql"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.run_optimization_mysql()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.run_optimization_sqlite"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.run_optimization_sqlite()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.save_config"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.save_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.show_study_results"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.show_study_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.start_proceed_study"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.start_proceed_study()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.study_to_df"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.study_to_df()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitOutputRange"><code class="docutils literal notranslate"><span class="pre">CircuitOutputRange</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOutputRange.p_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitOutputRange.p_min_nom_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOutputRange.steps_per_direction"><code class="docutils literal notranslate"><span class="pre">CircuitOutputRange.steps_per_direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOutputRange.v_1_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitOutputRange.v_1_min_nom_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOutputRange.v_2_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitOutputRange.v_2_min_nom_max_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitParetoDabDesign"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDabDesign</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDabDesign.circuit_study_name"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDabDesign.circuit_study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDabDesign.design_space"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDabDesign.design_space</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDabDesign.filter"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDabDesign.filter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDabDesign.output_range"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDabDesign.output_range</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDabDesign.project_directory"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDabDesign.project_directory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.c_par_1"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.c_par_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.c_par_2"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.c_par_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.f_s_min_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.f_s_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.l_1_min_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.l_1_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.l_2__min_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.l_2__min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.l_s_min_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.l_s_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.n_min_max_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.n_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.transistor_1_name_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.transistor_1_name_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitParetoDesignSpace.transistor_2_name_list"><code class="docutils literal notranslate"><span class="pre">CircuitParetoDesignSpace.transistor_2_name_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.CondBreakpoints"><code class="docutils literal notranslate"><span class="pre">CondBreakpoints</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CondBreakpoints.circuit"><code class="docutils literal notranslate"><span class="pre">CondBreakpoints.circuit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CondBreakpoints.heat_sink"><code class="docutils literal notranslate"><span class="pre">CondBreakpoints.heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CondBreakpoints.inductor"><code class="docutils literal notranslate"><span class="pre">CondBreakpoints.inductor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CondBreakpoints.model_config"><code class="docutils literal notranslate"><span class="pre">CondBreakpoints.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CondBreakpoints.transformer"><code class="docutils literal notranslate"><span class="pre">CondBreakpoints.transformer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.ConfigurationDataFiles"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ConfigurationDataFiles.circuit_configuration_file"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles.circuit_configuration_file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ConfigurationDataFiles.heat_sink_configuration_file"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles.heat_sink_configuration_file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ConfigurationDataFiles.inductor_configuration_file"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles.inductor_configuration_file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ConfigurationDataFiles.model_config"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ConfigurationDataFiles.transformer_configuration_file"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles.transformer_configuration_file</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.FixedParameters"><code class="docutils literal notranslate"><span class="pre">FixedParameters</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FixedParameters.transistor_1_dto_list"><code class="docutils literal notranslate"><span class="pre">FixedParameters.transistor_1_dto_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FixedParameters.transistor_2_dto_list"><code class="docutils literal notranslate"><span class="pre">FixedParameters.transistor_2_dto_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.FlowControl"><code class="docutils literal notranslate"><span class="pre">FlowControl</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.breakpoints"><code class="docutils literal notranslate"><span class="pre">FlowControl.breakpoints</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.circuit"><code class="docutils literal notranslate"><span class="pre">FlowControl.circuit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.conditional_breakpoints"><code class="docutils literal notranslate"><span class="pre">FlowControl.conditional_breakpoints</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.configuration_data_files"><code class="docutils literal notranslate"><span class="pre">FlowControl.configuration_data_files</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.general"><code class="docutils literal notranslate"><span class="pre">FlowControl.general</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.heat_sink"><code class="docutils literal notranslate"><span class="pre">FlowControl.heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.inductor"><code class="docutils literal notranslate"><span class="pre">FlowControl.inductor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.model_config"><code class="docutils literal notranslate"><span class="pre">FlowControl.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.transformer"><code class="docutils literal notranslate"><span class="pre">FlowControl.transformer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.lossfilepath"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.lossfilepath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.number_pre_sim_periods"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.number_pre_sim_periods</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.number_sim_periods"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.number_sim_periods</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.simfilepath"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.simfilepath</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.t_dead1"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.t_dead1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.t_dead2"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.t_dead2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.timestep"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.timestep</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoAdditionalParameters.timestep_pre"><code class="docutils literal notranslate"><span class="pre">GeckoAdditionalParameters.timestep_pre</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.GeckoResults"><code class="docutils literal notranslate"><span class="pre">GeckoResults</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.I1_squared_total_mean"><code class="docutils literal notranslate"><span class="pre">GeckoResults.I1_squared_total_mean</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S11_p_cond"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S11_p_cond</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S11_p_sw"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S11_p_sw</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S12_p_cond"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S12_p_cond</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S12_p_sw"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S12_p_sw</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S23_p_cond"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S23_p_cond</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S23_p_sw"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S23_p_sw</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S24_p_cond"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S24_p_cond</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.S24_p_sw"><code class="docutils literal notranslate"><span class="pre">GeckoResults.S24_p_sw</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_C11"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_C11</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_C12"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_C12</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_C23"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_C23</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_C24"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_C24</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_HF1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_HF1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_HF1_S11_sw_on"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_HF1_S11_sw_on</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_HF1_total_mean"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_HF1_total_mean</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_HF2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_HF2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_HF2_S23_sw_on"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_HF2_S23_sw_on</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_Lc1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_Lc1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_Lc2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_Lc2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_Ls"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_Ls</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_S11"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_S11</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_S12"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_S12</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_S23"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_S23</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_S24"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_S24</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_dc1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_dc1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.i_dc2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.i_dc2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.p_cond1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.p_cond1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.p_cond2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.p_cond2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.p_dc1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.p_dc1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.p_dc2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.p_dc2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.p_sw1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.p_sw1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.p_sw2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.p_sw2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.power_deviation"><code class="docutils literal notranslate"><span class="pre">GeckoResults.power_deviation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.v_dc1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.v_dc1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.v_dc2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.v_dc2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.v_ds_S11_sw_on"><code class="docutils literal notranslate"><span class="pre">GeckoResults.v_ds_S11_sw_on</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.v_ds_S23_sw_on"><code class="docutils literal notranslate"><span class="pre">GeckoResults.v_ds_S23_sw_on</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.zvs_coverage"><code class="docutils literal notranslate"><span class="pre">GeckoResults.zvs_coverage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.zvs_coverage1"><code class="docutils literal notranslate"><span class="pre">GeckoResults.zvs_coverage1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.zvs_coverage1_notnan"><code class="docutils literal notranslate"><span class="pre">GeckoResults.zvs_coverage1_notnan</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.zvs_coverage2"><code class="docutils literal notranslate"><span class="pre">GeckoResults.zvs_coverage2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.zvs_coverage2_notnan"><code class="docutils literal notranslate"><span class="pre">GeckoResults.zvs_coverage2_notnan</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoResults.zvs_coverage_notnan"><code class="docutils literal notranslate"><span class="pre">GeckoResults.zvs_coverage_notnan</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.GeckoWaveforms"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoWaveforms.i_HF1"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms.i_HF1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoWaveforms.i_HF2"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms.i_HF2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoWaveforms.i_Lc1"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms.i_Lc1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoWaveforms.i_Lc2"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms.i_Lc2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoWaveforms.i_Ls"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms.i_Ls</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeckoWaveforms.time"><code class="docutils literal notranslate"><span class="pre">GeckoWaveforms.time</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.General"><code class="docutils literal notranslate"><span class="pre">General</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.General.model_config"><code class="docutils literal notranslate"><span class="pre">General.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.General.project_directory"><code class="docutils literal notranslate"><span class="pre">General.project_directory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.GeneralInformation"><code class="docutils literal notranslate"><span class="pre">GeneralInformation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.circuit_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.circuit_study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.circuit_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.circuit_study_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.filtered_list_id"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.filtered_list_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.heat_sink_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.heat_sink_study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.heat_sink_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.heat_sink_study_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.inductor_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.inductor_study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.inductor_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.inductor_study_path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.project_directory"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.project_directory</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.transformer_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.transformer_study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.GeneralInformation.transformer_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.transformer_study_path</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HandleDabDto"><code class="docutils literal notranslate"><span class="pre">HandleDabDto</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.add_gecko_simulation_results"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.add_gecko_simulation_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.add_inductor_results"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.add_inductor_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.add_stacked_transformer_results"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.add_stacked_transformer_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.calculate_from_configuration"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.calculate_from_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.calculate_modulation"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.calculate_modulation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.export_transformer_target_parameters_dto"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.export_transformer_target_parameters_dto()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.get_c_oss_from_tdb"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.get_c_oss_from_tdb()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.get_max_peak_waveform_inductor"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.get_max_peak_waveform_inductor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.get_max_peak_waveform_transformer"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.get_max_peak_waveform_transformer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.init_config"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.init_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.load_from_file"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.load_from_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleDabDto.save"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HandleTransistorDto"><code class="docutils literal notranslate"><span class="pre">HandleTransistorDto</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HandleTransistorDto.tdb_to_transistor_dto"><code class="docutils literal notranslate"><span class="pre">HandleTransistorDto.tdb_to_transistor_dto()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HeatSink"><code class="docutils literal notranslate"><span class="pre">HeatSink</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSink.calculation_mode"><code class="docutils literal notranslate"><span class="pre">HeatSink.calculation_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSink.model_config"><code class="docutils literal notranslate"><span class="pre">HeatSink.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSink.number_of_trials"><code class="docutils literal notranslate"><span class="pre">HeatSink.number_of_trials</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSink.subdirectory"><code class="docutils literal notranslate"><span class="pre">HeatSink.subdirectory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HeatSinkBoundaryConditions"><code class="docutils literal notranslate"><span class="pre">HeatSinkBoundaryConditions</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkBoundaryConditions.t_ambient"><code class="docutils literal notranslate"><span class="pre">HeatSinkBoundaryConditions.t_ambient</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkBoundaryConditions.t_hs_max"><code class="docutils literal notranslate"><span class="pre">HeatSinkBoundaryConditions.t_hs_max</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.calculate_r_th_copper_coin"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.calculate_r_th_copper_coin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.calculate_r_th_tim"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.calculate_r_th_tim()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.init_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.optimization_config_list"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.optimization_config_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.optimization_handler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.InductiveElementCooling"><code class="docutils literal notranslate"><span class="pre">InductiveElementCooling</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductiveElementCooling.tim_conductivity"><code class="docutils literal notranslate"><span class="pre">InductiveElementCooling.tim_conductivity</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductiveElementCooling.tim_thickness"><code class="docutils literal notranslate"><span class="pre">InductiveElementCooling.tim_thickness</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.Inductor"><code class="docutils literal notranslate"><span class="pre">Inductor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Inductor.calculation_mode"><code class="docutils literal notranslate"><span class="pre">Inductor.calculation_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Inductor.model_config"><code class="docutils literal notranslate"><span class="pre">Inductor.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Inductor.number_of_trials"><code class="docutils literal notranslate"><span class="pre">Inductor.number_of_trials</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Inductor.subdirectory"><code class="docutils literal notranslate"><span class="pre">Inductor.subdirectory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.InductorOptimization"><code class="docutils literal notranslate"><span class="pre">InductorOptimization</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.init_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.sim_config_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.sim_config_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.simulation_handler"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.simulation_handler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.InductorResults"><code class="docutils literal notranslate"><span class="pre">InductorResults</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorResults.area_to_heat_sink"><code class="docutils literal notranslate"><span class="pre">InductorResults.area_to_heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorResults.circuit_trial_number"><code class="docutils literal notranslate"><span class="pre">InductorResults.circuit_trial_number</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorResults.inductor_trial_number"><code class="docutils literal notranslate"><span class="pre">InductorResults.inductor_trial_number</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorResults.p_combined_losses"><code class="docutils literal notranslate"><span class="pre">InductorResults.p_combined_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorResults.volume"><code class="docutils literal notranslate"><span class="pre">InductorResults.volume</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.ParetoFilePaths"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.circuit"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.circuit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.heat_sink"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.inductor"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.inductor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.transformer"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.transformer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.PlotDAB"><code class="docutils literal notranslate"><span class="pre">PlotDAB</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.apply_spacings"><code class="docutils literal notranslate"><span class="pre">PlotDAB.apply_spacings()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.close"><code class="docutils literal notranslate"><span class="pre">PlotDAB.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.figs_axes"><code class="docutils literal notranslate"><span class="pre">PlotDAB.figs_axes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.new_fig"><code class="docutils literal notranslate"><span class="pre">PlotDAB.new_fig()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.plot_3by1"><code class="docutils literal notranslate"><span class="pre">PlotDAB.plot_3by1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.plot_modulation"><code class="docutils literal notranslate"><span class="pre">PlotDAB.plot_modulation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.plot_modulation_classic"><code class="docutils literal notranslate"><span class="pre">PlotDAB.plot_modulation_classic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.plot_rms_current"><code class="docutils literal notranslate"><span class="pre">PlotDAB.plot_rms_current()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.pw"><code class="docutils literal notranslate"><span class="pre">PlotDAB.pw</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.save_fig"><code class="docutils literal notranslate"><span class="pre">PlotDAB.save_fig()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.show"><code class="docutils literal notranslate"><span class="pre">PlotDAB.show()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.subplot"><code class="docutils literal notranslate"><span class="pre">PlotDAB.subplot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.subplot_contourf"><code class="docutils literal notranslate"><span class="pre">PlotDAB.subplot_contourf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.subplot_contourf_fixedz"><code class="docutils literal notranslate"><span class="pre">PlotDAB.subplot_contourf_fixedz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotDAB.subplot_contourf_nan"><code class="docutils literal notranslate"><span class="pre">PlotDAB.subplot_contourf_nan()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.PlotWindow"><code class="docutils literal notranslate"><span class="pre">PlotWindow</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotWindow.addPlot"><code class="docutils literal notranslate"><span class="pre">PlotWindow.addPlot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotWindow.close"><code class="docutils literal notranslate"><span class="pre">PlotWindow.close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.PlotWindow.show"><code class="docutils literal notranslate"><span class="pre">PlotWindow.show()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.StackedTransformerResults"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StackedTransformerResults.area_to_heat_sink"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.area_to_heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StackedTransformerResults.circuit_trial_number"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.circuit_trial_number</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StackedTransformerResults.p_combined_losses"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.p_combined_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StackedTransformerResults.stacked_transformer_trial_number"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.stacked_transformer_trial_number</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StackedTransformerResults.volume"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.volume</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.ThermalCalcSupport"><code class="docutils literal notranslate"><span class="pre">ThermalCalcSupport</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ThermalCalcSupport.calculate_r_th_copper_coin"><code class="docutils literal notranslate"><span class="pre">ThermalCalcSupport.calculate_r_th_copper_coin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ThermalCalcSupport.calculate_r_th_tim"><code class="docutils literal notranslate"><span class="pre">ThermalCalcSupport.calculate_r_th_tim()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlCircuitFilterDistance"><code class="docutils literal notranslate"><span class="pre">TomlCircuitFilterDistance</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitFilterDistance.difference_percentage"><code class="docutils literal notranslate"><span class="pre">TomlCircuitFilterDistance.difference_percentage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitFilterDistance.model_config"><code class="docutils literal notranslate"><span class="pre">TomlCircuitFilterDistance.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitFilterDistance.number_filtered_designs"><code class="docutils literal notranslate"><span class="pre">TomlCircuitFilterDistance.number_filtered_designs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlCircuitOutputRange"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitOutputRange.model_config"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitOutputRange.p_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.p_min_nom_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitOutputRange.steps_per_direction"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.steps_per_direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitOutputRange.v_1_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.v_1_min_nom_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitOutputRange.v_2_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.v_2_min_nom_max_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDabDesign"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDabDesign</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDabDesign.design_space"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDabDesign.design_space</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDabDesign.filter_distance"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDabDesign.filter_distance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDabDesign.model_config"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDabDesign.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDabDesign.output_range"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDabDesign.output_range</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.c_par_1"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.c_par_1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.c_par_2"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.c_par_2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.f_s_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.f_s_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.l_1_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.l_1_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.l_2__min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.l_2__min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.l_s_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.l_s_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.model_config"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.n_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.n_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.transistor_1_name_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.transistor_1_name_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlCircuitParetoDesignSpace.transistor_2_name_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDesignSpace.transistor_2_name_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlFilterDistance"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.factor_max_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.factor_max_dc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.factor_min_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.factor_min_dc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.model_config"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSink"><code class="docutils literal notranslate"><span class="pre">TomlHeatSink</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSink.boundary_conditions"><code class="docutils literal notranslate"><span class="pre">TomlHeatSink.boundary_conditions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSink.design_space"><code class="docutils literal notranslate"><span class="pre">TomlHeatSink.design_space</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSink.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSink.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSink.settings"><code class="docutils literal notranslate"><span class="pre">TomlHeatSink.settings</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSink.thermal_resistance_data"><code class="docutils literal notranslate"><span class="pre">TomlHeatSink.thermal_resistance_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.area_min"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.area_min</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.t_ambient"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.t_ambient</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.height_c_list"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.height_c_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.height_d_list"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.height_d_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.length_l_list"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.length_l_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.number_fins_n_list"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.number_fins_n_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.thickness_fin_t_list"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.thickness_fin_t_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace.width_b_list"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace.width_b_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings.factor_bottom_area_copper_coin"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings.factor_bottom_area_copper_coin</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings.factor_pcb_area_copper_coin"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings.factor_pcb_area_copper_coin</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings.number_directions"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings.number_directions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings.thermal_conductivity_copper"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings.thermal_conductivity_copper</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.heat_sink"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.heat_sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.inductor_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.inductor_cooling</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.transformer_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.transformer_cooling</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.transistor_b1_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.transistor_b1_cooling</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.transistor_b2_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.transistor_b2_cooling</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlInductor"><code class="docutils literal notranslate"><span class="pre">TomlInductor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductor.boundary_conditions"><code class="docutils literal notranslate"><span class="pre">TomlInductor.boundary_conditions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductor.design_space"><code class="docutils literal notranslate"><span class="pre">TomlInductor.design_space</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductor.filter_distance"><code class="docutils literal notranslate"><span class="pre">TomlInductor.filter_distance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductor.insulations"><code class="docutils literal notranslate"><span class="pre">TomlInductor.insulations</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductor.material_data_sources"><code class="docutils literal notranslate"><span class="pre">TomlInductor.material_data_sources</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductor.model_config"><code class="docutils literal notranslate"><span class="pre">TomlInductor.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlInductorBoundaryConditions"><code class="docutils literal notranslate"><span class="pre">TomlInductorBoundaryConditions</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorBoundaryConditions.model_config"><code class="docutils literal notranslate"><span class="pre">TomlInductorBoundaryConditions.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorBoundaryConditions.temperature"><code class="docutils literal notranslate"><span class="pre">TomlInductorBoundaryConditions.temperature</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.core_inner_diameter_list"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.core_inner_diameter_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.core_name_list"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.core_name_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.litz_wire_list"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.litz_wire_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.material_name_list"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.material_name_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.model_config"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.window_h_list"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.window_h_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorDesignSpace.window_w_list"><code class="docutils literal notranslate"><span class="pre">TomlInductorDesignSpace.window_w_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation.core_bot"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation.core_bot</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation.core_left"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation.core_left</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation.core_right"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation.core_right</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation.core_top"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation.core_top</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation.model_config"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlInductorInsulation.primary_to_primary"><code class="docutils literal notranslate"><span class="pre">TomlInductorInsulation.primary_to_primary</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.model_config"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.permeability_datasource"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.permeability_datasource</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.permeability_datatype"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.permeability_datatype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.permeability_measurement_setup"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.permeability_measurement_setup</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.permittivity_datasource"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.permittivity_datasource</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.permittivity_datatype"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.permittivity_datatype</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlMaterialDataSources.permittivity_measurement_setup"><code class="docutils literal notranslate"><span class="pre">TomlMaterialDataSources.permittivity_measurement_setup</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformer"><code class="docutils literal notranslate"><span class="pre">TomlTransformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformer.boundary_conditions"><code class="docutils literal notranslate"><span class="pre">TomlTransformer.boundary_conditions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformer.design_space"><code class="docutils literal notranslate"><span class="pre">TomlTransformer.design_space</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformer.filter_distance"><code class="docutils literal notranslate"><span class="pre">TomlTransformer.filter_distance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformer.insulation"><code class="docutils literal notranslate"><span class="pre">TomlTransformer.insulation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformer.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformer.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformer.settings"><code class="docutils literal notranslate"><span class="pre">TomlTransformer.settings</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformerBoundaryConditions"><code class="docutils literal notranslate"><span class="pre">TomlTransformerBoundaryConditions</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerBoundaryConditions.max_core_volume"><code class="docutils literal notranslate"><span class="pre">TomlTransformerBoundaryConditions.max_core_volume</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerBoundaryConditions.max_transformer_total_height"><code class="docutils literal notranslate"><span class="pre">TomlTransformerBoundaryConditions.max_transformer_total_height</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerBoundaryConditions.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformerBoundaryConditions.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerBoundaryConditions.temperature"><code class="docutils literal notranslate"><span class="pre">TomlTransformerBoundaryConditions.temperature</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.core_inner_diameter_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.core_inner_diameter_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.core_name_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.core_name_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.material_name_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.material_name_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.n_p_bot_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.n_p_bot_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.n_p_top_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.n_p_top_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.primary_litz_wire_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.primary_litz_wire_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.secondary_litz_wire_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.secondary_litz_wire_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.window_h_bot_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.window_h_bot_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerDesignSpace.window_w_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerDesignSpace.window_w_min_max_list</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.factor_max_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.factor_max_dc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.factor_min_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.factor_min_dc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_primary_to_primary"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_primary_to_primary</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_primary_to_secondary"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_primary_to_secondary</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_secondary_to_secondary"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_secondary_to_secondary</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_bot_core_bot"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_bot_core_bot</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_bot_core_left"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_bot_core_left</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_bot_core_right"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_bot_core_right</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_bot_core_top"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_bot_core_top</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_top_core_bot"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_top_core_bot</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_top_core_left"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_top_core_left</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_top_core_right"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_top_core_right</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.iso_window_top_core_top"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.iso_window_top_core_top</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerInsulation.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformerInsulation.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformerSettings"><code class="docutils literal notranslate"><span class="pre">TomlTransformerSettings</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerSettings.fft_filter_value_factor"><code class="docutils literal notranslate"><span class="pre">TomlTransformerSettings.fft_filter_value_factor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerSettings.mesh_accuracy"><code class="docutils literal notranslate"><span class="pre">TomlTransformerSettings.mesh_accuracy</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerSettings.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformerSettings.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.Transformer"><code class="docutils literal notranslate"><span class="pre">Transformer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Transformer.calculation_mode"><code class="docutils literal notranslate"><span class="pre">Transformer.calculation_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Transformer.model_config"><code class="docutils literal notranslate"><span class="pre">Transformer.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Transformer.number_of_trials"><code class="docutils literal notranslate"><span class="pre">Transformer.number_of_trials</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Transformer.subdirectory"><code class="docutils literal notranslate"><span class="pre">Transformer.subdirectory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TransformerOptimization"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.init_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.sim_config_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.sim_config_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.simulation_handler"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.simulation_handler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters.l_h_target"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters.l_h_target</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters.l_s12_target"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters.l_s12_target</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters.n_target"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters.n_target</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters.temperature"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters.temperature</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters.time_current_1_vec"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters.time_current_1_vec</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerTargetParameters.time_current_2_vec"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters.time_current_2_vec</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TransistorCooling"><code class="docutils literal notranslate"><span class="pre">TransistorCooling</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorCooling.tim_conductivity"><code class="docutils literal notranslate"><span class="pre">TransistorCooling.tim_conductivity</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorCooling.tim_thickness"><code class="docutils literal notranslate"><span class="pre">TransistorCooling.tim_thickness</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TransistorDTO"><code class="docutils literal notranslate"><span class="pre">TransistorDTO</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.c_oss"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.c_oss</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.cooling_area"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.cooling_area</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.housing_area"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.housing_area</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.name"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.q_oss"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.q_oss</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.r_channel"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.r_channel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.r_th_jc"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.r_th_jc</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransistorDTO.t_j_max_op"><code class="docutils literal notranslate"><span class="pre">TransistorDTO.t_j_max_op</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calc_hf_currents"><code class="docutils literal notranslate"><span class="pre">calc_hf_currents()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calc_modulation_params"><code class="docutils literal notranslate"><span class="pre">calc_modulation_params()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calc_rms"><code class="docutils literal notranslate"><span class="pre">calc_rms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calc_rms_currents"><code class="docutils literal notranslate"><span class="pre">calc_rms_currents()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calc_transistor_rms_currents"><code class="docutils literal notranslate"><span class="pre">calc_transistor_rms_currents()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calculate_r_th_copper_coin"><code class="docutils literal notranslate"><span class="pre">calculate_r_th_copper_coin()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calculate_r_th_tim"><code class="docutils literal notranslate"><span class="pre">calculate_r_th_tim()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.colors"><code class="docutils literal notranslate"><span class="pre">colors()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.full_angle_waveform_from_angles"><code class="docutils literal notranslate"><span class="pre">full_angle_waveform_from_angles()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.full_current_waveform_from_currents"><code class="docutils literal notranslate"><span class="pre">full_current_waveform_from_currents()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.full_waveforms_from_angles_currents"><code class="docutils literal notranslate"><span class="pre">full_waveforms_from_angles_currents()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.get_free_port"><code class="docutils literal notranslate"><span class="pre">get_free_port()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.global_plot_settings_font_latex"><code class="docutils literal notranslate"><span class="pre">global_plot_settings_font_latex()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.global_plot_settings_font_sansserif"><code class="docutils literal notranslate"><span class="pre">global_plot_settings_font_sansserif()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.load_dab_specification"><code class="docutils literal notranslate"><span class="pre">load_dab_specification()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_calc_i_hf_waveforms"><code class="docutils literal notranslate"><span class="pre">plot_calc_i_hf_waveforms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_calc_waveforms"><code class="docutils literal notranslate"><span class="pre">plot_calc_waveforms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_calculation_results"><code class="docutils literal notranslate"><span class="pre">plot_calculation_results()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_gecko_simulation_results"><code class="docutils literal notranslate"><span class="pre">plot_gecko_simulation_results()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_mode_overview"><code class="docutils literal notranslate"><span class="pre">plot_mode_overview()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_modulation"><code class="docutils literal notranslate"><span class="pre">plot_modulation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.plot_rms_current"><code class="docutils literal notranslate"><span class="pre">plot_rms_current()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.show_plot"><code class="docutils literal notranslate"><span class="pre">show_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.start_gecko_simulation"><code class="docutils literal notranslate"><span class="pre">start_gecko_simulation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.transistor_conduction_loss"><code class="docutils literal notranslate"><span class="pre">transistor_conduction_loss()</span></code></a></li>
 </ul>
 </li>
 </ul>
