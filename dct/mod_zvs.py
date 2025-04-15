@@ -349,7 +349,7 @@ def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
     def integrate(v):
         v_interp = np.arange(v + 1)
         coss_v = np.interp(v_interp, np.arange(coss.shape[0]), coss)
-        return np.trapezoid(coss_v)
+        return np.trapz(coss_v)
 
     coss_int = np.vectorize(integrate)
     # get a qoss vector that has the resolution 1V from 0 to V_max
