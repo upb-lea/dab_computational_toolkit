@@ -11,7 +11,7 @@ def load_dab_specification(dab_configuration_name: str, steps_in_mesh_per_direct
     """
     Load some predefined DAB specification from different lab samples or papers.
 
-    :param dab_configuration_name: configuration name, which is from ["initial", "everts", "initial_reversed"]
+    :param dab_configuration_name: configuration name, which is from ["initial", "Everts", "initial_reversed"]
     :type dab_configuration_name: str
     :param steps_in_mesh_per_direction: Steps in each mesh direction (v_1, v_2, p_out), optional, e.g. 2: 2x2x2 = 8 simulations, 4: 4x4x4 = 64 simulations
     :type steps_in_mesh_per_direction: int | None

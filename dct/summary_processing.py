@@ -145,11 +145,11 @@ class DctSummaryProcessing:
         :param act_stacked_transformer_study_names : List of names with transformer studies which are to process
         :type  act_stacked_transformer_study_names : list[str]
 
-        :return: dataframe with result information of the pareto front
+        :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
         """
         # Variable declaration
-        # Result dataframe
+        # Result DataFrame
         df = pd.DataFrame()
 
         # iterate circuit numbers
@@ -357,10 +357,10 @@ class DctSummaryProcessing:
     def select_heat_sink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
         """Select the heat sink configuration from calculated heat sink pareto front.
 
-        :param act_ginfo : General information about the study name and study path
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_df_for_hs : dataframe with result information of the pareto front for heat sink selection
-        :type  act_df_for_hs : pd.DataFrame
+        :param act_ginfo: General information about the study name and study path
+        :type  act_ginfo: dct.GeneralInformation:
+        :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
+        :type  act_df_for_hs: pd.DataFrame
         """
         # Variable declaration
 

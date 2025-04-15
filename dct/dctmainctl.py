@@ -1,4 +1,4 @@
-"""Main control program to optimise the DAB converter."""
+"""Main control program to optimize the DAB converter."""
 # python libraries
 import os
 import shutil
@@ -550,7 +550,7 @@ class DctMainCtl:
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [ginfo.inductor_study_name]
         stacked_transformer_study_names = [ginfo.transformer_study_name]
-        # Start summary processing by generating the dataframe from calculated simulation results
+        # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = spro.generate_result_database(ginfo, inductor_study_names, stacked_transformer_study_names)
         #  Select the needed heat sink configuration
         spro.select_heat_sink_configuration(ginfo, s_df)

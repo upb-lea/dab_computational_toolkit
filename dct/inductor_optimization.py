@@ -19,7 +19,7 @@ logging.getLogger().setLevel(logging.ERROR)
 
 
 class InductorOptimization:
-    """Optimation of the inductor."""
+    """Optimization of the inductor."""
 
     # Simulation configuration list
     sim_config_list: list[list[int | fmt.InductorOptimizationDTO]] = []

@@ -155,7 +155,7 @@ class CalcCurrents:
 
 @dataclasses.dataclass(init=False)
 class CalcLosses:
-    """DTO contains te calculated losses."""
+    """DTO contains the calculated losses."""
 
     p_m1_conduction: np.ndarray
     p_m2_conduction: np.ndarray

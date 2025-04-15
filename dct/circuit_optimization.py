@@ -442,7 +442,7 @@ class CircuitOptimization:
 
         :param dab_config: DAB optimization configuration file
         :type dab_config: p_dtos.CircuitParetoDabDesign
-        :param df: Pandas dataframe to convert to the DAB-DTO list
+        :param df: Pandas DataFrame to convert to the DAB-DTO list
         :type df: pd.DataFrame
         :return:
         """
@@ -484,7 +484,7 @@ class CircuitOptimization:
 
     @staticmethod
     def study_to_df(dab_config: circuit_dtos.CircuitParetoDabDesign):
-        """Create a dataframe from a study.
+        """Create a DataFrame from a study.
 
         :param dab_config: DAB optimization configuration file
         :type dab_config: p_dtos.CircuitParetoDabDesign
@@ -514,8 +514,8 @@ class CircuitOptimization:
     def df_plot_pareto_front(df: pd.DataFrame, figure_size: tuple):
         """Plot an interactive Pareto diagram (losses vs. volume) to select the transformers to re-simulate.
 
-        :param df: Dataframe, generated from an optuna study (exported by optuna)
-        :type df: pd.Dataframe
+        :param df: DataFrame, generated from an optuna study (exported by optuna)
+        :type df: pd.DataFrame
         :param figure_size: figure size as x,y-tuple in mm, e.g. (160, 80)
         :type figure_size: tuple
         """
@@ -562,7 +562,7 @@ class CircuitOptimization:
     @staticmethod
     def load_csv_to_df(csv_filepath: str) -> pd.DataFrame:
         """
-        Load a csv file (previously stored from a Pandas dataframe) back to a Pandas dataframe.
+        Load a csv file (previously stored from a Pandas DataFrame) back to a Pandas DataFrame.
 
         :param csv_filepath: File path of .csv file
         :type csv_filepath: str
@@ -570,7 +570,7 @@ class CircuitOptimization:
         :rtype: pandas.DataFrame
         """
         df = pd.read_csv(csv_filepath, header=0, index_col=0)
-        # reading a pandas dataframe seems to change a global variable in the c subsystem
+        # reading a pandas DataFrame seems to change a global variable in the c subsystem
         # after reading csv values, there are issues running onelab/gmsh, as gmsh writes ',' instead '.' to its own files
         # reading the file again with setting back the delimiter to ';', is a workaround for the mentioned problem.
         pd.read_csv(csv_filepath, header=0, index_col=0, delimiter=';')
@@ -609,15 +609,15 @@ class CircuitOptimization:
     @staticmethod
     def pareto_front_from_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
         """
-        Calculate the Pareto front from a Pandas dataframe. Return a Pandas dataframe.
+        Calculate the Pareto front from a Pandas DataFrame. Return a Pandas DataFrame.
 
-        :param df: Pandas dataframe
+        :param df: Pandas DataFrame
         :type df: pd.DataFrame
         :param x: Name of x-parameter from df to show in Pareto plane
         :type x: str
         :param y: Name of y-parameter from df to show in Pareto plane
         :type y: str
-        :return: Pandas dataframe with pareto efficient points
+        :return: Pandas DataFrame with pareto efficient points
         :rtype: pd.DataFrame
         """
         x_vec = df[x][~np.isnan(df[x])]
@@ -633,7 +633,7 @@ class CircuitOptimization:
         """
         Remove designs with too high losses compared to the minimum losses.
 
-        :param df: pandas dataframe with study results
+        :param df: pandas DataFrame with study results
         :type df: pd.DataFrame
         :param x: x-value name for Pareto plot filtering
         :type x: str
@@ -643,7 +643,7 @@ class CircuitOptimization:
         :type factor_min_dc_losses: float
         :param factor_max_dc_losses: dc_max_loss = factor_max_dc_losses * min_available_dc_losses_in_pareto_front
         :type factor_max_dc_losses: float
-        :returns: pandas dataframe with Pareto front near points
+        :returns: pandas DataFrame with Pareto front near points
         :rtype: pd.DataFrame
         """
         # figure out pareto front
@@ -675,7 +675,7 @@ class CircuitOptimization:
     @staticmethod
     def filter_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign):
         """
-        Filter the study result and use geckocircuits for detailed calculation.
+        Filter the study result and use GeckoCIRCUITS for detailed calculation.
 
         :param dab_config: DAB configuration DTO
         :type dab_config: p_dtos.CircuitParetoDabDesign
