@@ -725,4 +725,4 @@ class CircuitOptimization:
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
-            dct.HandleDabDto.save(dto, dto.name, comment="", directory=dto_directory, timestamp=False)
+            dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
