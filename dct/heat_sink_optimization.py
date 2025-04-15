@@ -14,7 +14,7 @@ from dct.heat_sink_dtos import *
 # logging.getLogger().setLevel(logging.ERROR)
 
 class HeatSinkOptimization:
-    """Optimation support class for heat sink optimation."""
+    """Optimization support class for heat sink optimization."""
 
     # Simulation configuration list
     optimization_config_list: list[tuple] = []

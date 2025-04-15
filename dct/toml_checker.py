@@ -188,13 +188,13 @@ class TomlTransformerDesignSpace(BaseModel):
     n_p_bot_min_max_list: list[int]
 
 class TomlTransformerSettings(BaseModel):
-    """Toml checker class for TransfomerSettings."""
+    """Toml checker class for TransformerSettings."""
 
     fft_filter_value_factor: float
     mesh_accuracy: float
 
 class TomlTransformerBoundaryConditions(BaseModel):
-    """Toml checker class for TransformerBondaryConditions."""
+    """Toml checker class for TransformerBoundaryConditions."""
 
     max_transformer_total_height: float
     max_core_volume: float

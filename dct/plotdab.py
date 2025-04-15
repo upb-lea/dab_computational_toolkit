@@ -115,7 +115,7 @@ class PlotDAB:
         # TODO do we have to store axs if we can access them with fig.axes?
         self.figs_axes.append((fig, axs))
         if self.show_pw:
-            self.pw.addPlot(title=tab_title, figure=fig)
+            self.pw.add_plot(title=tab_title, figure=fig)
 
     def save_fig(self, fig, directory=None, name: str = '', comment: str = '', timestamp: bool = True):
         """
@@ -271,7 +271,7 @@ class PlotDAB:
         # TODO do we have to store axs if we can access them with fig.axes?
         self.figs_axes.append((fig, axs))
         if self.show_pw:
-            self.pw.addPlot(title=tab_title, figure=fig)
+            self.pw.add_plot(title=tab_title, figure=fig)
         fig_axes = self.figs_axes[-1]
 
         # Some defaults

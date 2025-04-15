@@ -13,7 +13,7 @@ from heat_sink_optimization import ThermalCalcSupport as thr_sup
 import hct
 
 
-class DctSummmaryProcessing:
+class DctSummaryProcessing:
     """Perform the summary calculation based on optimization results."""
 
     # Variable declaration
@@ -28,7 +28,7 @@ class DctSummmaryProcessing:
     r_th_per_unit_area_ind_heat_sink: float
     r_th_per_unit_area_xfmr_heat_sink: float
 
-    # Heat sink boudary condition parameter
+    # Heat sink boundary condition parameter
     heat_sink_boundary_conditions: dct.HeatSinkBoundaryConditions
 
     @staticmethod
@@ -46,12 +46,12 @@ class DctSummmaryProcessing:
         successful_init = True
         transformer_cooling: dct.InductiveElementCooling
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        DctSummmaryProcessing.transistor_b1_cooling = dct.TransistorCooling(
+        DctSummaryProcessing.transistor_b1_cooling = dct.TransistorCooling(
             tim_thickness=act_thermal_data.transistor_b1_cooling[0],
             tim_conductivity=act_thermal_data.transistor_b1_cooling[1])
 
         # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        DctSummmaryProcessing.transistor_b2_cooling = dct.TransistorCooling(
+        DctSummaryProcessing.transistor_b2_cooling = dct.TransistorCooling(
             tim_thickness=act_thermal_data.transistor_b2_cooling[0],
             tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
 
@@ -63,7 +63,7 @@ class DctSummmaryProcessing:
         if inductor_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
-            DctSummmaryProcessing.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
+            DctSummaryProcessing.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
         else:
             print(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
             successful_init = False
@@ -77,18 +77,18 @@ class DctSummmaryProcessing:
             tim_thickness=transformer_tim_thickness,
             tim_conductivity=transformer_tim_conductivity
         )
-        # Check on zero ( ASA: Maybe in general all configurtation files are to check for validity in advanced. In this case the check can be removed.)
+        # Check on zero ( ASA: Maybe in general all configuration files are to check for validity in advanced. In this case the check can be removed.)
         if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
-            DctSummmaryProcessing.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
+            DctSummaryProcessing.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
         else:
             print(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        DctSummmaryProcessing.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
-                                                                                             t_hs_max=act_thermal_data.heat_sink[1])
+        DctSummaryProcessing.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
+                                                                                            t_hs_max=act_thermal_data.heat_sink[1])
         # Return if initialisation was successful performed (True)
         return successful_init
 
@@ -102,7 +102,7 @@ class DctSummmaryProcessing:
         :return: tuple of bool and result list. True, if the directory exists and contains minimum one file
         :rtype: tuple
         """
-        # Variable deklaration
+        # Variable declaration
         magnetic_result_numbers: list[str] = []
         is_magnetic_list_generated = False
 
@@ -145,11 +145,11 @@ class DctSummmaryProcessing:
         :param act_stacked_transformer_study_names : List of names with transformer studies which are to process
         :type  act_stacked_transformer_study_names : list[str]
 
-        :return: dataframe with result information of the pareto front
+        :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
         """
         # Variable declaration
-        # Result dataframe
+        # Result DataFrame
         df = pd.DataFrame()
 
         # iterate circuit numbers
@@ -179,8 +179,8 @@ class DctSummmaryProcessing:
             r_th_copper_coin_2, copper_coin_area_2 = thr_sup.calculate_r_th_copper_coin(
                 circuit_dto.input_config.transistor_dto_2.cooling_area)
 
-            circuit_r_th_tim_1 = thr_sup.calculate_r_th_tim(copper_coin_area_1, DctSummmaryProcessing.transistor_b1_cooling)
-            circuit_r_th_tim_2 = thr_sup.calculate_r_th_tim(copper_coin_area_2, DctSummmaryProcessing.transistor_b2_cooling)
+            circuit_r_th_tim_1 = thr_sup.calculate_r_th_tim(copper_coin_area_1, DctSummaryProcessing.transistor_b1_cooling)
+            circuit_r_th_tim_2 = thr_sup.calculate_r_th_tim(copper_coin_area_2, DctSummaryProcessing.transistor_b2_cooling)
 
             circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
             circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
@@ -196,14 +196,14 @@ class DctSummmaryProcessing:
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
 
-                # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losseslosses
+                # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losses
                 inductor_filepath_results = os.path.join(act_ginfo.inductor_study_path, str(circuit_number),
                                                          inductor_study_name,
                                                          "09_circuit_dtos_incl_inductor_losses")
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummmaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
+                    DctSummaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
                     print(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -227,7 +227,7 @@ class DctSummmaryProcessing:
                     # iterate transformer study
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
 
-                        # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losseslosses
+                        # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losses
                         stacked_transformer_filepath_results = os.path.join(act_ginfo.transformer_study_path,
                                                                             str(circuit_number),
                                                                             stacked_transformer_study_name,
@@ -235,7 +235,7 @@ class DctSummmaryProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummmaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
+                            DctSummaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
                             print(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
@@ -271,20 +271,20 @@ class DctSummmaryProcessing:
                             max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
                             # Calculate the thermal resistance according r_th = 1/lambda * l / A
                             # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
-                            r_th_ind_heat_sink = DctSummmaryProcessing.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
+                            r_th_ind_heat_sink = DctSummaryProcessing.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
                             temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
                             # For transformer: r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l.
-                            r_th_xfmr_heat_sink = DctSummmaryProcessing.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
+                            r_th_xfmr_heat_sink = DctSummaryProcessing.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
                             temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
 
                             # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
                             t_min_matrix = np.minimum(circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_inductor_heat_sink_max_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_xfmr_heat_sink_max_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, DctSummmaryProcessing.heat_sink_boundary_conditions.t_hs_max)
+                            t_min_matrix = np.minimum(t_min_matrix, DctSummaryProcessing.heat_sink_boundary_conditions.t_hs_max)
 
                             # maximum delta temperature over the heat sink
-                            delta_t_max_heat_sink_matrix = t_min_matrix - DctSummmaryProcessing.heat_sink_boundary_conditions.t_ambient
+                            delta_t_max_heat_sink_matrix = t_min_matrix - DctSummaryProcessing.heat_sink_boundary_conditions.t_ambient
 
                             r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
 
@@ -343,7 +343,7 @@ class DctSummmaryProcessing:
 
                             df = pd.concat([df, local_df], axis=0)
 
-        # Calculate the total area as sum of circuit,  inductor and transformer area df-comand is like vector sum v1[:]=v2[:]+v3[:])
+        # Calculate the total area as sum of circuit,  inductor and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
         df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
         df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
         df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
@@ -355,12 +355,12 @@ class DctSummmaryProcessing:
 
     @staticmethod
     def select_heat_sink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
-        """Select the heatsink configuration from calculated heatsink pareto front.
+        """Select the heat sink configuration from calculated heat sink pareto front.
 
-        :param act_ginfo : General information about the study name and study path
-        :type  act_ginfo : dct.GeneralInformation:
-        :param act_df_for_hs : dataframe with result information of the pareto front for heatsink selection
-        :type  act_df_for_hs : pd.DataFrame
+        :param act_ginfo: General information about the study name and study path
+        :type  act_ginfo: dct.GeneralInformation:
+        :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
+        :type  act_df_for_hs: pd.DataFrame
         """
         # Variable declaration
 

@@ -59,8 +59,8 @@ def df_plot_final_pareto_front(df: pd.DataFrame, figure_size: tuple | None = Non
     """
     Plot an interactive Pareto diagram (losses vs. volume).
 
-    :param df: Dataframe
-    :type df: pd.Dataframe
+    :param df: DataFrame
+    :type df: pd.DataFrame
     :param figure_size: figures size as a x/y-tuple in mm, e.g. (160, 80)
     :type figure_size: tuple
     """

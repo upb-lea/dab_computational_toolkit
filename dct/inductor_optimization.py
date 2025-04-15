@@ -19,7 +19,7 @@ logging.getLogger().setLevel(logging.ERROR)
 
 
 class InductorOptimization:
-    """Optimation of the inductor."""
+    """Optimization of the inductor."""
 
     # Simulation configuration list
     sim_config_list: list[list[int | fmt.InductorOptimizationDTO]] = []
@@ -125,8 +125,8 @@ class InductorOptimization:
         :type  factor_min_dc_losses : float
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
-        :debug : Debug mode flag
-        :type bool
+        :param debug: Debug mode flag
+        :type debug: bool
         """
         # Variable declaration
         # Process_number are unclear (Usage in femmt)

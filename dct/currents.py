@@ -63,7 +63,7 @@ def _calc_l_2_mode_2_currents(tau_2_rad, v_2, f_s, l_2):
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
-    This formular works for the following cases:
+    This formula works for the following cases:
      - input: l_2, v_2, returns i_l_2
      - input: l_2_, v_2_, returns i_l_2_
 
@@ -138,7 +138,7 @@ def _calc_l_2_mode_1_plus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2)
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
-    This formular works for the following cases:
+    This formula works for the following cases:
      - input: l_2, v_2, returns i_l_2
      - input: l_2_, v_2_, returns i_l_2_
 
@@ -219,7 +219,7 @@ def _calc_l_2_mode_1_minus_currents(phi_rad, tau_1_rad, tau_2_rad, v_2, f_s, l_2
     """
     Calculate currents in l_2 for the given angles alpha_rad, beta_rad, gamma_rad and delta_rad.
 
-    This formular works for the following cases:
+    This formula works for the following cases:
      - input: l_2, v_2, returns i_l_2
      - input: l_2_, v_2_, returns i_l_2_
 

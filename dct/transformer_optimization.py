@@ -22,7 +22,7 @@ logging.getLogger().setLevel(logging.ERROR)
 
 
 class TransformerOptimization:
-    """Optimation of the transformer."""
+    """Optimization of the transformer."""
 
     # Configuration list
     sim_config_list: list[fmt.StoSingleInputConfig] = []
@@ -161,7 +161,7 @@ class TransformerOptimization:
         :param target_number_trials: Number of trials for the reluctance model optimization
         :type target_number_trials: int
         :param filter_factor: Pareto filter, tolerance band = Multiplication of minimum losses
-        :type filter_factor: flot
+        :type filter_factor: float
         :param re_simulate: True to re-simulate all waveforms
         :type re_simulate: bool
         :param debug: True to debug, defaults to False
