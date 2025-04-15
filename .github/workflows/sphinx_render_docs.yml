@@ -18,13 +18,65 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
     - uses: actions/checkout@v4
+    - name: install transistor database develop version
+      run: |
+        pwd
+        ls
+        wget https://github.com/upb-lea/transistordatabase/archive/refs/heads/main.zip
+        unzip main.zip
+        rm main.zip
+        cd transistordatabase-main
+        pip install -e .
+        cd ..
+        echo show folder path
+        pwd
+        echo show folder structure:
+        ls 
+
+    - name: install packages needed to run femmt, install femmt develop version
+      run: |
+          sudo apt-get update
+          # Problem with OSError: libGLU.so.1: cannot open shared object file
+          # Answer here: https://stackoverflow.com/questions/55313610/importerror-libgl-so-1-cannot-open-shared-object-file-no-such-file-or-directo
+          sudo apt install libsm6 libxext6 ffmpeg libfontconfig1 libxrender1 libglu1
+          pwd
+          ls
+          wget https://github.com/upb-lea/FEM_Magnetics_Toolbox/archive/refs/heads/main.zip
+          unzip main.zip
+          rm main.zip
+          cd FEM_Magnetics_Toolbox-main
+          pip install -e .
+          cd ..
+          echo show folder path
+          pwd
+          echo show folder structure:
+          ls 
+
+    - name: install HCT developer version
+      run: |
+          pwd
+          ls
+          wget https://github.com/upb-lea/HCT_heat_sink_computation_toolbox/archive/refs/heads/main.zip
+          unzip main.zip
+          rm main.zip
+          cd HCT_heat_sink_computation_toolbox-main
+          pip install -e .
+          cd ..
+          echo show folder path
+          pwd
+          echo show folder structure:
+          ls 
+
+    - name: install the package
+      run: |
+          pip install -e .
+
     - name: Install sphinx and build documentation with sphinx
       run: |
         python --version
         pip install sphinx sphinx_rtd_theme sphinxcontrib-email
-        pip install -e .
         cd docs
         make html
 #    - name: Build HTML

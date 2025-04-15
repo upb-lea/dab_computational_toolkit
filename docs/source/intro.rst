@@ -12,26 +12,14 @@ Install the Toolbox as a developer
 
     pip install -e .
 
-Pareto DAB (Dual Active Bridge) Tool function documentation
+DAB Computational Toolbox (DCT) documentation
 ===========================================================
-.. currentmodule:: paretodab.debug_tools
 
-.. automodule:: paretodab.debug_tools
+
+.. automodule:: dct
    :members:
+   :exclude-members: BaseModel, NavigationToolbar, QApplication, QMainWindow, QTabWidget, QVBoxLayout, QWidget, FigureCanvas, defaultdict, wraps
+   :imported-members:
+   :undoc-members:
+   :show-inheritance:
 
-Store specifications, modulation and simulation results
---------------------------------------------------------
-.. autoclass:: paretodab.DabData
-   :members:
-
-Calculate DAB intervals
-------------------------------
-.. currentmodule:: paretodab.interval_calc
-
-.. automodule:: paretodab.interval_calc
-   :members: calc_modulation, _calc_interval_1, _calc_interval_2, _calc_interval_3, _integrate_Coss
-
-Sample requirements
-------------------------------
-.. automodule:: paretodab.sample_requirements
-   :members:

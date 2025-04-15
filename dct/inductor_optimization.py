@@ -33,8 +33,8 @@ class InductorOptimization:
         :type toml_inductor: dct.TomlInductor
         :param toml_prog_flow: toml program flow configuration
         :type toml_prog_flow: dct.FlowControl
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
+        :param act_ginfo: General information about the study
+        :type  act_ginfo: dct.GeneralInformation
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
