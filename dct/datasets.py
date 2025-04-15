@@ -23,52 +23,52 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, V1_nom: float, V1_min: float, V1_max: float, V1_step: int, V2_nom: float, V2_min: float,
-                    V2_max: float, V2_step: int, P_min: float, P_max: float, P_nom: float, P_step: int,
-                    n: float, Ls: float, Lc1: float, Lc2: float, fs: float,
+    def init_config(name: str, v1_nom: float, v1_min: float, v1_max: float, v1_step: int, v2_nom: float, v2_min: float,
+                    v2_max: float, v2_step: int, p_min: float, p_max: float, p_nom: float, p_step: int,
+                    n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1, c_par_2) -> d_dtos.CircuitDabDTO:
         """
         Initialize the DAB structure.
 
         :param name: name of the simulation
         :type name: str
-        :param V1_nom: V1 nominal voltage
-        :type V1_nom: float
-        :param V1_min: V1 minimum voltage
-        :type V1_min: float
-        :param V1_max: V1 maximum voltage
-        :type V1_max: float
-        :param V1_step: V1 voltage steps
-        :type V1_step: int
-        :param V2_nom: V2 nominal voltage
-        :type V2_nom: float
-        :param V2_min: V2 minimum voltage
-        :type V2_min: float
-        :param V2_max: V2 maximum voltage
-        :type V2_max: float
-        :param V2_step: V2 voltage steps
-        :type V2_step: int
-        :param P_min: P minimum power
-        :type P_min: float
-        :param P_max: P maximum power
-        :type P_max: float
-        :param P_nom: P nominal power
-        :type P_nom: float
-        :param P_step: P power steps
-        :type P_step: int
+        :param v1_nom: V1 nominal voltage
+        :type v1_nom: float
+        :param v1_min: V1 minimum voltage
+        :type v1_min: float
+        :param v1_max: V1 maximum voltage
+        :type v1_max: float
+        :param v1_step: V1 voltage steps
+        :type v1_step: int
+        :param v2_nom: V2 nominal voltage
+        :type v2_nom: float
+        :param v2_min: V2 minimum voltage
+        :type v2_min: float
+        :param v2_max: V2 maximum voltage
+        :type v2_max: float
+        :param v2_step: V2 voltage steps
+        :type v2_step: int
+        :param p_min: P minimum power
+        :type p_min: float
+        :param p_max: P maximum power
+        :type p_max: float
+        :param p_nom: P nominal power
+        :type p_nom: float
+        :param p_step: P power steps
+        :type p_step: int
         :param n: transformer transfer ratio
         :type n: float
-        :param Ls: series inductance
-        :type Ls: float
-        :param Lc1: Commutation inductance Lc1
-        :type Lc1: float
-        :param Lc2: Commutation inductance Lc2
-        :type Lc2: float
+        :param ls: series inductance
+        :type ls: float
+        :param lc1: Commutation inductance Lc1
+        :type lc1: float
+        :param lc2: Commutation inductance Lc2
+        :type lc2: float
         :param fs: Switching frequency
         :type fs: float
-        :param transistor_dto_1: Transistor DTO for transistor bridge 1. Must match with transistordatbase available transistors.
+        :param transistor_dto_1: Transistor DTO for transistor bridge 1. Must match with transistordatabase available transistors.
         :type transistor_dto_1: TransistorDTO
-        :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatbase available transistors.
+        :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatabase available transistors.
         :type transistor_dto_2: TransistorDTO
         :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
         :type c_par_1: float
@@ -76,22 +76,22 @@ class HandleDabDto:
         :type c_par_2: float
         :return:
         """
-        input_configuration = d_dtos.CircuitConfig(V1_nom=np.array(V1_nom),
-                                                   V1_min=np.array(V1_min),
-                                                   V1_max=np.array(V1_max),
-                                                   V1_step=np.array(V1_step),
-                                                   V2_nom=np.array(V2_nom),
-                                                   V2_min=np.array(V2_min),
-                                                   V2_max=np.array(V2_max),
-                                                   V2_step=np.array(V2_step),
-                                                   P_min=np.array(P_min),
-                                                   P_max=np.array(P_max),
-                                                   P_nom=np.array(P_nom),
-                                                   P_step=np.array(P_step),
+        input_configuration = d_dtos.CircuitConfig(V1_nom=np.array(v1_nom),
+                                                   V1_min=np.array(v1_min),
+                                                   V1_max=np.array(v1_max),
+                                                   V1_step=np.array(v1_step),
+                                                   V2_nom=np.array(v2_nom),
+                                                   V2_min=np.array(v2_min),
+                                                   V2_max=np.array(v2_max),
+                                                   V2_step=np.array(v2_step),
+                                                   P_min=np.array(p_min),
+                                                   P_max=np.array(p_max),
+                                                   P_nom=np.array(p_nom),
+                                                   P_step=np.array(p_step),
                                                    n=np.array(n),
-                                                   Ls=np.array(Ls),
-                                                   Lc1=np.array(Lc1),
-                                                   Lc2=np.array(Lc2),
+                                                   Ls=np.array(ls),
+                                                   Lc1=np.array(lc1),
+                                                   Lc2=np.array(lc2),
                                                    fs=np.array(fs),
                                                    transistor_dto_1=transistor_dto_1,
                                                    transistor_dto_2=transistor_dto_2,
@@ -155,12 +155,12 @@ class HandleDabDto:
         :return: DabDTO
         """
         gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
-            mesh_V1=dab_dto.calc_config.mesh_V1, mesh_V2=dab_dto.calc_config.mesh_V2,
-            mesh_P=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
+            mesh_v1=dab_dto.calc_config.mesh_V1, mesh_v2=dab_dto.calc_config.mesh_V2,
+            mesh_p=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
             mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
             t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
-            fs=dab_dto.input_config.fs, Ls=dab_dto.input_config.Ls, Lc1=dab_dto.input_config.Lc1,
-            Lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
+            fs=dab_dto.input_config.fs, ls=dab_dto.input_config.Ls, lc1=dab_dto.input_config.Lc1,
+            lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
             t_j_1=dab_dto.calc_config.t_j_1, t_j_2=dab_dto.calc_config.t_j_2,
             simfilepath=dab_dto.gecko_additional_params.simfilepath,
             lossfilepath=dab_dto.gecko_additional_params.lossfilepath,
@@ -224,8 +224,8 @@ class HandleDabDto:
         :param calc_config: calculated parameters from the input configuration
         :return: Modulation parameters.
         """
-        result_dict = mod.calc_modulation_params(config.n, config.Ls, config.Lc1, config.Lc2, config.fs, Coss1=calc_config.c_oss_par_1,
-                                                 Coss2=calc_config.c_oss_par_2, V1=calc_config.mesh_V1, V2=calc_config.mesh_V2, P=calc_config.mesh_P)
+        result_dict = mod.calc_modulation_params(config.n, config.Ls, config.Lc1, config.Lc2, config.fs, c_oss_1=calc_config.c_oss_par_1,
+                                                 c_oss_2=calc_config.c_oss_par_2, v1=calc_config.mesh_V1, v2=calc_config.mesh_V2, power=calc_config.mesh_P)
 
         return d_dtos.CalcModulation(**result_dict)
 
@@ -260,7 +260,7 @@ class HandleDabDto:
 
         # The margin is considered here as a factor of the original capacitance value
         coss_interp = margin_factor * np.interp(v_interp, csv_data[:, 0], csv_data[:, 1])
-        # Since we now have an evenly spaced vector where x corespond to the element-number of the vector
+        # Since we now have an evenly spaced vector where x correspond to the element-number of the vector
         # we don't have to store x (v_interp) with it.
         # To get Coss(V) just get the array element coss_interp[V]
 
@@ -282,7 +282,7 @@ class HandleDabDto:
         def integrate(v):
             v_interp = np.arange(v + 1)
             coss_v = np.interp(v_interp, np.arange(coss.shape[0]), coss)
-            return np.trapz(coss_v)
+            return np.trapezoid(coss_v)
 
         coss_int = np.vectorize(integrate)
         # get the qoss vector that has the resolution 1V from 0 to V_max
@@ -294,7 +294,7 @@ class HandleDabDto:
         return qoss
 
     @staticmethod
-    def save(dab_dto: d_dtos.CircuitDabDTO, name: str, comment: str, directory: str, timestamp: bool = True):
+    def save(dab_dto: d_dtos.CircuitDabDTO, name: str, directory: str, timestamp: bool = True):
         """
         Save the DabDTO-class to a npz file.
 
@@ -302,8 +302,6 @@ class HandleDabDto:
         :type dab_dto: d_dtos.CircuitDabDTO
         :param name: Filename
         :type name: str
-        :param comment: Comment
-        :type comment: str
         :param directory: Directory to store the results
         :type directory: str
         :param timestamp: [True] to add a timestamp to the file name.

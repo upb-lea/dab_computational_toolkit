@@ -6,7 +6,6 @@ import socket
 import random
 
 # own libraries
-from dct.debug_tools import *
 
 # 3rd party libraries
 import numpy as np
@@ -15,10 +14,10 @@ import tqdm
 import pygeckocircuits2 as pgc
 import pandas as pd
 
-def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.ndarray,
+def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                            mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
                            t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray | np.float64,
-                           Ls: float, Lc1: float, Lc2: float, n: float,
+                           ls: float, lc1: float, lc2: float, n: float,
                            t_j_1: float, t_j_2: float,
                            simfilepath: str, timestep: float, number_sim_periods: int, transistor_1_name: str, transistor_2_name: str, lossfilepath: str,
                            i_ls_start: np.ndarray, i_lc1_start: np.ndarray, i_lc2_start: np.ndarray,
@@ -28,12 +27,12 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     """
     Start the GeckoCIRCUITS simulation.
 
-    :param mesh_V1: mesh of voltage v1 in V
-    :type mesh_V1: np.array
-    :param mesh_V2: mesh of voltage v2 in V
-    :type mesh_V2: np.array
-    :param mesh_P: mesh of the power P in W
-    :type mesh_P: np.array
+    :param mesh_v1: mesh of voltage v1 in V
+    :type mesh_v1: np.array
+    :param mesh_v2: mesh of voltage v2 in V
+    :type mesh_v2: np.array
+    :param mesh_p: mesh of the power P in W
+    :type mesh_p: np.array
     :param mod_phi: matrix with modulation parameter phi
     :type mod_phi: np.array
     :param mod_tau1: matrix with modulation parameter tau_1
@@ -46,12 +45,12 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     :type t_dead2: float
     :param fs: switching frequency in Hz
     :type fs: float
-    :param Ls: series inductance in H
-    :type Ls: float
-    :param Lc1: Commutation inductance for bridge 1 in H
-    :type Lc1: float
-    :param Lc2: Commutation inductance for bridge 2 in H
-    :type Lc2: float
+    :param ls: series inductance in H
+    :type ls: float
+    :param lc1: Commutation inductance for bridge 1 in H
+    :type lc1: float
+    :param lc2: Commutation inductance for bridge 2 in H
+    :type lc2: float
     :param n: transfer ratio
     :type n: float
     :param t_j_1: MOSFET junction temperature for bridge 1 in degree Celsius
@@ -96,7 +95,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     mesh_fs = _ones * fs
 
     # Transform Lc2 to side 1
-    Lc2_ = Lc2 * n ** 2
+    Lc2_ = lc2 * n ** 2
 
     # values we want to get from the simulation
     l_means_keys = ['p_dc1', 'p_dc2', 'S11_p_sw', 'S11_p_cond', 'S12_p_sw', 'S12_p_cond',
@@ -146,16 +145,16 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     for vec_vvp in np.ndindex(mod_phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
         sim_params = {
-            'v_dc1': mesh_V1[vec_vvp].item(),
-            'v_dc2': mesh_V2[vec_vvp].item(),
+            'v_dc1': mesh_v1[vec_vvp].item(),
+            'v_dc2': mesh_v2[vec_vvp].item(),
             'phi': mod_phi[vec_vvp].item() * 180 / np.pi,
             'tau1': mod_tau1[vec_vvp].item() * 180 / np.pi,
             'tau2': mod_tau2[vec_vvp].item() * 180 / np.pi,
             't_dead1': mesh_t_dead1[vec_vvp].item(),
             't_dead2': mesh_t_dead2[vec_vvp].item(),
             'fs': mesh_fs[vec_vvp].item(),
-            'Ls': float(Ls),
-            'Lc1': float(Lc1),
+            'Ls': float(ls),
+            'Lc1': float(lc1),
             'Lc2_': float(Lc2_),
             'n': float(n),
             't_j_1': float(t_j_1),
@@ -254,7 +253,7 @@ def start_gecko_simulation(mesh_V1: np.ndarray, mesh_V2: np.ndarray, mesh_P: np.
     # Calculate results for the entire Simulation
 
     # Calc power deviation from expected power target
-    da_sim_results['power_deviation'] = da_sim_results['p_dc2'] / (mesh_P + 0.01)
+    da_sim_results['power_deviation'] = da_sim_results['p_dc2'] / (mesh_p + 0.01)
     # Show ZVS coverage based on simulation
     da_sim_results['zvs_coverage'] = np.count_nonzero(
         np.less_equal(da_sim_results['v_ds_S11_sw_on'], zvs_vlimit) & np.less_equal(da_sim_results['v_ds_S23_sw_on'],

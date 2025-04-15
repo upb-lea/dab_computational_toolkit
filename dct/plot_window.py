@@ -32,7 +32,7 @@ class PlotWindow:
         self.figsize = figsize
         self.MainWindow.show()
 
-    def addPlot(self, title: str, figure):
+    def add_plot(self, title: str, figure):
         """Add plot to the GUI instance.
 
         :param title: title for the plot
@@ -97,12 +97,12 @@ if __name__ == '__main__':
     f = plt.figure()
     ysin = np.sin(x)
     plt.plot(x, ysin, '--')
-    pw.addPlot("sin", f)
+    pw.add_plot("sin", f)
 
     f = plt.figure()
     ycos = np.cos(x)
     plt.plot(x, ycos, '--')
-    pw.addPlot("cos", f)
+    pw.add_plot("cos", f)
     pw.show()
 
     # sys.exit(app.exec_())

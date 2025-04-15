@@ -11,32 +11,32 @@ import numpy as np
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
             'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p']
 
-def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.ndarray | int | float,
-                           Coss1: np.ndarray, Coss2: np.ndarray,
-                           V1: np.ndarray, V2: np.ndarray, P: np.ndarray) -> dict:
+def calc_modulation_params(n: float, ls: float, lc1: float, lc2: float, fs: np.ndarray | int | float,
+                           c_oss_1: np.ndarray, c_oss_2: np.ndarray,
+                           v1: np.ndarray, v2: np.ndarray, power: np.ndarray) -> dict:
     """
     OptZVS (Optimal ZVS) Modulation calculation, which will return phi, tau1 and tau2.
 
     :param n: Transformer turns ratio n1/n2.
     :type n: float
-    :param Ls: DAB converter series inductance. (Must not be zero!)
-    :type Ls: float
-    :param Lc1: Side 1 commutation inductance. Use np.inf it not present.
-    :type Lc1: float
-    :param Lc2: Side 2 commutation inductance. Use np.inf it not present. (Must not be zero!)
-    :type Lc2: float
+    :param ls: DAB converter series inductance. (Must not be zero!)
+    :type ls: float
+    :param lc1: Side 1 commutation inductance. Use np.inf it not present.
+    :type lc1: float
+    :param lc2: Side 2 commutation inductance. Use np.inf it not present. (Must not be zero!)
+    :type lc2: float
     :param fs: Switching frequency, can be a fixed value or a meshgrid with same shape as the other meshes.
     :type fs: float
-    :param Coss1: Side 1 MOSFET Coss(Vds) curve from Vds=0V to >= V1_max. Just one row with Coss data and index = Vds.
-    :type Coss1: np.array
-    :param Coss2: Side 2 MOSFET Coss(Vds) curve from Vds=0V to >= V2_max. Just one row with Coss data and index = Vds.
-    :type Coss2: np.array
-    :param V1: Input voltage meshgrid (voltage on side 1).
-    :type V1: np.array
-    :param V2: Output voltage meshgrid (voltage on side 2).
-    :type V2: np.array
-    :param P: DAB input power meshgrid (P=V1*I1).
-    :type P: np.array
+    :param c_oss_1: Side 1 MOSFET Coss(Vds) curve from Vds=0V to >= V1_max. Just one row with Coss data and index = Vds.
+    :type c_oss_1: np.array
+    :param c_oss_2: Side 2 MOSFET Coss(Vds) curve from Vds=0V to >= V2_max. Just one row with Coss data and index = Vds.
+    :type c_oss_2: np.array
+    :param v1: Input voltage meshgrid (voltage on side 1).
+    :type v1: np.array
+    :param v2: Output voltage meshgrid (voltage on side 2).
+    :type v2: np.array
+    :param power: DAB input power meshgrid (P=V1*I1).
+    :type power: np.array
     :return: dict with phi, tau1, tau2, masks (phi has First-Falling-Edge alignment!)
     """
     # Interval I is named with I and so on
@@ -45,29 +45,29 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     # g: greater
 
     # Create empty meshes
-    phi = np.full_like(V1, np.nan)
-    tau1 = np.full_like(V1, np.nan)
-    tau2 = np.full_like(V1, np.nan)
-    zvs = np.full_like(V1, np.nan)
-    _Im2_mask = np.full_like(V1, False)
-    _IIm2_mask = np.full_like(V1, False)
-    _IIIm1_mask = np.full_like(V1, False)
+    phi = np.full_like(v1, np.nan)
+    tau1 = np.full_like(v1, np.nan)
+    tau2 = np.full_like(v1, np.nan)
+    zvs = np.full_like(v1, np.nan)
+    _Im2_mask = np.full_like(v1, False)
+    _IIm2_mask = np.full_like(v1, False)
+    _IIIm1_mask = np.full_like(v1, False)
 
     # Precalculate all required values
     # Transform Lc2 to side 1
-    Lc2_ = Lc2 * n ** 2
+    Lc2_ = lc2 * n ** 2
     # Transform V2 to side 1
-    V2_ = V2 * n
+    V2_ = v2 * n
     # For negative P we have to recalculate phi at the end
-    _negative_power_mask = np.less(P, 0)
-    _positive_power_mask = np.less(0, P)
-    I1 = np.abs(P) / V1
+    _negative_power_mask = np.less(power, 0)
+    _positive_power_mask = np.less(0, power)
+    I1 = np.abs(power) / v1
     # Convert fs into omega_s
     ws = 2 * np.pi * fs
     # Calculate required Q for each voltage
     # FIXME Check if factor 2 is right here!
-    Q_AB_req1 = _integrate_c_oss(Coss1 * 2, V1)
-    Q_AB_req2 = _integrate_c_oss(Coss2 * 2, V2)
+    Q_AB_req1 = _integrate_c_oss(c_oss_1 * 2, v1)
+    Q_AB_req2 = _integrate_c_oss(c_oss_2 * 2, v2)
 
     # FIXME HACK for testing V1, V2 interchangeability
     # _V1 = V1
@@ -81,13 +81,13 @@ def calc_modulation_params(n: float, Ls: float, Lc1: float, Lc2: float, fs: np.n
     # This should be faster and easier.
 
     # Int. I (mode 2): calculate phi, tau1 and tau2
-    phi_I, tau1_I, tau2_I = _calc_interval_1(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
+    phi_I, tau1_I, tau2_I = _calc_interval_1(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
     # Int. II (mode 2): calculate phi, tau1 and tau2
-    phi_II, tau1_II, tau2_II = _calc_interval_2(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
+    phi_II, tau1_II, tau2_II = _calc_interval_2(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
     # Int. III (mode 1): calculate phi, tau1 and tau2
-    phi_III, tau1_III, tau2_III, additional_mask = _calc_interval_3(n, Ls, Lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, V1, V2_, I1)
+    phi_III, tau1_III, tau2_III, additional_mask = _calc_interval_3(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
     # Decision Logic
     # Interval I (mode 2):
@@ -349,12 +349,12 @@ def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
     def integrate(v):
         v_interp = np.arange(v + 1)
         coss_v = np.interp(v_interp, np.arange(coss.shape[0]), coss)
-        return np.trapz(coss_v)
+        return np.trapezoid(coss_v)
 
     coss_int = np.vectorize(integrate)
     # get a qoss vector that has the resolution 1V from 0 to V_max
     v_vec = np.arange(coss.shape[0])
-    # get an qoss vector that fits the mesh_V scale
+    # get a qoss vector that fits the mesh_V scale
     # v_vec = np.linspace(V_min, V_max, int(V_step))
     qoss = coss_int(v_vec)
 

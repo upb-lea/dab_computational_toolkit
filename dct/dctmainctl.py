@@ -12,12 +12,12 @@ import json
 import dct
 import toml_checker as tc
 import dct.circuit_optimization_dtos as p_dtos
-# Circuit, inductor, transformer and heatsink optimization class
+# Circuit, inductor, transformer and heat sink optimization class
 from dct import CircuitOptimization
 from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
-from summary_processing import DctSummmaryProcessing as spro
+from summary_processing import DctSummaryProcessing as spro
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
@@ -151,7 +151,7 @@ class DctMainCtl:
         """
         # Variable declaration
 
-        # Set projektdirectory
+        # Set project directory
         project_directory = os.path.abspath(act_config_program_flow.general.project_directory)
 
         # Setup variable by set study names
@@ -299,9 +299,7 @@ class DctMainCtl:
         tsim = TransformerOptimization
         # heat sink simulation
         hsim = HeatSinkOptimization
-        # Flag for available filtered results
-        filtered_circuit_result_folder_exists = False
-        # Flag for resimulation  (if False the summary will failed)
+        # Flag for re-simulation  (if False the summary will failed)
         enable_ind_re_simulation = True
         enable_trans_re_simulation = True
 
@@ -358,7 +356,6 @@ class DctMainCtl:
             # Check if filtered results folder exists
             filtered_circuit_results_datapath = os.path.join(ginfo.circuit_study_path, ginfo.circuit_study_name, "filtered_results")
             if os.path.exists(filtered_circuit_results_datapath):
-                filtered_circuit_result_folder_exists = True
                 # Add filtered result list
                 for filtered_circuit_result in os.listdir(filtered_circuit_results_datapath):
                     if os.path.isfile(os.path.join(filtered_circuit_results_datapath, filtered_circuit_result)):
@@ -465,7 +462,6 @@ class DctMainCtl:
                                                                  "filtered_results")
                 # Create the filtered result folder
                 os.makedirs(filtered_circuit_results_datapath, exist_ok=True)
-                filtered_circuit_result_folder_exists = True
                 # Delete obsolete folders of inductor and transformer
                 DctMainCtl.delete_study_content(ginfo.inductor_study_path)
                 DctMainCtl.delete_study_content(ginfo.transformer_study_path)
@@ -538,7 +534,7 @@ class DctMainCtl:
         if not toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.calculation_mode == "new":
-                # Delete old heatsink study
+                # Delete old heat sink study
                 DctMainCtl.delete_study_content(os.path.join(ginfo.heat_sink_study_path, ginfo.heat_sink_study_name), ginfo.heat_sink_study_name)
 
             hsim.init_configuration(toml_heat_sink, toml_prog_flow)
@@ -554,9 +550,9 @@ class DctMainCtl:
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [ginfo.inductor_study_name]
         stacked_transformer_study_names = [ginfo.transformer_study_name]
-        # Start summary processing by generating the dataframe from calculated simmulation results
+        # Start summary processing by generating the dataframe from calculated simulation results
         s_df = spro.generate_result_database(ginfo, inductor_study_names, stacked_transformer_study_names)
-        #  Select the needed heatsink configuration
+        #  Select the needed heat sink configuration
         spro.select_heat_sink_configuration(ginfo, s_df)
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

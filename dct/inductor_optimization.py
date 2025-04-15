@@ -125,8 +125,8 @@ class InductorOptimization:
         :type  factor_min_dc_losses : float
         :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  re_simulate : bool
-        :debug : Debug mode flag
-        :type bool
+        :param debug: Debug mode flag
+        :type debug: bool
         """
         # Variable declaration
         # Process_number are unclear (Usage in femmt)
