@@ -13,7 +13,7 @@ import pandas as pd
 import tqdm
 
 # own libraries
-import dct
+import dct.transformer_optimization_dtos
 import femmt as fmt
 
 # configure root logger
@@ -25,7 +25,7 @@ class TransformerOptimization:
     """Optimization of the transformer."""
 
     # Configuration list
-    sim_config_list: list[fmt.StoSingleInputConfig] = []
+    sim_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto] = []
 
     @staticmethod
     def init_configuration(toml_transformer: dct.TomlTransformer, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
@@ -142,7 +142,8 @@ class TransformerOptimization:
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
                     = os.path.join(act_ginfo.transformer_study_path, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
-                TransformerOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
+                transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(circuit_trial_number, next_io_config)
+                TransformerOptimization.sim_config_list.append(transformer_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
@@ -309,8 +310,8 @@ class TransformerOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            TransformerOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, factor_dc_min_losses,
-                                                factor_dc_max_losses, re_simulate, debug)
+            TransformerOptimization._simulation(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto, act_ginfo,
+                                                target_number_trials, factor_dc_min_losses, factor_dc_max_losses, re_simulate, debug)
 
             if debug:
                 # stop after one circuit run

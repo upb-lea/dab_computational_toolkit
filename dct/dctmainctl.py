@@ -326,7 +326,7 @@ class DctMainCtl:
         if not flow_control_loaded:
             raise ValueError("Program flow toml file does not exist.")
 
-        # Add absolute path to project data path (ASA: Later to remove because do not manipuase)
+        # Add absolute path to project data path (ASA: Later to remove because do not manipulate)
         workspace_path = os.path.abspath(workspace_path)
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 

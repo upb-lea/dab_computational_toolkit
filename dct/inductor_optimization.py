@@ -11,7 +11,7 @@ import tqdm
 
 # own libraries
 import femmt as fmt
-import dct
+import dct.inductor_optimization_dtos
 
 # configure root logger
 logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
@@ -22,7 +22,7 @@ class InductorOptimization:
     """Optimization of the inductor."""
 
     # Simulation configuration list
-    sim_config_list: list[list[int | fmt.InductorOptimizationDTO]] = []
+    sim_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto] = []
 
     @staticmethod
     def init_configuration(toml_inductor: dct.TomlInductor, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
@@ -100,7 +100,8 @@ class InductorOptimization:
                 next_io_config.inductor_optimization_directory = os.path.join(
                     act_ginfo.inductor_study_path, str(circuit_trial_number),
                     toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""))
-                InductorOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
+                inductor_dto = dct.inductor_optimization_dtos.InductorOptimizationDto(circuit_id=circuit_trial_number, inductor_optimization_dto=next_io_config)
+                InductorOptimization.sim_config_list.append(inductor_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
@@ -109,7 +110,8 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, act_ginfo: dct.GeneralInformation,
-                    target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float, re_simulate: bool, debug: bool):
+                    target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
+                    enable_operating_range_simulation: bool, debug: bool):
         """
         Perform the simulation.
 
@@ -123,8 +125,8 @@ class InductorOptimization:
         :type  target_number_trials : int
         :param factor_min_dc_losses : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
         :type  factor_min_dc_losses : float
-        :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-        :type  re_simulate : bool
+        :param enable_operating_range_simulation : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
+        :type  enable_operating_range_simulation : bool
         :param debug: Debug mode flag
         :type debug: bool
         """
@@ -142,24 +144,19 @@ class InductorOptimization:
         else:
             print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 
-        # Plot options
-        # fmt.optimization.InductorOptimization.ReluctanceModel.show_study_results(io_config)
-        # fmt.optimization.InductorOptimization.ReluctanceModel.df_plot_pareto_front(df, df_filtered, label_list=["all", "front"], interactive=False)
-
         # perform FEM simulations
-        if factor_min_dc_losses != 0:
+        if factor_min_dc_losses != 0 and factor_max_dc_losses > 0:
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(df,
-                                                                                                    factor_min_dc_losses=factor_min_dc_losses,
-                                                                                                    factor_max_dc_losses=factor_max_dc_losses)
+            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
+                df, factor_min_dc_losses=factor_min_dc_losses, factor_max_dc_losses=factor_max_dc_losses)
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
 
-            fmt.InductorOptimization.FemSimulation.fem_simulations_from_reluctance_df(df_filtered, act_io_config,
-                                                                                      process_number=process_number)
-
-        if re_simulate:
+            fmt.InductorOptimization.FemSimulation.fem_simulations_from_reluctance_df(
+                df_filtered, act_io_config, process_number=process_number)
+        # generate results for all operating points
+        if enable_operating_range_simulation:
             fem_results_folder_path = os.path.join(act_io_config.inductor_optimization_directory,
                                                    "02_fem_simulation_results")
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
@@ -209,7 +206,7 @@ class InductorOptimization:
                         if debug:
                             print(f"{current_waveform=}")
                             print("----------------------")
-                            print("Re-simulation of:")
+                            print("All operating point simulation of:")
                             print(f"   * Circuit study: {act_ginfo.circuit_study_name}")
                             print(f"   * Circuit trial: {circuit_id}")
                             print(f"   * Inductor study: {act_io_config.inductor_study_name}")
@@ -241,22 +238,22 @@ class InductorOptimization:
     @staticmethod
     def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
                            factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
-                           re_simulate: bool = False, debug: bool = False):
+                           enable_operating_range_simulation: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param target_number_trials : Number of trials for the optimization
-        :type  target_number_trials : int
-        :param factor_min_dc_losses : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-        :type  factor_min_dc_losses : float
+        :param act_ginfo: General information about the study
+        :type  act_ginfo: dct.GeneralInformation:
+        :param target_number_trials: Number of trials for the optimization
+        :type  target_number_trials: int
+        :param factor_min_dc_losses: Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
+        :type  factor_min_dc_losses: float
         :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
         :type factor_dc_max_losses: float
-        :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-        :type  re_simulate : bool
-        :param debug : Debug mode flag
-        :type  debug : bool
+        :param enable_operating_range_simulation: True to perform the simulations for all operating points
+        :type  enable_operating_range_simulation: bool
+        :param debug: Debug mode flag
+        :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
         for act_sim_config in InductorOptimization.sim_config_list:
@@ -267,8 +264,8 @@ class InductorOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            InductorOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials,
-                                             factor_min_dc_losses, factor_dc_max_losses, re_simulate, debug)
+            InductorOptimization._simulation(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, act_ginfo, target_number_trials,
+                                             factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             if debug:
                 # stop after one circuit run
