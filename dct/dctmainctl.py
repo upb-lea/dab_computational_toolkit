@@ -486,6 +486,15 @@ class DctMainCtl:
             study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
         )
+        transformer_study_data = dct.StudyData(
+            filtered_list_id=ginfo.filtered_list_id,
+            filtered_list_pathname=os.path.join(
+                project_directory, toml_prog_flow.circuit.subdirectory,
+                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
+            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+            study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
+        )
 
         # --------------------------
         # Inductor optimization
@@ -517,10 +526,10 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(ginfo.transformer_study_path)
 
             # Initialize transformer configuration
-            tsim.init_configuration(toml_transformer, toml_prog_flow, ginfo)
+            tsim.init_configuration(toml_transformer, transformer_study_data)
 
             # Perform transformer optimization
-            tsim.simulation_handler(ginfo, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
+            tsim.simulation_handler(transformer_study_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
                                     toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
         # Check breakpoint
