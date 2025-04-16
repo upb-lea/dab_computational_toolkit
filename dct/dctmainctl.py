@@ -157,15 +157,11 @@ class DctMainCtl:
         # Setup variable by set study names
         r_ginfo = dct.GeneralInformation(
             project_directory=project_directory,
-            circuit_study_name=act_config_program_flow.configuration_data_files.circuit_configuration_file
-            .replace(".toml", ""),
+            circuit_study_name=act_config_program_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             filtered_list_id=[],
-            inductor_study_name=act_config_program_flow
-            .configuration_data_files.inductor_configuration_file.replace(".toml", ""),
-            transformer_study_name=act_config_program_flow
-            .configuration_data_files.transformer_configuration_file.replace(".toml", ""),
-            heat_sink_study_name=act_config_program_flow
-            .configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
+            inductor_study_name=act_config_program_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
+            transformer_study_name=act_config_program_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
+            heat_sink_study_name=act_config_program_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
             # Set remaining elements with dummy names
             circuit_study_path=os.path.join(project_directory, act_config_program_flow.circuit.subdirectory),
             inductor_study_path=os.path.join(project_directory, act_config_program_flow.inductor.subdirectory),
@@ -480,6 +476,17 @@ class DctMainCtl:
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
 
+        project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
+        inductor_study_data = dct.StudyData(
+            filtered_list_id=ginfo.filtered_list_id,
+            filtered_list_pathname=os.path.join(
+                project_directory, toml_prog_flow.circuit.subdirectory,
+                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
+            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+            study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
+        )
+
         # --------------------------
         # Inductor optimization
         # --------------------------
@@ -491,10 +498,9 @@ class DctMainCtl:
                 # Delete old inductor study
                 DctMainCtl.delete_study_content(ginfo.inductor_study_path)
 
-            # Start simulation ASA: Filter_factor to correct
-            isim.init_configuration(toml_inductor, toml_prog_flow, ginfo)
-            isim.simulation_handler(ginfo, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
-                                    toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
+            isim.init_configuration(toml_inductor, inductor_study_data)
+            isim.optimization_handler(inductor_study_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
+                                      toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")

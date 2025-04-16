@@ -303,3 +303,13 @@ class TransformerTargetParameters:
     time_current_1_vec: np.ndarray
     time_current_2_vec: np.ndarray
     temperature: float
+
+@dataclasses.dataclass
+class StudyData:
+    """Data class containing all general information to perform a study."""
+
+    filtered_list_id: list[int]
+    filtered_list_pathname: str
+    circuit_study_name: str
+    study_name: str
+    optimization_directory: str
