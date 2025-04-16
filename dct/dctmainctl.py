@@ -342,7 +342,6 @@ class DctMainCtl:
         # Init circuit configuration
         is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
-        # generate
         config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
         if not is_circuit_loaded:
@@ -370,12 +369,12 @@ class DctMainCtl:
         # --------------------------
 
         # Load the inductor-configuration parameter
-        transformer_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
+        inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
         is_inductor_loaded, inductor_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
         toml_inductor = dct.TomlInductor(**inductor_dict)
 
         if not is_inductor_loaded:
-            raise ValueError(f"Inductor configuration file: {transformer_toml_filepath} does not exist.")
+            raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
 
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
@@ -447,11 +446,6 @@ class DctMainCtl:
         # --------------------------
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
-            # Load initialisation data of electrical simulation and initialize
-            is_circuit_loaded, circuit_dict = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
-            toml_circuit = dct.TomlCircuitParetoDabDesign(**circuit_dict)
-            config_circuit = DctMainCtl.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
-
             if not is_circuit_loaded:
                 raise ValueError("Electrical configuration not initialized!")
             # Check, if old study is to delete, if available
