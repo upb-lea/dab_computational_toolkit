@@ -157,12 +157,10 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def optimization_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int, debug: bool = False):
+    def optimization_handler(target_number_trials: int, debug: bool = False):
         """
         Control the multi simulation processes.
 
-        :param act_ginfo: General information about the study
-        :type  act_ginfo: dct.GeneralInformation:
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
         :param debug: Debug mode flag
