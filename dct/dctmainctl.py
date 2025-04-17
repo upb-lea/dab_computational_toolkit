@@ -357,7 +357,8 @@ class DctMainCtl:
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(os.path.join(circuit_study_data.optimization_directory, circuit_study_data.study_name), circuit_study_data.study_name):
+            if not DctMainCtl.check_study_data(os.path.join(circuit_study_data.optimization_directory, circuit_study_data.study_name),
+                                               circuit_study_data.study_name):
                 raise ValueError(f"Study {circuit_study_data.study_name} in path {circuit_study_data.optimization_directory} does not exist. "
                                  f"No sqlite3-database found!")
             # Check if filtered results folder exists
