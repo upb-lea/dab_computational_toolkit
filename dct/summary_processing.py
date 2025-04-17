@@ -108,7 +108,7 @@ class DctSummaryProcessing:
 
         # Check if target folder 09_circuit_dtos_incl_inductor_losses is created
         if os.path.exists(act_dir_name):
-            # Create list of filespath
+            # Create list of filepaths
             file_list = os.listdir(act_dir_name)
             # Filter basename without extension
             for file_name in file_list:
@@ -134,16 +134,23 @@ class DctSummaryProcessing:
         return is_magnetic_list_generated, magnetic_result_numbers
 
     @staticmethod
-    def generate_result_database(act_ginfo: dct.GeneralInformation, act_inductor_study_names: list[str],
+    def generate_result_database(circuit_study_data: dct.StudyData, inductor_study_data: dct.StudyData,
+                                 transformer_study_data: dct.StudyData, heat_sink_study_data: dct.StudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str]) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation
-        :param act_inductor_study_names : List of names with inductor studies which are to process
-        :type  act_inductor_study_names : list[str]
-        :param act_stacked_transformer_study_names : List of names with transformer studies which are to process
-        :type  act_stacked_transformer_study_names : list[str]
+        :param circuit_study_data: circuit study data
+        :type circuit_study_data: dct.StudyData
+        :param inductor_study_data: inductor study data
+        :type inductor_study_data: dct.StudyData
+        :param transformer_study_data: transformer study data
+        :type transformer_study_data: dct.StudyData
+        :param heat_sink_study_data: heat sink study data
+        :type heat_sink_study_data: dct.StudyData
+        :param act_inductor_study_names: List of names with inductor studies which are to process
+        :type  act_inductor_study_names: list[str]
+        :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
+        :type  act_stacked_transformer_study_names: list[str]
 
         :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
@@ -153,9 +160,9 @@ class DctSummaryProcessing:
         df = pd.DataFrame()
 
         # iterate circuit numbers
-        for circuit_number in act_ginfo.filtered_list_id:
+        for circuit_number in circuit_study_data.filtered_list_id:
             # Assemble pkl-filename
-            circuit_filepath_number = os.path.join(act_ginfo.circuit_study_path, act_ginfo.circuit_study_name, "filtered_results", f"{circuit_number}.pkl")
+            circuit_filepath_number = os.path.join(circuit_study_data.filtered_list_pathname, f"{circuit_number}.pkl")
 
             # Get circuit results
             circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
@@ -197,7 +204,7 @@ class DctSummaryProcessing:
             for inductor_study_name in act_inductor_study_names:
 
                 # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losses
-                inductor_filepath_results = os.path.join(act_ginfo.inductor_study_path, str(circuit_number),
+                inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, str(circuit_number),
                                                          inductor_study_name,
                                                          "09_circuit_dtos_incl_inductor_losses")
 
@@ -228,7 +235,7 @@ class DctSummaryProcessing:
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
 
                         # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losses
-                        stacked_transformer_filepath_results = os.path.join(act_ginfo.transformer_study_path,
+                        stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
                                                                             str(circuit_number),
                                                                             stacked_transformer_study_name,
                                                                             "09_circuit_dtos_incl_transformer_losses")
@@ -348,28 +355,29 @@ class DctSummaryProcessing:
         df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
         df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
         # Save results to file (ASA : later to store only on demand)
-        df.to_csv(f"{act_ginfo.heat_sink_study_path}/result_df.csv")
+        df.to_csv(f"{heat_sink_study_data.optimization_directory}/result_df.csv")
 
-        # return the data base
+        # return the database
         return df
 
     @staticmethod
-    def select_heat_sink_configuration(act_ginfo: dct.GeneralInformation, act_df_for_hs: pd.DataFrame):
+    def select_heat_sink_configuration(heat_sink_study_data: dct.StudyData, act_df_for_hs: pd.DataFrame):
         """Select the heat sink configuration from calculated heat sink pareto front.
 
-        :param act_ginfo: General information about the study name and study path
-        :type  act_ginfo: dct.GeneralInformation:
+        :param heat_sink_study_data: General information about the study name and study path
+        :type  heat_sink_study_data: dct.StudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
         """
         # Variable declaration
 
         # load heat sink
-        hs_config_filepath = os.path.join(act_ginfo.heat_sink_study_path, act_ginfo.heat_sink_study_name, f"{act_ginfo.heat_sink_study_name}.pkl")
+        hs_config_filepath = os.path.join(heat_sink_study_data.optimization_directory,
+                                          heat_sink_study_data.study_name, f"{heat_sink_study_data.study_name}.pkl")
         hs_config = hct.Optimization.load_config(hs_config_filepath)
         # Debug ASA Missing true simulations for remaining function
 
-        hs_config.heat_sink_optimization_directory = os.path.join(act_ginfo.heat_sink_study_path, act_ginfo.heat_sink_study_name)
+        hs_config.heat_sink_optimization_directory = os.path.join(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation
@@ -381,4 +389,4 @@ class DctSummaryProcessing:
         act_df_for_hs["total_volume"] = act_df_for_hs["transformer_volume"] + act_df_for_hs["inductor_volume"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        act_df_for_hs.to_csv(f"{act_ginfo.heat_sink_study_path}/df_summary.csv")
+        act_df_for_hs.to_csv(f"{heat_sink_study_data.optimization_directory}/df_summary.csv")
