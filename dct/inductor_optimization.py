@@ -106,11 +106,11 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, study_data: dct.StudyData,
-                    target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
-                    enable_operating_range_simulation: bool, debug: bool):
+    def _optimize(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, study_data: dct.StudyData,
+                  target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
+                  enable_operating_range_simulation: bool, debug: bool):
         """
-        Perform the simulation.
+        Perform the optimization.
 
         :param circuit_id: Name of the filtered optimal electrical circuit
         :type  circuit_id: int
@@ -259,8 +259,8 @@ class InductorOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            InductorOptimization._simulation(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, study_data, target_number_trials,
-                                             factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
+            InductorOptimization._optimize(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, study_data, target_number_trials,
+                                           factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             if debug:
                 # stop after one circuit run

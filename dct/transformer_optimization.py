@@ -146,8 +146,8 @@ class TransformerOptimization:
         return transformer_initialization_successful
 
     @staticmethod
-    def _simulation(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, study_data: dct.StudyData,
-                    act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool):
+    def _optimize(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, study_data: dct.StudyData,
+                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool):
         """
         Simulate.
 
@@ -303,8 +303,8 @@ class TransformerOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            TransformerOptimization._simulation(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto, study_data,
-                                                target_number_trials, factor_dc_min_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
+            TransformerOptimization._optimize(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto, study_data,
+                                              target_number_trials, factor_dc_min_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             if debug:
                 # stop after one circuit run
