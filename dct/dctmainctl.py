@@ -311,7 +311,8 @@ class DctMainCtl:
                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
-            optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory)
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory,
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
         inductor_study_data = dct.StudyData(
@@ -321,7 +322,8 @@ class DctMainCtl:
                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
-            optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
         transformer_study_data = dct.StudyData(
             filtered_list_id=[],
@@ -330,7 +332,8 @@ class DctMainCtl:
                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
-            optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory,
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
         heat_sink_study_data = dct.StudyData(
             filtered_list_id=[],
@@ -339,7 +342,8 @@ class DctMainCtl:
                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
-            optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
+                                                toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
         )
 
         # --------------------------
@@ -356,11 +360,10 @@ class DctMainCtl:
 
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
-            # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(os.path.join(circuit_study_data.optimization_directory, circuit_study_data.study_name),
-                                               circuit_study_data.study_name):
+            if not DctMainCtl.check_study_data(circuit_study_data.optimization_directory, circuit_study_data.study_name):
                 raise ValueError(f"Study {circuit_study_data.study_name} in path {circuit_study_data.optimization_directory} does not exist. "
                                  f"No sqlite3-database found!")
+            # Check, if data are available (skip case)
             # Check if filtered results folder exists
             if os.path.exists(circuit_study_data.filtered_list_pathname):
                 # Add filtered result list
@@ -395,8 +398,7 @@ class DctMainCtl:
             for id_entry in inductor_study_data.filtered_list_id:
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(inductor_study_data.optimization_directory,
-                                                         str(id_entry),
-                                                         inductor_study_data.study_name)
+                                                         str(id_entry), inductor_study_data.study_name)
                 # Check, if data are available (skip case)
                 if not DctMainCtl.check_study_data(inductor_results_datapath, inductor_study_data.study_name):
                     raise ValueError(
@@ -441,12 +443,10 @@ class DctMainCtl:
 
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.calculation_mode == "skip":
-            # Assemble pathname
-            heat_sink_results_datapath = os.path.join(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
             # Check, if data are available (skip case)
-            if not DctMainCtl.check_study_data(heat_sink_results_datapath, heat_sink_study_data.study_name):
+            if not DctMainCtl.check_study_data(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name):
                 raise ValueError(
-                    f"Study {heat_sink_study_data.study_name} in path {heat_sink_results_datapath} does not exist. No sqlite3-database found!")
+                    f"Study {heat_sink_study_data.study_name} in path {heat_sink_study_data.optimization_directory} does not exist. No sqlite3-database found!")
 
         # -- Start server  --------------------------------------------------------------------------------------------
         # Debug: Server switched off
@@ -463,8 +463,7 @@ class DctMainCtl:
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.calculation_mode == "new":
                 # delete old circuit study data
-                DctMainCtl.delete_study_content(os.path.join(circuit_study_data.optimization_directory, circuit_study_data.study_name),
-                                                circuit_study_data.study_name)
+                DctMainCtl.delete_study_content(circuit_study_data.optimization_directory, circuit_study_data.study_name)
 
                 # Create the filtered result folder
                 os.makedirs(circuit_study_data.filtered_list_pathname, exist_ok=True)
@@ -542,8 +541,7 @@ class DctMainCtl:
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.calculation_mode == "new":
                 # Delete old heat sink study
-                DctMainCtl.delete_study_content(os.path.join(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name),
-                                                heat_sink_study_data.study_name)
+                DctMainCtl.delete_study_content(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
 
             heat_sink_optimization.init_configuration(toml_heat_sink, toml_prog_flow)
             # Perform heat sink optimization
