@@ -258,11 +258,11 @@ class DctMainCtl:
         :type   workspace_path: str
         """
         # Inductor simulation
-        isim = InductorOptimization
+        inductor_optimization = InductorOptimization
         # Transformer simulation
-        tsim = TransformerOptimization
+        transformer_optimization = TransformerOptimization
         # heat sink simulation
-        hsim = HeatSinkOptimization
+        heat_sink_optimization = HeatSinkOptimization
         # Flag for re-simulation  (if False the summary will failed)
         enable_ind_re_simulation = True
         enable_trans_re_simulation = True
@@ -503,9 +503,10 @@ class DctMainCtl:
                 # Delete old inductor study
                 DctMainCtl.delete_study_content(inductor_study_data.optimization_directory)
 
-            isim.init_configuration(toml_inductor, inductor_study_data)
-            isim.optimization_handler(inductor_study_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
-                                      toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
+            inductor_optimization.init_configuration(toml_inductor, inductor_study_data)
+            inductor_optimization.optimization_handler(
+                inductor_study_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
+                toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
@@ -522,11 +523,12 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(transformer_study_data.optimization_directory)
 
             # Initialize transformer configuration
-            tsim.init_configuration(toml_transformer, transformer_study_data)
+            transformer_optimization.init_configuration(toml_transformer, transformer_study_data)
 
             # Perform transformer optimization
-            tsim.simulation_handler(transformer_study_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
-                                    toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
+            transformer_optimization.simulation_handler(
+                transformer_study_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
+                toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
@@ -543,9 +545,9 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(os.path.join(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name),
                                                 heat_sink_study_data.study_name)
 
-            hsim.init_configuration(toml_heat_sink, toml_prog_flow)
+            heat_sink_optimization.init_configuration(toml_heat_sink, toml_prog_flow)
             # Perform heat sink optimization
-            hsim.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
+            heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
