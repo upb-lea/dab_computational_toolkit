@@ -373,11 +373,10 @@ class DctSummaryProcessing:
 
         # load heat sink
         hs_config_filepath = os.path.join(heat_sink_study_data.optimization_directory,
-                                          heat_sink_study_data.study_name, f"{heat_sink_study_data.study_name}.pkl")
+                                          f"{heat_sink_study_data.study_name}.pkl")
         hs_config = hct.Optimization.load_config(hs_config_filepath)
         # Debug ASA Missing true simulations for remaining function
 
-        hs_config.heat_sink_optimization_directory = os.path.join(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation
