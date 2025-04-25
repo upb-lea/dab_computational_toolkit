@@ -25,7 +25,7 @@ class InductorOptimization:
     sim_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto] = []
 
     @staticmethod
-    def init_configuration(toml_inductor: dct.TomlInductor, study_data: dct.StudyData) -> bool:
+    def init_configuration(toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -33,6 +33,8 @@ class InductorOptimization:
         :type toml_inductor: dct.TomlInductor
         :param study_data: study data
         :type study_data: dct.StudyData
+        :param filter_data: Information about the filtered circuit designs
+        :type filter_data: dct.FilterData
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
@@ -77,8 +79,8 @@ class InductorOptimization:
         InductorOptimization.sim_config_list = []
 
         # Create the io_config_list for all trials
-        for circuit_trial_number in study_data.filtered_list_id:
-            circuit_filepath = os.path.join(study_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
+        for circuit_trial_number in filter_data.filtered_list_id:
+            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
             # Check filename
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
@@ -106,7 +108,7 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _optimize(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, study_data: dct.StudyData,
+    def _optimize(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
                   enable_operating_range_simulation: bool, debug: bool):
         """
@@ -132,7 +134,7 @@ class InductorOptimization:
         process_number = 1
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(study_data.filtered_list_pathname, f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -202,7 +204,7 @@ class InductorOptimization:
                             print(f"{current_waveform=}")
                             print("----------------------")
                             print("All operating point simulation of:")
-                            print(f"   * Circuit study: {study_data.circuit_study_name}")
+                            print(f"   * Circuit study: {filter_data.circuit_study_name}")
                             print(f"   * Circuit trial: {circuit_id}")
                             print(f"   * Inductor study: {act_io_config.inductor_study_name}")
                             print(f"   * Inductor re-simulation trial: {re_simulate_number}")
@@ -231,14 +233,14 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def optimization_handler(study_data: dct.StudyData, target_number_trials: int,
+    def optimization_handler(filter_data: dct.FilterData, target_number_trials: int,
                              factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
                              enable_operating_range_simulation: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
-        :param study_data: General information about the study
-        :type  study_data: dct.GeneralInformation:
+        :param filter_data: Information about the filtered designs
+        :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
         :param factor_min_dc_losses: Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
@@ -259,7 +261,7 @@ class InductorOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            InductorOptimization._optimize(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, study_data, target_number_trials,
+            InductorOptimization._optimize(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, filter_data, target_number_trials,
                                            factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             if debug:

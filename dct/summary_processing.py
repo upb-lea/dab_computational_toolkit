@@ -136,7 +136,7 @@ class DctSummaryProcessing:
     @staticmethod
     def generate_result_database(circuit_study_data: dct.StudyData, inductor_study_data: dct.StudyData,
                                  transformer_study_data: dct.StudyData, heat_sink_study_data: dct.StudyData, act_inductor_study_names: list[str],
-                                 act_stacked_transformer_study_names: list[str]) -> pd.DataFrame:
+                                 act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param circuit_study_data: circuit study data
@@ -151,7 +151,8 @@ class DctSummaryProcessing:
         :type  act_inductor_study_names: list[str]
         :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
         :type  act_stacked_transformer_study_names: list[str]
-
+        :param filter_data: filtered result lists
+        :type filter_data: dct.FilterData
         :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
         """
@@ -160,9 +161,9 @@ class DctSummaryProcessing:
         df = pd.DataFrame()
 
         # iterate circuit numbers
-        for circuit_number in circuit_study_data.filtered_list_id:
+        for circuit_number in filter_data.filtered_list_id:
             # Assemble pkl-filename
-            circuit_filepath_number = os.path.join(circuit_study_data.filtered_list_pathname, f"{circuit_number}.pkl")
+            circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_number}.pkl")
 
             # Get circuit results
             circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)

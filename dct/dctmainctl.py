@@ -299,51 +299,39 @@ class DctMainCtl:
 
         DctMainCtl.set_up_folder_structure(toml_prog_flow)
 
-        # --------------------------
-        # Introduce study data DTOs
-        # --------------------------
+        # -----------------------------------------
+        # Introduce study data and filter data DTOs
+        # -----------------------------------------
 
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
         circuit_study_data = dct.StudyData(
-            filtered_list_id=[],
-            filtered_list_pathname=os.path.join(
-                project_directory, toml_prog_flow.circuit.subdirectory,
-                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
         inductor_study_data = dct.StudyData(
-            filtered_list_id=[],
-            filtered_list_pathname=os.path.join(
-                project_directory, toml_prog_flow.circuit.subdirectory,
-                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
         transformer_study_data = dct.StudyData(
-            filtered_list_id=[],
-            filtered_list_pathname=os.path.join(
-                project_directory, toml_prog_flow.circuit.subdirectory,
-                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
         heat_sink_study_data = dct.StudyData(
+            study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
+                                                toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
+        )
+
+        filter_data = dct.FilterData(
             filtered_list_id=[],
             filtered_list_pathname=os.path.join(
                 project_directory, toml_prog_flow.circuit.subdirectory,
                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
-            study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
-            optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
-                                                toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
+            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
         )
 
         # --------------------------
@@ -365,19 +353,15 @@ class DctMainCtl:
                                  f"No sqlite3-database found!")
             # Check, if data are available (skip case)
             # Check if filtered results folder exists
-            if os.path.exists(circuit_study_data.filtered_list_pathname):
+            if os.path.exists(filter_data.filtered_list_pathname):
                 # Add filtered result list
-                for filtered_circuit_result in os.listdir(circuit_study_data.filtered_list_pathname):
-                    if os.path.isfile(os.path.join(circuit_study_data.filtered_list_pathname, filtered_circuit_result)):
-                        circuit_study_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
-                if not circuit_study_data.filtered_list_id:
-                    raise ValueError(f"Filtered results folder {circuit_study_data.filtered_list_pathname} is empty.")
+                for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
+                    if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
+                        filter_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
+                if not filter_data.filtered_list_id:
+                    raise ValueError(f"Filtered results folder {filter_data.filtered_list_pathname} is empty.")
             else:
-                raise ValueError(f"Filtered circuit results folder {circuit_study_data.filtered_list_pathname} does not exist.")
-
-        inductor_study_data.filtered_list_id = circuit_study_data.filtered_list_id
-        transformer_study_data.filtered_list_id = circuit_study_data.filtered_list_id
-        heat_sink_study_data.filtered_list_id = circuit_study_data.filtered_list_id
+                raise ValueError(f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist.")
 
         # --------------------------
         # Inductor flow control
@@ -395,7 +379,7 @@ class DctMainCtl:
         if toml_prog_flow.inductor.calculation_mode == "skip":
             # For loop to check, if all filtered values are available
 
-            for id_entry in inductor_study_data.filtered_list_id:
+            for id_entry in filter_data.filtered_list_id:
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(inductor_study_data.optimization_directory,
                                                          str(id_entry), inductor_study_data.study_name)
@@ -419,7 +403,7 @@ class DctMainCtl:
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
             # For loop to check, if all filtered values are available
-            for id_entry in transformer_study_data.filtered_list_id:
+            for id_entry in filter_data.filtered_list_id:
                 # Assemble pathname
                 transformer_results_datapath = os.path.join(transformer_study_data.optimization_directory,
                                                             str(id_entry),
@@ -466,7 +450,7 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(circuit_study_data.optimization_directory, circuit_study_data.study_name)
 
                 # Create the filtered result folder
-                os.makedirs(circuit_study_data.filtered_list_pathname, exist_ok=True)
+                os.makedirs(filter_data.filtered_list_pathname, exist_ok=True)
                 # Delete obsolete folders of inductor and transformer
                 DctMainCtl.delete_study_content(inductor_study_data.optimization_directory)
                 DctMainCtl.delete_study_content(transformer_study_data.optimization_directory)
@@ -484,9 +468,9 @@ class DctMainCtl:
             # Get filtered result path
 
             # Add filtered result list
-            for filtered_circuit_result in os.listdir(circuit_study_data.filtered_list_pathname):
-                if os.path.isfile(os.path.join(circuit_study_data.filtered_list_pathname, filtered_circuit_result)):
-                    circuit_study_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
+            for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
+                if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
+                    filter_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
 
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
@@ -502,9 +486,9 @@ class DctMainCtl:
                 # Delete old inductor study
                 DctMainCtl.delete_study_content(inductor_study_data.optimization_directory)
 
-            inductor_optimization.init_configuration(toml_inductor, inductor_study_data)
+            inductor_optimization.init_configuration(toml_inductor, inductor_study_data, filter_data)
             inductor_optimization.optimization_handler(
-                inductor_study_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
+                filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
                 toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
         # Check breakpoint
@@ -522,11 +506,11 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(transformer_study_data.optimization_directory)
 
             # Initialize transformer configuration
-            transformer_optimization.init_configuration(toml_transformer, transformer_study_data)
+            transformer_optimization.init_configuration(toml_transformer, transformer_study_data, filter_data)
 
             # Perform transformer optimization
             transformer_optimization.simulation_handler(
-                transformer_study_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
+                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
                 toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
         # Check breakpoint
@@ -558,7 +542,7 @@ class DctMainCtl:
         stacked_transformer_study_names = [transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = spro.generate_result_database(circuit_study_data, inductor_study_data, transformer_study_data, heat_sink_study_data,
-                                             inductor_study_names, stacked_transformer_study_names)
+                                             inductor_study_names, stacked_transformer_study_names, filter_data)
         #  Select the needed heat sink configuration
         spro.select_heat_sink_configuration(heat_sink_study_data, s_df)
         # Check breakpoint

@@ -308,8 +308,13 @@ class TransformerTargetParameters:
 class StudyData:
     """Data class containing all general information to perform a study."""
 
+    study_name: str
+    optimization_directory: str
+
+@dataclasses.dataclass
+class FilterData:
+    """Information about the filtered circuit designs."""
+
     filtered_list_id: list[int]
     filtered_list_pathname: str
     circuit_study_name: str
-    study_name: str
-    optimization_directory: str
