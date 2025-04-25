@@ -21,8 +21,8 @@ logging.getLogger().setLevel(logging.ERROR)
 class InductorOptimization:
     """Optimization of the inductor."""
 
-    # Simulation configuration list
-    sim_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto] = []
+    # List with configurations to optimize
+    optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto] = []
 
     @staticmethod
     def init_configuration(toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
@@ -76,7 +76,7 @@ class InductorOptimization:
             material_data_sources=act_material_data_sources)
 
         # Empty the list
-        InductorOptimization.sim_config_list = []
+        InductorOptimization.optimization_config_list = []
 
         # Create the io_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
@@ -100,7 +100,7 @@ class InductorOptimization:
                 next_io_config.inductor_optimization_directory = os.path.join(
                     study_data.optimization_directory, str(circuit_trial_number), study_data.study_name)
                 inductor_dto = dct.inductor_optimization_dtos.InductorOptimizationDto(circuit_id=circuit_trial_number, inductor_optimization_dto=next_io_config)
-                InductorOptimization.sim_config_list.append(inductor_dto)
+                InductorOptimization.optimization_config_list.append(inductor_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
@@ -118,8 +118,8 @@ class InductorOptimization:
         :type  circuit_id: int
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
-        :param study_data: General information about the study
-        :type  study_data: dct.StudyData:
+        :param filter_data: Contains information about filtered circuit designs
+        :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
         :param factor_min_dc_losses: Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
@@ -253,7 +253,7 @@ class InductorOptimization:
         :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in InductorOptimization.sim_config_list:
+        for act_sim_config in InductorOptimization.optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
