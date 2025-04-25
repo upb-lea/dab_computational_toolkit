@@ -24,8 +24,8 @@ logging.getLogger().setLevel(logging.ERROR)
 class TransformerOptimization:
     """Optimization of the transformer."""
 
-    # Configuration list
-    sim_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto] = []
+    # List with configurations to optimize
+    optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto] = []
 
     @staticmethod
     def init_configuration(toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
@@ -109,7 +109,7 @@ class TransformerOptimization:
         )
 
         # Empty the list
-        TransformerOptimization.sim_config_list = []
+        TransformerOptimization.optimization_config_list = []
 
         # Create the sto_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
@@ -140,7 +140,7 @@ class TransformerOptimization:
                 next_io_config.stacked_transformer_optimization_directory\
                     = os.path.join(study_data.optimization_directory, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
                 transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(circuit_trial_number, next_io_config)
-                TransformerOptimization.sim_config_list.append(transformer_dto)
+                TransformerOptimization.optimization_config_list.append(transformer_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
@@ -296,7 +296,7 @@ class TransformerOptimization:
         :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in TransformerOptimization.sim_config_list:
+        for act_sim_config in TransformerOptimization.optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
