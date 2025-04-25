@@ -200,7 +200,6 @@ pF
 params
 asctime
 levelname
-# font names
 Palatino
 Helvetica
 NaN
@@ -223,4 +222,3 @@ oaml
 jhs
 br
 wo
-
