@@ -567,7 +567,7 @@ class PlotDAB:
         fontsize_axis = self.fontsize
         fontsize_title = self.fontsize
 
-        # check if z input matrix is out ouf None's only. If Ture, raise exception.
+        # check if z input matrix is out of None's only. If True, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
         # search_nones = z.copy()
         # search_nones[np.isnan(search_nones)] = 1
@@ -730,7 +730,7 @@ class PlotDAB:
         fontsize_axis = self.fontsize
         fontsize_title = self.fontsize
 
-        # check if z input matrix is out ouf None's only. If Ture, raise exception.
+        # check if z input matrix is out of None's only. If True, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
         # search_nones = z.copy()
         # search_nones[np.isnan(search_nones)] = 1
@@ -861,12 +861,12 @@ class PlotDAB:
         :param z_max: [optional] clip to maximum z-value
         :type z_max: float
         """
-        # check if z input matrix is out ouf None's only. If Ture, raise exception.
+        # check if z input matrix is out of None's only. If True, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
         search_nones = z.copy()
         search_nones[np.isnan(search_nones)] = 1
         if np.sum(search_nones) == np.size(search_nones):
-            raise Exception("in subplot_contourf_nan(), z input out of None's only is not allowed")
+            raise Exception("in subplot_contourf_nan(), z input out of None values only is not allowed")
 
         if ax is None:
             ax = plt.gca()
@@ -961,7 +961,7 @@ class PlotDAB:
         """Close plot window."""
         if self.show_pw:
             # Close figures
-            # FIXME It seems that this does not close nicely
+            # FIXME: It seems that this does not close nicely
             self.pw.close()
         else:
             plt.close('all')

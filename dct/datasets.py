@@ -447,7 +447,7 @@ class HandleDabDto:
             max_index = vec_vvp if np.max(i_hf_2_sorted[vec_vvp]) > np.max(i_hf_2_sorted[max_index]) else max_index  # type: ignore
             if plot:
                 plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
-                         d_waveforms.full_current_waveform_from_currents(i_hf_2_sorted[vec_vvp]), color='grey')
+                         d_waveforms.full_current_waveform_from_currents(i_hf_2_sorted[vec_vvp]), color='gray')
 
         i_hf_2_max_current_waveform = i_hf_2_sorted[max_index]
         i_l_s_max_current_waveform = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))[max_index]
@@ -486,7 +486,7 @@ class HandleDabDto:
             max_index = vec_vvp if np.max(i_l1_sorted[vec_vvp]) > np.max(i_l1_sorted[max_index]) else max_index  # type: ignore
             if plot:
                 plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
-                         d_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp]), color='grey')
+                         d_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp]), color='gray')
 
         i_l1_max_current_waveform = i_l1_sorted[max_index]
 
