@@ -227,6 +227,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#dct.ConfigurationDataFiles.transformer_configuration_file"><code class="docutils literal notranslate"><span class="pre">ConfigurationDataFiles.transformer_configuration_file</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.FilterData"><code class="docutils literal notranslate"><span class="pre">FilterData</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dct.FilterData.circuit_study_name"><code class="docutils literal notranslate"><span class="pre">FilterData.circuit_study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.FilterData.filtered_list_id"><code class="docutils literal notranslate"><span class="pre">FilterData.filtered_list_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.FilterData.filtered_list_pathname"><code class="docutils literal notranslate"><span class="pre">FilterData.filtered_list_pathname</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.FixedParameters"><code class="docutils literal notranslate"><span class="pre">FixedParameters</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dct.FixedParameters.transistor_1_dto_list"><code class="docutils literal notranslate"><span class="pre">FixedParameters.transistor_1_dto_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.FixedParameters.transistor_2_dto_list"><code class="docutils literal notranslate"><span class="pre">FixedParameters.transistor_2_dto_list</span></code></a></li>
@@ -316,19 +322,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#dct.General.project_directory"><code class="docutils literal notranslate"><span class="pre">General.project_directory</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#dct.GeneralInformation"><code class="docutils literal notranslate"><span class="pre">GeneralInformation</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.circuit_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.circuit_study_name</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.circuit_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.circuit_study_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.filtered_list_id"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.filtered_list_id</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.heat_sink_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.heat_sink_study_name</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.heat_sink_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.heat_sink_study_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.inductor_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.inductor_study_name</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.inductor_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.inductor_study_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.project_directory"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.project_directory</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.transformer_study_name"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.transformer_study_name</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.GeneralInformation.transformer_study_path"><code class="docutils literal notranslate"><span class="pre">GeneralInformation.transformer_study_path</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.HandleDabDto"><code class="docutils literal notranslate"><span class="pre">HandleDabDto</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dct.HandleDabDto.add_gecko_simulation_results"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.add_gecko_simulation_results()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.HandleDabDto.add_inductor_results"><code class="docutils literal notranslate"><span class="pre">HandleDabDto.add_inductor_results()</span></code></a></li>
@@ -382,8 +375,13 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.InductorOptimization"><code class="docutils literal notranslate"><span class="pre">InductorOptimization</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.init_configuration()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimization.sim_config_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.sim_config_list</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimization.simulation_handler"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.simulation_handler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimization.optimization_config_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.optimization_config_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.optimization_handler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.InductorOptimizationDto"><code class="docutils literal notranslate"><span class="pre">InductorOptimizationDto</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimizationDto.circuit_id"><code class="docutils literal notranslate"><span class="pre">InductorOptimizationDto.circuit_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.InductorOptimizationDto.inductor_optimization_dto"><code class="docutils literal notranslate"><span class="pre">InductorOptimizationDto.inductor_optimization_dto</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.InductorResults"><code class="docutils literal notranslate"><span class="pre">InductorResults</span></code></a><ul>
@@ -431,6 +429,11 @@
 <li class="toctree-l3"><a class="reference internal" href="#dct.StackedTransformerResults.p_combined_losses"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.p_combined_losses</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.StackedTransformerResults.stacked_transformer_trial_number"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.stacked_transformer_trial_number</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.StackedTransformerResults.volume"><code class="docutils literal notranslate"><span class="pre">StackedTransformerResults.volume</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.StudyData"><code class="docutils literal notranslate"><span class="pre">StudyData</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dct.StudyData.optimization_directory"><code class="docutils literal notranslate"><span class="pre">StudyData.optimization_directory</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.StudyData.study_name"><code class="docutils literal notranslate"><span class="pre">StudyData.study_name</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.ThermalCalcSupport"><code class="docutils literal notranslate"><span class="pre">ThermalCalcSupport</span></code></a><ul>
@@ -627,8 +630,13 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.TransformerOptimization"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dct.TransformerOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.init_configuration()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.TransformerOptimization.sim_config_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.sim_config_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.TransformerOptimization.optimization_config_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.optimization_config_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.TransformerOptimization.simulation_handler"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.simulation_handler()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dct.TransformerOptimizationDto"><code class="docutils literal notranslate"><span class="pre">TransformerOptimizationDto</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dct.TransformerOptimizationDto.circuit_id"><code class="docutils literal notranslate"><span class="pre">TransformerOptimizationDto.circuit_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.TransformerOptimizationDto.transformer_optimization_dto"><code class="docutils literal notranslate"><span class="pre">TransformerOptimizationDto.transformer_optimization_dto</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.TransformerTargetParameters"><code class="docutils literal notranslate"><span class="pre">TransformerTargetParameters</span></code></a><ul>
@@ -1723,6 +1731,28 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="dct.FilterData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">FilterData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filtered_list_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_list_pathname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circuit_study_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.FilterData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Information about the filtered circuit designs.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.FilterData.circuit_study_name">
+<span class="sig-name descname"><span class="pre">circuit_study_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.FilterData.circuit_study_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.FilterData.filtered_list_id">
+<span class="sig-name descname"><span class="pre">filtered_list_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dct.FilterData.filtered_list_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.FilterData.filtered_list_pathname">
+<span class="sig-name descname"><span class="pre">filtered_list_pathname</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.FilterData.filtered_list_pathname" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="dct.FixedParameters">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">FixedParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transistor_1_dto_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dct.TransistorDTO" title="dct.datasets_dtos.TransistorDTO"><span class="pre">TransistorDTO</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transistor_2_dto_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dct.TransistorDTO" title="dct.datasets_dtos.TransistorDTO"><span class="pre">TransistorDTO</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.FixedParameters" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -2122,63 +2152,6 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dct.GeneralInformation">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">GeneralInformation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circuit_study_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inductor_study_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_study_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_sink_study_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_list_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circuit_study_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inductor_study_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_study_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_sink_study_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.GeneralInformation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Names and paths.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.circuit_study_name">
-<span class="sig-name descname"><span class="pre">circuit_study_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.circuit_study_name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.circuit_study_path">
-<span class="sig-name descname"><span class="pre">circuit_study_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.circuit_study_path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.filtered_list_id">
-<span class="sig-name descname"><span class="pre">filtered_list_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dct.GeneralInformation.filtered_list_id" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.heat_sink_study_name">
-<span class="sig-name descname"><span class="pre">heat_sink_study_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.heat_sink_study_name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.heat_sink_study_path">
-<span class="sig-name descname"><span class="pre">heat_sink_study_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.heat_sink_study_path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.inductor_study_name">
-<span class="sig-name descname"><span class="pre">inductor_study_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.inductor_study_name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.inductor_study_path">
-<span class="sig-name descname"><span class="pre">inductor_study_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.inductor_study_path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.project_directory">
-<span class="sig-name descname"><span class="pre">project_directory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.project_directory" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.transformer_study_name">
-<span class="sig-name descname"><span class="pre">transformer_study_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.transformer_study_name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.GeneralInformation.transformer_study_path">
-<span class="sig-name descname"><span class="pre">transformer_study_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.GeneralInformation.transformer_study_path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="dct.HandleDabDto">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">HandleDabDto</span></span><a class="headerlink" href="#dct.HandleDabDto" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -2561,12 +2534,11 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dct.HeatSinkOptimization.optimization_handler">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">optimization_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">act_ginfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.GeneralInformation" title="dct.circuit_optimization_dtos.GeneralInformation"><span class="pre">GeneralInformation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_number_trials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.HeatSinkOptimization.optimization_handler" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">optimization_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_number_trials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.HeatSinkOptimization.optimization_handler" title="Link to this definition"></a></dt>
 <dd><p>Control the multi simulation processes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>act_ginfo</strong> (<em>dct.GeneralInformation:</em>) – General information about the study</p></li>
 <li><p><strong>target_number_trials</strong> (<em>int</em>) – Number of trials for the optimization</p></li>
 <li><p><strong>debug</strong> (<em>bool</em>) – Debug mode flag</p></li>
 </ul>
@@ -2628,14 +2600,14 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 <p>Optimization of the inductor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dct.InductorOptimization.init_configuration">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">toml_inductor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TomlInductor" title="dct.toml_checker.TomlInductor"><span class="pre">TomlInductor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">toml_prog_flow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.FlowControl" title="dct.toml_checker.FlowControl"><span class="pre">FlowControl</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_ginfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.GeneralInformation" title="dct.circuit_optimization_dtos.GeneralInformation"><span class="pre">GeneralInformation</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dct.InductorOptimization.init_configuration" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">toml_inductor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TomlInductor" title="dct.toml_checker.TomlInductor"><span class="pre">TomlInductor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.StudyData" title="dct.datasets_dtos.StudyData"><span class="pre">StudyData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.FilterData" title="dct.datasets_dtos.FilterData"><span class="pre">FilterData</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dct.InductorOptimization.init_configuration" title="Link to this definition"></a></dt>
 <dd><p>Initialize the configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>toml_inductor</strong> (<a class="reference internal" href="#dct.TomlInductor" title="dct.TomlInductor"><em>dct.TomlInductor</em></a>) – toml inductor configuration</p></li>
-<li><p><strong>toml_prog_flow</strong> (<a class="reference internal" href="#dct.FlowControl" title="dct.FlowControl"><em>dct.FlowControl</em></a>) – toml program flow configuration</p></li>
-<li><p><strong>act_ginfo</strong> (<a class="reference internal" href="#dct.GeneralInformation" title="dct.GeneralInformation"><em>dct.GeneralInformation</em></a>) – General information about the study</p></li>
+<li><p><strong>study_data</strong> (<a class="reference internal" href="#dct.StudyData" title="dct.StudyData"><em>dct.StudyData</em></a>) – study data</p></li>
+<li><p><strong>filter_data</strong> (<a class="reference internal" href="#dct.FilterData" title="dct.FilterData"><em>dct.FilterData</em></a>) – Information about the filtered circuit designs</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2648,27 +2620,44 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.InductorOptimization.sim_config_list">
-<span class="sig-name descname"><span class="pre">sim_config_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">InductorOptimizationDTO</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dct.InductorOptimization.sim_config_list" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dct.InductorOptimization.optimization_config_list">
+<span class="sig-name descname"><span class="pre">optimization_config_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dct.InductorOptimizationDto" title="dct.inductor_optimization_dtos.InductorOptimizationDto"><span class="pre">InductorOptimizationDto</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dct.InductorOptimization.optimization_config_list" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dct.InductorOptimization.simulation_handler">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">simulation_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">act_ginfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.GeneralInformation" title="dct.circuit_optimization_dtos.GeneralInformation"><span class="pre">GeneralInformation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_number_trials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_min_dc_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_dc_max_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_simulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.InductorOptimization.simulation_handler" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dct.InductorOptimization.optimization_handler">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">optimization_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.FilterData" title="dct.datasets_dtos.FilterData"><span class="pre">FilterData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_number_trials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_min_dc_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_dc_max_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_operating_range_simulation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.InductorOptimization.optimization_handler" title="Link to this definition"></a></dt>
 <dd><p>Control the multi simulation processes.</p>
-<p>:param act_ginfo : General information about the study
-:type  act_ginfo : dct.GeneralInformation:
-:param target_number_trials : Number of trials for the optimization
-:type  target_number_trials : int
-:param factor_min_dc_losses : Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-:type  factor_min_dc_losses : float
-:param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
-:type factor_dc_max_losses: float
-:param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-:type  re_simulate : bool
-:param debug : Debug mode flag
-:type  debug : bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filter_data</strong> (<a class="reference internal" href="#dct.FilterData" title="dct.FilterData"><em>dct.FilterData</em></a>) – Information about the filtered designs</p></li>
+<li><p><strong>target_number_trials</strong> (<em>int</em>) – Number of trials for the optimization</p></li>
+<li><p><strong>factor_min_dc_losses</strong> (<em>float</em>) – Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)</p></li>
+<li><p><strong>factor_dc_max_losses</strong> (<em>float</em>) – Filter factor for the maximum losses, related to the minimum DC losses</p></li>
+<li><p><strong>enable_operating_range_simulation</strong> (<em>bool</em>) – True to perform the simulations for all operating points</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Debug mode flag</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dct.InductorOptimizationDto">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">InductorOptimizationDto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuit_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inductor_optimization_dto</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">InductorOptimizationDTO</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.InductorOptimizationDto" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>DTO for the inductor optimization.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.InductorOptimizationDto.circuit_id">
+<span class="sig-name descname"><span class="pre">circuit_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dct.InductorOptimizationDto.circuit_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.InductorOptimizationDto.inductor_optimization_dto">
+<span class="sig-name descname"><span class="pre">inductor_optimization_dto</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InductorOptimizationDTO</span></em><a class="headerlink" href="#dct.InductorOptimizationDto.inductor_optimization_dto" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -3080,6 +3069,23 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dct.StackedTransformerResults.volume">
 <span class="sig-name descname"><span class="pre">volume</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#dct.StackedTransformerResults.volume" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dct.StudyData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">StudyData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">study_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimization_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.StudyData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Data class containing all general information to perform a study.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.StudyData.optimization_directory">
+<span class="sig-name descname"><span class="pre">optimization_directory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.StudyData.optimization_directory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.StudyData.study_name">
+<span class="sig-name descname"><span class="pre">study_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dct.StudyData.study_name" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -3914,14 +3920,14 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 <p>Optimization of the transformer.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dct.TransformerOptimization.init_configuration">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">toml_transformer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TomlTransformer" title="dct.toml_checker.TomlTransformer"><span class="pre">TomlTransformer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">toml_prog_flow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.FlowControl" title="dct.toml_checker.FlowControl"><span class="pre">FlowControl</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_ginfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.GeneralInformation" title="dct.circuit_optimization_dtos.GeneralInformation"><span class="pre">GeneralInformation</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dct.TransformerOptimization.init_configuration" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">toml_transformer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TomlTransformer" title="dct.toml_checker.TomlTransformer"><span class="pre">TomlTransformer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">study_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.StudyData" title="dct.datasets_dtos.StudyData"><span class="pre">StudyData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.FilterData" title="dct.datasets_dtos.FilterData"><span class="pre">FilterData</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dct.TransformerOptimization.init_configuration" title="Link to this definition"></a></dt>
 <dd><p>Initialize the configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>toml_transformer</strong> (<a class="reference internal" href="#dct.TomlTransformer" title="dct.TomlTransformer"><em>dct.TomlTransformer</em></a>) – transformer toml file</p></li>
-<li><p><strong>toml_prog_flow</strong> (<a class="reference internal" href="#dct.FlowControl" title="dct.FlowControl"><em>dct.FlowControl</em></a>) – flow control toml file</p></li>
-<li><p><strong>act_ginfo</strong> (<a class="reference internal" href="#dct.GeneralInformation" title="dct.GeneralInformation"><em>dct.GeneralInformation</em></a>) – General information</p></li>
+<li><p><strong>study_data</strong> (<a class="reference internal" href="#dct.StudyData" title="dct.StudyData"><em>dct.StudyData</em></a>) – Study data</p></li>
+<li><p><strong>filter_data</strong> (<a class="reference internal" href="#dct.FilterData" title="dct.FilterData"><em>dct.FilterData</em></a>) – Information about the filtered circuit designs</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -3934,27 +3940,44 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.TransformerOptimization.sim_config_list">
-<span class="sig-name descname"><span class="pre">sim_config_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">StoSingleInputConfig</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dct.TransformerOptimization.sim_config_list" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dct.TransformerOptimization.optimization_config_list">
+<span class="sig-name descname"><span class="pre">optimization_config_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#dct.TransformerOptimizationDto" title="dct.transformer_optimization_dtos.TransformerOptimizationDto"><span class="pre">TransformerOptimizationDto</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dct.TransformerOptimization.optimization_config_list" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dct.TransformerOptimization.simulation_handler">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">simulation_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">act_ginfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.GeneralInformation" title="dct.circuit_optimization_dtos.GeneralInformation"><span class="pre">GeneralInformation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_number_trials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_dc_min_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_dc_max_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_simulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.TransformerOptimization.simulation_handler" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">simulation_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.FilterData" title="dct.datasets_dtos.FilterData"><span class="pre">FilterData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_number_trials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_dc_min_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor_dc_max_losses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_operating_range_simulation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.TransformerOptimization.simulation_handler" title="Link to this definition"></a></dt>
 <dd><p>Control the multi simulation processes.</p>
-<p>:param act_ginfo : General information about the study
-:type  act_ginfo : dct.GeneralInformation:
-:param target_number_trials : Number of trials for the optimization
-:type  target_number_trials : int
-:param factor_dc_min_losses : Filter factor for the offset, related to the minimum DC losses
-:type  factor_dc_min_losses : float
+<p>:param filter_data : Information about the filtered circuit designs
+:type  filter_data : dct.FilterData
+:param target_number_trials: Number of trials for the optimization
+:type  target_number_trials: int
+:param factor_dc_min_losses: Filter factor for the offset, related to the minimum DC losses
+:type  factor_dc_min_losses: float
 :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
 :type factor_dc_max_losses: float
-:param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-:type  re_simulate : bool
-:param debug : Debug mode flag
-:type  debug : bool</p>
+:param enable_operating_range_simulation: True to perform the simulations for all operating points
+:type  enable_operating_range_simulation: bool
+:param debug: Debug mode flag
+:type  debug: bool</p>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dct.TransformerOptimizationDto">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">TransformerOptimizationDto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">circuit_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_optimization_dto</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StoSingleInputConfig</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.TransformerOptimizationDto" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>DTO for the transformer optimization.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.TransformerOptimizationDto.circuit_id">
+<span class="sig-name descname"><span class="pre">circuit_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dct.TransformerOptimizationDto.circuit_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dct.TransformerOptimizationDto.transformer_optimization_dto">
+<span class="sig-name descname"><span class="pre">transformer_optimization_dto</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">StoSingleInputConfig</span></em><a class="headerlink" href="#dct.TransformerOptimizationDto.transformer_optimization_dto" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
