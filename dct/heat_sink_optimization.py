@@ -135,7 +135,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _simulation(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool):
+    def _optimize(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool):
         """
         Perform the simulation.
 
@@ -157,12 +157,10 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def optimization_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int, debug: bool = False):
+    def optimization_handler(target_number_trials: int, debug: bool = False):
         """
         Control the multi simulation processes.
 
-        :param act_ginfo: General information about the study
-        :type  act_ginfo: dct.GeneralInformation:
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
         :param debug: Debug mode flag
@@ -178,7 +176,7 @@ class HeatSinkOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            HeatSinkOptimization._simulation(act_sim_config, target_number_trials, debug)
+            HeatSinkOptimization._optimize(act_sim_config, target_number_trials, debug)
             if debug:
                 # stop after one circuit run
                 break

@@ -13,7 +13,7 @@ import pandas as pd
 import tqdm
 
 # own libraries
-import dct
+import dct.transformer_optimization_dtos
 import femmt as fmt
 
 # configure root logger
@@ -24,21 +24,20 @@ logging.getLogger().setLevel(logging.ERROR)
 class TransformerOptimization:
     """Optimization of the transformer."""
 
-    # Configuration list
-    sim_config_list: list[fmt.StoSingleInputConfig] = []
+    # List with configurations to optimize
+    optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto] = []
 
     @staticmethod
-    def init_configuration(toml_transformer: dct.TomlTransformer, toml_prog_flow: dct.FlowControl, act_ginfo: dct.GeneralInformation) -> bool:
+    def init_configuration(toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
         :param toml_transformer: transformer toml file
         :type toml_transformer: dct.TomlTransformer
-        :param toml_prog_flow: flow control toml file
-        :type toml_prog_flow: dct.FlowControl
-        :param act_ginfo: General information
-        :type act_ginfo: dct.GeneralInformation
-
+        :param study_data: Study data
+        :type study_data: dct.StudyData
+        :param filter_data: Information about the filtered circuit designs
+        :type filter_data: dct.FilterData
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
@@ -75,7 +74,7 @@ class TransformerOptimization:
 
         # Create fix part of io_config
         sto_config = fmt.StoSingleInputConfig(
-            stacked_transformer_study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
+            stacked_transformer_study_name=study_data.study_name,
             # target parameters  initialized with default values
             l_s12_target=0,
             l_h_target=0,
@@ -110,13 +109,11 @@ class TransformerOptimization:
         )
 
         # Empty the list
-        TransformerOptimization.sim_config_list = []
+        TransformerOptimization.optimization_config_list = []
 
         # Create the sto_config_list for all trials
-        for circuit_trial_number in act_ginfo.filtered_list_id:
-            circuit_filepath = os.path.join(act_ginfo.circuit_study_path, act_ginfo.circuit_study_name,
-                                            "filtered_results",
-                                            f"{circuit_trial_number}.pkl")
+        for circuit_trial_number in filter_data.filtered_list_id:
+            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
 
             # Check filename
             if os.path.isfile(circuit_filepath):
@@ -141,16 +138,17 @@ class TransformerOptimization:
                 next_io_config.time_current_2_vec = transformer_target_params.time_current_2_vec
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
-                    = os.path.join(act_ginfo.transformer_study_path, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
-                TransformerOptimization.sim_config_list.append([circuit_trial_number, next_io_config])
+                    = os.path.join(study_data.optimization_directory, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
+                transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(circuit_trial_number, next_io_config)
+                TransformerOptimization.optimization_config_list.append(transformer_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
         return transformer_initialization_successful
 
     @staticmethod
-    def _simulation(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, act_ginfo: dct.GeneralInformation,
-                    act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool):
+    def _optimize(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool):
         """
         Simulate.
 
@@ -172,10 +170,7 @@ class TransformerOptimization:
         process_number = 1
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(act_ginfo.circuit_study_path,
-                                                                   act_ginfo.circuit_study_name,
-                                                                   "filtered_results",
-                                                                   f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
         # Check number of trials
         if act_target_number_trials > 0:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(
@@ -249,7 +244,7 @@ class TransformerOptimization:
                             print(f"{current_waveform=}")
                             print("----------------------")
                             print("Re-simulation of:")
-                            print(f"   * Circuit study: {act_ginfo.circuit_study_name}")
+                            print(f"   * Circuit study: {filter_data.circuit_study_name}")
                             print(f"   * Circuit trial: {circuit_id}")
                             print(f"   * Transformer study: {act_sto_config.transformer_study_name}")
                             print(f"   * Transformer re-simulation trial: {re_simulate_number}")
@@ -281,27 +276,27 @@ class TransformerOptimization:
 
     @staticmethod
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def simulation_handler(act_ginfo: dct.GeneralInformation, target_number_trials: int,
+    def simulation_handler(filter_data: dct.FilterData, target_number_trials: int,
                            factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
-                           re_simulate: bool = False, debug: bool = False):
+                           enable_operating_range_simulation: bool = False, debug: bool = False):
         """
         Control the multi simulation processes.
 
-        :param act_ginfo : General information about the study
-        :type  act_ginfo : dct.GeneralInformation:
-        :param target_number_trials : Number of trials for the optimization
-        :type  target_number_trials : int
-        :param factor_dc_min_losses : Filter factor for the offset, related to the minimum DC losses
-        :type  factor_dc_min_losses : float
+        :param filter_data : Information about the filtered circuit designs
+        :type  filter_data : dct.FilterData
+        :param target_number_trials: Number of trials for the optimization
+        :type  target_number_trials: int
+        :param factor_dc_min_losses: Filter factor for the offset, related to the minimum DC losses
+        :type  factor_dc_min_losses: float
         :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
         :type factor_dc_max_losses: float
-        :param re_simulate : Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
-        :type  re_simulate : bool
-        :param debug : Debug mode flag
-        :type  debug : bool
+        :param enable_operating_range_simulation: True to perform the simulations for all operating points
+        :type  enable_operating_range_simulation: bool
+        :param debug: Debug mode flag
+        :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in TransformerOptimization.sim_config_list:
+        for act_sim_config in TransformerOptimization.optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -309,8 +304,8 @@ class TransformerOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            TransformerOptimization._simulation(act_sim_config[0], act_sim_config[1], act_ginfo, target_number_trials, factor_dc_min_losses,
-                                                factor_dc_max_losses, re_simulate, debug)
+            TransformerOptimization._optimize(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto, filter_data,
+                                              target_number_trials, factor_dc_min_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             if debug:
                 # stop after one circuit run
