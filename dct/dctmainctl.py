@@ -257,12 +257,6 @@ class DctMainCtl:
         :param  workspace_path: Path to subfolder 'workspace' (if empty default path '../<path to this file>' is used)
         :type   workspace_path: str
         """
-        # Inductor simulation
-        inductor_optimization = InductorOptimization
-        # Transformer simulation
-        transformer_optimization = TransformerOptimization
-        # heat sink simulation
-        heat_sink_optimization = HeatSinkOptimization
         # Flag for re-simulation  (if False the summary will failed)
         enable_ind_re_simulation = True
         enable_trans_re_simulation = True
@@ -486,7 +480,7 @@ class DctMainCtl:
                 # Delete old inductor study
                 DctMainCtl.delete_study_content(inductor_study_data.optimization_directory)
 
-            inductor_optimization.init_configuration(toml_inductor, inductor_study_data, filter_data)
+            inductor_optimization = InductorOptimization(toml_inductor, inductor_study_data, filter_data)
             inductor_optimization.optimization_handler(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
                 toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
@@ -506,7 +500,7 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(transformer_study_data.optimization_directory)
 
             # Initialize transformer configuration
-            transformer_optimization.init_configuration(toml_transformer, transformer_study_data, filter_data)
+            transformer_optimization = TransformerOptimization(toml_transformer, transformer_study_data, filter_data)
 
             # Perform transformer optimization
             transformer_optimization.simulation_handler(
@@ -527,7 +521,7 @@ class DctMainCtl:
                 # Delete old heat sink study
                 DctMainCtl.delete_study_content(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
 
-            heat_sink_optimization.init_configuration(toml_heat_sink, toml_prog_flow)
+            heat_sink_optimization = HeatSinkOptimization(toml_heat_sink, toml_prog_flow)
             # Perform heat sink optimization
             heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
 

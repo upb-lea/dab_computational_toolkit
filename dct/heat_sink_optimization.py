@@ -17,10 +17,9 @@ class HeatSinkOptimization:
     """Optimization support class for heat sink optimization."""
 
     # Simulation configuration list
-    optimization_config_list: list[tuple] = []
+    optimization_config_list: list[hct.OptimizationParameters]
 
-    @staticmethod
-    def init_configuration(toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
+    def __init__(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl):
         """
         Initialize the configuration.
 
@@ -31,25 +30,17 @@ class HeatSinkOptimization:
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
-        # Variable declaration
-        # Return variable initialized to False
-        heat_sink_optimization_successful = False
-
         heat_sink_fan_datapath = os.path.join(os.path.dirname(hct.__file__), "data")
 
         # Check if path exists
         if not os.path.exists(heat_sink_fan_datapath):
             print(f"Fan data path {heat_sink_fan_datapath} does not exists!")
-            # Return with false if path does not exist
-            return heat_sink_optimization_successful
         # Generate the fan-list
         for (_, _, file_name_list) in os.walk(heat_sink_fan_datapath):
             fan_list = file_name_list
 
         if not fan_list:
             print(f"No fan design data found in path {heat_sink_fan_datapath}!")
-            # Return with false
-            return heat_sink_optimization_successful
 
         heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
 
@@ -78,60 +69,9 @@ class HeatSinkOptimization:
         )
 
         # Empty the list
-        HeatSinkOptimization.optimization_config_list = []
+        self.optimization_config_list = []
         # Add configuration to list
-        HeatSinkOptimization.optimization_config_list.append(hct_config)
-        print(f"{HeatSinkOptimization.optimization_config_list=}")
-        # Set return value to true and return
-        heat_sink_optimization_successful = True
-
-        return heat_sink_optimization_successful
-
-    @staticmethod
-    def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55e-3,
-                                   height_pcb_heat_sink: float = 3.0e-3) -> tuple[float, float]:
-        """
-        Calculate the thermal resistance of the copper coin.
-
-        Assumptions are made with some geometry factors from a real copper coin for TO263 housing.
-        :param cooling_area: cooling area in m²
-        :type cooling_area: float
-        :param height_pcb: PCB thickness, e.g. 1.55 mm
-        :type height_pcb: float
-        :param height_pcb_heat_sink: Distance from PCB to heat sink in m
-        :type height_pcb_heat_sink: float
-        :return: r_th_copper_coin, effective_copper_coin_cooling_area
-        :rtype: tuple[float, float]
-        """
-        factor_pcb_area_copper_coin = 1.42
-        factor_bottom_area_copper_coin = 0.39
-        thermal_conductivity_copper = 136  # W/(m*K)
-
-        effective_pcb_cooling_area = cooling_area / factor_pcb_area_copper_coin
-        effective_bottom_cooling_area = effective_pcb_cooling_area / factor_bottom_area_copper_coin
-
-        r_pcb = 1 / thermal_conductivity_copper * height_pcb / effective_pcb_cooling_area
-        r_bottom = 1 / thermal_conductivity_copper * height_pcb_heat_sink / effective_bottom_cooling_area
-
-        r_copper_coin = r_pcb + r_bottom
-
-        return r_copper_coin, effective_bottom_cooling_area
-
-    @staticmethod
-    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
-        """
-        Calculate the thermal resistance of the thermal interface material (TIM).
-
-        :param copper_coin_bot_area: bottom copper coin area in m²
-        :type copper_coin_bot_area: float
-        :param transistor_cooling: Transistor cooling DTO
-        :type transistor_cooling: TransistorCooling
-        :return: r_th of TIM material
-        :rtype: float
-        """
-        r_th_tim = 1 / transistor_cooling.tim_conductivity * transistor_cooling.tim_thickness / copper_coin_bot_area
-
-        return r_th_tim
+        self.optimization_config_list.append(hct_config)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
@@ -146,7 +86,6 @@ class HeatSinkOptimization:
         """
         # Check number of trials
         if target_number_trials > 0:
-            print(f"{HeatSinkOptimization.optimization_config_list=}")
             hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=target_number_trials)
         else:
             print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
@@ -156,8 +95,8 @@ class HeatSinkOptimization:
         # hopt.Optimization.df_plot_pareto_front(df_heat_sink, (50, 60))
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    @staticmethod
-    def optimization_handler(target_number_trials: int, debug: bool = False):
+
+    def optimization_handler(self, target_number_trials: int, debug: bool = False):
         """
         Control the multi simulation processes.
 
@@ -167,8 +106,7 @@ class HeatSinkOptimization:
         :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        print(f"{HeatSinkOptimization.optimization_config_list=}")
-        for act_sim_config in HeatSinkOptimization.optimization_config_list:
+        for act_sim_config in self.optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
