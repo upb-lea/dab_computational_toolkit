@@ -20,6 +20,7 @@ from dct import CircuitOptimization
 from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
+from dct import ParetoPlots
 from summary_processing import DctSummaryProcessing as spro
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
@@ -581,6 +582,9 @@ class DctMainCtl:
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         DctMainCtl.generate_zip_archive(toml_prog_flow)
+
+        ParetoPlots.plot_circuit_results(toml_prog_flow)
+        ParetoPlots.plot_heat_sink_results(toml_prog_flow)
 
 
 # Program flow control of DAB-optimization
