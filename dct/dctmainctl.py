@@ -1,9 +1,12 @@
 """Main control program to optimize the DAB converter."""
+import datetime
 # python libraries
 import os
 import shutil
 import sys
 import tomllib
+import zipfile
+import fnmatch
 
 # 3rd party libraries
 import json
@@ -247,6 +250,42 @@ class DctMainCtl:
             filter=filter)
 
         return circuit_dto
+
+    @staticmethod
+    def generate_zip_archive(toml_prog_flow: tc.FlowControl) -> None:
+        """
+        Generate a zip archive from the given simulation results to transfer to another computer.
+
+        Remove unnecessary file structure before performing the zip operation, e.g. the 00_femmt_simulation results directory.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        folder_selection = [toml_prog_flow.general.project_directory]
+
+        # Exclude folders that should not be included in the zip archive
+        folder_exclusion = ['00_femmt_simulation']
+
+        # Define the path to the zip archive
+        zip_path = f'{toml_prog_flow.general.project_directory}_archived_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")}.zip'
+
+        # Create the zip archive
+        with zipfile.ZipFile(zip_path, 'w') as zip_archive:
+            for folder in folder_selection:
+                for root, dirs, files in os.walk(folder):
+                    for dir in dirs:
+                        dir_path = os.path.join(root, dir)
+                        relative_path = os.path.relpath(dir_path, folder)
+                        if fnmatch.fnmatch(relative_path, '*/' + folder_exclusion[0] + '/*') or relative_path.endswith('/' + folder_exclusion[0]):
+                            dirs.remove(dir)  # Exclude the subfolder
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        relative_path = os.path.relpath(file_path, folder)
+                        if relative_path.startswith(folder_exclusion[0] + '/') or relative_path.endswith('/' + folder_exclusion[0]):
+                            continue  # Exclude the file if it is in an excluded folder
+                        zip_archive.write(file_path, relative_path)
+
+        print('Zip archive created:', zip_path)
 
     @staticmethod
     def run_optimization_from_toml_configs(workspace_path: str):
@@ -541,6 +580,7 @@ class DctMainCtl:
         spro.select_heat_sink_configuration(heat_sink_study_data, s_df)
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
+        DctMainCtl.generate_zip_archive(toml_prog_flow)
 
 
 # Program flow control of DAB-optimization
