@@ -25,7 +25,7 @@ class TransformerOptimization:
     """Optimization of the transformer."""
 
     # List with configurations to optimize
-    optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto] = []
+    optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto]
 
     def __init__(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData):
         """

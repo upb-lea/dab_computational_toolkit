@@ -94,7 +94,6 @@ DabElectricConf
 DabHeatSinkConf
 DabInductorConf
 DabTransformerConf
-GeckoCIRCUITs
 TomlHeatSink
 CircuitDabDTO
 Pareto

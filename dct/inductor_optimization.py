@@ -22,7 +22,7 @@ class InductorOptimization:
     """Optimization of the inductor."""
 
     # List with configurations to optimize
-    optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto] = []
+    optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto]
 
     def __init__(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData):
         """
