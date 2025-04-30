@@ -1,14 +1,15 @@
 """Plot the optimization results."""
-import os.path
 
 # python libraries
-import hct
+import os
 
 # 3rd party libraries
 from matplotlib import pyplot as plt
 
 # own libraries
 import dct
+import hct
+import femmt as fmt
 
 class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
@@ -56,6 +57,34 @@ class ParetoPlots:
         fig_name = fig_name.replace(".pdf", "")
         plt.savefig(f"{fig_name}.pdf")
 
+    # @staticmethod
+    # def study_to_df(toml_prog_flow: dct.FlowControl):
+    #     """Create a DataFrame from a study.
+    #
+    #     :param dab_config: DAB optimization configuration file
+    #     :type dab_config: p_dtos.CircuitParetoDabDesign
+    #     """
+    #     sqlite_storage_url = f"sqlite:///{toml_prog_flow.general.project_directory}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.sqlite3"
+    #
+    #     loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
+    #     df = loaded_study.trials_dataframe()
+    #     return df
+
+    @staticmethod
+    def read_circuit_numbers_from_filestructure(toml_prog_flow: dct.FlowControl) -> list[str]:
+        """
+        Get the filtered circuit numbers from the "filtered_results" folder.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        :return: List with number of filtered circuit simulations
+        :rtype: list[int]
+        """
+        for _, _, files in os.walk(os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.circuit.subdirectory,
+                                   toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results")):
+            files = [file.replace(".pkl", "") for file in files]
+        return files
+
     @staticmethod
     def plot_circuit_results(toml_prog_flow: dct.FlowControl) -> None:
         """
@@ -73,6 +102,83 @@ class ParetoPlots:
         ParetoPlots.generate_pdf_pareto([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
                                         x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
                                         label_list=[None], fig_name="circuit")
+
+    @staticmethod
+    def plot_inductor_results(toml_prog_flow: dct.FlowControl):
+        """
+        Plot the results of the inductor optimization in the Pareto plane.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        circuit_numbers = ParetoPlots.read_circuit_numbers_from_filestructure(toml_prog_flow)
+
+        project_name = toml_prog_flow.general.project_directory
+        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
+        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
+
+        for circuit_number in circuit_numbers:
+
+            file_path = f"/{project_name}/{toml_prog_flow.inductor.subdirectory}/{circuit_study_name}/{circuit_number}/{inductor_study_name}"
+            config_pickle_filepath = os.path.join(file_path, f"{inductor_study_name}.pkl")
+            config = fmt.optimization.InductorOptimization.ReluctanceModel.load_config(config_pickle_filepath)
+            df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(config)
+
+            # m³ -> cm³
+            factor_m3_cm3 = 1e6
+            df["values_0"] = df["values_0"] * factor_m3_cm3
+
+            fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
+            df_filtered = fmt.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
+            df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
+
+            # all fem simulation points
+            fem_loss_results = df_fem_reluctance["fem_p_loss_winding"] + df_fem_reluctance["fem_eddy_core"] + df_fem_reluctance["user_attrs_p_hyst"]
+
+            x_values_list = [df["values_0"], df_filtered["values_0"], df_fem_reluctance["values_0"]]
+            y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
+            label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
+
+            ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
+                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list, fig_name=f"inductor_c{circuit_number}")
+
+    @staticmethod
+    def plot_transformer_results(toml_prog_flow: dct.FlowControl):
+        """
+        Plot the results of the transformer optimization in the Pareto plane.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        circuit_numbers = ParetoPlots.read_circuit_numbers_from_filestructure(toml_prog_flow)
+
+        project_name = toml_prog_flow.general.project_directory
+        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
+        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
+
+        for circuit_number in circuit_numbers:
+            file_path = f"/{project_name}/{toml_prog_flow.transformer.subdirectory}/{circuit_study_name}/{circuit_number}/{transformer_study_name}"
+            config_pickle_filepath = os.path.join(file_path, f"{transformer_study_name}.pkl")
+            config = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.load_config(config_pickle_filepath)
+            df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(config)
+
+            # m³ -> cm³
+            factor_m3_cm3 = 1e6
+            df["values_0"] = df["values_0"] * factor_m3_cm3
+
+            fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
+            df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
+            df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
+
+            # all fem simulation points
+            fem_loss_results = df_fem_reluctance["fem_p_loss_winding"] + df_fem_reluctance["fem_eddy_core"] + df_fem_reluctance["user_attrs_p_hyst"]
+
+            x_values_list = [df["values_0"], df_filtered["values_0"], df_fem_reluctance["values_0"]]
+            y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
+            label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
+
+            ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
+                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list, fig_name=f"transformer_c{circuit_number}")
 
     @staticmethod
     def plot_heat_sink_results(toml_prog_flow: dct.FlowControl) -> None:

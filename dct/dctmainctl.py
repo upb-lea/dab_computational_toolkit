@@ -584,6 +584,8 @@ class DctMainCtl:
         DctMainCtl.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(toml_prog_flow)
+        ParetoPlots.plot_inductor_results(toml_prog_flow)
+        ParetoPlots.plot_transformer_results(toml_prog_flow)
         ParetoPlots.plot_heat_sink_results(toml_prog_flow)
 
 
