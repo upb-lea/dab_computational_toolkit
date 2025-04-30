@@ -141,7 +141,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _optimize(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
-                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool):
+                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> None:
         """
         Simulate.
 
@@ -272,7 +272,7 @@ class TransformerOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def simulation_handler(self, filter_data: dct.FilterData, target_number_trials: int,
                            factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
-                           enable_operating_range_simulation: bool = False, debug: bool = False):
+                           enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 

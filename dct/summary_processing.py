@@ -362,7 +362,7 @@ class DctSummaryProcessing:
         return df
 
     @staticmethod
-    def select_heat_sink_configuration(heat_sink_study_data: dct.StudyData, act_df_for_hs: pd.DataFrame):
+    def select_heat_sink_configuration(heat_sink_study_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: General information about the study name and study path

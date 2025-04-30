@@ -26,7 +26,7 @@ class HandleDabDto:
     def init_config(name: str, v1_nom: float, v1_min: float, v1_max: float, v1_step: int, v2_nom: float, v2_min: float,
                     v2_max: float, v2_step: int, p_min: float, p_max: float, p_nom: float, p_step: int,
                     n: float, ls: float, lc1: float, lc2: float, fs: float,
-                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1, c_par_2) -> d_dtos.CircuitDabDTO:
+                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
         """
         Initialize the DAB structure.
 
@@ -294,7 +294,7 @@ class HandleDabDto:
         return qoss
 
     @staticmethod
-    def save(dab_dto: d_dtos.CircuitDabDTO, name: str, directory: str, timestamp: bool = True):
+    def save(dab_dto: d_dtos.CircuitDabDTO, name: str, directory: str, timestamp: bool = True) -> None:
         """
         Save the DabDTO-class to a npz file.
 

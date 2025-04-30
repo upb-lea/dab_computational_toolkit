@@ -8,7 +8,7 @@ import numpy as np
 # own libraries
 import dct
 
-def plot_mode_overview(dab_config: dct.CircuitDabDTO):
+def plot_mode_overview(dab_config: dct.CircuitDabDTO) -> None:
     """
     Mode overview of the converter. This function is for debugging.
 

@@ -103,7 +103,7 @@ class InductorOptimization:
     @staticmethod
     def _optimize(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
-                  enable_operating_range_simulation: bool, debug: bool):
+                  enable_operating_range_simulation: bool, debug: bool) -> None:
         """
         Perform the optimization.
 
@@ -228,7 +228,7 @@ class InductorOptimization:
 
     def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
                              factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
-                             enable_operating_range_simulation: bool = False, debug: bool = False):
+                             enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 

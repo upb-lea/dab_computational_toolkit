@@ -75,7 +75,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _optimize(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool):
+    def _optimize(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool) -> None:
         """
         Perform the simulation.
 
@@ -96,7 +96,7 @@ class HeatSinkOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
 
-    def optimization_handler(self, target_number_trials: int, debug: bool = False):
+    def optimization_handler(self, target_number_trials: int, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 

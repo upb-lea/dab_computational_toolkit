@@ -85,7 +85,7 @@ class CircuitOptimization:
             return loaded_pareto_dto
 
     @staticmethod
-    def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters):
+    def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
         """
         Objective function to optimize.
 
@@ -177,7 +177,7 @@ class CircuitOptimization:
     # Add for Parallelization: Optimization function
     @staticmethod
     def run_optimization_sqlite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: circuit_dtos.CircuitParetoDabDesign,
-                                act_fixed_parameters: d_dtos.FixedParameters):
+                                act_fixed_parameters: d_dtos.FixedParameters) -> None:
         """Proceed a study which is stored as sqlite database.
 
         :param act_study: Study information configuration
@@ -201,7 +201,7 @@ class CircuitOptimization:
 
     @staticmethod
     def run_optimization_mysql(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: circuit_dtos.CircuitParetoDabDesign,
-                               act_fixed_parameters: d_dtos.FixedParameters):
+                               act_fixed_parameters: d_dtos.FixedParameters) -> None:
         """Proceed a study which is stored as sqlite database.
 
         :param act_storage_url: url-Name of the database path
@@ -234,8 +234,7 @@ class CircuitOptimization:
     @staticmethod
     def start_proceed_study(dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
                             database_type: str = 'sqlite',
-                            sampler=optuna.samplers.NSGAIIISampler()
-                            ):
+                            sampler: optuna.samplers.BaseSampler = optuna.samplers.NSGAIIISampler()) -> None:
         """Proceed a study which is stored as sqlite database.
 
         :param dab_config: DAB optimization configuration file
@@ -387,7 +386,7 @@ class CircuitOptimization:
         fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None):
+    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None) -> dct.CircuitDabDTO:
         """
         Load a DAB-DTO from an optuna study.
 
@@ -483,7 +482,7 @@ class CircuitOptimization:
         return dab_dto_list
 
     @staticmethod
-    def study_to_df(dab_config: circuit_dtos.CircuitParetoDabDesign):
+    def study_to_df(dab_config: circuit_dtos.CircuitParetoDabDesign) -> pd.DataFrame:
         """Create a DataFrame from a study.
 
         :param dab_config: DAB optimization configuration file
@@ -511,7 +510,7 @@ class CircuitOptimization:
         return sqlite_storage_url
 
     @staticmethod
-    def df_plot_pareto_front(df: pd.DataFrame, figure_size: tuple):
+    def df_plot_pareto_front(df: pd.DataFrame, figure_size: tuple) -> None:
         """Plot an interactive Pareto diagram (losses vs. volume) to select the transformers to re-simulate.
 
         :param df: DataFrame, generated from an optuna study (exported by optuna)
@@ -577,7 +576,7 @@ class CircuitOptimization:
         return df
 
     @staticmethod
-    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True):
+    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
         """
         Find the pareto-efficient points.
 
@@ -673,7 +672,7 @@ class CircuitOptimization:
         return pareto_df_offset
 
     @staticmethod
-    def filter_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign):
+    def filter_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign) -> None:
         """
         Filter the study result and use GeckoCIRCUITS for detailed calculation.
 

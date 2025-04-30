@@ -55,7 +55,7 @@ heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(
     t_hs_max=90,
 )
 
-def df_plot_final_pareto_front(df: pd.DataFrame, figure_size: tuple | None = None):
+def df_plot_final_pareto_front(df: pd.DataFrame, figure_size: tuple | None = None) -> None:
     """
     Plot an interactive Pareto diagram (losses vs. volume).
 

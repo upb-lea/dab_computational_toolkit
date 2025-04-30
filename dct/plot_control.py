@@ -16,7 +16,7 @@ class ParetoPlots:
 
     @staticmethod
     def generate_pdf_pareto(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
-                            x_label: str, y_label: str, label_list: list[str | None], fig_name: str):
+                            x_label: str, y_label: str, label_list: list[str | None], fig_name: str) -> None:
         """
         Generate multiple Pareto plot in one PDF file.
 
@@ -104,7 +104,7 @@ class ParetoPlots:
                                         label_list=[None], fig_name="circuit")
 
     @staticmethod
-    def plot_inductor_results(toml_prog_flow: dct.FlowControl):
+    def plot_inductor_results(toml_prog_flow: dct.FlowControl) -> None:
         """
         Plot the results of the inductor optimization in the Pareto plane.
 
@@ -143,7 +143,7 @@ class ParetoPlots:
                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list, fig_name=f"inductor_c{circuit_number}")
 
     @staticmethod
-    def plot_transformer_results(toml_prog_flow: dct.FlowControl):
+    def plot_transformer_results(toml_prog_flow: dct.FlowControl) -> None:
         """
         Plot the results of the transformer optimization in the Pareto plane.
 

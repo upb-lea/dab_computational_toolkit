@@ -104,7 +104,7 @@ class DctMainCtl:
         return False
 
     @staticmethod
-    def delete_study_content(folder_name: str, study_file_name: str = ""):
+    def delete_study_content(folder_name: str, study_file_name: str = "") -> None:
         """
         Delete the study files and the femmt folders.
 
@@ -131,7 +131,7 @@ class DctMainCtl:
                     os.remove(full_path)
 
     @staticmethod
-    def user_input_break_point(break_point_key: str, info: str):
+    def user_input_break_point(break_point_key: str, info: str) -> None:
         """
         Continue, wait for user input or stop the program according breakpoint configuration.
 
@@ -176,7 +176,7 @@ class DctMainCtl:
         return is_study_existing
 
     @staticmethod
-    def check_breakpoint(break_point_key: str, info: str):
+    def check_breakpoint(break_point_key: str, info: str) -> None:
         """
         Continue, wait for user input or stop the program according breakpoint configuration.
 
@@ -289,7 +289,7 @@ class DctMainCtl:
         print('Zip archive created:', zip_path)
 
     @staticmethod
-    def run_optimization_from_toml_configs(workspace_path: str):
+    def run_optimization_from_toml_configs(workspace_path: str) -> None:
         """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
