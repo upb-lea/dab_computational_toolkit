@@ -19,7 +19,11 @@ class HeatSinkOptimization:
     # Simulation configuration list
     optimization_config_list: list[hct.OptimizationParameters]
 
-    def __init__(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl):
+    def __init__(self) -> None:
+        """Initialize the configuration list for the heat sink optimizations."""
+        self.optimization_config_list = []
+
+    def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
         """
         Initialize the configuration.
 
@@ -30,6 +34,7 @@ class HeatSinkOptimization:
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
+        is_list_generation_successful = False
         heat_sink_fan_datapath = os.path.join(os.path.dirname(hct.__file__), "data")
 
         # Check if path exists
@@ -68,10 +73,12 @@ class HeatSinkOptimization:
             number_directions=toml_heat_sink.settings.number_directions
         )
 
-        # Empty the list
-        self.optimization_config_list = []
-        # Add configuration to list
         self.optimization_config_list.append(hct_config)
+
+        if self.optimization_config_list:
+            is_list_generation_successful = True
+
+        return is_list_generation_successful
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod

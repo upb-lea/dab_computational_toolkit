@@ -24,7 +24,11 @@ class InductorOptimization:
     # List with configurations to optimize
     optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto]
 
-    def __init__(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData):
+    def __init__(self) -> None:
+        """Initialize the configuration list for the inductor optimizations."""
+        self.optimization_config_list = []
+
+    def generate_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -37,6 +41,8 @@ class InductorOptimization:
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
+        is_list_generation_successful = False
+
         # Insulation parameter
         act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
                                                     core_bot=toml_inductor.insulations.core_bot,
@@ -70,9 +76,6 @@ class InductorOptimization:
             inductor_optimization_directory="",
             material_data_sources=act_material_data_sources)
 
-        # Empty the list
-        self.optimization_config_list = []
-
         # Create the io_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
             circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
@@ -98,6 +101,11 @@ class InductorOptimization:
                 self.optimization_config_list.append(inductor_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
+
+        if self.optimization_config_list:
+            is_list_generation_successful = True
+
+        return is_list_generation_successful
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod

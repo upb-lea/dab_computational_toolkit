@@ -27,7 +27,11 @@ class TransformerOptimization:
     # List with configurations to optimize
     optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto]
 
-    def __init__(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData):
+    def __init__(self) -> None:
+        """Initialize the configuration list for the transformer optimizations."""
+        self.optimization_config_list = []
+
+    def generate_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -40,6 +44,8 @@ class TransformerOptimization:
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
+        is_list_generation_successful = False
+
         act_insulation = fmt.StoInsulation(
             # insulation for top core window
             iso_window_top_core_top=toml_transformer.insulation.iso_window_top_core_top,
@@ -103,9 +109,6 @@ class TransformerOptimization:
             material_data_sources=material_data_sources
         )
 
-        # Empty the list
-        self.optimization_config_list = []
-
         # Create the sto_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
             circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
@@ -138,6 +141,11 @@ class TransformerOptimization:
                 self.optimization_config_list.append(transformer_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
+
+        if self.optimization_config_list:
+            is_list_generation_successful = True
+
+        return is_list_generation_successful
 
     @staticmethod
     def _optimize(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
