@@ -43,11 +43,13 @@ class DctMainCtl:
         inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
         transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+        summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
 
         path_dict = {'circuit': circuit_path,
                      'inductor': inductor_path,
                      'transformer': transformer_path,
-                     'heat_sink': heat_sink_path}
+                     'heat_sink': heat_sink_path,
+                     'summary': summary_path}
 
         for _, value in path_dict.items():
             os.makedirs(value, exist_ok=True)
@@ -360,6 +362,8 @@ class DctMainCtl:
                                                 toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
         )
 
+        summary_data = dct.StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
+
         filter_data = dct.FilterData(
             filtered_list_id=[],
             filtered_list_pathname=os.path.join(
@@ -578,10 +582,10 @@ class DctMainCtl:
         inductor_study_names = [inductor_study_data.study_name]
         stacked_transformer_study_names = [transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = spro.generate_result_database(circuit_study_data, inductor_study_data, transformer_study_data, heat_sink_study_data,
+        s_df = spro.generate_result_database(circuit_study_data, inductor_study_data, transformer_study_data, heat_sink_study_data, summary_data,
                                              inductor_study_names, stacked_transformer_study_names, filter_data)
         #  Select the needed heat sink configuration
-        spro.select_heat_sink_configuration(heat_sink_study_data, s_df)
+        spro.select_heat_sink_configuration(heat_sink_study_data, summary_data, s_df)
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         DctMainCtl.generate_zip_archive(toml_prog_flow)

@@ -134,8 +134,8 @@ class DctSummaryProcessing:
         return is_magnetic_list_generated, magnetic_result_numbers
 
     @staticmethod
-    def generate_result_database(circuit_study_data: dct.StudyData, inductor_study_data: dct.StudyData,
-                                 transformer_study_data: dct.StudyData, heat_sink_study_data: dct.StudyData, act_inductor_study_names: list[str],
+    def generate_result_database(circuit_study_data: dct.StudyData, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
+                                 heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
@@ -147,6 +147,8 @@ class DctSummaryProcessing:
         :type transformer_study_data: dct.StudyData
         :param heat_sink_study_data: heat sink study data
         :type heat_sink_study_data: dct.StudyData
+        :param summary_data: Information about the summary name and path
+        :type summary_data: dct.StudyData
         :param act_inductor_study_names: List of names with inductor studies which are to process
         :type  act_inductor_study_names: list[str]
         :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
@@ -356,17 +358,19 @@ class DctSummaryProcessing:
         df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
         df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
         # Save results to file (ASA : later to store only on demand)
-        df.to_csv(f"{heat_sink_study_data.optimization_directory}/result_df.csv")
+        df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
 
         # return the database
         return df
 
     @staticmethod
-    def select_heat_sink_configuration(heat_sink_study_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
-        :param heat_sink_study_data: General information about the study name and study path
+        :param heat_sink_study_data: Information about the heat sink study name and study path
         :type  heat_sink_study_data: dct.StudyData
+        :param summary_data: Information about the summary name and path
+        :type summary_data: dct.StudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
         """
@@ -389,4 +393,4 @@ class DctSummaryProcessing:
         act_df_for_hs["total_volume"] = act_df_for_hs["transformer_volume"] + act_df_for_hs["inductor_volume"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        act_df_for_hs.to_csv(f"{heat_sink_study_data.optimization_directory}/df_summary.csv")
+        act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/df_w_hs.csv")

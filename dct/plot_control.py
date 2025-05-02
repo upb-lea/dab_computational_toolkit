@@ -100,9 +100,11 @@ class ParetoPlots:
         # generate circuit dataframe
         df_circuit = dct.CircuitOptimization.study_to_df(dab_config)
 
+        fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "circuit")
+
         ParetoPlots.generate_pdf_pareto([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
                                         x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
-                                        label_list=[None], fig_name="circuit")
+                                        label_list=[None], fig_name=fig_name)
 
     @staticmethod
     def plot_inductor_results(toml_prog_flow: dct.FlowControl) -> None:
@@ -140,8 +142,11 @@ class ParetoPlots:
             y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
             label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
+            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, f"inductor_c{circuit_number}")
+
             ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
-                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list, fig_name=f"inductor_c{circuit_number}")
+                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
+                                            fig_name=fig_name)
 
     @staticmethod
     def plot_transformer_results(toml_prog_flow: dct.FlowControl) -> None:
@@ -178,8 +183,11 @@ class ParetoPlots:
             y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
             label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
+            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, f"transformer_c{circuit_number}")
+
             ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
-                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list, fig_name=f"transformer_c{circuit_number}")
+                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
+                                            fig_name=fig_name)
 
     @staticmethod
     def plot_heat_sink_results(toml_prog_flow: dct.FlowControl) -> None:
@@ -220,10 +228,13 @@ class ParetoPlots:
             y_values_list.append(df_a_min["values_1"])
             legend_list.append(f"{int(area_min * factor_m2_cm2)} cm²")
 
+        fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "heat_sink")
+
         # plot all the different heat sink areas
         ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list, alpha=0.5,
                                         x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
-                                        label_list=legend_list, fig_name="heat_sink")
+                                        label_list=legend_list,
+                                        fig_name=fig_name)
 
     @staticmethod
     def plot_summary(toml_prog_flow: dct.FlowControl) -> None:
@@ -233,8 +244,7 @@ class ParetoPlots:
         :param toml_prog_flow: Flow control toml file
         :type toml_prog_flow: tc.FlowControl
         """
-        df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.heat_sink.subdirectory}"
-                         f"/{toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")}/df_summary.csv")
+        df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.summary.subdirectory}/df_w_hs.csv")
 
         df_filtered = dct.CircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
                                                         factor_min_dc_losses=0.001, factor_max_dc_losses=10)
@@ -245,5 +255,8 @@ class ParetoPlots:
         y_values_list = [df["total_mean_loss"], df_filtered["total_mean_loss"]]
         label_list: list[str | None] = ["Design", "Best designs"]
 
+        fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "summary")
+
         ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
-                                        x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W", fig_name="summary")
+                                        x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
+                                        fig_name=fig_name)
