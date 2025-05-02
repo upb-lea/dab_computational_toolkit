@@ -11,5 +11,7 @@ dct/design_check/__pycache__/
 *.html
 *.csv
 *.zip
+*.pkl
+dictionary.dic
 examples/
 workspace/
