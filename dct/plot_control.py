@@ -5,6 +5,7 @@ import os
 
 # 3rd party libraries
 from matplotlib import pyplot as plt
+import pandas as pd
 
 # own libraries
 import dct
@@ -223,3 +224,26 @@ class ParetoPlots:
         ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list, alpha=0.5,
                                         x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
                                         label_list=legend_list, fig_name="heat_sink")
+
+    @staticmethod
+    def plot_summary(toml_prog_flow: dct.FlowControl) -> None:
+        """
+        Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.heat_sink.subdirectory}"
+                         f"/{toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")}/df_summary.csv")
+
+        df_filtered = dct.CircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                        factor_min_dc_losses=0.001, factor_max_dc_losses=10)
+
+        dct.global_plot_settings_font_latex()
+        fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
+        x_values_list = [df["total_volume"] * 1e6, df_filtered["total_volume"] * 1e6]
+        y_values_list = [df["total_mean_loss"], df_filtered["total_mean_loss"]]
+        label_list: list[str | None] = ["Design", "Best designs"]
+
+        ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
+                                        x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W", fig_name="summary")
