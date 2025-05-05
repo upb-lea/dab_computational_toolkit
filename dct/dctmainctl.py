@@ -95,7 +95,7 @@ class DctMainCtl:
         Create and save the configuration file.
 
         Generate following default configuration files within the path:
-        DabElectricConf.toml, DabInductorConf.toml, DabTransformerConf.toml and DabHeatSinkConf.toml,
+        DabCircuitConf.toml, DabInductorConf.toml, DabTransformerConf.toml and DabHeatSinkConf.toml,
 
         :param path : Location of the configuration
         :type  path : str

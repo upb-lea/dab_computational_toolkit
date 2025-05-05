@@ -90,7 +90,7 @@ TransistorCooling
 CircuitParetoDabDesign
 TomlCircuitParetoDabDesign
 sqlite
-DabElectricConf
+DabCircuitConf
 DabHeatSinkConf
 DabInductorConf
 DabTransformerConf
@@ -164,6 +164,7 @@ spacings
 subfolder
 subprojects
 subdirectories
+subdirectory
 tc
 ds
 xy
@@ -224,3 +225,9 @@ wo
 sto
 attrs
 hyst
+PQ
+datasource
+insulations
+litz
+fft
+iso
