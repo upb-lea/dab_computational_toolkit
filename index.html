@@ -280,6 +280,7 @@
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.heat_sink"><code class="docutils literal notranslate"><span class="pre">FlowControl.heat_sink</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.inductor"><code class="docutils literal notranslate"><span class="pre">FlowControl.inductor</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.model_config"><code class="docutils literal notranslate"><span class="pre">FlowControl.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.summary"><code class="docutils literal notranslate"><span class="pre">FlowControl.summary</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.FlowControl.transformer"><code class="docutils literal notranslate"><span class="pre">FlowControl.transformer</span></code></a></li>
 </ul>
 </li>
@@ -387,9 +388,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.calculate_r_th_copper_coin"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.calculate_r_th_copper_coin()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.calculate_r_th_tim"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.calculate_r_th_tim()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.init_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.generate_optimization_list"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.generate_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.optimization_config_list"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.optimization_config_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.optimization_handler()</span></code></a></li>
 </ul>
@@ -407,7 +406,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.InductorOptimization"><code class="docutils literal notranslate"><span class="pre">InductorOptimization</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.init_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.generate_optimization_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.generate_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.optimization_config_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.optimization_config_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.optimization_handler()</span></code></a></li>
 </ul>
@@ -430,6 +429,16 @@
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.heat_sink"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.heat_sink</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.inductor"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.inductor</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoFilePaths.transformer"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths.transformer</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.ParetoPlots"><code class="docutils literal notranslate"><span class="pre">ParetoPlots</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.generate_pdf_pareto"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.generate_pdf_pareto()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.plot_circuit_results"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.plot_circuit_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.plot_heat_sink_results"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.plot_heat_sink_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.plot_inductor_results"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.plot_inductor_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.plot_summary"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.plot_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.plot_transformer_results"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.plot_transformer_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.ParetoPlots.read_circuit_numbers_from_filestructure"><code class="docutils literal notranslate"><span class="pre">ParetoPlots.read_circuit_numbers_from_filestructure()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.PlotDAB"><code class="docutils literal notranslate"><span class="pre">PlotDAB</span></code></a><ul>
@@ -467,6 +476,12 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.StudyData"><code class="docutils literal notranslate"><span class="pre">StudyData</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StudyData.optimization_directory"><code class="docutils literal notranslate"><span class="pre">StudyData.optimization_directory</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.StudyData.study_name"><code class="docutils literal notranslate"><span class="pre">StudyData.study_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.Summary"><code class="docutils literal notranslate"><span class="pre">Summary</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Summary.calculation_mode"><code class="docutils literal notranslate"><span class="pre">Summary.calculation_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Summary.model_config"><code class="docutils literal notranslate"><span class="pre">Summary.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.Summary.subdirectory"><code class="docutils literal notranslate"><span class="pre">Summary.subdirectory</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.ThermalCalcSupport"><code class="docutils literal notranslate"><span class="pre">ThermalCalcSupport</span></code></a><ul>
@@ -662,7 +677,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TransformerOptimization"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.init_configuration"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.init_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.generate_optimization_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.generate_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.optimization_config_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.optimization_config_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.simulation_handler"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.simulation_handler()</span></code></a></li>
 </ul>
@@ -704,10 +719,16 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calc_transistor_rms_currents"><code class="docutils literal notranslate"><span class="pre">calc_transistor_rms_currents()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calculate_r_th_copper_coin"><code class="docutils literal notranslate"><span class="pre">calculate_r_th_copper_coin()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.calculate_r_th_tim"><code class="docutils literal notranslate"><span class="pre">calculate_r_th_tim()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.check_for_missing_toml_files"><code class="docutils literal notranslate"><span class="pre">check_for_missing_toml_files()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.colors"><code class="docutils literal notranslate"><span class="pre">colors()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.full_angle_waveform_from_angles"><code class="docutils literal notranslate"><span class="pre">full_angle_waveform_from_angles()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.full_current_waveform_from_currents"><code class="docutils literal notranslate"><span class="pre">full_current_waveform_from_currents()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.full_waveforms_from_angles_currents"><code class="docutils literal notranslate"><span class="pre">full_waveforms_from_angles_currents()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.generate_circuit_toml"><code class="docutils literal notranslate"><span class="pre">generate_circuit_toml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.generate_flow_control_toml"><code class="docutils literal notranslate"><span class="pre">generate_flow_control_toml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.generate_heat_sink_toml"><code class="docutils literal notranslate"><span class="pre">generate_heat_sink_toml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.generate_inductor_toml"><code class="docutils literal notranslate"><span class="pre">generate_inductor_toml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.generate_transformer_toml"><code class="docutils literal notranslate"><span class="pre">generate_transformer_toml()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.get_free_port"><code class="docutils literal notranslate"><span class="pre">get_free_port()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.global_plot_settings_font_latex"><code class="docutils literal notranslate"><span class="pre">global_plot_settings_font_latex()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.global_plot_settings_font_sansserif"><code class="docutils literal notranslate"><span class="pre">global_plot_settings_font_sansserif()</span></code></a></li>

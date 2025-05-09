@@ -206,19 +206,15 @@
 </li>
       <li><a href="intro.html#dct.HandleDabDto.calculate_modulation">calculate_modulation() (dct.HandleDabDto static method)</a>
 </li>
-      <li><a href="intro.html#dct.HeatSinkOptimization.calculate_r_th_copper_coin">calculate_r_th_copper_coin() (dct.HeatSinkOptimization static method)</a>
+      <li><a href="intro.html#dct.ThermalCalcSupport.calculate_r_th_copper_coin">calculate_r_th_copper_coin() (dct.ThermalCalcSupport static method)</a>
 
       <ul>
-        <li><a href="intro.html#dct.ThermalCalcSupport.calculate_r_th_copper_coin">(dct.ThermalCalcSupport static method)</a>
-</li>
         <li><a href="intro.html#dct.calculate_r_th_copper_coin">(in module dct)</a>
 </li>
       </ul></li>
-      <li><a href="intro.html#dct.HeatSinkOptimization.calculate_r_th_tim">calculate_r_th_tim() (dct.HeatSinkOptimization static method)</a>
+      <li><a href="intro.html#dct.ThermalCalcSupport.calculate_r_th_tim">calculate_r_th_tim() (dct.ThermalCalcSupport static method)</a>
 
       <ul>
-        <li><a href="intro.html#dct.ThermalCalcSupport.calculate_r_th_tim">(dct.ThermalCalcSupport static method)</a>
-</li>
         <li><a href="intro.html#dct.calculate_r_th_tim">(in module dct)</a>
 </li>
       </ul></li>
@@ -229,9 +225,13 @@
 </li>
         <li><a href="intro.html#dct.Inductor.calculation_mode">(dct.Inductor attribute)</a>
 </li>
+        <li><a href="intro.html#dct.Summary.calculation_mode">(dct.Summary attribute)</a>
+</li>
         <li><a href="intro.html#dct.Transformer.calculation_mode">(dct.Transformer attribute)</a>
 </li>
       </ul></li>
+      <li><a href="intro.html#dct.check_for_missing_toml_files">check_for_missing_toml_files() (in module dct)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.Circuit">Circuit (class in dct)</a>
@@ -451,9 +451,29 @@
 </li>
       <li><a href="intro.html#dct.General">General (class in dct)</a>
 </li>
+      <li><a href="intro.html#dct.FlowControl.general">general (dct.FlowControl attribute)</a>
+</li>
+      <li><a href="intro.html#dct.generate_circuit_toml">generate_circuit_toml() (in module dct)</a>
+</li>
+      <li><a href="intro.html#dct.generate_flow_control_toml">generate_flow_control_toml() (in module dct)</a>
+</li>
+      <li><a href="intro.html#dct.generate_heat_sink_toml">generate_heat_sink_toml() (in module dct)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="intro.html#dct.FlowControl.general">general (dct.FlowControl attribute)</a>
+      <li><a href="intro.html#dct.generate_inductor_toml">generate_inductor_toml() (in module dct)</a>
+</li>
+      <li><a href="intro.html#dct.HeatSinkOptimization.generate_optimization_list">generate_optimization_list() (dct.HeatSinkOptimization method)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.InductorOptimization.generate_optimization_list">(dct.InductorOptimization method)</a>
+</li>
+        <li><a href="intro.html#dct.TransformerOptimization.generate_optimization_list">(dct.TransformerOptimization method)</a>
+</li>
+      </ul></li>
+      <li><a href="intro.html#dct.ParetoPlots.generate_pdf_pareto">generate_pdf_pareto() (dct.ParetoPlots static method)</a>
+</li>
+      <li><a href="intro.html#dct.generate_transformer_toml">generate_transformer_toml() (in module dct)</a>
 </li>
       <li><a href="intro.html#dct.HandleDabDto.get_c_oss_from_tdb">get_c_oss_from_tdb() (dct.HandleDabDto static method)</a>
 </li>
@@ -587,10 +607,10 @@
 </li>
       <li><a href="intro.html#dct.GeckoResults.i_S11">i_S11 (dct.GeckoResults attribute)</a>
 </li>
-      <li><a href="intro.html#dct.GeckoResults.i_S12">i_S12 (dct.GeckoResults attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="intro.html#dct.GeckoResults.i_S12">i_S12 (dct.GeckoResults attribute)</a>
+</li>
       <li><a href="intro.html#dct.GeckoResults.i_S23">i_S23 (dct.GeckoResults attribute)</a>
 </li>
       <li><a href="intro.html#dct.GeckoResults.i_S24">i_S24 (dct.GeckoResults attribute)</a>
@@ -627,14 +647,6 @@
 </li>
       <li><a href="intro.html#dct.HandleDabDto.init_config">init_config() (dct.HandleDabDto static method)</a>
 </li>
-      <li><a href="intro.html#dct.HeatSinkOptimization.init_configuration">init_configuration() (dct.HeatSinkOptimization static method)</a>
-
-      <ul>
-        <li><a href="intro.html#dct.InductorOptimization.init_configuration">(dct.InductorOptimization static method)</a>
-</li>
-        <li><a href="intro.html#dct.TransformerOptimization.init_configuration">(dct.TransformerOptimization static method)</a>
-</li>
-      </ul></li>
       <li><a href="intro.html#dct.CircuitDabDTO.input_config">input_config (dct.CircuitDabDTO attribute)</a>
 </li>
       <li><a href="intro.html#dct.TomlTransformer.insulation">insulation (dct.TomlTransformer attribute)</a>
@@ -782,6 +794,8 @@
 </li>
         <li><a href="intro.html#dct.Inductor.model_config">(dct.Inductor attribute)</a>
 </li>
+        <li><a href="intro.html#dct.Summary.model_config">(dct.Summary attribute)</a>
+</li>
         <li><a href="intro.html#dct.TomlCircuitFilterDistance.model_config">(dct.TomlCircuitFilterDistance attribute)</a>
 </li>
         <li><a href="intro.html#dct.TomlCircuitOutputRange.model_config">(dct.TomlCircuitOutputRange attribute)</a>
@@ -910,10 +924,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.StudyData.optimization_directory">optimization_directory (dct.StudyData attribute)</a>
 </li>
-      <li><a href="intro.html#dct.HeatSinkOptimization.optimization_handler">optimization_handler() (dct.HeatSinkOptimization static method)</a>
+      <li><a href="intro.html#dct.HeatSinkOptimization.optimization_handler">optimization_handler() (dct.HeatSinkOptimization method)</a>
 
       <ul>
-        <li><a href="intro.html#dct.InductorOptimization.optimization_handler">(dct.InductorOptimization static method)</a>
+        <li><a href="intro.html#dct.InductorOptimization.optimization_handler">(dct.InductorOptimization method)</a>
 </li>
       </ul></li>
       <li><a href="intro.html#dct.CircuitParetoDabDesign.output_range">output_range (dct.CircuitParetoDabDesign attribute)</a>
@@ -970,18 +984,20 @@
 </li>
       <li><a href="intro.html#dct.ParetoFilePaths">ParetoFilePaths (class in dct)</a>
 </li>
+      <li><a href="intro.html#dct.ParetoPlots">ParetoPlots (class in dct)</a>
+</li>
       <li><a href="intro.html#dct.TomlMaterialDataSources.permeability_datasource">permeability_datasource (dct.TomlMaterialDataSources attribute)</a>
 </li>
       <li><a href="intro.html#dct.TomlMaterialDataSources.permeability_datatype">permeability_datatype (dct.TomlMaterialDataSources attribute)</a>
 </li>
       <li><a href="intro.html#dct.TomlMaterialDataSources.permeability_measurement_setup">permeability_measurement_setup (dct.TomlMaterialDataSources attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.TomlMaterialDataSources.permittivity_datasource">permittivity_datasource (dct.TomlMaterialDataSources attribute)</a>
 </li>
       <li><a href="intro.html#dct.TomlMaterialDataSources.permittivity_datatype">permittivity_datatype (dct.TomlMaterialDataSources attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.TomlMaterialDataSources.permittivity_measurement_setup">permittivity_measurement_setup (dct.TomlMaterialDataSources attribute)</a>
 </li>
       <li><a href="intro.html#dct.CalcModulation.phi">phi (dct.CalcModulation attribute)</a>
@@ -994,7 +1010,13 @@
 </li>
       <li><a href="intro.html#dct.plot_calculation_results">plot_calculation_results() (in module dct)</a>
 </li>
+      <li><a href="intro.html#dct.ParetoPlots.plot_circuit_results">plot_circuit_results() (dct.ParetoPlots static method)</a>
+</li>
       <li><a href="intro.html#dct.plot_gecko_simulation_results">plot_gecko_simulation_results() (in module dct)</a>
+</li>
+      <li><a href="intro.html#dct.ParetoPlots.plot_heat_sink_results">plot_heat_sink_results() (dct.ParetoPlots static method)</a>
+</li>
+      <li><a href="intro.html#dct.ParetoPlots.plot_inductor_results">plot_inductor_results() (dct.ParetoPlots static method)</a>
 </li>
       <li><a href="intro.html#dct.plot_mode_overview">plot_mode_overview() (in module dct)</a>
 </li>
@@ -1012,6 +1034,10 @@
         <li><a href="intro.html#dct.plot_rms_current">(in module dct)</a>
 </li>
       </ul></li>
+      <li><a href="intro.html#dct.ParetoPlots.plot_summary">plot_summary() (dct.ParetoPlots static method)</a>
+</li>
+      <li><a href="intro.html#dct.ParetoPlots.plot_transformer_results">plot_transformer_results() (dct.ParetoPlots static method)</a>
+</li>
       <li><a href="intro.html#dct.PlotDAB">PlotDAB (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.PlotWindow">PlotWindow (class in dct)</a>
@@ -1056,6 +1082,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="intro.html#dct.ParetoPlots.read_circuit_numbers_from_filestructure">read_circuit_numbers_from_filestructure() (dct.ParetoPlots static method)</a>
+</li>
       <li><a href="intro.html#dct.CircuitOptimization.run_optimization_mysql">run_optimization_mysql() (dct.CircuitOptimization static method)</a>
 </li>
       <li><a href="intro.html#dct.CircuitOptimization.run_optimization_sqlite">run_optimization_sqlite() (dct.CircuitOptimization static method)</a>
@@ -1108,12 +1136,12 @@
 </li>
       <li><a href="intro.html#dct.GeckoAdditionalParameters.simfilepath">simfilepath (dct.GeckoAdditionalParameters attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="intro.html#dct.TransformerOptimization.simulation_handler">simulation_handler() (dct.TransformerOptimization static method)</a>
+      <li><a href="intro.html#dct.TransformerOptimization.simulation_handler">simulation_handler() (dct.TransformerOptimization method)</a>
 </li>
       <li><a href="intro.html#dct.CircuitDabDTO.stacked_transformer_results">stacked_transformer_results (dct.CircuitDabDTO attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.StackedTransformerResults.stacked_transformer_trial_number">stacked_transformer_trial_number (dct.StackedTransformerResults attribute)</a>
 </li>
       <li><a href="intro.html#dct.StackedTransformerResults">StackedTransformerResults (class in dct)</a>
@@ -1141,6 +1169,8 @@
 </li>
         <li><a href="intro.html#dct.Inductor.subdirectory">(dct.Inductor attribute)</a>
 </li>
+        <li><a href="intro.html#dct.Summary.subdirectory">(dct.Summary attribute)</a>
+</li>
         <li><a href="intro.html#dct.Transformer.subdirectory">(dct.Transformer attribute)</a>
 </li>
       </ul></li>
@@ -1152,8 +1182,14 @@
 </li>
       <li><a href="intro.html#dct.PlotDAB.subplot_contourf_nan">subplot_contourf_nan() (dct.PlotDAB method)</a>
 </li>
-      <li><a href="intro.html#dct.Breakpoints.summary">summary (dct.Breakpoints attribute)</a>
+      <li><a href="intro.html#dct.Summary">Summary (class in dct)</a>
 </li>
+      <li><a href="intro.html#dct.Breakpoints.summary">summary (dct.Breakpoints attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.FlowControl.summary">(dct.FlowControl attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
