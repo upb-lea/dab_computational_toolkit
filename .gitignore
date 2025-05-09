@@ -10,6 +10,8 @@ dct/design_check/__pycache__/
 *.sqlite3
 *.html
 *.csv
+*.zip
+*.pkl
+dictionary.dic
 examples/
-workspace/2025-01-31_example/
-workspace/core_materials_temp.pro
+workspace/

@@ -57,6 +57,12 @@ class HeatSink(BaseModel):
     calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
+class Summary(BaseModel):
+    """Flow control for the summary."""
+
+    calculation_mode: Literal['new', 'skip']
+    subdirectory: str
+
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
 
@@ -75,6 +81,7 @@ class FlowControl(BaseModel):
     inductor: Inductor
     transformer: Transformer
     heat_sink: HeatSink
+    summary: Summary
     configuration_data_files: ConfigurationDataFiles
 
 

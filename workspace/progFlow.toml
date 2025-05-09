@@ -1,6 +1,6 @@
 # Path configuration
 [general]
-    project_directory = "2025-01-31_example"
+    project_directory = "2025-04-25_example_1"
 
 [breakpoints]
     # possible values: no/pause/stop
@@ -18,13 +18,13 @@
     heat_sink = 1000         # Number of trials which exceed a limit value?
 
 [circuit]
-    number_of_trials = 200
+    number_of_trials = 100
     calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "01_circuit"
 
 [inductor]
     number_of_trials = 100
-    calculation_mode = "new" # (new,continue,skip)
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "02_inductor"
 
 [transformer]
@@ -36,6 +36,10 @@
     number_of_trials = 100
     calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "04_heat_sink"
+
+[summary]
+    calculation_mode = "skip" # (new,continue,skip)
+    subdirectory = "05_summary"
 
 [configuration_data_files]
     circuit_configuration_file = "DabCircuitConf.toml"

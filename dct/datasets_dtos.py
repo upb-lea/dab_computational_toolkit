@@ -61,7 +61,7 @@ class CircuitConfig:
 
 @dataclasses.dataclass(init=False)
 class GeckoAdditionalParameters:
-    """Additional parameters for the GeckoCIRCUITs simulation, like simulation time or some file paths."""
+    """Additional parameters for the GeckoCIRCUITS simulation, like simulation time or some file paths."""
 
     t_dead1: np.ndarray
     t_dead2: np.ndarray

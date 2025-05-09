@@ -22,10 +22,13 @@ class InductorOptimization:
     """Optimization of the inductor."""
 
     # List with configurations to optimize
-    optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto] = []
+    optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto]
 
-    @staticmethod
-    def init_configuration(toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
+    def __init__(self) -> None:
+        """Initialize the configuration list for the inductor optimizations."""
+        self.optimization_config_list = []
+
+    def generate_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -38,9 +41,7 @@ class InductorOptimization:
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
-        # Variable declaration
-        # Return variable initialized to True (ASA: Usage is to add later, currently not used
-        initialization_successful = True
+        is_list_generation_successful = False
 
         # Insulation parameter
         act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
@@ -75,9 +76,6 @@ class InductorOptimization:
             inductor_optimization_directory="",
             material_data_sources=act_material_data_sources)
 
-        # Empty the list
-        InductorOptimization.optimization_config_list = []
-
         # Create the io_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
             circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
@@ -100,17 +98,20 @@ class InductorOptimization:
                 next_io_config.inductor_optimization_directory = os.path.join(
                     study_data.optimization_directory, str(circuit_trial_number), study_data.study_name)
                 inductor_dto = dct.inductor_optimization_dtos.InductorOptimizationDto(circuit_id=circuit_trial_number, inductor_optimization_dto=next_io_config)
-                InductorOptimization.optimization_config_list.append(inductor_dto)
+                self.optimization_config_list.append(inductor_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
-        return initialization_successful
+        if self.optimization_config_list:
+            is_list_generation_successful = True
+
+        return is_list_generation_successful
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _optimize(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
-                  enable_operating_range_simulation: bool, debug: bool):
+                  enable_operating_range_simulation: bool, debug: bool) -> None:
         """
         Perform the optimization.
 
@@ -232,10 +233,10 @@ class InductorOptimization:
                         break
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    @staticmethod
-    def optimization_handler(filter_data: dct.FilterData, target_number_trials: int,
+
+    def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
                              factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
-                             enable_operating_range_simulation: bool = False, debug: bool = False):
+                             enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 
@@ -253,7 +254,7 @@ class InductorOptimization:
         :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in InductorOptimization.optimization_config_list:
+        for act_sim_config in self.optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -261,8 +262,8 @@ class InductorOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            InductorOptimization._optimize(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, filter_data, target_number_trials,
-                                           factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
+            self._optimize(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, filter_data, target_number_trials,
+                           factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             if debug:
                 # stop after one circuit run

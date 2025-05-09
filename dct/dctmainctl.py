@@ -1,9 +1,12 @@
 """Main control program to optimize the DAB converter."""
+import datetime
 # python libraries
 import os
 import shutil
 import sys
 import tomllib
+import zipfile
+import fnmatch
 
 # 3rd party libraries
 import json
@@ -17,6 +20,7 @@ from dct import CircuitOptimization
 from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
+from dct import ParetoPlots
 from summary_processing import DctSummaryProcessing as spro
 
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
@@ -39,11 +43,13 @@ class DctMainCtl:
         inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
         transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+        summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
 
         path_dict = {'circuit': circuit_path,
                      'inductor': inductor_path,
                      'transformer': transformer_path,
-                     'heat_sink': heat_sink_path}
+                     'heat_sink': heat_sink_path,
+                     'summary': summary_path}
 
         for _, value in path_dict.items():
             os.makedirs(value, exist_ok=True)
@@ -89,7 +95,7 @@ class DctMainCtl:
         Create and save the configuration file.
 
         Generate following default configuration files within the path:
-        DabElectricConf.toml, DabInductorConf.toml, DabTransformerConf.toml and DabHeatSinkConf.toml,
+        DabCircuitConf.toml, DabInductorConf.toml, DabTransformerConf.toml and DabHeatSinkConf.toml,
 
         :param path : Location of the configuration
         :type  path : str
@@ -100,7 +106,7 @@ class DctMainCtl:
         return False
 
     @staticmethod
-    def delete_study_content(folder_name: str, study_file_name: str = ""):
+    def delete_study_content(folder_name: str, study_file_name: str = "") -> None:
         """
         Delete the study files and the femmt folders.
 
@@ -127,7 +133,7 @@ class DctMainCtl:
                     os.remove(full_path)
 
     @staticmethod
-    def user_input_break_point(break_point_key: str, info: str):
+    def user_input_break_point(break_point_key: str, info: str) -> None:
         """
         Continue, wait for user input or stop the program according breakpoint configuration.
 
@@ -172,7 +178,7 @@ class DctMainCtl:
         return is_study_existing
 
     @staticmethod
-    def check_breakpoint(break_point_key: str, info: str):
+    def check_breakpoint(break_point_key: str, info: str) -> None:
         """
         Continue, wait for user input or stop the program according breakpoint configuration.
 
@@ -249,7 +255,43 @@ class DctMainCtl:
         return circuit_dto
 
     @staticmethod
-    def run_optimization_from_toml_configs(workspace_path: str):
+    def generate_zip_archive(toml_prog_flow: tc.FlowControl) -> None:
+        """
+        Generate a zip archive from the given simulation results to transfer to another computer.
+
+        Remove unnecessary file structure before performing the zip operation, e.g. the 00_femmt_simulation results directory.
+
+        :param toml_prog_flow: Flow control toml file
+        :type toml_prog_flow: tc.FlowControl
+        """
+        folder_selection = [toml_prog_flow.general.project_directory]
+
+        # Exclude folders that should not be included in the zip archive
+        folder_exclusion = ['00_femmt_simulation']
+
+        # Define the path to the zip archive
+        zip_path = f'{toml_prog_flow.general.project_directory}_archived_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")}.zip'
+
+        # Create the zip archive
+        with zipfile.ZipFile(zip_path, 'w') as zip_archive:
+            for folder in folder_selection:
+                for root, dirs, files in os.walk(folder):
+                    for dir in dirs:
+                        dir_path = os.path.join(root, dir)
+                        relative_path = os.path.relpath(dir_path, folder)
+                        if fnmatch.fnmatch(relative_path, '*/' + folder_exclusion[0] + '/*') or relative_path.endswith('/' + folder_exclusion[0]):
+                            dirs.remove(dir)  # Exclude the subfolder
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        relative_path = os.path.relpath(file_path, folder)
+                        if relative_path.startswith(folder_exclusion[0] + '/') or relative_path.endswith('/' + folder_exclusion[0]):
+                            continue  # Exclude the file if it is in an excluded folder
+                        zip_archive.write(file_path, relative_path)
+
+        print('Zip archive created:', zip_path)
+
+    @staticmethod
+    def run_optimization_from_toml_configs(workspace_path: str) -> None:
         """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
@@ -257,12 +299,6 @@ class DctMainCtl:
         :param  workspace_path: Path to subfolder 'workspace' (if empty default path '../<path to this file>' is used)
         :type   workspace_path: str
         """
-        # Inductor simulation
-        inductor_optimization = InductorOptimization
-        # Transformer simulation
-        transformer_optimization = TransformerOptimization
-        # heat sink simulation
-        heat_sink_optimization = HeatSinkOptimization
         # Flag for re-simulation  (if False the summary will failed)
         enable_ind_re_simulation = True
         enable_trans_re_simulation = True
@@ -325,6 +361,8 @@ class DctMainCtl:
             optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
                                                 toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
         )
+
+        summary_data = dct.StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
 
         filter_data = dct.FilterData(
             filtered_list_id=[],
@@ -486,7 +524,8 @@ class DctMainCtl:
                 # Delete old inductor study
                 DctMainCtl.delete_study_content(inductor_study_data.optimization_directory)
 
-            inductor_optimization.init_configuration(toml_inductor, inductor_study_data, filter_data)
+            inductor_optimization = InductorOptimization()
+            inductor_optimization.generate_optimization_list(toml_inductor, inductor_study_data, filter_data)
             inductor_optimization.optimization_handler(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
                 toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
@@ -506,7 +545,8 @@ class DctMainCtl:
                 DctMainCtl.delete_study_content(transformer_study_data.optimization_directory)
 
             # Initialize transformer configuration
-            transformer_optimization.init_configuration(toml_transformer, transformer_study_data, filter_data)
+            transformer_optimization = TransformerOptimization()
+            transformer_optimization.generate_optimization_list(toml_transformer, transformer_study_data, filter_data)
 
             # Perform transformer optimization
             transformer_optimization.simulation_handler(
@@ -527,7 +567,8 @@ class DctMainCtl:
                 # Delete old heat sink study
                 DctMainCtl.delete_study_content(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
 
-            heat_sink_optimization.init_configuration(toml_heat_sink, toml_prog_flow)
+            heat_sink_optimization = HeatSinkOptimization()
+            heat_sink_optimization.generate_optimization_list(toml_heat_sink, toml_prog_flow)
             # Perform heat sink optimization
             heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
 
@@ -541,12 +582,19 @@ class DctMainCtl:
         inductor_study_names = [inductor_study_data.study_name]
         stacked_transformer_study_names = [transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = spro.generate_result_database(circuit_study_data, inductor_study_data, transformer_study_data, heat_sink_study_data,
+        s_df = spro.generate_result_database(circuit_study_data, inductor_study_data, transformer_study_data, heat_sink_study_data, summary_data,
                                              inductor_study_names, stacked_transformer_study_names, filter_data)
         #  Select the needed heat sink configuration
-        spro.select_heat_sink_configuration(heat_sink_study_data, s_df)
+        spro.select_heat_sink_configuration(heat_sink_study_data, summary_data, s_df)
         # Check breakpoint
         DctMainCtl.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
+        DctMainCtl.generate_zip_archive(toml_prog_flow)
+
+        ParetoPlots.plot_circuit_results(toml_prog_flow)
+        ParetoPlots.plot_inductor_results(toml_prog_flow)
+        ParetoPlots.plot_transformer_results(toml_prog_flow)
+        ParetoPlots.plot_heat_sink_results(toml_prog_flow)
+        ParetoPlots.plot_summary(toml_prog_flow)
 
 
 # Program flow control of DAB-optimization

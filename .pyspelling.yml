@@ -13,4 +13,4 @@ matrix:
       strings: true
       comments: false
   ignore_regexp:
-        - '.*\b(TODO|FIXME|NOTE|:param|:type|:return|:rtype)\b.*'
+        - '.*\b(TODO|FIXME|NOTE)\b.*'

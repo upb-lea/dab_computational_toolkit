@@ -21,11 +21,11 @@ class PlotDAB:
     pw: PlotWindow
     figs_axes: list
 
-    def __init__(self, latex=False, window_title: str = 'DAB Plots', figsize=(12, 5), fontsize=16, show=True):
+    def __init__(self, is_latex: bool = False, window_title: str = 'DAB Plots', figsize: tuple = (12, 5), fontsize: int = 16, show: bool = True) -> None:
         """
         Create the object with default settings for all further plots.
 
-        :param latex: Use Latex fonts (if available) for labels
+        :param is_latex: Use Latex fonts (if available) for labels
         :param window_title:
         :param figsize: Set default figsize for all plots and savefig (figsize * dpi = px)
         """
@@ -44,8 +44,8 @@ class PlotDAB:
         self.figs_axes = []
         # Switch between latex math usage and plain text where possible
         # Note: For latex to work you must have it installed on your system!
-        self.latex = latex
-        if latex:
+        self.latex = is_latex
+        if is_latex:
             plt.rcParams.update({
                 "text.usetex": True,
                 "font.family": "STIXGeneral",
@@ -90,7 +90,7 @@ class PlotDAB:
                 fig.subplots_adjust(left=0.065, right=0.975, bottom=0.15, top=0.93, wspace=0.17, hspace=0.25)
 
     def new_fig(self, nrows: int = 1, ncols: int = 1, sharex: bool = True, sharey: bool = True,
-                tab_title='add Plot title'):
+                tab_title: str = 'add Plot title') -> None:
         """
         Create a new fig in a new tab with the amount of subplots specified.
 
@@ -117,7 +117,7 @@ class PlotDAB:
         if self.show_pw:
             self.pw.add_plot(title=tab_title, figure=fig)
 
-    def save_fig(self, fig, directory=None, name: str = '', comment: str = '', timestamp: bool = True):
+    def save_fig(self, fig: plt.Figure, directory: str | None = None, name: str = '', comment: str = '', timestamp: bool = True) -> None:
         """
         Save the given fig as PNG and PDF.
 
@@ -179,8 +179,8 @@ class PlotDAB:
             fname = os.path.join(directory, filename + '.pdf')
             fig.savefig(fname=fname, metadata=metadata)
 
-    def plot_3by1(self, fig_axes: tuple, x, y, z1, z2, z3, xl: str = 'x', yl: str = 'y', t1: str = 'z1', t2: str = 'z2',
-                  t3: str = 'z3'):
+    def plot_3by1(self, fig_axes: tuple, x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, xl: str = 'x', yl: str = 'y',
+                  t1: str = 'z1', t2: str = 'z2', t3: str = 'z3') -> None:
         """
         Plot three contourf plots with a shared colorbar.
 
@@ -233,8 +233,9 @@ class PlotDAB:
         # Redraw the current figure
         plt.draw()
 
-    def plot_modulation(self, x, y, z1, z2, z3, title: str = '', mask1: np.ndarray | None = None, mask2=None, mask3=None,
-                        maskZVS=None, Vnum=2, tab_title='add Plot title'):
+    def plot_modulation(self, x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '', mask1: np.ndarray | None = None,
+                        mask2: np.ndarray | None = None, mask3: np.ndarray | None = None, maskZVS: np.ndarray | None = None,
+                        Vnum: float = 2, tab_title: str = 'add Plot title') -> None:
         """
         Plot three contourf plots with a shared colorbar.
 
@@ -368,8 +369,9 @@ class PlotDAB:
         fig.canvas.draw()
         fig.canvas.flush_events()
 
-    def plot_modulation_classic(self, fig_axes: tuple, x, y, z1, z2, z3, title: str = '', mask1=None, mask2=None,
-                                mask3=None, maskZVS=None):
+    def plot_modulation_classic(self, fig_axes: tuple, x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '',
+                                mask1: np.ndarray | None = None, mask2: np.ndarray | None = None, mask3: np.ndarray | None = None,
+                                maskZVS: np.ndarray | None = None) -> None:
         """
         Plot three contourf plots with a shared colorbar.
 
@@ -471,7 +473,7 @@ class PlotDAB:
         fig.canvas.flush_events()
 
     @timeit
-    def plot_rms_current(self, mesh_V2: np.ndarray, mesh_P: np.ndarray, mvvp_iLs: np.ndarray):
+    def plot_rms_current(self, mesh_V2: np.ndarray, mesh_P: np.ndarray, mvvp_iLs: np.ndarray) -> plt.Figure:
         """
         Plot RMS currents.
 
@@ -500,11 +502,12 @@ class PlotDAB:
         # plt.show()
         return fig
 
-    def subplot_contourf(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, mask1=None, mask2=None, mask3=None,
-                         nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
+    def subplot_contourf(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, mask1: np.ndarray | None = None, mask2: np.ndarray | None = None,
+                         mask3: np.ndarray | None = None,
+                         nan_matrix: np.ndarray | None = None, ax: matplotlib.axes.Axes | None = None,
                          num_cont_lines: int = 12, alpha: float = 0.75, cmap: str = 'viridis',
-                         axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None,
-                         inlinespacing: int = -10, xlabel='', ylabel: str = '', title: str = "", clabel: bool = False,
+                         axlinewidth: float = 0.5, axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None,
+                         inlinespacing: int = -10, xlabel: str = '', ylabel: str = '', title: str = "", clabel: bool = False,
                          markerstyle: str = 'star',
                          z_min: float | None = None, z_max: float | None = None,
                          square: bool = False, same_xy_ticks: bool = False) -> None:
@@ -668,11 +671,12 @@ class PlotDAB:
         if same_xy_ticks:
             ax.set_yticks(ax.get_xticks())
 
-    def subplot_contourf_fixedz(self, x, y, z, mask1=None, mask2=None, mask3=None,
-                                nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
+    def subplot_contourf_fixedz(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, mask1: np.ndarray | None = None, mask2: np.ndarray | None = None,
+                                mask3: np.ndarray | None = None,
+                                nan_matrix: np.ndarray | None = None, ax: matplotlib.axes.Axes | None = None,
                                 num_cont_lines: int = 12, alpha: float = 0.75, cmap: str = 'viridis',
-                                axlinewidth=0.5, axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None,
-                                inlinespacing: int = -10, xlabel='', ylabel: str = '', title: str = "",
+                                axlinewidth: float = 0.5, axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None,
+                                inlinespacing: int = -10, xlabel: str = '', ylabel: str = '', title: str = "",
                                 clabel: bool = False, markerstyle: str = 'star',
                                 z_min: float | None = None, z_max: float | None = None) -> None:
         """
@@ -805,10 +809,10 @@ class PlotDAB:
             ax.plot(wp_x, wp_y, marker="*", color=axlinecolor)
 
     @timeit
-    def subplot_contourf_nan(self, x, y, z, nan_matrix=None, ax: matplotlib.axes.Axes | None = None,
-                             num_cont_lines: int = 20, alpha: float = 0.75, cmap: str = 'inferno', axlinewidth=0.5,
+    def subplot_contourf_nan(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, nan_matrix: np.ndarray | None = None, ax: matplotlib.axes.Axes | None = None,
+                             num_cont_lines: int = 20, alpha: float = 0.75, cmap: str = 'inferno', axlinewidth: float = 0.5,
                              axlinecolor: str = 'r', wp_x: float | None = None, wp_y: float | None = None, inlinespacing: int = -10,
-                             xlabel='Lambda = f * L', ylabel: str = 'Turns ratio n', fontsize_axis: int = 9,
+                             xlabel: str = 'Lambda = f * L', ylabel: str = 'Turns ratio n', fontsize_axis: int = 9,
                              fontsize_title: int = 9, title: str = "", clabel: bool = False, markerstyle: str = 'star',
                              z_min: float | None = None, z_max: float | None = None) -> None:
         """
@@ -875,6 +879,8 @@ class PlotDAB:
             z_min = np.nanmin(z)
         if z_max is None or z_max < np.nanmin(z):
             z_max = np.nanmax(z)
+        if z_min is None or z_max is None:
+            raise ValueError("Issue with setting z_min or z_max")  # mypy workaround
         # in case of nan_matrix is not set
         if nan_matrix is None:
             cs_full = ax.contourf(x, y, z.clip(z_min, z_max), num_cont_lines, alpha=1, antialiased=True, cmap=cmap,
@@ -968,8 +974,9 @@ class PlotDAB:
 
 
 @timeit
-def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '', mask1=None, mask2=None, mask3=None,
-                    maskZVS: np.ndarray | None = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False):
+def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, title: str = '', mask1: np.ndarray | None = None,
+                    mask2: np.ndarray | None = None, mask3: np.ndarray | None = None,
+                    maskZVS: np.ndarray | None = None, Vnum: int = 2, filename: str = 'Plot_title', latex: bool = False) -> None:
     """
     Plot three contourf plots with a shared colorbar.
 
@@ -1016,14 +1023,18 @@ def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray
         plt.rcParams['figure.constrained_layout.use'] = False
         plt.rcParams["figure.autolayout"] = False
 
-    if np.all(mask1 == mask1[0]):
-        mask1 = None
-    if np.all(mask2 == mask2[0]):
-        mask2 = None
-    if np.all(mask3 == mask3[0]):
-        mask3 = None
-    if np.all(maskZVS == maskZVS[0]):  # type: ignore
-        maskZVS = None
+    if mask1 is not None:
+        if np.all(mask1 == mask1[0]):
+            mask1 = None
+    if mask2 is not None:
+        if np.all(mask2 == mask2[0]):
+            mask2 = None
+    if mask3 is not None:
+        if np.all(mask3 == mask3[0]):
+            mask3 = None
+    if maskZVS is not None:
+        if np.all(maskZVS == maskZVS[0]):  # type: ignore
+            maskZVS = None
 
     # Add a new tab with subplot
     fig, axs = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=figsize,
@@ -1119,23 +1130,23 @@ def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray
 
 
 @timeit
-def plot_rms_current(mesh_V2: np.ndarray, mesh_P: np.ndarray, mvvp_iLs: np.ndarray):
+def plot_rms_current(mesh_v2: np.ndarray, mesh_p: np.ndarray, mvvp_i_ls: np.ndarray) -> plt.Figure:
     """
     Plot the RMS currents.
 
-    :param mesh_V2: mesh of voltage v2 in V
-    :type mesh_V2: np.ndarray
-    :param mesh_P: mesh of the power P in W
-    :type mesh_P: np.ndarray
-    :param mvvp_iLs: current i_Ls in A
-    :type mvvp_iLs: np.ndarray
+    :param mesh_v2: mesh of voltage v2 in V
+    :type mesh_v2: np.ndarray
+    :param mesh_p: mesh of the power P in W
+    :type mesh_p: np.ndarray
+    :param mvvp_i_ls: current i_Ls in A
+    :type mvvp_i_ls: np.ndarray
     """
     # plot
     fig, axs = plt.subplots(1, 3, sharey=True)
     fig.suptitle("DAB RMS Currents")
-    cf = axs[0].contourf(mesh_P[:, 1, :], mesh_V2[:, 1, :], mvvp_iLs[:, 1, :])
-    axs[1].contourf(mesh_P[:, 1, :], mesh_V2[:, 1, :], mvvp_iLs[:, 1, :])
-    axs[2].contourf(mesh_P[:, 1, :], mesh_V2[:, 1, :], mvvp_iLs[:, 1, :])
+    cf = axs[0].contourf(mesh_p[:, 1, :], mesh_v2[:, 1, :], mvvp_i_ls[:, 1, :])
+    axs[1].contourf(mesh_p[:, 1, :], mesh_v2[:, 1, :], mvvp_i_ls[:, 1, :])
+    axs[2].contourf(mesh_p[:, 1, :], mesh_v2[:, 1, :], mvvp_i_ls[:, 1, :])
     axs[0].set_title("i_Ls")
     axs[1].set_title("i_Ls")
     axs[2].set_title("i_Ls")

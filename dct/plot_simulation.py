@@ -13,7 +13,7 @@ import numpy as np
 
 @timeit
 def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_name: str, comment: str, directory: str,
-                                  show_plot: bool = True, logfile=str()):
+                                  show_plot: bool = True) -> None:
     """
     Plot the results from the GeckoCIRCUITS simulation.
 
@@ -27,8 +27,6 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
     :type directory: str
     :param show_plot: True (default) to show the plots.
     :type show_plot: bool
-    :param logfile: Logfile name
-    :type logfile: str
     """
     if not isinstance(dab_config.gecko_results, d_dtos.GeckoResults):
         raise TypeError(f"{dab_config.gecko_results} is not of Type GeckoResults.")
@@ -38,7 +36,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
     simulation_name += '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
     comment += ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
 
-    plt = PlotDAB(latex=False, show=show_plot, figsize=(15, 5), fontsize=22)
+    plt = PlotDAB(is_latex=False, show=show_plot, figsize=(15, 5), fontsize=22)
 
     modulation_name = 'zvs'
 

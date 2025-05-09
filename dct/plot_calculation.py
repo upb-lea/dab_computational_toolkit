@@ -10,7 +10,7 @@ from dct import CircuitDabDTO
 # 3rd party libraries
 import numpy as np
 
-def plot_calculation_results(dab_config: CircuitDabDTO):
+def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
     """
     Calculate the DAB operating points and show the results.
 
@@ -33,7 +33,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO):
         int(dab_config.input_config.V2_step),
         int(dab_config.input_config.P_step))
 
-    plt = dct.plotdab.PlotDAB(latex=False)
+    plt = dct.plotdab.PlotDAB(is_latex=False)
 
     # Plot OptZVS mod results
     # Plot a cross-section through the V1 plane

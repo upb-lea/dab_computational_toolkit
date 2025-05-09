@@ -9,7 +9,7 @@ import dct.functions_waveforms as fw
 import numpy as np
 from matplotlib import pyplot as plt
 
-def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False):
+def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False) -> None:
     """
     Plot calculated current waveforms for Ls, Lc1, Lc2.
 
@@ -101,7 +101,7 @@ def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: 
             plt.tight_layout()
             plt.show()
 
-def plot_calc_i_hf_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False):
+def plot_calc_i_hf_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False) -> None:
     """
     Plot calculated current waveforms for i_hf_1 and i_hf_2.
 

@@ -90,11 +90,10 @@ TransistorCooling
 CircuitParetoDabDesign
 TomlCircuitParetoDabDesign
 sqlite
-DabElectricConf
+DabCircuitConf
 DabHeatSinkConf
 DabInductorConf
 DabTransformerConf
-GeckoCIRCUITs
 TomlHeatSink
 CircuitDabDTO
 Pareto
@@ -165,6 +164,7 @@ spacings
 subfolder
 subprojects
 subdirectories
+subdirectory
 tc
 ds
 xy
@@ -222,3 +222,12 @@ oaml
 jhs
 br
 wo
+sto
+attrs
+hyst
+PQ
+datasource
+insulations
+litz
+fft
+iso

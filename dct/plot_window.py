@@ -15,7 +15,7 @@ import sys
 class PlotWindow:
     """Class to initialize the GUI."""
 
-    def __init__(self, parent=None, window_title: str = 'plot window', figsize=(12.8, 8)):
+    def __init__(self, parent: None = None, window_title: str = 'plot window', figsize: tuple = (12.8, 8)) -> None:
         """Initialize PlotWindow instance."""
         self.app = QApplication(sys.argv)
         self.MainWindow = QMainWindow()
@@ -32,7 +32,7 @@ class PlotWindow:
         self.figsize = figsize
         self.MainWindow.show()
 
-    def add_plot(self, title: str, figure):
+    def add_plot(self, title: str, figure: plt.Figure) -> None:
         """Add plot to the GUI instance.
 
         :param title: title for the plot
