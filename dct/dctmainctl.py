@@ -1,4 +1,6 @@
 """Main control program to optimize the DAB converter."""
+import logging.config
+
 import datetime
 # python libraries
 import os
@@ -7,6 +9,7 @@ import sys
 import tomllib
 import zipfile
 import fnmatch
+import logging
 
 # 3rd party libraries
 import json
@@ -21,10 +24,10 @@ from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
 from dct import ParetoPlots
+from dct import generate_logging_config
 from summary_processing import DctSummaryProcessing as spro
 
-# logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-# logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class DctMainCtl:
     """Main class for control dab-optimization."""
@@ -88,6 +91,37 @@ class DctMainCtl:
             print(f"Path {toml_file_directory} does not exists!")
 
         return is_toml_file_existing, config
+
+    @staticmethod
+    def load_generate_logging_config(logging_config_file: str) -> None:
+        """
+        Read the logging configuration file and configure the logger.
+
+        Generate a default logging configuration file in case it does not exist.
+
+        :param logging_config_file: File name of the logging configuration file
+        :type logging_config_file: str
+        """
+        # Separate filename and path
+        logging_conf_file_directory = os.path.dirname(logging_config_file)
+
+        # check path
+        if os.path.exists(logging_conf_file_directory) or logging_conf_file_directory == "":
+            # check filename
+            if os.path.isfile(logging_config_file):
+                with open(logging_config_file, "rb") as f:
+                    logging.config.fileConfig(logging_config_file)
+                    logger.info(f"Found existing logging configuration {logging_config_file}.")
+            else:
+                logger.info("Generate a new logging.conf file.")
+                generate_logging_config(logging_conf_file_directory)
+                if os.path.isfile(logging_config_file):
+                    with open(logging_config_file, "rb") as f:
+                        logging.config.fileConfig(logging_config_file)
+                else:
+                    raise ValueError("logging.conf can not be generated.")
+        else:
+            logger.warning(f"Path {logging_conf_file_directory} does not exists!")
 
     @staticmethod
     def generate_conf_file(path: str) -> bool:
@@ -318,6 +352,13 @@ class DctMainCtl:
             raise ValueError("Error: Workspace folder does not exists!") from exc
         except PermissionError as exc:
             raise ValueError("Error: No permission to change the folder!") from exc
+
+        # --------------------------
+        # Logging
+        # --------------------------
+        # read logging for submodules
+        logging_filename = os.path.join(workspace_path, "logging.conf")
+        DctMainCtl.load_generate_logging_config(logging_filename)
 
         # --------------------------
         # Flow control

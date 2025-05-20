@@ -235,3 +235,14 @@ Changelog
 HCT
 PyPI
 sectnum
+NOTSET
+StreamHandler
+args
+datefmt
+formatter
+formatters
+hct
+qualname
+stdout
+sys
+conf

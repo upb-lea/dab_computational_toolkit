@@ -16,10 +16,7 @@ import tqdm
 import dct.transformer_optimization_dtos
 import femmt as fmt
 
-# configure root logger
-logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-logging.getLogger().setLevel(logging.ERROR)
-
+logger = logging.getLogger(__name__)
 
 class TransformerOptimization:
     """Optimization of the transformer."""
@@ -140,7 +137,7 @@ class TransformerOptimization:
                 transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(circuit_trial_number, next_io_config)
                 self.optimization_config_list.append(transformer_dto)
             else:
-                print(f"Wrong path or file {circuit_filepath} does not exists!")
+                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
 
         if self.optimization_config_list:
             is_list_generation_successful = True
@@ -179,7 +176,7 @@ class TransformerOptimization:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(
                 act_sto_config, target_number_trials=act_target_number_trials)
         else:
-            print(f"Target number of trials = {act_target_number_trials} which are less equal 0!. No simulation is performed")
+            logger.info(f"Target number of trials = {act_target_number_trials} which are less equal 0!. No simulation is performed")
             return
 
         # perform FEM simulations
@@ -221,7 +218,7 @@ class TransformerOptimization:
             re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
 
             for re_simulate_number in re_simulate_numbers:
-                print(f"{re_simulate_number=}")
+                logger.info(f"{re_simulate_number=}")
                 df_geometry_re_simulation_number = df_fem_reluctance[df_fem_reluctance["number"] == re_simulate_number]
 
                 result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
@@ -232,7 +229,7 @@ class TransformerOptimization:
                     os.makedirs(new_circuit_dto_directory)
 
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
-                    print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                    logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
@@ -244,15 +241,15 @@ class TransformerOptimization:
                         current_waveform = np.array([time, current])
 
                         if debug:
-                            print(f"{current_waveform=}")
-                            print("----------------------")
-                            print("Re-simulation of:")
-                            print(f"   * Circuit study: {filter_data.circuit_study_name}")
-                            print(f"   * Circuit trial: {circuit_id}")
-                            print(f"   * Transformer study: {act_sto_config.transformer_study_name}")
-                            print(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                            logger.info(f"{current_waveform=}")
+                            logger.info("----------------------")
+                            logger.info("Re-simulation of:")
+                            logger.info(f"   * Circuit study: {filter_data.circuit_study_name}")
+                            logger.info(f"   * Circuit trial: {circuit_id}")
+                            logger.info(f"   * Transformer study: {act_sto_config.transformer_study_name}")
+                            logger.info(f"   * Transformer re-simulation trial: {re_simulate_number}")
 
-                        print(f"{current_waveform=}")
+                        logger.info(f"{current_waveform=}")
                         # workaround for comma problem. Read a random csv file and set back the delimiter.
                         pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 

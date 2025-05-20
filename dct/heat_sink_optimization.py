@@ -1,6 +1,7 @@
 """Inductor optimization class."""
 # python libraries
 import os
+import logging
 
 # 3rd party libraries
 
@@ -9,9 +10,7 @@ import hct
 import dct
 from dct.heat_sink_dtos import *
 
-# configure root logger
-# logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-# logging.getLogger().setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 class HeatSinkOptimization:
     """Optimization support class for heat sink optimization."""
@@ -39,13 +38,13 @@ class HeatSinkOptimization:
 
         # Check if path exists
         if not os.path.exists(heat_sink_fan_datapath):
-            print(f"Fan data path {heat_sink_fan_datapath} does not exists!")
+            logger.info(f"Fan data path {heat_sink_fan_datapath} does not exists!")
         # Generate the fan-list
         for (_, _, file_name_list) in os.walk(heat_sink_fan_datapath):
             fan_list = file_name_list
 
         if not fan_list:
-            print(f"No fan design data found in path {heat_sink_fan_datapath}!")
+            logger.info(f"No fan design data found in path {heat_sink_fan_datapath}!")
 
         heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
 
@@ -95,7 +94,7 @@ class HeatSinkOptimization:
         if target_number_trials > 0:
             hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=target_number_trials)
         else:
-            print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
+            logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 
         # Plot options ASA: Later to add to server
         # df_heat_sink = hopt.Optimization.study_to_df(act_hct_config)
