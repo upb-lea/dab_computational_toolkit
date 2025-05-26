@@ -269,8 +269,8 @@ class CircuitOptimization:
             config_on_disk = CircuitOptimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
             difference = deepdiff.DeepDiff(config_on_disk, dab_config, ignore_order=True, significant_digits=10)
             if difference:
-                logger.warning("Configuration file has changed from previous simulation. Do you want to proceed?")
-                logger.warning(f"Difference: {difference}")
+                print("Configuration file has changed from previous simulation. Do you want to proceed?")
+                print(f"Difference: {difference}")
                 read_text = input("'1' or Enter: proceed, 'any key': abort\nYour choice: ")
                 if read_text == str(1) or read_text == "":
                     logger.info("proceed...")
