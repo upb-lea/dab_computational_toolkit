@@ -363,6 +363,7 @@ class DctMainCtl:
         # --------------------------
         # Flow control
         # --------------------------
+        logger.debug("Read flow control file")
         # Load the configuration for program flow and check the validity
         flow_control_loaded, dict_prog_flow = DctMainCtl.load_toml_file("progFlow.toml")
         toml_prog_flow = tc.FlowControl(**dict_prog_flow)
@@ -416,6 +417,7 @@ class DctMainCtl:
         # --------------------------
         # Circuit flow control
         # --------------------------
+        logger.debug("Read circuit flow control")
 
         # Init circuit configuration
         is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
@@ -445,6 +447,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor flow control
         # --------------------------
+        logger.debug("Read inductor flow control")
 
         # Load the inductor-configuration parameter
         inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
@@ -470,6 +473,7 @@ class DctMainCtl:
         # --------------------------
         # Transformer flow control
         # --------------------------
+        logger.debug("Read transformer flow control")
 
         # Load the transformer-configuration parameter
         transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
@@ -519,6 +523,7 @@ class DctMainCtl:
         # --------------------------
         # Circuit optimization
         # --------------------------
+        logger.info("Start circuit optimization.")
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
             if not is_circuit_loaded:
@@ -557,6 +562,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor optimization
         # --------------------------
+        logger.info("Start inductor optimization.")
 
         # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip" or toml_prog_flow.circuit.calculation_mode == "new":
@@ -577,6 +583,7 @@ class DctMainCtl:
         # --------------------------
         # Transformer optimization
         # --------------------------
+        logger.info("Start transformer optimization.")
 
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.transformer.calculation_mode == "skip" or toml_prog_flow.circuit.calculation_mode == "new":
@@ -600,6 +607,7 @@ class DctMainCtl:
         # --------------------------
         # Heat sink optimization
         # --------------------------
+        logger.info("Start heat sink optimization.")
 
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.calculation_mode == "skip":

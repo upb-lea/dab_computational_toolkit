@@ -253,7 +253,7 @@ class CircuitOptimization:
         circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.circuit_study_name}.sqlite3")
 
         if os.path.exists(circuit_study_sqlite_database):
-            logger.info("Existing study found. Proceeding.")
+            logger.info("Existing circuit study found. Proceeding.")
         else:
             os.makedirs(f"{filepaths.circuit}/{dab_config.circuit_study_name}", exist_ok=True)
 
