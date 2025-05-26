@@ -1,4 +1,6 @@
 """Main control program to optimize the DAB converter."""
+import logging.config
+
 import datetime
 # python libraries
 import os
@@ -7,6 +9,7 @@ import sys
 import tomllib
 import zipfile
 import fnmatch
+import logging
 
 # 3rd party libraries
 import json
@@ -21,10 +24,10 @@ from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
 from dct import ParetoPlots
+from dct import generate_logging_config
 from summary_processing import DctSummaryProcessing as spro
 
-# logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-# logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class DctMainCtl:
     """Main class for control dab-optimization."""
@@ -88,6 +91,37 @@ class DctMainCtl:
             print(f"Path {toml_file_directory} does not exists!")
 
         return is_toml_file_existing, config
+
+    @staticmethod
+    def load_generate_logging_config(logging_config_file: str) -> None:
+        """
+        Read the logging configuration file and configure the logger.
+
+        Generate a default logging configuration file in case it does not exist.
+
+        :param logging_config_file: File name of the logging configuration file
+        :type logging_config_file: str
+        """
+        # Separate filename and path
+        logging_conf_file_directory = os.path.dirname(logging_config_file)
+
+        # check path
+        if os.path.exists(logging_conf_file_directory) or logging_conf_file_directory == "":
+            # check filename
+            if os.path.isfile(logging_config_file):
+                with open(logging_config_file, "rb") as f:
+                    logging.config.fileConfig(logging_config_file)
+                    logger.info(f"Found existing logging configuration {logging_config_file}.")
+            else:
+                logger.info("Generate a new logging.conf file.")
+                generate_logging_config(logging_conf_file_directory)
+                if os.path.isfile(logging_config_file):
+                    with open(logging_config_file, "rb") as f:
+                        logging.config.fileConfig(logging_config_file)
+                else:
+                    raise ValueError("logging.conf can not be generated.")
+        else:
+            logger.warning(f"Path {logging_conf_file_directory} does not exists!")
 
     @staticmethod
     def generate_conf_file(path: str) -> bool:
@@ -320,8 +354,16 @@ class DctMainCtl:
             raise ValueError("Error: No permission to change the folder!") from exc
 
         # --------------------------
+        # Logging
+        # --------------------------
+        # read logging for submodules
+        logging_filename = os.path.join(workspace_path, "logging.conf")
+        DctMainCtl.load_generate_logging_config(logging_filename)
+
+        # --------------------------
         # Flow control
         # --------------------------
+        logger.debug("Read flow control file")
         # Load the configuration for program flow and check the validity
         flow_control_loaded, dict_prog_flow = DctMainCtl.load_toml_file("progFlow.toml")
         toml_prog_flow = tc.FlowControl(**dict_prog_flow)
@@ -375,6 +417,7 @@ class DctMainCtl:
         # --------------------------
         # Circuit flow control
         # --------------------------
+        logger.debug("Read circuit flow control")
 
         # Init circuit configuration
         is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
@@ -404,6 +447,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor flow control
         # --------------------------
+        logger.debug("Read inductor flow control")
 
         # Load the inductor-configuration parameter
         inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
@@ -429,6 +473,7 @@ class DctMainCtl:
         # --------------------------
         # Transformer flow control
         # --------------------------
+        logger.debug("Read transformer flow control")
 
         # Load the transformer-configuration parameter
         transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
@@ -478,6 +523,7 @@ class DctMainCtl:
         # --------------------------
         # Circuit optimization
         # --------------------------
+        logger.info("Start circuit optimization.")
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
             if not is_circuit_loaded:
@@ -516,6 +562,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor optimization
         # --------------------------
+        logger.info("Start inductor optimization.")
 
         # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip" or toml_prog_flow.circuit.calculation_mode == "new":
@@ -536,6 +583,7 @@ class DctMainCtl:
         # --------------------------
         # Transformer optimization
         # --------------------------
+        logger.info("Start transformer optimization.")
 
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.transformer.calculation_mode == "skip" or toml_prog_flow.circuit.calculation_mode == "new":
@@ -559,6 +607,7 @@ class DctMainCtl:
         # --------------------------
         # Heat sink optimization
         # --------------------------
+        logger.info("Start heat sink optimization.")
 
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.calculation_mode == "skip":

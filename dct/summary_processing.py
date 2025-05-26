@@ -2,6 +2,7 @@
 # python libraries
 import os
 import pickle
+import logging
 
 # 3rd party libraries
 import pandas as pd
@@ -12,6 +13,7 @@ import dct
 from heat_sink_optimization import ThermalCalcSupport as thr_sup
 import hct
 
+logger = logging.getLogger(__name__)
 
 class DctSummaryProcessing:
     """Perform the summary calculation based on optimization results."""
@@ -65,7 +67,7 @@ class DctSummaryProcessing:
             # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
             DctSummaryProcessing.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
         else:
-            print(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
+            logger.info(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
             successful_init = False
 
         # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
@@ -83,7 +85,7 @@ class DctSummaryProcessing:
             # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
             DctSummaryProcessing.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
         else:
-            print(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
+            logger.info(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
@@ -122,11 +124,11 @@ class DctSummaryProcessing:
                     if extension == '.pkl':
                         magnetic_result_numbers.append(device_number)
                     else:
-                        print(f"File {device_number}{extension} has no extension '.pkl'!")
+                        logger.info(f"File {device_number}{extension} has no extension '.pkl'!")
                 else:
-                    print(f"File'{file_path}' does not exists!")
+                    logger.info(f"File'{file_path}' does not exists!")
         else:
-            print(f"Path {act_dir_name} does not exists!")
+            logger.info(f"Path {act_dir_name} does not exists!")
 
         if magnetic_result_numbers:
             is_magnetic_list_generated = True
@@ -201,7 +203,7 @@ class DctSummaryProcessing:
                 circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
             # End: ASA: No influence by inductor or transformer ################################
 
-            print(f"{circuit_number=}")
+            logger.info(f"{circuit_number=}")
 
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
@@ -215,7 +217,7 @@ class DctSummaryProcessing:
                 is_inductor_list_generated, inductor_full_operating_range_list = (
                     DctSummaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
-                    print(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
 
@@ -247,7 +249,7 @@ class DctSummaryProcessing:
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
                             DctSummaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
-                            print(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
+                            logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
                             continue
 
@@ -385,7 +387,7 @@ class DctSummaryProcessing:
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation
-        print(df_hs.loc[df_hs["values_1"] < 1]["values_0"].nsmallest(n=1).values[0])
+        logger.info(df_hs.loc[df_hs["values_1"] < 1]["values_0"].nsmallest(n=1).values[0])
         act_df_for_hs["heat_sink_volume"] = act_df_for_hs["r_th_heat_sink"].apply(
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)

@@ -13,10 +13,7 @@ import tqdm
 import femmt as fmt
 import dct.inductor_optimization_dtos
 
-# configure root logger
-logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-logging.getLogger().setLevel(logging.ERROR)
-
+logger = logging.getLogger(__name__)
 
 class InductorOptimization:
     """Optimization of the inductor."""
@@ -100,7 +97,7 @@ class InductorOptimization:
                 inductor_dto = dct.inductor_optimization_dtos.InductorOptimizationDto(circuit_id=circuit_trial_number, inductor_optimization_dto=next_io_config)
                 self.optimization_config_list.append(inductor_dto)
             else:
-                print(f"Wrong path or file {circuit_filepath} does not exists!")
+                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
 
         if self.optimization_config_list:
             is_list_generation_successful = True
@@ -140,7 +137,7 @@ class InductorOptimization:
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
         else:
-            print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
+            logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 
         # perform FEM simulations
         if factor_min_dc_losses != 0 and factor_max_dc_losses > 0:
@@ -175,11 +172,11 @@ class InductorOptimization:
             re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
 
             for re_simulate_number in re_simulate_numbers:
-                print(f"{re_simulate_number=}")
+                logger.info(f"{re_simulate_number=}")
                 df_geometry_re_simulation_number = df_fem_reluctance[
                     df_fem_reluctance["number"] == float(re_simulate_number)]
 
-                print(df_geometry_re_simulation_number.head())
+                logger.info(df_geometry_re_simulation_number.head())
 
                 result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
@@ -189,7 +186,7 @@ class InductorOptimization:
                     os.makedirs(new_circuit_dto_directory)
 
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
-                    print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                    logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
@@ -202,13 +199,13 @@ class InductorOptimization:
 
                         current_waveform = np.array([time, current])
                         if debug:
-                            print(f"{current_waveform=}")
-                            print("----------------------")
-                            print("All operating point simulation of:")
-                            print(f"   * Circuit study: {filter_data.circuit_study_name}")
-                            print(f"   * Circuit trial: {circuit_id}")
-                            print(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                            print(f"   * Inductor re-simulation trial: {re_simulate_number}")
+                            logger.info(f"{current_waveform=}")
+                            logger.info("----------------------")
+                            logger.info("All operating point simulation of:")
+                            logger.info(f"   * Circuit study: {filter_data.circuit_study_name}")
+                            logger.info(f"   * Circuit trial: {circuit_id}")
+                            logger.info(f"   * Inductor study: {act_io_config.inductor_study_name}")
+                            logger.info(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform=current_waveform,
