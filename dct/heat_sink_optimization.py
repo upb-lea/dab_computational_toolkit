@@ -1,27 +1,35 @@
 """Inductor optimization class."""
 # python libraries
 import os
+import time
+import copy
+import threading
 
 # 3rd party libraries
 
 # own libraries
 import hct
 import dct
+from server_ctl_dtos import StatData as StData
 from dct.heat_sink_dtos import *
 
 # configure root logger
 # logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
 # logging.getLogger().setLevel(logging.ERROR)
+# Structure clase
 
 class HeatSinkOptimization:
     """Optimization support class for heat sink optimization."""
 
     # Simulation configuration list
-    optimization_config_list: list[hct.OptimizationParameters]
+    _hct_config: hct.OptimizationParameters
+    _stat_data: StData
 
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
-        self.optimization_config_list = []
+        self._hct_config: hct.OptimizationParameters
+        self._stat_data: StData = StData(start_proc_time=0.0, proc_run_time=0.0, nb_of_filtered_points=0, status=0)
+        self._h_lock_stat: threading.Lock = threading.Lock()
 
     def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
         """
@@ -49,7 +57,7 @@ class HeatSinkOptimization:
 
         heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
 
-        hct_config = hct.OptimizationParameters(
+        self._hct_config = hct.OptimizationParameters(
 
             # general parameters
             heat_sink_study_name=heat_sink_study_name,
@@ -72,13 +80,22 @@ class HeatSinkOptimization:
             # constraints
             number_directions=toml_heat_sink.settings.number_directions
         )
-
-        self.optimization_config_list.append(hct_config)
-
-        if self.optimization_config_list:
-            is_list_generation_successful = True
+        is_list_generation_successful = True
 
         return is_list_generation_successful
+
+    def get_progress_data(self)-> StData:
+        # Lock statistical performance data access
+        with self._h_lock_stat:
+            # Update statistical data if optimisation is running
+            if self._stat_data.status == 1:
+                self._stat_data.proc_run_time = time.process_time() - self._stat_data.start_proc_time
+                # Check for valid entry
+                if self._stat_data.proc_run_time < 0:
+                    self._stat_data.proc_run_time = 0.0
+                    self._stat_data.start_proc_time = time.process_time()
+
+        return copy.deepcopy(self._stat_data)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
@@ -102,7 +119,6 @@ class HeatSinkOptimization:
         # hopt.Optimization.df_plot_pareto_front(df_heat_sink, (50, 60))
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-
     def optimization_handler(self, target_number_trials: int, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
@@ -112,19 +128,31 @@ class HeatSinkOptimization:
         :param debug: Debug mode flag
         :type  debug: bool
         """
-        # Later this is to parallelize with multiple processes
-        for act_sim_config in self.optimization_config_list:
-            # Debug switch
-            if target_number_trials != 0:
-                if debug:
-                    # overwrite input number of trials with 100 for short simulation times
-                    if target_number_trials > 100:
-                        target_number_trials = 100
 
-            HeatSinkOptimization._optimize(act_sim_config, target_number_trials, debug)
+        # Update statistical data
+        with self._h_lock_stat:
+            self._stat_data.start_proc_time = time.process_time()
+            self._stat_data.proc_run_time = 0.0
+            self._stat_data.status = 1
+
+        # Perform optimization
+        # Debug switch
+        if target_number_trials != 0:
             if debug:
-                # stop after one circuit run
-                break
+                # overwrite input number of trials with 100 for short simulation times
+                if target_number_trials > 100:
+                    target_number_trials = 100
+
+        HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
+
+        # Update statistical data
+        with self._h_lock_stat:
+            self._stat_data.proc_run_time = time.process_time() - self._stat_data.start_proc_time
+            # Check for valid entry
+            if self._stat_data.proc_run_time < 0:
+                self._stat_data.proc_run_time = 0.0
+                self._stat_data.start_proc_time = time.process_time()
+            self._stat_data.status = 2
 
 class ThermalCalcSupport:
     """Provides functions to calculate the thermal resistance."""

@@ -6,6 +6,8 @@ import copy
 import logging
 import os.path
 import pickle
+import time
+import threading
 
 # 3rd party libraries
 import numpy as np
@@ -15,6 +17,7 @@ import tqdm
 # own libraries
 import dct.transformer_optimization_dtos
 import femmt as fmt
+from server_ctl_dtos import StatData as StData
 
 # configure root logger
 logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
@@ -24,12 +27,14 @@ logging.getLogger().setLevel(logging.ERROR)
 class TransformerOptimization:
     """Optimization of the transformer."""
 
-    # List with configurations to optimize
-    optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto]
+    # List with configurations to optimize and lock variable
+    _optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto]
+    _t_lock_stat: threading.Lock
 
     def __init__(self) -> None:
         """Initialize the configuration list for the transformer optimizations."""
-        self.optimization_config_list = []
+        self._optimization_config_list = []
+        self._t_lock_stat: threading.Lock = threading.Lock()
 
     def generate_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
@@ -109,6 +114,9 @@ class TransformerOptimization:
             material_data_sources=material_data_sources
         )
 
+        # Initialize the staticical data
+        stat_data_init: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0, status=0)
+
         # Create the sto_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
             circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
@@ -137,19 +145,44 @@ class TransformerOptimization:
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
                     = os.path.join(study_data.optimization_directory, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
-                transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(circuit_trial_number, next_io_config)
-                self.optimization_config_list.append(transformer_dto)
+                transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(
+                    circuit_id=circuit_trial_number,
+                    stat_data=copy.deepcopy(stat_data_init),
+                    transformer_optimization_dto=next_io_config)
+
+                self._optimization_config_list.append(transformer_dto)
             else:
                 print(f"Wrong path or file {circuit_filepath} does not exists!")
 
-        if self.optimization_config_list:
+        if self._optimization_config_list:
             is_list_generation_successful = True
 
         return is_list_generation_successful
 
+    def get_progress_data(self, filtered_list_id: int)-> StData:
+        # Variable deklaration and default initialisation
+        ret_stat_data: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0, status=self._optimization_config_list[filtered_list_id].stat_data.status)
+
+        # Check for valid filtered_list_id
+        if len(self._optimization_config_list) > filtered_list_id:
+            # Lock statistical performance data access
+            # with self._i_lock_stat: ASA Error
+                # Update statistical data if optimisation is running
+                if self._optimization_config_list[filtered_list_id].stat_data.status == 1:
+                    self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = time.process_time() - self._optimization_config_list[filtered_list_id].stat_data.start_proc_time
+                    # Check for valid entry
+                    if self._optimization_config_list[filtered_list_id].stat_data.proc_run_time < 0:
+                        self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = 0.0
+                        self._optimization_config_list[filtered_list_id].stat_data.start_proc_time = time.process_time()
+                else:
+                    ret_stat_data=copy.deepcopy(self._optimization_config_list[filtered_list_id].stat_data)
+
+        return copy.deepcopy(ret_stat_data)
+
+
     @staticmethod
     def _optimize(circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
-                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> None:
+                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> int:
         """
         Simulate.
 
@@ -171,6 +204,8 @@ class TransformerOptimization:
         # Variable declaration
         # Process_number used in femmt
         process_number = 1
+        # Number of filtered operating points
+        nb_of_filtered_points = 0
 
         # Load configuration
         circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
@@ -212,13 +247,16 @@ class TransformerOptimization:
             config_on_disk = fmt.StackedTransformerOptimization.ReluctanceModel.load_config(config_filepath)
 
             # workaround for comma problem. Read a random csv file and set back the delimiter.
-            pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+            # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 
             # sweep through all current waveforms
             i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
             angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
             re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
+
+            # Overtake the filtered operation points
+            nb_of_filtered_points=len(re_simulate_numbers)
 
             for re_simulate_number in re_simulate_numbers:
                 print(f"{re_simulate_number=}")
@@ -254,7 +292,7 @@ class TransformerOptimization:
 
                         print(f"{current_waveform=}")
                         # workaround for comma problem. Read a random csv file and set back the delimiter.
-                        pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+                        # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 
                         volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
@@ -277,6 +315,9 @@ class TransformerOptimization:
                         # stop after one successful re-simulation run
                         break
 
+            # returns the number of filtered results
+            return nb_of_filtered_points
+
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def simulation_handler(self, filter_data: dct.FilterData, target_number_trials: int,
                            factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
@@ -298,7 +339,7 @@ class TransformerOptimization:
         :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in self.optimization_config_list:
+        for act_sim_config in self._optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -306,8 +347,21 @@ class TransformerOptimization:
                     if target_number_trials > 100:
                         target_number_trials = 100
 
-            self._optimize(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto, filter_data,
-                           target_number_trials, factor_dc_min_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
+            # Update statistical data
+            # with self._t_lock_stat:
+            act_sim_config.stat_data.start_proc_time = time.process_time()
+            act_sim_config.stat_data.status = 1
+
+            nb_fil_pt = TransformerOptimization._optimize(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto,
+                                                          filter_data, target_number_trials, factor_dc_min_losses,
+                                                          factor_dc_max_losses, enable_operating_range_simulation, debug)
+
+            # Update statistical data
+            #  with self._t_lock_stat:
+            act_sim_config.stat_data.proc_run_time = time.process_time() - act_sim_config.stat_data.start_proc_time
+            act_sim_config.stat_data.nb_of_filtered_points = nb_fil_pt
+            act_sim_config.stat_data.status = 2
+
 
             if debug:
                 # stop after one circuit run
