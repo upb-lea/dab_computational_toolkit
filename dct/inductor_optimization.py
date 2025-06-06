@@ -17,7 +17,6 @@ import dct.inductor_optimization_dtos
 from server_ctl_dtos import StatData as StData
 
 # configure root logger
-
 logger = logging.getLogger(__name__)
 
 class InductorOptimization:

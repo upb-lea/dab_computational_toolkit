@@ -14,6 +14,7 @@ import fnmatch
 import time
 from multiprocessing import Queue
 from typing import Optional, Any
+import logging
 
 # 3rd party libraries
 import json
@@ -763,6 +764,7 @@ class DctMainCtl:
         # --------------------------
         # Circuit flow control
         # --------------------------
+        logger.debug("Read circuit flow control")
 
         # Init circuit configuration
         is_circuit_loaded, dict_circuit = self.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
@@ -795,6 +797,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor flow control
         # --------------------------
+        logger.debug("Read inductor flow control")
 
         # Load the inductor-configuration parameter
         inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
@@ -901,7 +904,6 @@ class DctMainCtl:
 
         # Start the circuit processing time measurement
         self._circuit_proc_time[0].reset_start_trigger()
-
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
             if not is_circuit_loaded:
@@ -956,7 +958,6 @@ class DctMainCtl:
 
         # Start the inductor processing time measurement
         self._inductor_proc_time[0].reset_start_trigger()
-
         # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip":
             # Check, if old study is to delete, if available
@@ -986,7 +987,6 @@ class DctMainCtl:
 
         # Start the transformer processing time measurement
         self._transformer_proc_time[0].reset_start_trigger()
-
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.transformer.calculation_mode == "skip":
             # Check, if old study is to delete, if available
@@ -1016,7 +1016,6 @@ class DctMainCtl:
 
         # Start the heat sink processing time measurement
         self._heat_sink_proc_time[0].reset_start_trigger()
-
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if old study is to delete, if available

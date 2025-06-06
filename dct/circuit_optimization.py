@@ -285,7 +285,7 @@ class CircuitOptimization:
         else:
             os.makedirs(f"{filepaths.circuit}/{dab_config.circuit_study_name}", exist_ok=True)
 
-        # set logging verbosity: https://optuna.readthedocs.io/en/stable/reference/generated/optuna.logging.set_verbosity.html#optuna.logging.set_verbosity
+        # set logging verbosity: https://optuna.readthedocs.io/en/stable/reference/generated/optuna.logger.set_verbosity.html#optuna.logging.set_verbosity
         # .INFO: all messages (default)
         # .WARNING: fails and warnings
         # .ERROR: only errors
