@@ -4,6 +4,7 @@ import os
 import datetime
 import warnings
 import math
+import logging
 
 # 3rd party libraries
 import numpy as np
@@ -14,6 +15,8 @@ import matplotlib.axes
 # own libraries
 from dct.debug_tools import *
 from dct.plot_window import *
+
+logger = logging.getLogger(__name__)
 
 class PlotDAB:
     """Class storing and managing the plot window, figs and axes."""
@@ -224,7 +227,7 @@ class PlotDAB:
         # Only add colorbar if there was none
         if fig.axes[-1].get_label() == '<colorbar>':
             # TODO update colorbar
-            print("update colorbar")
+            logger.info("update colorbar")
             cbar = fig.axes[-1]
         else:
             cbar = fig.colorbar(cf, ax=axs)
@@ -349,7 +352,7 @@ class PlotDAB:
         # if fig.axes[-1].get_label() == '<colorbar>':
         if False:
             # TODO update colorbar
-            print("update colorbar not implemented")
+            logger.info("update colorbar not implemented")
             cbar = fig.axes[-1]
         else:
             cbar = fig.colorbar(mappable=mappable, ax=axs, fraction=0.05, pad=0.02,

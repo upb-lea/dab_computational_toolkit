@@ -7,6 +7,8 @@ import numpy as np
 
 # own libraries
 
+logger = logging.getLogger(__name__)
+
 # The dict keys this modulation will return
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
             'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p']
@@ -212,8 +214,8 @@ def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_
     # TODO Maybe Ls is too small? Is that even possible? Error in Formula?
     e3 = n * (v_b2_ * (l_c_b2_ + l_s) - v_b1 * l_c_b2_)
     if np.any(np.less(e3, 0)):
-        logging.info('Something is wrong. Formula e3 is negative and it should not!')
-        logging.info('Please check your DAB Params, probably you must check n or iterate L, Lc1, Lc2.')
+        logger.debug('Something is wrong. Formula e3 is negative and it should not!')
+        logger.debug('Please check your DAB Params, probably you must check n or iterate L, Lc1, Lc2.')
 
     e4 = 2 * n * np.sqrt(q_ab_req_b1 * l_s * np.power(omega_s, 2) * v_b1 * l_c_b1 * (l_c_b1 + l_s))
 

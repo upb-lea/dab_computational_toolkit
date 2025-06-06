@@ -4,6 +4,7 @@ import os
 import time
 import copy
 import threading
+import logging
 
 # 3rd party libraries
 
@@ -13,10 +14,7 @@ import dct
 from server_ctl_dtos import StatData as StData
 from dct.heat_sink_dtos import *
 
-# configure root logger
-# logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-# logging.getLogger().setLevel(logging.ERROR)
-# Structure clase
+logger = logging.getLogger(__name__)
 
 class HeatSinkOptimization:
     """Optimization support class for heat sink optimization."""
@@ -47,13 +45,13 @@ class HeatSinkOptimization:
 
         # Check if path exists
         if not os.path.exists(heat_sink_fan_datapath):
-            print(f"Fan data path {heat_sink_fan_datapath} does not exists!")
+            logger.info(f"Fan data path {heat_sink_fan_datapath} does not exists!")
         # Generate the fan-list
         for (_, _, file_name_list) in os.walk(heat_sink_fan_datapath):
             fan_list = file_name_list
 
         if not fan_list:
-            print(f"No fan design data found in path {heat_sink_fan_datapath}!")
+            logger.info(f"No fan design data found in path {heat_sink_fan_datapath}!")
 
         heat_sink_study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
 
@@ -80,20 +78,27 @@ class HeatSinkOptimization:
             # constraints
             number_directions=toml_heat_sink.settings.number_directions
         )
+
         is_list_generation_successful = True
 
         return is_list_generation_successful
 
-    def get_progress_data(self)-> StData:
+    def get_progress_data(self) -> StData:
+        """Provide the progress data of the optimization.
+
+        :return: Progress data: Processing start time, actual processing time and status.
+                 number of filtered heat sink Pareto front points are obsolete
+        :rtype: StData
+        """
         # Lock statistical performance data access
         with self._h_lock_stat:
             # Update statistical data if optimisation is running
             if self._stat_data.status == 1:
-                self._stat_data.proc_run_time = time.process_time() - self._stat_data.start_proc_time
+                self._stat_data.proc_run_time = time.perf_counter() - self._stat_data.start_proc_time
                 # Check for valid entry
                 if self._stat_data.proc_run_time < 0:
                     self._stat_data.proc_run_time = 0.0
-                    self._stat_data.start_proc_time = time.process_time()
+                    self._stat_data.start_proc_time = time.perf_counter()
 
         return copy.deepcopy(self._stat_data)
 
@@ -112,13 +117,14 @@ class HeatSinkOptimization:
         if target_number_trials > 0:
             hct.Optimization.start_proceed_study(config=act_hct_config, number_trials=target_number_trials)
         else:
-            print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
+            logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 
         # Plot options ASA: Later to add to server
         # df_heat_sink = hopt.Optimization.study_to_df(act_hct_config)
         # hopt.Optimization.df_plot_pareto_front(df_heat_sink, (50, 60))
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
+
     def optimization_handler(self, target_number_trials: int, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
@@ -128,10 +134,9 @@ class HeatSinkOptimization:
         :param debug: Debug mode flag
         :type  debug: bool
         """
-
         # Update statistical data
         with self._h_lock_stat:
-            self._stat_data.start_proc_time = time.process_time()
+            self._stat_data.start_proc_time = time.perf_counter()
             self._stat_data.proc_run_time = 0.0
             self._stat_data.status = 1
 
@@ -147,11 +152,11 @@ class HeatSinkOptimization:
 
         # Update statistical data
         with self._h_lock_stat:
-            self._stat_data.proc_run_time = time.process_time() - self._stat_data.start_proc_time
+            self._stat_data.proc_run_time = time.perf_counter() - self._stat_data.start_proc_time
             # Check for valid entry
             if self._stat_data.proc_run_time < 0:
                 self._stat_data.proc_run_time = 0.0
-                self._stat_data.start_proc_time = time.process_time()
+                self._stat_data.start_proc_time = time.perf_counter()
             self._stat_data.status = 2
 
 class ThermalCalcSupport:

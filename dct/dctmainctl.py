@@ -1,4 +1,6 @@
 """Main control program to optimize the DAB converter."""
+import logging.config
+
 import datetime
 # python libraries
 import copy
@@ -11,13 +13,11 @@ import zipfile
 import fnmatch
 import time
 from multiprocessing import Queue
-from typing import Optional
+from typing import Optional, Any
 
 # 3rd party libraries
 import json
-from typing import Tuple, List
 
-from mypy.types import UnionType
 
 # own libraries
 import dct
@@ -25,11 +25,11 @@ import toml_checker as tc
 import dct.circuit_optimization_dtos as p_dtos
 import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
-from dct import CircuitOptimization
 from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
 from dct import ParetoPlots
+from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from summary_processing import DctSummaryProcessing as spro
 from server_ctl import DctServer as ServerCtl
@@ -37,8 +37,7 @@ from server_ctl import SrvReqData as srv_rd
 from server_ctl import ReqCmd
 from server_ctl_dtos import StatData as StData
 
-# logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-# logging.getLogger('pygeckocircuits2').setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class DctMainCtl:
     """Main class for control dab-optimization."""
@@ -47,48 +46,60 @@ class DctMainCtl:
     class RunTime:
         """Runtime class for measure processing time."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             self._start_time: float = 0.0
             self._run_time: float = 0.0
             self._timer_flag: bool = False
             self._timer_lock: threading.Lock = threading.Lock()
 
-        def reset_start_trigger(self):
+        def reset_start_trigger(self) -> None:
+            """Reset and start the timer."""
             with self._timer_lock:
-                self._start_time=time.process_time()
-                self._run_time: float = 0.0
-                self._timer_flag: bool = True
+                self._start_time = time.perf_counter()
+                self._run_time = 0.0
+                self._timer_flag = True
 
-        def continue_trigger(self):
+        def continue_trigger(self) -> None:
+            """Continue the timer without reset."""
             if not self._timer_flag:
                 with self._timer_lock:
-                    self._start_time = time.process_time() - self._run_time
+                    self._start_time = time.perf_counter() - self._run_time
                     self._timer_flag = True
 
-        def stop_trigger(self):
+        def stop_trigger(self) -> None:
+            """Stop the timer."""
             if self._timer_flag:
                 with self._timer_lock:
                     self._timer_flag = False
-                    self._run_time=time.process_time() - self._start_time
+                    self._run_time = time.perf_counter() - self._start_time
 
-        def is_timer_active(self):
-            return(self._timer_flag)
+        def is_timer_active(self) -> bool:
+            """Provide the timer state.
 
+            :return: True, if the time is active
+            :rtype: bool
+            """
+            return self._timer_flag
 
-        def get_runtime(self)-> float:
+        def get_runtime(self) -> float:
+            """Provide the current measured time since timer start.
+
+            :return: time in seconds
+            :rtype: float
+            """
             # Variable declaration
-            run_time:float = 0.0
+            run_time: float = 0.0
             with self._timer_lock:
                 if self._timer_flag:
-                    run_time = time.process_time() - self._start_time
+                    run_time = time.perf_counter() - self._start_time
                 else:
                     run_time = self._run_time
+                print(f"Run:{run_time} Start: {self._start_time}  Proc: {time.perf_counter()} {self._timer_flag} \n")
 
             return run_time
 
-
-    def __init__(self):
-
+    def __init__(self) -> None:
+        """Initialize the member variable of the DctMainCtl-class."""
         # List data for server communication
         self.circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
         self.inductor_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
@@ -113,8 +124,7 @@ class DctMainCtl:
         # Filtered point results in case of skip
         self.inductor_nbfiltpt_skip_list: list[int] = []
         self.transformer_nbfiltpt_skip_list: list[int] = []
-        self.heatsink_nbfiltpt_skip: list[int] = []
-
+        self.heat_sink_nbfiltpt_skip: list[int] = []
 
     def set_up_folder_structure(self, toml_prog_flow: tc.FlowControl) -> None:
         """
@@ -174,7 +184,39 @@ class DctMainCtl:
 
         return is_toml_file_existing, config
 
-    def generate_conf_file(self, path: str) -> bool:
+    @staticmethod
+    def load_generate_logging_config(logging_config_file: str) -> None:
+        """
+        Read the logging configuration file and configure the logger.
+
+        Generate a default logging configuration file in case it does not exist.
+
+        :param logging_config_file: File name of the logging configuration file
+        :type logging_config_file: str
+        """
+        # Separate filename and path
+        logging_conf_file_directory = os.path.dirname(logging_config_file)
+
+        # check path
+        if os.path.exists(logging_conf_file_directory) or logging_conf_file_directory == "":
+            # check filename
+            if os.path.isfile(logging_config_file):
+                with open(logging_config_file, "rb") as f:
+                    logging.config.fileConfig(logging_config_file)
+                    logger.info(f"Found existing logging configuration {logging_config_file}.")
+            else:
+                logger.info("Generate a new logging.conf file.")
+                generate_logging_config(logging_conf_file_directory)
+                if os.path.isfile(logging_config_file):
+                    with open(logging_config_file, "rb") as f:
+                        logging.config.fileConfig(logging_config_file)
+                else:
+                    raise ValueError("logging.conf can not be generated.")
+        else:
+            logger.warning(f"Path {logging_conf_file_directory} does not exists!")
+
+    @staticmethod
+    def generate_conf_file(path: str) -> bool:
         """
         Create and save the configuration file.
 
@@ -260,13 +302,14 @@ class DctMainCtl:
         return is_study_existing
 
     def get_nb_of_pkl_files(self, filtered_file_path: str) -> int:
-        """
-        Verify if the study path and sqlite3-database file exists.
+        """Count the number of files with extension 'pkl'.
 
-        Works for all types of studies (circuit, inductor, transformer, heat sink).
-        :param path_name: drive location path to the filtered file folder
-        :type  path_name: str
-        :return: Number of pkl-files within the folder corresponds to number of filtered points
+        If the optimization is skipped the number of filtered points reflected by the number of pkl-files
+        needs to be count for status information.
+
+        :param filtered_file_path: drive location path to the 'pkl'-file folder
+        :type  filtered_file_path: str
+        :return: Number of pkl-files within the folder corresponds to number of filtered operation points
         :rtype: int
         """
         # Number of pkl-files in this folder
@@ -275,8 +318,8 @@ class DctMainCtl:
         # check path
         if os.path.exists(filtered_file_path):
             # Loop over the files
-            for filename in  os.listdir(filtered_file_path):
-                if filename.endswith('.pkl') and os.path.isfile(os.path.join(filtered_file_path,filename)):
+            for filename in os.listdir(filtered_file_path):
+                if filename.endswith('.pkl') and os.path.isfile(os.path.join(filtered_file_path, filename)):
                     nb_of_files = nb_of_files + 1
 
         # Return the number of files with extension pkl
@@ -395,7 +438,15 @@ class DctMainCtl:
     def get_init_queue_data(self, act_toml_prog_flow: tc.FlowControl) \
         -> tuple[list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto],
                  list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]]:
+        """Initialize the lists of configuration data.
 
+        :param act_toml_prog_flow: Flow control toml file (reference)
+        :type act_toml_prog_flow: tc.FlowControl
+        :return: List of configuration data for data transfer: circuit, transformer, inductor, heat sink and summary.
+                 Each configuration gets one entry of the list.
+        :rtype: list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto],
+                list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]
+        """
         # Variable declaration and initialisation
 
         # Initialize the staticical data
@@ -405,45 +456,44 @@ class DctMainCtl:
         # Circuit
         circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until circuit_configuration_file is a list
-        configuration_file_list=[act_toml_prog_flow.configuration_data_files.circuit_configuration_file]
+        configuration_file_list = [act_toml_prog_flow.configuration_data_files.circuit_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
             circuit_data_entry = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name = entry,
-                nb_of_trials = act_toml_prog_flow.circuit.number_of_trials,
+                conf_name=entry,
+                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
                 progress_data=copy.deepcopy(stat_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.circuit.calculation_mode == "skip":
-                circuit_data_entry.progress_data.status=3
+                circuit_data_entry.progress_data.status = 3
             circuit_list.append(circuit_data_entry)
 
         # Inductor list (entry per configuration)
         inductor_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until inductor_configuration_file is no list
-        configuration_file_list=[act_toml_prog_flow.configuration_data_files.inductor_configuration_file]
+        configuration_file_list = [act_toml_prog_flow.configuration_data_files.inductor_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
             inductor_data = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name = entry,
-                nb_of_trials = act_toml_prog_flow.circuit.number_of_trials,
+                conf_name=entry,
+                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
                 progress_data=copy.deepcopy(stat_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.inductor.calculation_mode == "skip":
-                inductor_data.progress_data.status=3
+                inductor_data.progress_data.status = 3
                 # Count all filtered points
-                inductor_data.progress_data.nb_of_filtered_points=110
+                inductor_data.progress_data.nb_of_filtered_points = 110
             inductor_list.append(inductor_data)
-
 
         # Transformer data (List per configuration)
         transformer_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until transformer_configuration_file is no list
-        configuration_file_list=[act_toml_prog_flow.configuration_data_files.transformer_configuration_file]
+        configuration_file_list = [act_toml_prog_flow.configuration_data_files.transformer_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
             transformer_data = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name = entry,
-                nb_of_trials = act_toml_prog_flow.circuit.number_of_trials,
+                conf_name=entry,
+                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
                 progress_data=copy.deepcopy(stat_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.transformer.calculation_mode == "skip":
@@ -453,48 +503,53 @@ class DctMainCtl:
         # Heat_sink data (List per configuration)
         heat_sink_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until transformer_configuration_file is no list
-        configuration_file_list=[act_toml_prog_flow.configuration_data_files.heat_sink_configuration_file]
+        configuration_file_list = [act_toml_prog_flow.configuration_data_files.heat_sink_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
             heat_sink_data = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name = entry,
-                nb_of_trials = act_toml_prog_flow.circuit.number_of_trials,
+                conf_name=entry,
+                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
                 progress_data=copy.deepcopy(stat_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.inductor.calculation_mode == "skip":
-                heat_sink_data.progress_data.status=3
+                heat_sink_data.progress_data.status = 3
             heat_sink_list.append(heat_sink_data)
 
         # Summary data (List per circuit configuration)
         summary_list: list[srv_ctl_dtos.SummaryDataEntryDto] = []
         # Workaround until transformer_configuration_file is no list
-        configuration_file_list=[act_toml_prog_flow.configuration_data_files.circuit_configuration_file]
+        configuration_file_list = [act_toml_prog_flow.configuration_data_files.circuit_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
             summary_data = srv_ctl_dtos.SummaryDataEntryDto(
-                conf_name = entry,
-                nb_of_combinations = 0,
+                conf_name=entry,
+                nb_of_combinations=0,
                 progress_data=copy.deepcopy(stat_data_init))
             summary_list.append(summary_data)
 
         # Return the queue data object
-        return circuit_list, inductor_list, transformer_list, heat_sink_list, transformer_list,summary_list
+        return circuit_list, inductor_list, transformer_list, heat_sink_list, transformer_list, summary_list
 
-    def _get_sd_main_data(self)-> srv_ctl_dtos.QueueMainData:
+    def _get_sd_main_data(self) -> srv_ctl_dtos.QueueMainData:
+        """Provide the actual statistical information of the optimization.
+
+        :return: Data for the queue consisting of actual information about the circuit, heat sink and summary and processing times.
+        :rtype: srv_ctl_dtos.QueueMainData
+        """
         # Circuit
         # Check if circuit optimization is not skipped
-        if  self.circuit_list[0].progress_data.status != 3:
+        if self.circuit_list[0].progress_data.status != 3:
             self.circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Workaround for number of filtered points
-        self.circuit_list[0].progress_data.nb_of_filtered_points=len(self._filtered_list_id_ref)
+        self.circuit_list[0].progress_data.nb_of_filtered_points = len(self._filtered_list_id_ref)
 
         # Heat sink
-        # Check if heatsink is initialized,if not initialized progress data are valid
+        # Check if heat sink is initialized,if not initialized progress data are valid
         if self.heat_sink_optimization is not None:
             self.heat_sink_list[0].progress_data = self.heat_sink_optimization.get_progress_data()
 
         # Summary data
-        # Check if heatsink is initialized,if not initialized progress data are valid
+        # Check if heat sink is initialized,if not initialized progress data are valid
         # if self.heat_sink_optimizationis not None:
         # self.summary_list[0].progress_data = dct.DctSummaryProcessing.get_progress_data()
 
@@ -508,27 +563,35 @@ class DctMainCtl:
                                          transformer_proc_time=self._transformer_proc_time[0].get_runtime()
                                          )
 
-        return(queue_main_data_response)
+        return queue_main_data_response
 
+    def _get_sd_detail_data(self, filtered_pt_id: int) -> srv_ctl_dtos.QueueMainData:
+        """Provide the actual statistical information of the optimization.
 
-    def _get_sd_detail_data(self, filtered_pt_id: int):
+        :param  filtered_pt_id: Index of the filtered circuit operation point
+        :type   filtered_pt_id: int
+
+        :return: Data for the queue consisting of actual information about the circuit, transformer, inductor, heat sink and summary
+                 and processing times of a specific filtered circuit operation point.
+        :rtype: srv_ctl_dtos.QueueMainData
+        """
         # Circuit
-        name_of_filtered_point_list: list[tuple[str, int]] = []
+        filtered_points_name_list: list[tuple[str, int] | Any] = []
         # Workaround: Convert the filtered file list
         entry_id = 0
         for entry in self._filtered_list_id_ref:
-            list_item = [str(entry),entry_id]
+            list_item = [str(entry), entry_id]
             entry_id = entry_id + 1
-            name_of_filtered_point_list.append(list_item)
+            filtered_points_name_list.append(list_item)
 
         # Check if circuit optimization is not skipped
-        if  self.circuit_list[0].progress_data.status != 3:
+        if self.circuit_list[0].progress_data.status != 3:
             self.circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Add remaining data
         circuit_data_entry: srv_ctl_dtos.CircuitConfigurationDataDto = srv_ctl_dtos.CircuitConfigurationDataDto(
             conf_name=self.circuit_list[0].conf_name,
             nb_of_trials=self.circuit_list[0].nb_of_trials,
-            name_of_filtered_points=name_of_filtered_point_list,
+            filtered_points_name_list=filtered_points_name_list,
             progress_data=self.circuit_list[0].progress_data
         )
 
@@ -545,7 +608,7 @@ class DctMainCtl:
         elif self.inductor_list[0].progress_data.status == 3:
             self.transformer_list[0].progress_data.nb_of_filtered_points = self.transformer_nbfiltpt_skip_list[filtered_pt_id]
         # Heat sink
-        # Check if heatsink is initialized,if not initialized progress data are valid
+        # Check if heat sink is initialized,if not initialized progress data are valid
         if self.heat_sink_optimization is not None:
             self.heat_sink_list[0].progress_data = self.heat_sink_optimization.get_progress_data()
         # Summary data
@@ -558,11 +621,19 @@ class DctMainCtl:
                                          transformer_list=self.transformer_list,
                                          heat_sink_list=self.heat_sink_list,
                                          summary_data=self.summary_list[0],
-                                         conf_proc_time= self._total_time.get_runtime()))
+                                         conf_proc_time=self._total_time.get_runtime()))
 
         return (queue_detail_data_response)
 
-    def _srv_response_queue(self, act_srv_request_queue: Queue, act_srv_response_queue: Queue):
+    def _srv_response_queue(self, act_srv_request_queue: Queue, act_srv_response_queue: Queue) -> Queue:
+        """Provide the response depending on the request.
+
+        :param  filtered_pt_id: Index of the filtered circuit operation point
+        :type   filtered_pt_id: int
+
+        :return: Queue with data consisting of the requested information and processing times of a specific filtered circuit operation point.
+        :rtype: Queue
+        """
         while True:
             # Wait for the request
             request: srv_rd = act_srv_request_queue.get()
@@ -577,33 +648,6 @@ class DctMainCtl:
                 act_srv_response_queue.put(srv_detail_data)
             elif request.req_cmd == ReqCmd.pareto_front:
                 pass
-
-        """
-        Layout
-        Inductor/Transformer
-        
-        
-        Heatsink
-        Name of conf. 	Number of trials 	Processing time 	Status 	Show Pareto-front
-        
-            Resultcombination filtpd 17 of circuit conf 5
-            'SD', 'I', 5, 17
-            'PF', 'I', 5, 17
-            'PF', 'T', 5, 17
-            'PF', 'C', 5
-        
-            QueueStatMain    
-            table_list    c
-            table_list    h
-            table_list    s
-        
-            QueueStatDetail
-            table    c
-            table_list    i
-            table_list    t
-            table_list    h
-            table    s
-        """
 
     def run_optimization_from_toml_configs(self, workspace_path: str) -> None:
         """Perform the main program.
@@ -627,7 +671,7 @@ class DctMainCtl:
         srv_response_stop_flag = True
 
         # Initialize start time
-        self._total_time=DctMainCtl.RunTime()
+        self._total_time = DctMainCtl.RunTime()
 
         # Start runtime measurement for the optimization
         self._total_time.reset_start_trigger()
@@ -652,8 +696,16 @@ class DctMainCtl:
             raise ValueError("Error: No permission to change the folder!") from exc
 
         # --------------------------
+        # Logging
+        # --------------------------
+        # read logging for submodules
+        logging_filename = os.path.join(workspace_path, "logging.conf")
+        DctMainCtl.load_generate_logging_config(logging_filename)
+
+        # --------------------------
         # Flow control
         # --------------------------
+        logger.debug("Read flow control file")
         # Load the configuration for program flow and check the validity
         flow_control_loaded, dict_prog_flow = self.load_toml_file("progFlow.toml")
         toml_prog_flow = tc.FlowControl(**dict_prog_flow)
@@ -705,7 +757,8 @@ class DctMainCtl:
         )
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
-        self.circuit_list, self.inductor_list, self.transformer_list, self.heat_sink_list, self.transformer_list,self.summary_list = self.get_init_queue_data(toml_prog_flow)
+        self.circuit_list, self.inductor_list, self.transformer_list, self.heat_sink_list, self.transformer_list, self.summary_list = (
+            self.get_init_queue_data(toml_prog_flow))
 
         # --------------------------
         # Circuit flow control
@@ -756,13 +809,16 @@ class DctMainCtl:
             # Initialize inductor_nbfiltpt_skip_list
             self.inductor_nbfiltpt_skip_list = []
             # For loop to check, if all filtered values are available
+
             for id_entry in filter_data.filtered_list_id:
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(inductor_study_data.optimization_directory,
                                                          str(id_entry), inductor_study_data.study_name)
                 # Check, if data are available (skip case)
                 if self.check_study_data(inductor_results_datapath, inductor_study_data.study_name):
-                    self.inductor_nbfiltpt_skip_list.append(self.get_nb_of_pkl_files(os.path.join(inductor_results_datapath,"09_circuit_dtos_incl_inductor_losses")))
+                    self.inductor_nbfiltpt_skip_list.append(
+                        self.get_nb_of_pkl_files(os.path.join(inductor_results_datapath,
+                                                              "09_circuit_dtos_incl_inductor_losses")))
                 else:
                     raise ValueError(
                         f"Study {inductor_study_data.study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
@@ -770,6 +826,7 @@ class DctMainCtl:
         # --------------------------
         # Transformer flow control
         # --------------------------
+        logger.debug("Read transformer flow control")
 
         # Load the transformer-configuration parameter
         transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
@@ -791,13 +848,14 @@ class DctMainCtl:
                                                             transformer_study_data.study_name)
                 # Check, if data are available (skip case)
                 if self.check_study_data(transformer_results_datapath, transformer_study_data.study_name):
-                    self.transformer_nbfiltpt_skip_list.append(self.get_nb_of_pkl_files(os.path.join(transformer_results_datapath,"09_circuit_dtos_incl_transformer_losses")))
+                    self.transformer_nbfiltpt_skip_list.append(
+                        self.get_nb_of_pkl_files(os.path.join(transformer_results_datapath,
+                                                              "09_circuit_dtos_incl_transformer_losses")))
                 else:
                     raise ValueError(
                         f"Study {transformer_study_data.study_name} in path {transformer_results_datapath}"
                         "does not exist. No sqlite3-database found!"
                     )
-
 
         # --------------------------
         # Heat sink flow control
@@ -812,9 +870,7 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if data are available (skip case)
-            if self.check_study_data(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name):
-                self.heat_sink_list[0].progress_data = self.get_nb_of_pkl_files(os.path.join(heat_sink_study_data.optimization_directory, "09_circuit_dtos_incl_transformer_losses"))
-            else:
+            if not self.check_study_data(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name):
                 raise ValueError(
                     f"Study {heat_sink_study_data.study_name} in path {heat_sink_study_data.optimization_directory} does not exist. No sqlite3-database found!")
 
@@ -827,7 +883,6 @@ class DctMainCtl:
         self._heat_sink_proc_time = [DctMainCtl.RunTime()]
         self._summary_proc_time = [DctMainCtl.RunTime()]
 
-
         # Start the data exchange queue thread
         srv_response_stop_flag = False
         _srv_response_hdl = threading.Thread(target=self._srv_response_queue,
@@ -836,15 +891,14 @@ class DctMainCtl:
         _srv_response_hdl.start()
 
         # Start the server
-        srv_ctl.start_dct_server(srv_request_queue, srv_response_queue,True)
+        srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
 
         # -- Start optimization  ----------------------------------------------------------------------------------------
         # --------------------------
         # Circuit optimization
         # --------------------------
+        logger.info("Start circuit optimization.")
 
-        # Debug
-        ptime = time.perf_counter()
         # Start the circuit processing time measurement
         self._circuit_proc_time[0].reset_start_trigger()
 
@@ -898,6 +952,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor optimization
         # --------------------------
+        logger.info("Start inductor optimization.")
 
         # Start the inductor processing time measurement
         self._inductor_proc_time[0].reset_start_trigger()
@@ -927,6 +982,7 @@ class DctMainCtl:
         # --------------------------
         # Transformer optimization
         # --------------------------
+        logger.info("Start transformer optimization.")
 
         # Start the transformer processing time measurement
         self._transformer_proc_time[0].reset_start_trigger()
@@ -956,6 +1012,7 @@ class DctMainCtl:
         # --------------------------
         # Heat sink optimization
         # --------------------------
+        logger.info("Start heat sink optimization.")
 
         # Start the heat sink processing time measurement
         self._heat_sink_proc_time[0].reset_start_trigger()
@@ -1013,7 +1070,7 @@ class DctMainCtl:
         ParetoPlots.plot_summary(toml_prog_flow)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
-        self._total_time.reset_stop_trigger()
+        self._total_time.stop_trigger()
 
         # Stop server
         srv_ctl.stop_dct_server()

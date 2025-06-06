@@ -249,3 +249,62 @@ def generate_heat_sink_toml(working_directory: str) -> None:
     '''
     with open(f"{working_directory}/DabHeatSinkConf.toml", 'w') as output:
         output.write(toml_data)
+
+
+def generate_logging_config(working_directory: str) -> None:
+    """
+    Generate the default logging configuration file.
+
+    :param working_directory: working directory
+    :type working_directory: str
+    """
+    logging_data_config = '''[loggers]
+keys=root,dct,transistordatabase,femmt,hct
+
+[handlers]
+keys=console
+
+[formatters]
+keys=simple
+
+[logger_root]
+level=INFO
+handlers=console
+qualname=
+
+[logger_dct]
+level=INFO
+handlers=console
+qualname=dct
+propagate=0
+
+[logger_transistordatabase]
+level=INFO
+handlers=console
+qualname=transistordatabase
+propagate=0
+
+[logger_femmt]
+level=INFO
+handlers=console
+qualname=femmt
+propagate=0
+
+[logger_hct]
+level=INFO
+handlers=console
+qualname=hct
+propagate=0
+
+[handler_console]
+class=StreamHandler
+level=NOTSET
+formatter=simple
+args=(sys.stdout,)
+
+[formatter_simple]
+format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+datefmt=%Y-%m-%d %H:%M:%S
+    '''
+    with open(f"{working_directory}/logging.conf", 'w') as output:
+        output.write(logging_data_config)

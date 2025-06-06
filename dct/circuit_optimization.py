@@ -15,14 +15,15 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
-import dct.datasets_dtos
 
+import dct.datasets_dtos
 # own libraries
 import dct.datasets_dtos as d_dtos
 import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
 from server_ctl_dtos import StatData as StData
 
+logger = logging.getLogger(__name__)
 
 class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
@@ -94,19 +95,23 @@ class CircuitOptimization:
             return loaded_pareto_dto
 
     @staticmethod
-    def get_progress_data()-> StData:
+    def get_progress_data() -> StData:
+        """Provide the progress data of the optimization.
+
+        :return: Progress data: Processing start time, actual processing time, number of filtered operation points and status.
+        :rtype: StData
+        """
         # Lock statistical performance data access
         with CircuitOptimization._c_lock_stat:
             # Update statistical data if optimisation is runningw
             if CircuitOptimization._stat_data.status == 1:
-                CircuitOptimization._stat_data.proc_run_time = time.process_time() - CircuitOptimization._stat_data.start_proc_time
+                CircuitOptimization._stat_data.proc_run_time = time.perf_counter() - CircuitOptimization._stat_data.start_proc_time
                 # Check for valid entry
                 if CircuitOptimization._stat_data.proc_run_time < 0:
                     CircuitOptimization._stat_data.proc_run_time = 0.0
-                    CircuitOptimization._stat_data.start_proc_time = time.process_time()
+                    CircuitOptimization._stat_data.start_proc_time = time.perf_counter()
 
         return copy.deepcopy(CircuitOptimization._stat_data)
-
 
     @staticmethod
     def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
@@ -251,8 +256,8 @@ class CircuitOptimization:
             pass
         finally:
             # study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-            print(f"Finished {act_number_trials} trials.")
-            print(f"current time: {datetime.datetime.now()}")
+            logger.info(f"Finished {act_number_trials} trials.")
+            logger.info(f"current time: {datetime.datetime.now()}")
             # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
     @staticmethod
@@ -276,7 +281,7 @@ class CircuitOptimization:
         circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.circuit_study_name}.sqlite3")
 
         if os.path.exists(circuit_study_sqlite_database):
-            print("Existing study found. Proceeding.")
+            logger.info("Existing circuit study found. Proceeding.")
         else:
             os.makedirs(f"{filepaths.circuit}/{dab_config.circuit_study_name}", exist_ok=True)
 
@@ -296,9 +301,9 @@ class CircuitOptimization:
                 print(f"Difference: {difference}")
                 read_text = input("'1' or Enter: proceed, 'any key': abort\nYour choice: ")
                 if read_text == str(1) or read_text == "":
-                    print("proceed...")
+                    logger.info("proceed...")
                 else:
-                    print("abort...")
+                    logger.info("abort...")
                     return None
 
         directions = ['maximize', 'minimize']
@@ -307,7 +312,7 @@ class CircuitOptimization:
 
         # Update statistical data
         with CircuitOptimization._c_lock_stat:
-            CircuitOptimization._stat_data.proc_run_time = time.process_time() - CircuitOptimization._stat_data.start_proc_time
+            CircuitOptimization._stat_data.proc_run_time = time.perf_counter() - CircuitOptimization._stat_data.start_proc_time
             CircuitOptimization._stat_data.status = 1
 
         # introduce study in storage, e.g. sqlite or mysql
@@ -327,15 +332,15 @@ class CircuitOptimization:
             # If trials exists, add them to study_in_memory
             study_in_memory.add_trials(study_in_storage.trials)
             # Inform about sampler type
-            print(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
+            logger.info(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
             # actual number of trials
             overtaken_no_trials = len(study_in_memory.trials)
             # Start optimization
             CircuitOptimization.run_optimization_sqlite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
             # Store memory to storage
             study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-            print(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials = {len(study_in_memory.trials)} trials.")
-            print(f"current time: {datetime.datetime.now()}")
+            logger.info(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials = {len(study_in_memory.trials)} trials.")
+            logger.info(f"current time: {datetime.datetime.now()}")
             CircuitOptimization.save_config(dab_config)
 
         elif database_type == 'mysql':
@@ -354,8 +359,7 @@ class CircuitOptimization:
                                                    load_if_exists=True, sampler=sampler)
 
             # Inform about sampler type
-            print(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
-
+            logger.info(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
             # Start optimization
             CircuitOptimization.run_optimization_mysql(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
 
@@ -366,7 +370,7 @@ class CircuitOptimization:
         #    processes = []
         # Loop to start the processes
         #   for proc in range(num_processes):
-        #       print(f"Process {proc} started")
+        #       logger.info(f"Process {proc} started")
         #       p = multiprocessing.Process(target=Optimization.run_optimization,
         #                                   args=(storage_url, dab_config.circuit_study_name,
         #                                         number_trials, dab_config,fixed_parameters
@@ -379,11 +383,11 @@ class CircuitOptimization:
         #   for proc in processes:
             # wait until each process is joined
         #       p.join()
-        #       print(f"Process {proc} joins")
+        #       logger.info(f"Process {proc} joins")
 
 #        Old approach
 #        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.circuit_study_name, sampler=sampler)
-#        print(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
+#        logger.info(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
 #        study_in_memory.add_trials(study_in_storage.trials)
 #        try:
 #            study_in_memory.optimize(func, n_trials=number_trials, n_jobs=1, show_progress_bar=True)
@@ -391,8 +395,8 @@ class CircuitOptimization:
 #            pass
 #        finally:
 #            study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-#            print(f"Finished {number_trials} trials.")
-#            print(f"current time: {datetime.datetime.now()}")
+#            logger.info(f"Finished {number_trials} trials.")
+#            logger.info(f"current time: {datetime.datetime.now()}")
 #            Optimization.save_config(dab_config)
 
     @staticmethod
@@ -434,7 +438,7 @@ class CircuitOptimization:
 
         loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name,
                                            storage=database_url, load_if_exists=True)
-        logging.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
+        logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
         dab_dto = d_sets.HandleDabDto.init_config(
@@ -475,7 +479,7 @@ class CircuitOptimization:
         :type df: pd.DataFrame
         :return:
         """
-        logging.info(f"The study '{dab_config.circuit_study_name}' contains {len(df)} trials.")
+        logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(df)} trials.")
 
         dab_dto_list = []
 
@@ -548,7 +552,7 @@ class CircuitOptimization:
         :param figure_size: figure size as x,y-tuple in mm, e.g. (160, 80)
         :type figure_size: tuple
         """
-        print(df.head())
+        logger.info(df.head())
 
         names = df["number"].to_numpy()
         # plt.figure()
@@ -719,8 +723,8 @@ class CircuitOptimization:
         smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest)[0])
 
         for count in np.arange(0, dab_config.filter.number_filtered_designs - 1):
-            print("------------------")
-            print(f"{count=}")
+            logger.info("------------------")
+            logger.info(f"{count=}")
             n_suggest = df_smallest['params_n_suggest'].item()
             f_s_suggest = df_smallest['params_f_s_suggest'].item()
             l_s_suggest = df_smallest['params_l_s_suggest'].item()
@@ -756,11 +760,10 @@ class CircuitOptimization:
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
-
         # Update statistical data
         with CircuitOptimization._c_lock_stat:
             if CircuitOptimization._stat_data.status == 1:
-                CircuitOptimization._stat_data.proc_run_time = time.process_time() - CircuitOptimization._stat_data.start_proc_time
+                CircuitOptimization._stat_data.proc_run_time = time.perf_counter() - CircuitOptimization._stat_data.start_proc_time
                 # Check for valid entry
                 if CircuitOptimization._stat_data.proc_run_time < 0:
                     CircuitOptimization._stat_data.proc_run_time = 0.0
@@ -769,4 +772,3 @@ class CircuitOptimization:
             else:
                 # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
                 pass
-

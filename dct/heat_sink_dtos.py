@@ -3,6 +3,7 @@
 # python libraries
 import dataclasses
 
+
 @dataclasses.dataclass
 class HeatSinkBoundaryConditions:
     """Fix parameters for the heat sink cooling."""

@@ -17,9 +17,8 @@ import dct.inductor_optimization_dtos
 from server_ctl_dtos import StatData as StData
 
 # configure root logger
-logging.basicConfig(format='%(levelname)s,%(asctime)s:%(message)s', encoding='utf-8')
-logging.getLogger().setLevel(logging.ERROR)
 
+logger = logging.getLogger(__name__)
 
 class InductorOptimization:
     """Optimization of the inductor."""
@@ -109,36 +108,45 @@ class InductorOptimization:
                     circuit_id=circuit_trial_number, stat_data=copy.deepcopy(stat_data_init), inductor_optimization_dto=next_io_config)
                 self._optimization_config_list.append(inductor_dto)
             else:
-                print(f"Wrong path or file {circuit_filepath} does not exists!")
+                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
 
         if self._optimization_config_list:
             is_list_generation_successful = True
 
         return is_list_generation_successful
 
-    def get_progress_data(self, filtered_list_id: int)-> StData:
+    def get_progress_data(self, filtered_list_id: int) -> StData:
+        """Provide the progress data of the optimization.
+
+        :param filtered_list_id: List index of the filtered operation point from circuit
+        :type  filtered_list_id: int
+
+        :return: Progress data: Processing start time, actual processing time, number of filtered inductor Pareto front points and status.
+        :rtype: StData
+        """
         # Variable deklaration and default initialisation
-        ret_stat_data: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0, status=self._optimization_config_list[filtered_list_id].stat_data.status)
+        ret_stat_data: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0,
+                                       status=self._optimization_config_list[filtered_list_id].stat_data.status)
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
-            # Lock statistical performance data access
-            # with self._i_lock_stat: ASA Error
-                # Update statistical data if optimisation is running
-                if self._optimization_config_list[filtered_list_id].stat_data.status == 1:
-                    self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = time.process_time() - self._optimization_config_list[filtered_list_id].stat_data.start_proc_time
-                    # Check for valid entry
-                    if self._optimization_config_list[filtered_list_id].stat_data.proc_run_time < 0:
-                        self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = 0.0
-                        self._optimization_config_list[filtered_list_id].stat_data.start_proc_time = time.process_time()
-                else:
-                    ret_stat_data=copy.deepcopy(self._optimization_config_list[filtered_list_id].stat_data)
+            # Lock statistical performance data access (ASA: Possible Bug)
+            # with self._i_lock_stat:  -> ASA: Later to repair
+            # Update statistical data if optimisation is running
+            if self._optimization_config_list[filtered_list_id].stat_data.status == 1:
+                self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = (
+                    time.perf_counter() - self._optimization_config_list[filtered_list_id].stat_data.start_proc_time)
+                # Check for valid entry
+                if self._optimization_config_list[filtered_list_id].stat_data.proc_run_time < 0:
+                    self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = 0.0
+                    self._optimization_config_list[filtered_list_id].stat_data.start_proc_time = time.perf_counter()
+            else:
+                ret_stat_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].stat_data)
 
         return copy.deepcopy(ret_stat_data)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    @staticmethod
-    def _optimize(circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
+    def _optimize(self, circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
                   enable_operating_range_simulation: bool, debug: bool) -> int:
         """
@@ -171,7 +179,8 @@ class InductorOptimization:
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
         else:
-            print(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
+            logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
+            return 0
 
         # perform FEM simulations
         if factor_min_dc_losses != 0 and factor_max_dc_losses > 0:
@@ -206,14 +215,14 @@ class InductorOptimization:
             re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
 
             # Overtake the filtered operation points
-            nb_of_filtered_points=len(re_simulate_numbers)
+            nb_of_filtered_points = len(re_simulate_numbers)
 
             for re_simulate_number in re_simulate_numbers:
-                print(f"{re_simulate_number=}")
+                logger.info(f"{re_simulate_number=}")
                 df_geometry_re_simulation_number = df_fem_reluctance[
                     df_fem_reluctance["number"] == float(re_simulate_number)]
 
-                print(df_geometry_re_simulation_number.head())
+                logger.info(df_geometry_re_simulation_number.head())
 
                 result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
@@ -223,7 +232,7 @@ class InductorOptimization:
                     os.makedirs(new_circuit_dto_directory)
 
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
-                    print(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                    logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
@@ -236,13 +245,13 @@ class InductorOptimization:
 
                         current_waveform = np.array([time, current])
                         if debug:
-                            print(f"{current_waveform=}")
-                            print("----------------------")
-                            print("All operating point simulation of:")
-                            print(f"   * Circuit study: {filter_data.circuit_study_name}")
-                            print(f"   * Circuit trial: {circuit_id}")
-                            print(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                            print(f"   * Inductor re-simulation trial: {re_simulate_number}")
+                            logger.info(f"{current_waveform=}")
+                            logger.info("----------------------")
+                            logger.info("All operating point simulation of:")
+                            logger.info(f"   * Circuit study: {filter_data.circuit_study_name}")
+                            logger.info(f"   * Circuit trial: {circuit_id}")
+                            logger.info(f"   * Inductor study: {act_io_config.inductor_study_name}")
+                            logger.info(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform=current_waveform,
@@ -266,12 +275,9 @@ class InductorOptimization:
                         # stop after one successful re-simulation run
                         break
 
-            # returns the number of filtered results
-            return nb_of_filtered_points
+        # returns the number of filtered results
+        return nb_of_filtered_points
 
-
-
-    # Simulation handler. Later the simulation handler starts a process per list entry.
     def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
                              factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
                              enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
@@ -302,15 +308,16 @@ class InductorOptimization:
 
             # Update statistical data
             with self._i_lock_stat:
-                act_sim_config.stat_data.start_proc_time = time.process_time()
+                act_sim_config.stat_data.start_proc_time = time.perf_counter()
                 act_sim_config.stat_data.status = 1
 
-                nb_fil_pt = InductorOptimization._optimize(act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, filter_data, target_number_trials,
-                                                           factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
+                nb_fil_pt = self._optimize(
+                    act_sim_config.circuit_id, act_sim_config.inductor_optimization_dto, filter_data, target_number_trials,
+                    factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             # Update statistical data
             with self._i_lock_stat:
-                act_sim_config.stat_data.proc_run_time = time.process_time() - act_sim_config.stat_data.start_proc_time
+                act_sim_config.stat_data.proc_run_time = time.perf_counter() - act_sim_config.stat_data.start_proc_time
                 act_sim_config.stat_data.nb_of_filtered_points = nb_fil_pt
                 act_sim_config.stat_data.status = 2
 
