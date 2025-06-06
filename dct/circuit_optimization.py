@@ -5,6 +5,9 @@ import logging
 import json
 import pickle
 import datetime
+import time
+import threading
+import copy
 
 # 3rd party libraries
 import optuna
@@ -18,11 +21,17 @@ import dct.datasets_dtos
 import dct.datasets_dtos as d_dtos
 import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
+from server_ctl_dtos import StatData as StData
 
 logger = logging.getLogger(__name__)
 
 class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
+
+    """Initialize the configuration list for the circuit optimizations."""
+    _c_lock_stat: threading.Lock = threading.Lock()
+    # Initialize the staticical data (For more configuration it needs to become instance instead of static
+    _stat_data: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0, status=0)
 
     @staticmethod
     def load_filepaths(project_directory: str) -> circuit_dtos.ParetoFilePaths:
@@ -84,6 +93,25 @@ class CircuitOptimization:
             if not isinstance(loaded_pareto_dto, circuit_dtos.CircuitParetoDabDesign):
                 raise TypeError(f"Loaded pickle file {loaded_pareto_dto} not of type CircuitParetoDabDesign.")
             return loaded_pareto_dto
+
+    @staticmethod
+    def get_progress_data() -> StData:
+        """Provide the progress data of the optimization.
+
+        :return: Progress data: Processing start time, actual processing time, number of filtered operation points and status.
+        :rtype: StData
+        """
+        # Lock statistical performance data access
+        with CircuitOptimization._c_lock_stat:
+            # Update statistical data if optimisation is runningw
+            if CircuitOptimization._stat_data.status == 1:
+                CircuitOptimization._stat_data.proc_run_time = time.perf_counter() - CircuitOptimization._stat_data.start_proc_time
+                # Check for valid entry
+                if CircuitOptimization._stat_data.proc_run_time < 0:
+                    CircuitOptimization._stat_data.proc_run_time = 0.0
+                    CircuitOptimization._stat_data.start_proc_time = time.perf_counter()
+
+        return copy.deepcopy(CircuitOptimization._stat_data)
 
     @staticmethod
     def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
@@ -281,6 +309,11 @@ class CircuitOptimization:
         directions = ['maximize', 'minimize']
 
         fixed_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+
+        # Update statistical data
+        with CircuitOptimization._c_lock_stat:
+            CircuitOptimization._stat_data.proc_run_time = time.perf_counter() - CircuitOptimization._stat_data.start_proc_time
+            CircuitOptimization._stat_data.status = 1
 
         # introduce study in storage, e.g. sqlite or mysql
         if database_type == 'sqlite':
@@ -726,3 +759,16 @@ class CircuitOptimization:
         for dto in smallest_dto_list:
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+
+        # Update statistical data
+        with CircuitOptimization._c_lock_stat:
+            if CircuitOptimization._stat_data.status == 1:
+                CircuitOptimization._stat_data.proc_run_time = time.perf_counter() - CircuitOptimization._stat_data.start_proc_time
+                # Check for valid entry
+                if CircuitOptimization._stat_data.proc_run_time < 0:
+                    CircuitOptimization._stat_data.proc_run_time = 0.0
+                # Set Status to done
+                CircuitOptimization._stat_data.status = 2
+            else:
+                # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
+                pass
