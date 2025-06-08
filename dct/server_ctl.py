@@ -47,8 +47,10 @@ class DctServer:
     app = FastAPI()
     app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 
-    #  Templates
-    _template_directory = abspath("htmltemplates")
+    # Get path of this file
+    _base_dir = os.path.dirname(os.path.abspath(__file__))
+    # Set template directory
+    _template_directory = os.path.join(_base_dir, "htmltemplates")
 
     templates = Jinja2Templates(directory=_template_directory)
 
