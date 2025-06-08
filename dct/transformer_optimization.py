@@ -16,7 +16,7 @@ import tqdm
 # own libraries
 import dct.transformer_optimization_dtos
 import femmt as fmt
-from server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import StatData as StData
 
 logger = logging.getLogger(__name__)
 

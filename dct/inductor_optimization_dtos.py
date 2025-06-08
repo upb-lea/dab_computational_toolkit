@@ -6,7 +6,7 @@ import dataclasses
 # 3rd party libraries
 import femmt as fmt
 # own libraries
-from server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import StatData as StData
 
 @dataclasses.dataclass
 class InductorOptimizationDto:

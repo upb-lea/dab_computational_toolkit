@@ -33,10 +33,10 @@ from dct import ParetoPlots
 from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from summary_processing import DctSummaryProcessing as spro
-from server_ctl import DctServer as ServerCtl
-from server_ctl import SrvReqData as srv_rd
-from server_ctl import ReqCmd
-from server_ctl_dtos import StatData as StData
+from dct.server_ctl import DctServer as ServerCtl
+from dct.server_ctl import SrvReqData as srv_rd
+from dct.server_ctl import ReqCmd
+from dct.server_ctl_dtos import StatData as StData
 
 logger = logging.getLogger(__name__)
 

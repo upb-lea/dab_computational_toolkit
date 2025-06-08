@@ -21,7 +21,7 @@ import dct.datasets_dtos
 import dct.datasets_dtos as d_dtos
 import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
-from server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import StatData as StData
 
 logger = logging.getLogger(__name__)
 

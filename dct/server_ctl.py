@@ -17,7 +17,7 @@ from starlette.templating import _TemplateResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 # own libraries
-import server_ctl_dtos as srv_ctl_dtos
+import dct.server_ctl_dtos as srv_ctl_dtos
 
 # Structure classes
 # Structure class of request command

@@ -11,7 +11,7 @@ import logging
 # own libraries
 import hct
 import dct
-from server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import StatData as StData
 from dct.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)

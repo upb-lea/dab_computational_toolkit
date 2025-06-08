@@ -14,7 +14,7 @@ import tqdm
 # own libraries
 import femmt as fmt
 import dct.inductor_optimization_dtos
-from server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import StatData as StData
 
 # configure root logger
 logger = logging.getLogger(__name__)
