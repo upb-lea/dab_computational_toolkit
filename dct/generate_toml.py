@@ -104,9 +104,9 @@ def generate_circuit_toml(working_directory: str) -> None:
         c_par_2=16e-12
     
     [output_range]
-        v_1_min_nom_max_list=[690, 700, 710]
-        v_2_min_nom_max_list=[175, 235, 295]
-        p_min_nom_max_list=[-2000, 2000, 2200]
+        v_1_min_max_list=[690, 710]
+        v_2_min_max_list=[175, 295]
+        p_min_max_list=[-2000, 2200]
         steps_per_direction=3
     
     [filter_distance]

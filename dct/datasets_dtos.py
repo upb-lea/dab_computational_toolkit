@@ -30,17 +30,14 @@ class FixedParameters:
 class CircuitConfig:
     """Input configuration DTO for the DAB converter."""
 
-    V1_nom: np.float64
     V1_min: np.float64
     V1_max: np.float64
     V1_step: np.float64
-    V2_nom: np.float64
     V2_min: np.float64
     V2_max: np.float64
     V2_step: np.float64
     P_min: np.float64
     P_max: np.float64
-    P_nom: np.float64
     P_step: np.float64
     n: np.float64
     Ls: np.float64

@@ -4,8 +4,8 @@
 import os
 
 # own libraries
-import dct
 from dct import CircuitDabDTO
+from dct import PlotDAB
 
 # 3rd party libraries
 import numpy as np
@@ -33,7 +33,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
         int(dab_config.input_config.V2_step),
         int(dab_config.input_config.P_step))
 
-    plt = dct.plotdab.PlotDAB(is_latex=False)
+    plt = PlotDAB(is_latex=False)
 
     # Plot OptZVS mod results
     # Plot a cross-section through the V1 plane
