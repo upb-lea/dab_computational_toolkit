@@ -6,12 +6,12 @@ import dataclasses
 # 3rd party libraries
 import femmt as fmt
 # own libraries
-from dct.server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import ProgressData
 
 @dataclasses.dataclass
 class InductorOptimizationDto:
     """DTO for the inductor optimization."""
 
     circuit_id: int
-    stat_data: StData
+    progress_data: ProgressData
     inductor_optimization_dto: fmt.InductorOptimizationDTO

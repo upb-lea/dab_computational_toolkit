@@ -16,7 +16,7 @@ import tqdm
 # own libraries
 import dct.transformer_optimization_dtos
 import femmt as fmt
-from dct.server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import ProgressData
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ class TransformerOptimization:
         """Initialize the configuration list for the transformer optimizations."""
         self._optimization_config_list = []
         self._t_lock_stat: threading.Lock = threading.Lock()
+        self._number_performed_calculations: int = 0
 
     def generate_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
@@ -111,7 +112,7 @@ class TransformerOptimization:
         )
 
         # Initialize the staticical data
-        stat_data_init: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0, status=0)
+        stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
 
         # Create the sto_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
@@ -143,7 +144,7 @@ class TransformerOptimization:
                     = os.path.join(study_data.optimization_directory, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
                 transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(
                     circuit_id=circuit_trial_number,
-                    stat_data=copy.deepcopy(stat_data_init),
+                    progress_data=copy.deepcopy(stat_data_init),
                     transformer_optimization_dto=next_io_config)
 
                 self._optimization_config_list.append(transformer_dto)
@@ -155,36 +156,44 @@ class TransformerOptimization:
 
         return is_list_generation_successful
 
-    def get_progress_data(self, filtered_list_id: int) -> StData:
+    def get_progress_data(self, filtered_list_id: int) -> ProgressData:
         """Provide the progress data of the optimization.
 
         :param filtered_list_id: List index of the filtered operation point from circuit
         :type  filtered_list_id: int
 
         :return: Progress data: Processing start time, actual processing time, number of filtered transformer Pareto front points and status.
-        :rtype: StData
+        :rtype: ProgressData
         """
         # Variable deklaration and default initialisation
-        ret_stat_data: StData = StData(
-            start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0,
-            status=self._optimization_config_list[filtered_list_id].stat_data.status)
+        ret_progress_data: ProgressData = ProgressData(
+            start_time=0.0, run_time=0, nb_of_filtered_points=0,
+            status=0)
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
             # Lock statistical performance data access   (ASA: Possible Bug)
             # with self._t_lock_stat: -> ASA: Later to repair
             # Update statistical data if optimisation is running
-            if self._optimization_config_list[filtered_list_id].stat_data.status == 1:
-                self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = (
-                    time.perf_counter() - self._optimization_config_list[filtered_list_id].stat_data.start_proc_time)
+            if self._optimization_config_list[filtered_list_id].progress_data.status == 1:
+                self._optimization_config_list[filtered_list_id].progress_data.run_time = (
+                    time.perf_counter() - self._optimization_config_list[filtered_list_id].progress_data.start_time)
                 # Check for valid entry
-                if self._optimization_config_list[filtered_list_id].stat_data.proc_run_time < 0:
-                    self._optimization_config_list[filtered_list_id].stat_data.proc_run_time = 0.0
-                    self._optimization_config_list[filtered_list_id].stat_data.start_proc_time = time.perf_counter()
+                if self._optimization_config_list[filtered_list_id].progress_data.run_time < 0:
+                    self._optimization_config_list[filtered_list_id].progress_data.run_time = 0.0
+                    self._optimization_config_list[filtered_list_id].progress_data.start_time = time.perf_counter()
             else:
-                ret_stat_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].stat_data)
+                ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
 
-        return copy.deepcopy(ret_stat_data)
+        return copy.deepcopy(ret_progress_data)
+
+    def get_number_of_performed_calculations(self) -> int:
+        """Provide the number of performed calculations.
+
+        :return: int: Number of performed calculations
+        :rtype: int
+        """
+        return self._number_performed_calculations
 
     def _optimize(self, circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
                   act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> int:
@@ -320,13 +329,16 @@ class TransformerOptimization:
                         # stop after one successful re-simulation run
                         break
 
+                # Increment performed calculation counter
+                self._number_performed_calculations = self._number_performed_calculations + 1
+
         # returns the number of filtered results
         return nb_of_filtered_points
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def simulation_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                           factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
-                           enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
+    def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
+                             factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
+                             enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 
@@ -344,7 +356,7 @@ class TransformerOptimization:
         :type  debug: bool
         """
         # Later this is to parallelize with multiple processes
-        for act_sim_config in self._optimization_config_list:
+        for act_optimization_configuration in self._optimization_config_list:
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -354,18 +366,19 @@ class TransformerOptimization:
 
             # Update statistical data
             # with self._t_lock_stat:
-            act_sim_config.stat_data.start_proc_time = time.perf_counter()
-            act_sim_config.stat_data.status = 1
+            act_optimization_configuration.progress_data.start_time = time.perf_counter()
+            act_optimization_configuration.progress_data.status = 1
 
-            nb_fil_pt = self._optimize(act_sim_config.circuit_id, act_sim_config.transformer_optimization_dto,
+            nb_fil_pt = self._optimize(act_optimization_configuration.circuit_id,
+                                       act_optimization_configuration.transformer_optimization_dto,
                                        filter_data, target_number_trials, factor_dc_min_losses,
                                        factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             # Update statistical data
             #  with self._t_lock_stat:
-            act_sim_config.stat_data.proc_run_time = time.perf_counter() - act_sim_config.stat_data.start_proc_time
-            act_sim_config.stat_data.nb_of_filtered_points = nb_fil_pt
-            act_sim_config.stat_data.status = 2
+            act_optimization_configuration.progress_data.run_time = time.perf_counter() - act_optimization_configuration.progress_data.start_time
+            act_optimization_configuration.progress_data.nb_of_filtered_points = nb_fil_pt
+            act_optimization_configuration.progress_data.status = 2
 
             if debug:
                 # stop after one circuit run

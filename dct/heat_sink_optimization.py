@@ -11,7 +11,7 @@ import logging
 # own libraries
 import hct
 import dct
-from dct.server_ctl_dtos import StatData as StData
+from dct.server_ctl_dtos import ProgressData
 from dct.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)
@@ -21,12 +21,12 @@ class HeatSinkOptimization:
 
     # Simulation configuration list
     _hct_config: hct.OptimizationParameters
-    _stat_data: StData
+    _progress_data: ProgressData
 
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
         self._hct_config: hct.OptimizationParameters
-        self._stat_data: StData = StData(start_proc_time=0.0, proc_run_time=0.0, nb_of_filtered_points=0, status=0)
+        self._progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0.0, nb_of_filtered_points=0, status=0)
         self._h_lock_stat: threading.Lock = threading.Lock()
 
     def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
@@ -83,24 +83,24 @@ class HeatSinkOptimization:
 
         return is_list_generation_successful
 
-    def get_progress_data(self) -> StData:
+    def get_progress_data(self) -> ProgressData:
         """Provide the progress data of the optimization.
 
         :return: Progress data: Processing start time, actual processing time and status.
                  number of filtered heat sink Pareto front points are obsolete
-        :rtype: StData
+        :rtype: ProgressData
         """
         # Lock statistical performance data access
         with self._h_lock_stat:
             # Update statistical data if optimisation is running
-            if self._stat_data.status == 1:
-                self._stat_data.proc_run_time = time.perf_counter() - self._stat_data.start_proc_time
+            if self._progress_data.status == 1:
+                self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
                 # Check for valid entry
-                if self._stat_data.proc_run_time < 0:
-                    self._stat_data.proc_run_time = 0.0
-                    self._stat_data.start_proc_time = time.perf_counter()
+                if self._progress_data.run_time < 0:
+                    self._progress_data.run_time = 0.0
+                    self._progress_data.start_time = time.perf_counter()
 
-        return copy.deepcopy(self._stat_data)
+        return copy.deepcopy(self._progress_data)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
@@ -136,9 +136,9 @@ class HeatSinkOptimization:
         """
         # Update statistical data
         with self._h_lock_stat:
-            self._stat_data.start_proc_time = time.perf_counter()
-            self._stat_data.proc_run_time = 0.0
-            self._stat_data.status = 1
+            self._progress_data.start_time = time.perf_counter()
+            self._progress_data.run_time = 0.0
+            self._progress_data.status = 1
 
         # Perform optimization
         # Debug switch
@@ -152,12 +152,12 @@ class HeatSinkOptimization:
 
         # Update statistical data
         with self._h_lock_stat:
-            self._stat_data.proc_run_time = time.perf_counter() - self._stat_data.start_proc_time
+            self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
             # Check for valid entry
-            if self._stat_data.proc_run_time < 0:
-                self._stat_data.proc_run_time = 0.0
-                self._stat_data.start_proc_time = time.perf_counter()
-            self._stat_data.status = 2
+            if self._progress_data.run_time < 0:
+                self._progress_data.run_time = 0.0
+                self._progress_data.start_time = time.perf_counter()
+            self._progress_data.status = 2
 
 class ThermalCalcSupport:
     """Provides functions to calculate the thermal resistance."""

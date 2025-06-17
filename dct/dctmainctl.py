@@ -34,9 +34,11 @@ from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from summary_processing import DctSummaryProcessing as spro
 from dct.server_ctl import DctServer as ServerCtl
-from dct.server_ctl import SrvReqData as srv_rd
-from dct.server_ctl import ReqCmd
-from dct.server_ctl_dtos import StatData as StData
+from dct.server_ctl import SrvReqData
+from dct.server_ctl import RequestCmd
+from dct.server_ctl import ParetoFrontSource
+from dct.server_ctl_dtos import ProgressData
+
 
 logger = logging.getLogger(__name__)
 
@@ -102,18 +104,20 @@ class DctMainCtl:
     def __init__(self) -> None:
         """Initialize the member variable of the DctMainCtl-class."""
         # List data for server communication
-        self.circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
-        self.inductor_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
-        self.transformer_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
-        self.heat_sink_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
-        self.summary_list: list[srv_ctl_dtos.SummaryDataEntryDto]
+        self._circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
+        self._inductor_main_list: list[srv_ctl_dtos.MagneticDataEntryDto]
+        self._transformer_main_list: list[srv_ctl_dtos.MagneticDataEntryDto]
+        self._inductor_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
+        self._transformer_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
+        self._heat_sink_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
+        self._summary_list: list[srv_ctl_dtos.SummaryDataEntryDto]
         # Processing time data (Prepared for future implementation with  multiple configurations)
         self._total_time: DctMainCtl.RunTime
-        self._circuit_proc_time: list[DctMainCtl.RunTime] = []
-        self._inductor_proc_time: list[DctMainCtl.RunTime] = []
-        self._transformer_proc_time: list[DctMainCtl.RunTime] = []
-        self._heat_sink_proc_time: list[DctMainCtl.RunTime] = []
-        self._summary_proc_time: list[DctMainCtl.RunTime] = []
+        self._circuit_progress_time: list[DctMainCtl.RunTime] = []
+        self._inductor_progress_time: list[DctMainCtl.RunTime] = []
+        self._transformer_progress_time: list[DctMainCtl.RunTime] = []
+        self._heat_sink_progress_time: list[DctMainCtl.RunTime] = []
+        self._summary_progress_time: list[DctMainCtl.RunTime] = []
 
         # Optimisation class instances
         # circuit_optimisation is missing due to static class. Needs to be changed to instance class too.
@@ -123,9 +127,15 @@ class DctMainCtl:
         self.heat_sink_optimization: Optional[HeatSinkOptimization] = None
 
         # Filtered point results in case of skip
-        self.inductor_nbfiltpt_skip_list: list[int] = []
-        self.transformer_nbfiltpt_skip_list: list[int] = []
-        self.heat_sink_nbfiltpt_skip: list[int] = []
+        self._inductor_number_filtered_points_skip_list: list[int] = []
+        self._transformer_number_filtered_points_skip_list: list[int] = []
+        self._heat_sink_number_filtered_points_skip: list[int] = []
+
+        # Key input variables
+        self._key_input_lock: threading.Lock = threading.Lock()
+        self._key_input_string: str = ""
+        self._break_point_flag = False
+        self._break_point_message: str = ""
 
     def set_up_folder_structure(self, toml_prog_flow: tc.FlowControl) -> None:
         """
@@ -346,9 +356,17 @@ class DctMainCtl:
             print("Active breakpoint at: '"+info+"'!\n")
             print("'C'=continue, 'S'=stop the program. Please enter your choice")
             key_inp = "x"
-            # Wait for keyboard entry
-            while key_inp != "c" and key_inp != "C" and key_inp != "s" and key_inp != "S":
-                key_inp = input()
+            # Notify server about the breakpoint
+            self._break_point_flag = True
+            # Consume previous key input
+            self._get_key_inp()
+            # Add breakpoint message
+            self._break_point_message = "Active breakpoint at: '"+info+"'!\n"
+            # Wait for keyboard entry or server command
+            while key_inp != "c" and key_inp != "C" and key_inp != "s" and key_inp != "S" and self._break_point_flag:
+                key_inp = self._get_key_inp()
+                # Decrease the load
+                time.sleep(0.25)
 
             # Check result
             if key_inp == "s" or key_inp == "S":
@@ -356,7 +374,8 @@ class DctMainCtl:
                 # stop program
                 sys.exit()
         else:
-            pass
+            # Remove breakpoint measage
+            self._break_point_message = ""
 
     def circuit_toml_2_dto(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
         """
@@ -437,25 +456,31 @@ class DctMainCtl:
         print('Zip archive created:', zip_path)
 
     def get_init_queue_data(self, act_toml_prog_flow: tc.FlowControl) \
-        -> tuple[list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto],
-                 list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]]:
+        -> tuple[list[ConfigurationDataEntryDto], list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
+                 list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
+                 list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]]:
         """Initialize the lists of configuration data.
 
         :param act_toml_prog_flow: Flow control toml file (reference)
         :type act_toml_prog_flow: tc.FlowControl
         :return: List of configuration data for data transfer: circuit, transformer, inductor, heat sink and summary.
                  Each configuration gets one entry of the list.
-        :rtype: list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto],
+        :rtype: list[ConfigurationDataEntryDto], list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
+                list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
                 list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]
         """
         # Variable declaration and initialisation
 
         # Initialize the staticical data
-        stat_data_init: StData = StData(start_proc_time=0.0, proc_run_time=0, nb_of_filtered_points=0, status=0)
+        progress_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
 
         # Create data for the queue objects
         # Circuit
         circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
+        # Inductor
+        inductor_main_list: list[srv_ctl_dtos.MagneticDataEntryDto] = []
+        # Transformer
+        transformer_main_list: list[srv_ctl_dtos.MagneticDataEntryDto] = []
         # Workaround until circuit_configuration_file is a list
         configuration_file_list = [act_toml_prog_flow.configuration_data_files.circuit_configuration_file]
         # Add entries per configuration
@@ -463,11 +488,29 @@ class DctMainCtl:
             circuit_data_entry = srv_ctl_dtos.ConfigurationDataEntryDto(
                 conf_name=entry,
                 nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
-                progress_data=copy.deepcopy(stat_data_init))
+                progress_data=copy.deepcopy(progress_data_init))
+            # Update dependent magnetic lists
+            inductor_data_entry = srv_ctl_dtos.MagneticDataEntryDto(
+                circuit_configuration_name=entry,
+                number_performed_calculations=0,
+                number_calculations=0,
+                progress_data=copy.deepcopy(progress_data_init))
+            transformer_data_entry = srv_ctl_dtos.MagneticDataEntryDto(
+                circuit_configuration_name=entry,
+                number_performed_calculations=0,
+                number_calculations=0,
+                progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.circuit.calculation_mode == "skip":
                 circuit_data_entry.progress_data.status = 3
+            if act_toml_prog_flow.inductor.calculation_mode == "skip":
+                inductor_data_entry.progress_data.status = 3
+            if act_toml_prog_flow.transformer.calculation_mode == "skip":
+                transformer_data_entry.progress_data.status = 3
+            # Overtake the list entries
             circuit_list.append(circuit_data_entry)
+            inductor_main_list.append(inductor_data_entry)
+            transformer_main_list.append(transformer_data_entry)
 
         # Inductor list (entry per configuration)
         inductor_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
@@ -478,14 +521,13 @@ class DctMainCtl:
             inductor_data = srv_ctl_dtos.ConfigurationDataEntryDto(
                 conf_name=entry,
                 nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
-                progress_data=copy.deepcopy(stat_data_init))
+                progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.inductor.calculation_mode == "skip":
                 inductor_data.progress_data.status = 3
                 # Count all filtered points
                 inductor_data.progress_data.nb_of_filtered_points = 110
             inductor_list.append(inductor_data)
-
         # Transformer data (List per configuration)
         transformer_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until transformer_configuration_file is no list
@@ -495,7 +537,7 @@ class DctMainCtl:
             transformer_data = srv_ctl_dtos.ConfigurationDataEntryDto(
                 conf_name=entry,
                 nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
-                progress_data=copy.deepcopy(stat_data_init))
+                progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.transformer.calculation_mode == "skip":
                 transformer_data.progress_data.status = 3
@@ -510,7 +552,7 @@ class DctMainCtl:
             heat_sink_data = srv_ctl_dtos.ConfigurationDataEntryDto(
                 conf_name=entry,
                 nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
-                progress_data=copy.deepcopy(stat_data_init))
+                progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.inductor.calculation_mode == "skip":
                 heat_sink_data.progress_data.status = 3
@@ -525,13 +567,13 @@ class DctMainCtl:
             summary_data = srv_ctl_dtos.SummaryDataEntryDto(
                 conf_name=entry,
                 nb_of_combinations=0,
-                progress_data=copy.deepcopy(stat_data_init))
+                progress_data=copy.deepcopy(progress_data_init))
             summary_list.append(summary_data)
 
         # Return the queue data object
-        return circuit_list, inductor_list, transformer_list, heat_sink_list, transformer_list, summary_list
+        return circuit_list, inductor_main_list, inductor_list, transformer_main_list, transformer_list, heat_sink_list, summary_list
 
-    def _get_sd_main_data(self) -> srv_ctl_dtos.QueueMainData:
+    def _get_page_main_data(self) -> srv_ctl_dtos.QueueMainData:
         """Provide the actual statistical information of the optimization.
 
         :return: Data for the queue consisting of actual information about the circuit, heat sink and summary and processing times.
@@ -539,34 +581,45 @@ class DctMainCtl:
         """
         # Circuit
         # Check if circuit optimization is not skipped
-        if self.circuit_list[0].progress_data.status != 3:
-            self.circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
+        if self._circuit_list[0].progress_data.status != 3:
+            self._circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Workaround for number of filtered points
-        self.circuit_list[0].progress_data.nb_of_filtered_points = len(self._filtered_list_id_ref)
+        self._circuit_list[0].progress_data.nb_of_filtered_points = len(self._filtered_list_id_ref)
+        # Inductor
+        # Check if inductor is initialized,if not initialized progress data are valid
+        if self.inductor_optimization is not None:
+            self._inductor_main_list[0].number_performed_calculations = self.inductor_optimization.get_number_of_performed_calculations()
+            self._inductor_main_list[0].progress_data.run_time = self._inductor_progress_time[0].get_runtime()
+        # Transformer
+        # Check if transformer is initialized,if not initialized progress data are valid
+        if self.transformer_optimization is not None:
+            self._transformer_main_list[0].number_performed_calculations = self.transformer_optimization.get_number_of_performed_calculations()
+            self._transformer_main_list[0].progress_data.run_time = self._transformer_progress_time[0].get_runtime()
 
         # Heat sink
         # Check if heat sink is initialized,if not initialized progress data are valid
         if self.heat_sink_optimization is not None:
-            self.heat_sink_list[0].progress_data = self.heat_sink_optimization.get_progress_data()
+            self._heat_sink_list[0].progress_data = self.heat_sink_optimization.get_progress_data()
 
         # Summary data
-        # Check if heat sink is initialized,if not initialized progress data are valid
-        # if self.heat_sink_optimizationis not None:
-        # self.summary_list[0].progress_data = dct.DctSummaryProcessing.get_progress_data()
+        # Check if summary processing is initialized,if not initialized progress data are valid
+        if self._summary_list is not None:
+            self._summary_list[0].progress_data = spro.get_progress_data()
 
         # Assemble queue data
         queue_main_data_response: srv_ctl_dtos.QueueMainData \
-            = srv_ctl_dtos.QueueMainData(circuit_list=self.circuit_list,
-                                         heat_sink_list=self.heat_sink_list,
-                                         summary_list=self.summary_list,
-                                         total_proc_time=self._total_time.get_runtime(),
-                                         inductor_proc_time=self._inductor_proc_time[0].get_runtime(),
-                                         transformer_proc_time=self._transformer_proc_time[0].get_runtime()
+            = srv_ctl_dtos.QueueMainData(circuit_list=self._circuit_list,
+                                         inductor_main_list=self._inductor_main_list,
+                                         transformer_main_list=self._transformer_main_list,
+                                         heat_sink_list=self._heat_sink_list,
+                                         summary_list=self._summary_list,
+                                         total_process_time=self._total_time.get_runtime(),
+                                         break_point_notification=self._break_point_message
                                          )
 
         return queue_main_data_response
 
-    def _get_sd_detail_data(self, filtered_pt_id: int) -> srv_ctl_dtos.QueueMainData:
+    def _get_page_detail_data(self, filtered_pt_id: int) -> srv_ctl_dtos.QueueDetailData:
         """Provide the actual statistical information of the optimization.
 
         :param  filtered_pt_id: Index of the filtered circuit operation point
@@ -586,47 +639,236 @@ class DctMainCtl:
             filtered_points_name_list.append(list_item)
 
         # Check if circuit optimization is not skipped
-        if self.circuit_list[0].progress_data.status != 3:
-            self.circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
+        if self._circuit_list[0].progress_data.status != 3:
+            self._circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Add remaining data
         circuit_data_entry: srv_ctl_dtos.CircuitConfigurationDataDto = srv_ctl_dtos.CircuitConfigurationDataDto(
-            conf_name=self.circuit_list[0].conf_name,
-            nb_of_trials=self.circuit_list[0].nb_of_trials,
+            conf_name=self._circuit_list[0].conf_name,
+            nb_of_trials=self._circuit_list[0].nb_of_trials,
             filtered_points_name_list=filtered_points_name_list,
-            progress_data=self.circuit_list[0].progress_data
+            progress_data=self._circuit_list[0].progress_data
         )
 
         # Inductor
         # Check if inductor is initialized,if not initialized progress data are valid
         if self.inductor_optimization is not None:
-            self.inductor_list[0].progress_data = self.inductor_optimization.get_progress_data(filtered_pt_id)
-        elif self.inductor_list[0].progress_data.status == 3:
-            self.inductor_list[0].progress_data.nb_of_filtered_points = self.inductor_nbfiltpt_skip_list[filtered_pt_id]
+            self._inductor_list[0].progress_data = self.inductor_optimization.get_progress_data(filtered_pt_id)
+        elif self._inductor_list[0].progress_data.status == 3:
+            self._inductor_list[0].progress_data.nb_of_filtered_points = self._inductor_number_filtered_points_skip_list[filtered_pt_id]
         # Transformer
         # Check if transformer is initialized,if not initialized progress data are valid
         if self.transformer_optimization is not None:
-            self.transformer_list[0].progress_data = self.transformer_optimization.get_progress_data(filtered_pt_id)
-        elif self.inductor_list[0].progress_data.status == 3:
-            self.transformer_list[0].progress_data.nb_of_filtered_points = self.transformer_nbfiltpt_skip_list[filtered_pt_id]
+            self._transformer_list[0].progress_data = self.transformer_optimization.get_progress_data(filtered_pt_id)
+        elif self._inductor_list[0].progress_data.status == 3:
+            self._transformer_list[0].progress_data.nb_of_filtered_points = self._transformer_number_filtered_points_skip_list[filtered_pt_id]
         # Heat sink
         # Check if heat sink is initialized,if not initialized progress data are valid
         if self.heat_sink_optimization is not None:
-            self.heat_sink_list[0].progress_data = self.heat_sink_optimization.get_progress_data()
+            self._heat_sink_list[0].progress_data = self.heat_sink_optimization.get_progress_data()
         # Summary data
-        # self.summary_list[0].progress_data = dct.DctSummaryProcessing.get_progress_data()
+        # Check if summary processing is initialized,if not initialized progress data are valid
+        if self._summary_list is not None:
+            self._summary_list[0].progress_data = spro.get_progress_data()
 
         # Assemble queue data
         queue_detail_data_response: srv_ctl_dtos.QueueDetailData = (
             srv_ctl_dtos.QueueDetailData(circuit_data=circuit_data_entry,
-                                         inductor_list=self.inductor_list,
-                                         transformer_list=self.transformer_list,
-                                         heat_sink_list=self.heat_sink_list,
-                                         summary_data=self.summary_list[0],
-                                         conf_proc_time=self._total_time.get_runtime()))
+                                         inductor_list=self._inductor_list,
+                                         transformer_list=self._transformer_list,
+                                         heat_sink_list=self._heat_sink_list,
+                                         summary_data=self._summary_list[0],
+                                         conf_process_time=self._total_time.get_runtime(),
+                                         break_point_notification=self._break_point_message))
 
-        return (queue_detail_data_response)
+        return queue_detail_data_response
 
-    def _srv_response_queue(self, act_srv_request_queue: Queue, act_srv_response_queue: Queue) -> Queue:
+    def _request_pareto_front(self, pareto_source: ParetoFrontSource, c_configuration_index: int,
+                              item_configuration_index: int, c_filtered_point_index: int) -> srv_ctl_dtos.QueueParetoFrontData:
+        """Provide the actual statistical information of the optimization.
+
+        :param  c_configuration_index: Index of the circuit configuration
+        :type   c_configuration_index: int
+        :param  pareto_source: Type of the Pareto front source
+        :type   pareto_source: ParetoFrontSource (enumeration)
+        :param  c_filtered_point_index: Index of the filtered circuit operation point
+        :type   c_filtered_point_index: int
+
+        :return: Html page of the requested pareto front
+        :rtype:  str
+        """
+        # Variable declaration
+        response_data = srv_ctl_dtos.QueueParetoFrontData(parto_front_optuna="",
+                                                          validity=False,
+                                                          evaluation_info="Unexpected error!")
+
+        # Circuit (Later to create a instance variable)
+        filtered_points_name_list: list[tuple[str, int] | Any] = []
+        # Workaround: Convert the filtered file list
+        entry_id = 0
+        for entry in self._filtered_list_id_ref:
+            list_item = [str(entry), entry_id]
+            entry_id = entry_id + 1
+            filtered_points_name_list.append(list_item)
+
+        # Flag for available pareto file
+        is_pareto_file_available: bool = False
+
+        # Verify the input data
+        if not c_configuration_index < len(self._circuit_list) or c_configuration_index < 0:
+            response_data.evaluation_info = "Index of circuit configuration is invalid!"
+            return response_data
+        # Process the input data to find the Pareto front data
+        if pareto_source == ParetoFrontSource.pareto_circuit:
+            # Pareto front of circuit
+            if self._circuit_list[c_configuration_index].progress_data.status == 1:
+                # Get Pareto front from memory
+                response_data.evaluation_info = f"Circuit configuration file: {self._circuit_list[c_configuration_index].conf_name}"
+                response_data.parto_front_optuna = dct.CircuitOptimization.get_actual_pareto_html()
+            elif not self._circuit_list[c_configuration_index].progress_data.status == 0:
+                # Get Pareto front from file
+                if self.check_study_data(self._circuit_study_data.optimization_directory,
+                                         self._circuit_study_data.study_name):
+                    response_data.evaluation_info = f"Circuit configuration: {self._circuit_list[c_configuration_index].conf_name}"
+                    response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(self._circuit_study_data.study_name,
+                                                                                               os.path.join(self._circuit_study_data.optimization_directory,
+                                                                                                            self._circuit_study_data.study_name+".sqlite3"))
+            else:
+                response_data.evaluation_info = "Pareto front calculation still not started!"
+        # Pareto front of inductor
+        elif pareto_source == ParetoFrontSource.pareto_inductor:
+            # Verify the input data
+            if not item_configuration_index < len(self._inductor_list) or item_configuration_index < 0:
+                response_data.evaluation_info = "Index of circuit configuration is invalid!"
+                return response_data
+            else:
+                # Check if inductor optimization is initialized, if not initialized progress data are valid
+                if self.inductor_optimization is not None:
+                    # Get progress data of selected filtered point
+                    self._inductor_list[0].progress_data = self.inductor_optimization.get_progress_data(c_filtered_point_index)
+                    if self._inductor_list[0].progress_data == 1:
+                        # Get Pareto front from memory (Still not available. Femmt-update needed)
+                        # response_data.evaluation_info = f"Inductor configuration: {self._inductor_list[i_configuration_index].conf_name}"
+                        response_data.evaluation_info = "Pareto front calculation is started..."
+                        # response_data.parto_front_optuna = self.inductor_optimization.get_actual_pareto_html()
+                    elif not self._inductor_list[0].progress_data.status == 0:
+                        is_pareto_file_available = True
+                if is_pareto_file_available or self._inductor_list[0].progress_data.status == 3:
+                    # Get Pareto front from file
+                    # Assemble path name
+                    sqlite_file_path = os.path.join(self._inductor_study_data.optimization_directory,
+                                                    filtered_points_name_list[c_filtered_point_index][0],
+                                                    self._inductor_study_data.study_name)
+                    if self.check_study_data(sqlite_file_path, self._inductor_study_data.study_name):
+                        response_data.evaluation_info = (f"Inductor configuration file: {self._inductor_list[item_configuration_index].conf_name}"
+                                                         f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}")
+                        response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
+                            self._inductor_study_data.study_name, os.path.join(sqlite_file_path, self._inductor_study_data.study_name + ".sqlite3"))
+                else:
+                    # Pareto front is not available
+                    response_data.evaluation_info = "Pareto front calculation still not started!"
+        # Pareto front of transformer
+        elif pareto_source == ParetoFrontSource.pareto_transformer:
+            # Verify the input data
+            if not item_configuration_index < len(self._transformer_list) or item_configuration_index < 0:
+                response_data.evaluation_info = "Index of circuit configuration is invalid!"
+                return response_data
+            else:
+                # Check if transformer optimization is initialized,if not initialized progress data are valid
+                if self.transformer_optimization is not None:
+                    # Get progress data of selected filtered point
+                    self._transformer_list[0].progress_data = self.transformer_optimization.get_progress_data(c_filtered_point_index)
+                    if self._transformer_list[0].progress_data == 1:
+                        # Get Pareto front from memory (Still not available. Femmt-update needed)
+                        response_data.evaluation_info = "Pareto front calculation is started..."
+                        # response_data.parto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
+                    elif not self._transformer_list[0].progress_data.status == 0:
+                        is_pareto_file_available = True
+                if is_pareto_file_available or self._transformer_list[0].progress_data.status == 3:
+                    # Get Pareto front from file
+                    # Assemble path name
+                    sqlite_file_path = os.path.join(self._transformer_study_data.optimization_directory,
+                                                    filtered_points_name_list[c_filtered_point_index][0],
+                                                    self._transformer_study_data.study_name)
+                    if self.check_study_data(sqlite_file_path, self._transformer_study_data.study_name):
+                        response_data.evaluation_info = (f"Transformer configuration file: {self._transformer_list[item_configuration_index].conf_name}"
+                                                         f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}")
+                        response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
+                            self._transformer_study_data.study_name, os.path.join(sqlite_file_path, self._transformer_study_data.study_name + ".sqlite3"))
+                else:
+                    # Pareto front is not available
+                    response_data.evaluation_info = "Pareto front calculation still not started!"
+        elif pareto_source == ParetoFrontSource.pareto_heat_sink:
+            # Pareto front of heat sink
+            # Verify the input data
+            if not item_configuration_index < len(self._heat_sink_list) or item_configuration_index < 0:
+                response_data.evaluation_info = "Index of circuit configuration is invalid!"
+                return response_data
+            else:
+                # Check if heat sink optimization is initialized,if not initialized progress data are valid
+                if self.heat_sink_optimization is not None:
+                    # Get progress data of selected filtered point
+                    self._heat_sink_list[item_configuration_index].progress_data = self.heat_sink_optimization.get_progress_data()
+                    if self._transformer_list[item_configuration_index].progress_data == 1:
+                        # Get Pareto front from memory (Still not available. Femmt-update needed)
+                        response_data.evaluation_info = "Pareto front calculation is started..."
+                        # response_data.parto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
+                    elif not self._heat_sink_list[item_configuration_index].progress_data.status == 0:
+                        is_pareto_file_available = True
+                if is_pareto_file_available or self._heat_sink_list[item_configuration_index].progress_data.status == 3:
+                    # Get Pareto front from file
+                    if self.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
+                        response_data.evaluation_info = f"Heat sink configuration file: {self._heat_sink_list[item_configuration_index].conf_name}"
+                        response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
+                            self._heat_sink_study_data.study_name, os.path.join(self._heat_sink_study_data.optimization_directory,
+                                                                                self._heat_sink_study_data.study_name + ".sqlite3"))
+                else:
+                    # Pareto front is not available
+                    response_data.evaluation_info = "Pareto front calculation still not started!"
+        elif pareto_source == ParetoFrontSource.pareto_summary:
+            pass
+
+        if not response_data.parto_front_optuna == "":
+            response_data.validity = True
+
+        return response_data
+
+    def _srv_response_queue(self, act_srv_request_queue: Queue, act_srv_response_queue: Queue) -> None:
+        """Provide the response depending on the request.
+
+        :param  act_srv_request_queue: Container (queue) for the request receives the requests of the server
+        :type   filtered_pt_id: Queue
+        :param  act_srv_response_queue: Container (queue) for the response to the server
+        :type   act_srv_response_queue: Queue
+        """
+        while True:
+            # Wait for the request
+            request: SrvReqData = act_srv_request_queue.get()
+            # Evaluate request
+            if request.req_cmd == RequestCmd.page_main:
+                # Process request and send response
+                srv_main_data = self._get_page_main_data()
+                act_srv_response_queue.put(srv_main_data)
+            elif request.req_cmd == RequestCmd.page_detail:
+                # Process request and send response
+                srv_detail_data = self._get_page_detail_data(request.c_filtered_point_index)
+                act_srv_response_queue.put(srv_detail_data)
+            elif request.req_cmd == RequestCmd.continue_opt:
+                self._break_point_flag = False
+                self._break_point_message = ""
+                act_srv_response_queue.put(True)
+            elif request.req_cmd == RequestCmd.pareto_front:
+                pareto_front_data_queue = self._request_pareto_front(request.pareto_source, request.c_configuration_index,
+                                                                     request.item_configuration_index, request.c_filtered_point_index)
+                act_srv_response_queue.put(pareto_front_data_queue)
+
+    def _get_key_inp(self) -> str:
+        # Get the last key input with lock
+        with self._key_input_lock:
+            last_key_input_string = self._key_input_string
+            self._key_input_string = ""
+        return last_key_input_string
+
+    def _key_input(self) -> None:
         """Provide the response depending on the request.
 
         :param  filtered_pt_id: Index of the filtered circuit operation point
@@ -637,18 +879,10 @@ class DctMainCtl:
         """
         while True:
             # Wait for the request
-            request: srv_rd = act_srv_request_queue.get()
-            # Evaluate request
-            if request.req_cmd == ReqCmd.sd_main:
-                # Process request and send response
-                srv_main_data = self._get_sd_main_data()
-                act_srv_response_queue.put(srv_main_data)
-            if request.req_cmd == ReqCmd.sd_detail:
-                # Process request and send response
-                srv_detail_data = self._get_sd_detail_data(request.c_filt_pt_id)
-                act_srv_response_queue.put(srv_detail_data)
-            elif request.req_cmd == ReqCmd.pareto_front:
-                pass
+            key_input_string: str = input()
+            # Store the input
+            with self._key_input_lock:
+                self._key_input_string = key_input_string
 
     def run_optimization_from_toml_configs(self, workspace_path: str) -> None:
         """Perform the main program.
@@ -664,7 +898,7 @@ class DctMainCtl:
         enable_trans_re_simulation = True
 
         # Server reqesponse thread handler
-        _srv_response_hdl = None
+        _srv_response_handler = None
         # Queues for request and response
         srv_request_queue: Queue = Queue()
         srv_response_queue: Queue = Queue()
@@ -725,23 +959,23 @@ class DctMainCtl:
         # -----------------------------------------
 
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
-        circuit_study_data = dct.StudyData(
+        self._circuit_study_data = dct.StudyData(
             study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
-        inductor_study_data = dct.StudyData(
+        self._inductor_study_data = dct.StudyData(
             study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
-        transformer_study_data = dct.StudyData(
+        self._transformer_study_data = dct.StudyData(
             study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
-        heat_sink_study_data = dct.StudyData(
+        self._heat_sink_study_data = dct.StudyData(
             study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
                                                 toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
@@ -758,8 +992,8 @@ class DctMainCtl:
         )
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
-        self.circuit_list, self.inductor_list, self.transformer_list, self.heat_sink_list, self.transformer_list, self.summary_list = (
-            self.get_init_queue_data(toml_prog_flow))
+        (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
+         self._transformer_list, self._heat_sink_list, self._summary_list) = self.get_init_queue_data(toml_prog_flow)
 
         # --------------------------
         # Circuit flow control
@@ -777,8 +1011,8 @@ class DctMainCtl:
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
             # Check, if data are available (skip case)
-            if not self.check_study_data(circuit_study_data.optimization_directory, circuit_study_data.study_name):
-                raise ValueError(f"Study {circuit_study_data.study_name} in path {circuit_study_data.optimization_directory} does not exist. "
+            if not self.check_study_data(self._circuit_study_data.optimization_directory, self._circuit_study_data.study_name):
+                raise ValueError(f"Study {self._circuit_study_data.study_name} in path {self._circuit_study_data.optimization_directory} does not exist. "
                                  f"No sqlite3-database found!")
             # Check, if data are available (skip case)
             # Check if filtered results folder exists
@@ -810,21 +1044,21 @@ class DctMainCtl:
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
             # Initialize inductor_nbfiltpt_skip_list
-            self.inductor_nbfiltpt_skip_list = []
+            self._inductor_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
 
             for id_entry in filter_data.filtered_list_id:
                 # Assemble pathname
-                inductor_results_datapath = os.path.join(inductor_study_data.optimization_directory,
-                                                         str(id_entry), inductor_study_data.study_name)
+                inductor_results_datapath = os.path.join(self._inductor_study_data.optimization_directory,
+                                                         str(id_entry), self._inductor_study_data.study_name)
                 # Check, if data are available (skip case)
-                if self.check_study_data(inductor_results_datapath, inductor_study_data.study_name):
-                    self.inductor_nbfiltpt_skip_list.append(
+                if self.check_study_data(inductor_results_datapath, self._inductor_study_data.study_name):
+                    self._inductor_number_filtered_points_skip_list.append(
                         self.get_nb_of_pkl_files(os.path.join(inductor_results_datapath,
                                                               "09_circuit_dtos_incl_inductor_losses")))
                 else:
                     raise ValueError(
-                        f"Study {inductor_study_data.study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
+                        f"Study {self._inductor_study_data.study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
 
         # --------------------------
         # Transformer flow control
@@ -842,21 +1076,21 @@ class DctMainCtl:
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
             # Initialize transformer_nbfiltpt_skip_list
-            self.transformer_nbfiltpt_skip_list = []
+            self._transformer_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
             for id_entry in filter_data.filtered_list_id:
                 # Assemble pathname
-                transformer_results_datapath = os.path.join(transformer_study_data.optimization_directory,
+                transformer_results_datapath = os.path.join(self._transformer_study_data.optimization_directory,
                                                             str(id_entry),
-                                                            transformer_study_data.study_name)
+                                                            self._transformer_study_data.study_name)
                 # Check, if data are available (skip case)
-                if self.check_study_data(transformer_results_datapath, transformer_study_data.study_name):
-                    self.transformer_nbfiltpt_skip_list.append(
+                if self.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
+                    self._transformer_number_filtered_points_skip_list.append(
                         self.get_nb_of_pkl_files(os.path.join(transformer_results_datapath,
                                                               "09_circuit_dtos_incl_transformer_losses")))
                 else:
                     raise ValueError(
-                        f"Study {transformer_study_data.study_name} in path {transformer_results_datapath}"
+                        f"Study {self._transformer_study_data.study_name} in path {transformer_results_datapath}"
                         "does not exist. No sqlite3-database found!"
                     )
 
@@ -873,28 +1107,33 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if data are available (skip case)
-            if not self.check_study_data(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name):
+            if not self.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
                 raise ValueError(
-                    f"Study {heat_sink_study_data.study_name} in path {heat_sink_study_data.optimization_directory} does not exist. No sqlite3-database found!")
+                    f"Study {self._heat_sink_study_data.study_name} in path "
+                    f"{self._heat_sink_study_data.optimization_directory} does not exist. No sqlite3-database found!")
 
         # -- Start server  --------------------------------------------------------------------------------------------
 
         # Initialize the runtime timer
-        self._circuit_proc_time = [DctMainCtl.RunTime()]
-        self._inductor_proc_time = [DctMainCtl.RunTime()]
-        self._transformer_proc_time = [DctMainCtl.RunTime()]
-        self._heat_sink_proc_time = [DctMainCtl.RunTime()]
-        self._summary_proc_time = [DctMainCtl.RunTime()]
+        self._circuit_progress_time = [DctMainCtl.RunTime()]
+        self._inductor_progress_time = [DctMainCtl.RunTime()]
+        self._transformer_progress_time = [DctMainCtl.RunTime()]
+        self._heat_sink_progress_time = [DctMainCtl.RunTime()]
+        self._summary_progress_time = [DctMainCtl.RunTime()]
 
         # Start the data exchange queue thread
         srv_response_stop_flag = False
-        _srv_response_hdl = threading.Thread(target=self._srv_response_queue,
-                                             args=(srv_request_queue, srv_response_queue), daemon=True)
+        _srv_response_handler = threading.Thread(target=self._srv_response_queue,
+                                                 args=(srv_request_queue, srv_response_queue), daemon=True)
 
-        _srv_response_hdl.start()
+        _srv_response_handler.start()
 
         # Start the server
         srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
+
+        # Initialize key input handler
+        self._key_input_handler = threading.Thread(target=self._key_input,
+                                                   args=(srv_request_queue, srv_response_queue), daemon=True)
 
         # -- Start optimization  ----------------------------------------------------------------------------------------
         # --------------------------
@@ -903,7 +1142,7 @@ class DctMainCtl:
         logger.info("Start circuit optimization.")
 
         # Start the circuit processing time measurement
-        self._circuit_proc_time[0].reset_start_trigger()
+        self._circuit_progress_time[0].reset_start_trigger()
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
             if not is_circuit_loaded:
@@ -911,25 +1150,25 @@ class DctMainCtl:
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.calculation_mode == "new":
                 # delete old circuit study data
-                self.delete_study_content(circuit_study_data.optimization_directory, circuit_study_data.study_name)
+                self.delete_study_content(self._circuit_study_data.optimization_directory, self._circuit_study_data.study_name)
 
                 # Create the filtered result folder
                 os.makedirs(filter_data.filtered_list_pathname, exist_ok=True)
                 # Delete obsolete folders of inductor and transformer
-                self.delete_study_content(inductor_study_data.optimization_directory)
-                self.delete_study_content(transformer_study_data.optimization_directory)
+                self.delete_study_content(self._inductor_study_data.optimization_directory)
+                self.delete_study_content(self._transformer_study_data.optimization_directory)
 
             # Start calculation
             dct.CircuitOptimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials)
 
         # Stop the circuit processing time measurement (Intermediate stop)
-        self._circuit_proc_time[0].stop_trigger()
+        self._circuit_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
 
         # Continue the circuit processing time measurement
-        self._circuit_proc_time[0].continue_trigger()
+        self._circuit_progress_time[0].continue_trigger()
 
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
@@ -946,7 +1185,11 @@ class DctMainCtl:
             self._filtered_list_id_ref = filter_data.filtered_list_id
 
         # Stop the circuit processing time measurement (finally)
-        self._circuit_proc_time[0].stop_trigger()
+        self._circuit_progress_time[0].stop_trigger()
+
+        # Set the number of calculations for the magenetic components
+        self._inductor_main_list[0].number_calculations = len(self._filtered_list_id_ref)
+        self._transformer_main_list[0].number_calculations = len(self._filtered_list_id_ref)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
@@ -957,25 +1200,32 @@ class DctMainCtl:
         logger.info("Start inductor optimization.")
 
         # Start the inductor processing time measurement
-        self._inductor_proc_time[0].reset_start_trigger()
+        self._inductor_progress_time[0].reset_start_trigger()
+
         # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip":
+            # Set the status to InProgress
+            self._inductor_main_list[0].progress_data.status = 1
+
             # Check, if old study is to delete, if available
             if toml_prog_flow.inductor.calculation_mode == "new":
                 # Delete old inductor study
-                self.delete_study_content(inductor_study_data.optimization_directory)
+                self.delete_study_content(self._inductor_study_data.optimization_directory)
 
             # Allocate and initialize inductor configuration
             self.inductor_optimization = InductorOptimization()
-            self.inductor_optimization.generate_optimization_list(toml_inductor, inductor_study_data, filter_data)
+            self.inductor_optimization.generate_optimization_list(toml_inductor, self._inductor_study_data, filter_data)
 
             # Perform inductor optimization
             self.inductor_optimization.optimization_handler(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
                 toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
+            # Set the status to Done
+            self._inductor_main_list[0].progress_data.status = 3
+
         # Stop the inductor processing time measurement
-        self._inductor_proc_time[0].stop_trigger()
+        self._inductor_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
@@ -986,25 +1236,30 @@ class DctMainCtl:
         logger.info("Start transformer optimization.")
 
         # Start the transformer processing time measurement
-        self._transformer_proc_time[0].reset_start_trigger()
+        self._transformer_progress_time[0].reset_start_trigger()
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.transformer.calculation_mode == "skip":
+            # Set the status to InProgress
+            self._transformer_main_list[0].progress_data.status = 1
             # Check, if old study is to delete, if available
             if toml_prog_flow.transformer.calculation_mode == "new":
                 # Delete old transformer study
-                self.delete_study_content(transformer_study_data.optimization_directory)
+                self.delete_study_content(self._transformer_study_data.optimization_directory)
 
             # Allocate and initialize transformer configuration
             self.transformer_optimization = TransformerOptimization()
-            self.transformer_optimization.generate_optimization_list(toml_transformer, transformer_study_data,
+            self.transformer_optimization.generate_optimization_list(toml_transformer, self._transformer_study_data,
                                                                      filter_data)
             # Perform transformer optimization
-            self.transformer_optimization.simulation_handler(
+            self.transformer_optimization.optimization_handler(
                 filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
                 toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
+            # Set the status to Done
+            self._transformer_main_list[0].progress_data.status = 3
+
         # Stop the transformer processing time measurement
-        self._transformer_proc_time[0].stop_trigger()
+        self._transformer_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
@@ -1015,13 +1270,13 @@ class DctMainCtl:
         logger.info("Start heat sink optimization.")
 
         # Start the heat sink processing time measurement
-        self._heat_sink_proc_time[0].reset_start_trigger()
+        self._heat_sink_progress_time[0].reset_start_trigger()
         # Check, if heat sink optimization is to skip
         if not toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if old study is to delete, if available
             if toml_prog_flow.heat_sink.calculation_mode == "new":
                 # Delete old heat sink study
-                self.delete_study_content(heat_sink_study_data.optimization_directory, heat_sink_study_data.study_name)
+                self.delete_study_content(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name)
 
             # Allocate and initialize heat sink configuration
             self.heat_sink_optimization = HeatSinkOptimization()
@@ -1031,7 +1286,7 @@ class DctMainCtl:
             self.heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
 
         # Stop the heat sink processing time measurement
-        self._heat_sink_proc_time[0].stop_trigger()
+        self._heat_sink_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
@@ -1041,22 +1296,23 @@ class DctMainCtl:
         # --------------------------
 
         # Start the summary processing time measurement
-        self._summary_proc_time[0].reset_start_trigger()
+        self._summary_progress_time[0].reset_start_trigger()
 
         # Initialisation thermal data
         if not spro.init_thermal_configuration(toml_heat_sink.thermal_resistance_data):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
-        inductor_study_names = [inductor_study_data.study_name]
-        stacked_transformer_study_names = [transformer_study_data.study_name]
+        inductor_study_names = [self._inductor_study_data.study_name]
+        stacked_transformer_study_names = [self._transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = spro.generate_result_database(circuit_study_data, inductor_study_data, transformer_study_data, heat_sink_study_data, summary_data,
-                                             inductor_study_names, stacked_transformer_study_names, filter_data)
+        s_df = spro.generate_result_database(self._circuit_study_data, self._inductor_study_data, self._transformer_study_data,
+                                             self._heat_sink_study_data, summary_data, inductor_study_names,
+                                             stacked_transformer_study_names, filter_data)
         #  Select the needed heat sink configuration
-        spro.select_heat_sink_configuration(heat_sink_study_data, summary_data, s_df)
+        spro.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 
         # Stop the summary processing time measurement
-        self._summary_proc_time[0].stop_trigger()
+        self._summary_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
@@ -1075,9 +1331,6 @@ class DctMainCtl:
         srv_ctl.stop_dct_server()
         # Stop svr_response_thread
         srv_response_stop_flag = True
-
-        # Finish server thread
-        _srv_response_hdl.join()
 
 
 # Program flow control of DAB-optimization

@@ -273,8 +273,12 @@ QueueMainData
 RedirectResponse
 srv
 ssl
-StData
 StyleSheets
 Stylesheets
 SummaryDataEntryDto
 TemplateResponse
+MagneticDataEntryDto
+ParetoFrontSource
+ProgressData
+
+

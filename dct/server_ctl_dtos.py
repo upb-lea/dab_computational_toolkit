@@ -18,11 +18,11 @@ class RunTimeMeasure:
     summary_time_list: list[float]
 
 @dataclasses.dataclass
-class StatData:
+class ProgressData:
     """Statistic data of heat sink optimization."""
 
-    start_proc_time: float
-    proc_run_time: float
+    start_time: float
+    run_time: float
     nb_of_filtered_points: int
     status: int
 
@@ -32,7 +32,7 @@ class ConfigurationDataEntryDto:
 
     conf_name: str
     nb_of_trials: int
-    progress_data: StatData
+    progress_data: ProgressData
 
 @dataclasses.dataclass
 class CircuitConfigurationDataDto:
@@ -41,7 +41,7 @@ class CircuitConfigurationDataDto:
     conf_name: str
     nb_of_trials: int
     filtered_points_name_list: list[str]
-    progress_data: StatData
+    progress_data: ProgressData
 
 @dataclasses.dataclass
 class SummaryDataEntryDto:
@@ -49,20 +49,30 @@ class SummaryDataEntryDto:
 
     conf_name: str
     nb_of_combinations: int
-    progress_data: StatData
+    progress_data: ProgressData
+
+@dataclasses.dataclass
+class MagneticDataEntryDto:
+    """DTO for queue summary information transfer."""
+
+    circuit_configuration_name: str
+    number_calculations: int
+    number_performed_calculations: int
+    progress_data: ProgressData
 
 @dataclasses.dataclass
 class QueueMainData:
     """DTO for one shared memory data exchange within a queue."""
 
     circuit_list: list[ConfigurationDataEntryDto]
+    inductor_main_list: list[MagneticDataEntryDto]
+    transformer_main_list: list[MagneticDataEntryDto]
     heat_sink_list: list[ConfigurationDataEntryDto]
     summary_list: list[SummaryDataEntryDto]
     # For future usage
     # final_summary:  SummaryDataEntryDto
-    total_proc_time: float
-    inductor_proc_time: float
-    transformer_proc_time: float
+    total_process_time: float
+    break_point_notification: str
 
 @dataclasses.dataclass
 class QueueDetailData:
@@ -73,4 +83,13 @@ class QueueDetailData:
     transformer_list: list[ConfigurationDataEntryDto]
     heat_sink_list: list[ConfigurationDataEntryDto]
     summary_data: SummaryDataEntryDto
-    conf_proc_time: float
+    conf_process_time: float
+    break_point_notification: str
+
+@dataclasses.dataclass
+class QueueParetoFrontData:
+    """DTO for one shared memory data exchange within a queue."""
+
+    parto_front_optuna: str
+    evaluation_info: str
+    validity: bool

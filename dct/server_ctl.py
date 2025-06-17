@@ -21,21 +21,38 @@ import dct.server_ctl_dtos as srv_ctl_dtos
 
 # Structure classes
 # Structure class of request command
-class ReqCmd(Enum):
+class RequestCmd(Enum):
     """Enum of possible commands."""
 
-    sd_main = 0       # Request statistical data of main page
-    sd_detail = 1     # Request detailed statistical data
+    page_main = 0     # Request statistical data of main page
+    page_detail = 1   # Request detailed statistical data
     pareto_front = 2  # Request pareto front
+    continue_opt = 3  # Request to continue (if breakpoint reached)
+
+# Structure class of request command
+class ParetoFrontSource(Enum):
+    """Enum of Pareto front types."""
+
+    pareto_circuit = 0      # Request Pareto front of the circuit
+    pareto_inductor = 1     # Request Pareto front of the inductor
+    pareto_transformer = 2  # Request Pareto front of the transformer
+    pareto_heat_sink = 3    # Request Pareto front of the heat sink
+    pareto_summary = 4      # Request Pareto front of the summary?
 
 # Structure class of request
 class SrvReqData:
     """Request command structure."""
 
     # Request command
-    req_cmd: ReqCmd
-    # Id of circuit filtered point
-    c_filt_pt_id: int
+    req_cmd: RequestCmd
+    # Pareto front source
+    pareto_source: ParetoFrontSource
+    # Index of the circuit configuration
+    c_configuration_index: int
+    # Index of the configuration item (inductor, transformer, heat sink or summary)
+    item_configuration_index: int
+    # Index of circuit filtered point
+    c_filtered_point_index: int
 
 class DctServer:
     """Server to visualize the actual progress and calculated Pareto-fronts."""
@@ -88,10 +105,13 @@ class DctServer:
     _prog_exit_flag = False
     # Server supervision
     _srv_supervision = None
-    # Selected configuration id
-    _c_config_id = 0
-    # Selected filtered point id
-    _c_filt_pt_ID = 0
+    # Selected configuration index
+    _c_config_index = 0
+    # Selected filtered point index
+    _c_filtered_point_index = 0
+
+    # Breakpoint flag
+    _breakpoint_flag = False
 
     # Debug
     break_status: int = 0
@@ -110,9 +130,7 @@ class DctServer:
         :return: User name, if client is logged in, otherwise None
         :rtype: Any
         """
-        retval = request.session.get("user")
-        # return request.session.get("user")
-        return retval
+        return request.session.get("user")
 
     @staticmethod
     def start_dct_server(act_srv_request_queue: Queue, act_srv_response_queue: Queue, program_exit_flag: bool) -> None:
@@ -183,7 +201,7 @@ class DctServer:
         DctServer.srv_request_queue = act_srv_request_queue
         DctServer.srv_response_queue = act_srv_response_queue
         # Start the server (blocking call)
-        config = uvicorn.Config(DctServer.app, host="127.0.0.1", port=8007, log_level="info",
+        config = uvicorn.Config(DctServer.app, host="127.0.0.1", port=8008, log_level="info",
                                 ssl_keyfile=DctServer._ssl_key, ssl_certfile=DctServer._ssl_cert)
 
         DctServer.srv_obj = uvicorn.Server(config)
@@ -224,19 +242,44 @@ class DctServer:
         # Return value
         table_data: list[dict] = []
         # Index variable
-        id = 0
+        index = 0
 
         # Loop over the configurations
         for entry in component_data_list:
             table_data.append({"conf_name": entry.conf_name, "nb_trails": entry.nb_of_trials,
                                "nb_filt_pts": entry.progress_data.nb_of_filtered_points,
-                               "proc_time": DctServer.get_format_time(entry.progress_data.proc_run_time),
+                               "process_time": DctServer.get_format_time(entry.progress_data.run_time),
                                "image_link": DctServer.icon[entry.progress_data.status],
                                "status": DctServer.status_text[entry.progress_data.status],
-                               "index": id})
-            # Increment id
-            id = id + 1
+                               "index": index})
+            # Increment index
+            index = index + 1
         return table_data
+
+    @staticmethod
+    def get_magnetic_table_data(magnetic_data_list: list[srv_ctl_dtos.MagneticDataEntryDto]) -> list[dict]:
+        """Fill the table data for display magnetic progress data of one configuration with filtered point name.
+
+        :param magnetic_data_list: Configuration data of magnetic configuration for progress reporting (inductor or transformer)
+        :type  magnetic_data_list: list[srv_ctl_dtos.MagneticDataEntryDto]
+        :return: List of formatted entries for progress reporting
+        :rtype:  list[dict]
+        """
+        # Variable declaration
+        # Return value
+        magnetic_table_data_list: list[dict] = []
+
+        # Loop over the configurations
+        for entry in magnetic_data_list:
+            # Enter the table data
+            magnetic_table_data_list.append({"conf_name": entry.circuit_configuration_name,
+                                             "number_performed_calculations": entry.number_performed_calculations,
+                                             "number_calculations": entry.number_calculations,
+                                             "progress_time": DctServer.get_format_time(entry.progress_data.run_time),
+                                             "image_link": DctServer.icon[entry.progress_data.status],
+                                             "status": DctServer.status_text[entry.progress_data.status], "index": 0})
+
+        return magnetic_table_data_list
 
     @staticmethod
     def get_circuit_table_data(circuit_data: srv_ctl_dtos.CircuitConfigurationDataDto) -> dict:
@@ -251,8 +294,8 @@ class DctServer:
         # Enter the table data
         circuit_table_data: dict = {"conf_name": circuit_data.conf_name,
                                     "nb_trails": circuit_data.nb_of_trials,
-                                    "filt_pts_name_list": circuit_data.filtered_points_name_list,
-                                    "proc_time": DctServer.get_format_time(circuit_data.progress_data.proc_run_time),
+                                    "c_filtered_points_name_list": circuit_data.filtered_points_name_list,
+                                    "process_time": DctServer.get_format_time(circuit_data.progress_data.run_time),
                                     "image_link": DctServer.icon[circuit_data.progress_data.status],
                                     "status": DctServer.status_text[circuit_data.progress_data.status], "index": 0}
 
@@ -272,17 +315,17 @@ class DctServer:
         heat_sink_table_data_list: list[dict[str, Any]] = []
 
         # Index variable
-        entry_id = 0
+        entry_index = 0
 
         # Loop over the configurations
         for entry in act_heat_sink_data_list:
             # Enter the table data
             heat_sink_table_data_list.append({"conf_name": entry.conf_name, "nb_trails": entry.nb_of_trials,
-                                              "proc_time": DctServer.get_format_time(entry.progress_data.proc_run_time),
+                                              "process_time": DctServer.get_format_time(entry.progress_data.run_time),
                                               "image_link": DctServer.icon[entry.progress_data.status],
-                                              "status": DctServer.status_text[entry.progress_data.status], "index": entry_id})
-            # Increment id
-            entry_id = entry_id + 1
+                                              "status": DctServer.status_text[entry.progress_data.status], "index": entry_index})
+            # Increment index
+            entry_index = entry_index + 1
 
         return heat_sink_table_data_list
 
@@ -300,17 +343,17 @@ class DctServer:
         summary_table_data_list: list[dict[str, Any]] = []
 
         # Index variable
-        entry_id = 0
+        entry_index = 0
 
         # Loop over the configurations
         for entry in act_summary_data_list:
             # Enter the table data
-            summary_table_data_list.append({"conf_name": entry.conf_name, "proc_time": DctServer.get_format_time(entry.progress_data.proc_run_time),
+            summary_table_data_list.append({"conf_name": entry.conf_name, "process_time": DctServer.get_format_time(entry.progress_data.run_time),
                                             "nb_of_combinations": entry.nb_of_combinations,
                                             "image_link": DctServer.icon[entry.progress_data.status],
-                                            "status": DctServer.status_text[entry.progress_data.status], "index": entry_id})
-            # Increment id
-            entry_id = entry_id + 1
+                                            "status": DctServer.status_text[entry.progress_data.status], "index": entry_index})
+            # Increment index
+            entry_index = entry_index + 1
 
         return summary_table_data_list
 
@@ -328,51 +371,53 @@ class DctServer:
             return file.read()
 
     @staticmethod
-    def _create_info_string(button_id: int = -1, table_id: int = -1, filt_pt_id: int = -1, page_id: int = -1) -> str:
+    def _calculate_key_parameter(button_index: int = -1, table_index: int = -1, filtered_point_index: int = -1,
+                                 page_index: int = -1) -> tuple[ParetoFrontSource, int]:
         """Create the information string based on the input parameters.
 
         With the input parameter the information string is generated.
-        :param button_id: Index of the button, which is pressed
-        :type  button_id: int
-        :param table_id: Index of the table, which contains the button
-        :type  table_id: int
-        :param filt_pt_id: Index of actual filter point id
-        :type  filt_pt_id: int
-        :param page_id: Actual html-page
-        :type  page_id: int
-        :return: Information string
-        :rtype:  str
+        :param button_index: Index of the button, which is pressed
+        :type  button_index: int
+        :param table_index: Index of the table, which contains the button
+        :type  table_index: in
+        :param filtered_point_index: Index of actual filter point index
+        :type  filtered_point_index: int
+        :param page_index: Actual html-page
+        :type  page_index: int
+        :return: Pareto front source information and configuration index
+        :rtype: ParetoFrontSource, int
         """
         # Variable declaration
         info_string = ""
+        # Assign default value to pareto_front_source
+        pareto_front_source = ParetoFrontSource.pareto_circuit
 
         # Check pageID
-        if page_id == 0:
-            if table_id == 1:
-                info_string = f"Circuit configuration {button_id}"
-            elif table_id == 4:
-                info_string = f"Heat sink configuration {button_id}"
-            elif table_id == 5:
-                info_string = f"Summary of circuit configuration {button_id}"
-            else:
-                info_string = "Unknown configuration "
-        elif page_id == 1:
-            if table_id == 1:
-                info_string = f"Circuit configuration {DctServer._c_config_id}"
-            elif table_id == 2:
-                info_string = f"Inductor configuration {button_id} of filtered circuit point {filt_pt_id}"
-            elif table_id == 3:
-                info_string = f"Transformer configuration {button_id} of filtered circuit point {filt_pt_id}"
-            elif table_id == 4:
-                info_string = f"Heat sink configuration {button_id}"
-            elif table_id == 5:
-                info_string = f"Summary of circuit configuration {button_id}"
-            else:
-                info_string = "Unknown configuration "
-        else:
-            info_string = "Wrong html_id"
+        # page_index corresponds to main_page1.html
+        if page_index == 0:
+            if table_index == 1:
+                pareto_front_source = ParetoFrontSource.pareto_circuit
+            elif table_index == 4:
+                pareto_front_source = ParetoFrontSource.pareto_heat_sink
+            elif table_index == 5:
+                pareto_front_source = ParetoFrontSource.pareto_summary
+        # page_index corresponds to main_page2.html
+        elif page_index == 1:
+            if table_index == 1:
+                pareto_front_source = ParetoFrontSource.pareto_circuit
+            elif table_index == 2:
+                pareto_front_source = ParetoFrontSource.pareto_inductor
+            elif table_index == 3:
+                pareto_front_source = ParetoFrontSource.pareto_transformer
+            elif table_index == 4:
+                pareto_front_source = ParetoFrontSource.pareto_heat_sink
+            elif table_index == 5:
+                pareto_front_source = ParetoFrontSource.pareto_summary
 
-        return (info_string)
+        # Button index corresponds to configuration index
+        item_configuration_index = button_index
+
+        return pareto_front_source, item_configuration_index
 
     @staticmethod
     def get_format_time(time_value: float) -> str:
@@ -413,7 +458,7 @@ class DctServer:
     @app.get("/", response_class=HTMLResponse, response_model=None)
     @app.get("/html_homepage1", response_class=HTMLResponse, response_model=None)
     async def main_page1(request: Request, action: str = "", user: str = Depends(get_current_user),
-                         button_id: int | None = None, table_id: int | None = None) -> _TemplateResponse | HTMLResponse:
+                         button_index: int | None = None, table_index: int | None = None) -> _TemplateResponse | HTMLResponse:
         """Provide the html-information based on client request to html_homepage1.
 
         :param request: Request information of the client request
@@ -422,10 +467,10 @@ class DctServer:
         :type  action: str
         :param user: User, in case of valid user
         :type  user: str
-        :param button_id: Index of selected button, if a button was pressed
-        :type  button_id: int
-        :param table_id: Index of selected table in case of a button press
-        :type  table_id: int
+        :param button_index: Index of selected button, if a button was pressed
+        :type  button_index: int
+        :param table_index: Index of selected table in case of a button press
+        :type  table_index: int
         :return: html-page
         :rtype:  _TemplateResponse | HTMLResponse
         """
@@ -434,18 +479,14 @@ class DctServer:
             user = ""
             DctServer.status_message = "User is logged off"
         elif action == "pareto_circuit":
-            # Check for valid parameters
-            if button_id is not None and table_id is not None:
-                info_string = DctServer._create_info_string(button_id, table_id, 0, 0)
+            # Display Pareto front
+            return DctServer.get_pareto_front(request, button_index, table_index, "/html_homepage1")
+        elif action == "details" and table_index == 1:
+            # Check if button_index is valid
+            if button_index is not None:
+                DctServer._c_config_index = button_index
             else:
-                info_string = DctServer._create_info_string(-1, -1, 0, 0)
-            return DctServer.get_pareto_front(request, info_string, "/html_homepage1")
-        elif action == "details" and table_id == 1:
-            # Check if button_id is valid
-            if button_id is not None:
-                DctServer._c_config_id = button_id
-            else:
-                DctServer._c_config_id = 0
+                DctServer._c_config_index = 0
             return await DctServer.main_page2(request, "", 0, user)
         elif action == "control_sheet":
             # Check if user is authorized
@@ -462,7 +503,9 @@ class DctServer:
 
         # Init request for main process
         request_data = SrvReqData()
-        request_data.req_cmd = ReqCmd.sd_main
+        request_data.req_cmd = RequestCmd.page_main
+        # Later to set the circuit configuration index in case of multiple circuit configurations
+        request_data.c_configuration_index = 0
 
         # Request data from main process
         DctServer.srv_request_queue.put(request_data)
@@ -474,6 +517,9 @@ class DctServer:
         circuit_conf_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = data.circuit_list
         table_data_circuit = DctServer.get_table_data(circuit_conf_list)
 
+        table_main_data_inductor = DctServer.get_magnetic_table_data(data.inductor_main_list)
+        table_main_data_transformer = DctServer.get_magnetic_table_data(data.transformer_main_list)
+
         # Add content heat sink config
         table_data_heat_sink = DctServer.get_heat_sink_table_data(data.heat_sink_list)
         # table_data_heat_sink = DctServer.get_table_data(data.heat_sink_list)
@@ -481,35 +527,43 @@ class DctServer:
         # Add content summary
         table_data_summary = DctServer.get_summary_table_data(data.summary_list)
 
+        # Add breakpoint notification text and evaluate breakpoint status
+        breakpoint_message = data.break_point_notification
+        if len(breakpoint_message) > 0:
+            DctServer._breakpoint_flag = True
+        else:
+            DctServer._breakpoint_flag = False
+
         return DctServer.templates.TemplateResponse("main_page1.html",
                                                     {"request": request, "c_table_data": table_data_circuit,
+                                                     "i_table_main_data": table_main_data_inductor,
+                                                     "t_table_main_data": table_main_data_transformer,
                                                      "h_table_data": table_data_heat_sink,
                                                      "s_table_data": table_data_summary,
-                                                     "total_proc_time": DctServer.get_format_time(data.total_proc_time),
-                                                     "total_inductor_proc_time": DctServer.get_format_time(data.inductor_proc_time),
-                                                     "total_transformer_proc_time": DctServer.get_format_time(data.transformer_proc_time),
+                                                     "total_process_time": DctServer.get_format_time(data.total_process_time),
                                                      "text_message": DctServer.status_message,
+                                                     "break_pt_text": breakpoint_message,
                                                      "user": user})
 
     @staticmethod
     @app.get("/html_homepage2", response_class=HTMLResponse, response_model=None)
-    async def main_page2(request: Request, action: str = "", c_filt_pt_ID: int = 0,
+    async def main_page2(request: Request, action: str = "", c_selected_filtered_point_index: int = -1,
                          user: str | None = Depends(get_current_user),
-                         button_id: int | None = None, table_id: int | None = None) -> _TemplateResponse | HTMLResponse:
+                         button_index: int | None = None, table_index: int | None = None) -> _TemplateResponse | HTMLResponse:
         """Provide the html-information based on client request to html_homepage2.
 
         :param request: Request information of the client request
         :type  request: Request
         :param action: Information about the requested action (Keyword driven)
         :type  action: str
-        :param c_filt_pt_ID: Index of the selected circuit filtered point
-        :type  c_filt_pt_ID: int
+        :param c_selected_filtered_point_index: Index of the selected circuit filtered point
+        :type  c_selected_filtered_point_index: int
         :param user: User, in case of valid user
         :type  user: str
-        :param button_id: Index of selected button, if a button was pressed
-        :type  button_id: int
-        :param table_id: Index of selected table in case of a button press
-        :type  table_id: int
+        :param button_index: Index of selected button, if a button was pressed
+        :type  button_index: int
+        :param table_index: Index of selected table in case of a button press
+        :type  table_index: int
         :return: html-page
         :rtype:  _TemplateResponse | HTMLResponse
         """
@@ -521,34 +575,31 @@ class DctServer:
             DctServer.status_message = "User is logged out"
         # User request: Button press to display Pareto-front
         elif action == "pareto_circuit":
-            if button_id is not None and table_id is not None:
-                info_string = DctServer._create_info_string(button_id, table_id, DctServer._c_filt_pt_ID, 1)
-            else:
-                info_string = DctServer._create_info_string(-1, -1, 0, 0)
-
             # Display the Pareto-front
-            return DctServer.get_pareto_front(request, info_string, "/html_homepage2")
+            return DctServer.get_pareto_front(request, button_index, table_index, "/html_homepage2")
         # User request: Button press to change to control sheet
         elif action == "control_sheet":
             # Check if user is authorized
             if user is not None:
-                if DctServer.break_status == 1:
-                    DctServer.break_status = 0
-                else:
-                    DctServer.break_status = 1
-                # Display the control page
-                break_status = DctServer.break_status
+                # Set the break status
+                break_status = DctServer._breakpoint_flag
                 return DctServer.templates.TemplateResponse("control_page.html",
                                                             {"request": request, "url_back": "/html_homepage2",
                                                              "break_status": break_status})
 
         # Init request for main process
         request_data = SrvReqData()
-        request_data.req_cmd = ReqCmd.sd_detail
-        request_data.c_filt_pt_id = c_filt_pt_ID
+        request_data.req_cmd = RequestCmd.page_detail
+        # Later to set the circuit configuration index in case of multiple circuit configurations
+        request_data.c_configuration_index = 0
+        # Check selected filtered point index
+        if not c_selected_filtered_point_index == -1:
+            # Save the selected filtered point index
+            DctServer._c_filtered_point_index = c_selected_filtered_point_index
+        else:
+            c_selected_filtered_point_index = DctServer._c_filtered_point_index
 
-        # Save the selected filtered point id
-        DctServer._c_filt_pt_ID = c_filt_pt_ID
+        request_data.c_filtered_point_index = c_selected_filtered_point_index
 
         # Request data from main process
         DctServer.srv_request_queue.put(request_data)
@@ -571,20 +622,28 @@ class DctServer:
         # Add content summary
         table_data_summary = DctServer.get_summary_table_data([data.summary_data])
 
+        # Add breakpoint notification text and evaluate breakpoint status
+        breakpoint_message = data.break_point_notification
+        if len(breakpoint_message) > 0:
+            DctServer._breakpoint_flag = True
+        else:
+            DctServer._breakpoint_flag = False
+
         return DctServer.templates.TemplateResponse("main_page2.html", {"request": request,
                                                                         "c_table_data": table_data_circuit,
                                                                         "i_table_data": table_data_inductor,
                                                                         "t_table_data": table_data_transformer,
                                                                         "h_table_data": table_data_heat_sink,
-                                                                        "stable_data": table_data_summary,
-                                                                        "conf_proc_time": DctServer.get_format_time(data.conf_proc_time),
-                                                                        "c_filt_pt_ID": c_filt_pt_ID,
+                                                                        "s_table_data": table_data_summary,
+                                                                        "conf_process_time": DctServer.get_format_time(data.conf_process_time),
+                                                                        "c_selected_filtered_point_index": c_selected_filtered_point_index,
                                                                         "text_message": DctServer.status_message,
+                                                                        "break_pt_text": breakpoint_message,
                                                                         "user": user})
 
     @staticmethod
     @app.get("/control_page", response_class=HTMLResponse, response_model=None)
-    async def control_page(request: Request, action: str = "", url_back: str = "/html_homepage1") -> _TemplateResponse | HTMLResponse:
+    async def control_page(request: Request, action: str = "", url_back: str = "/html_homepage1") -> _TemplateResponse | HTMLResponse | RedirectResponse:
         """Provide the html-information based on client request to control_page.
 
         :param request: Request information of the client request
@@ -598,6 +657,21 @@ class DctServer:
         """
         if action == "continue":
             DctServer.status_message = "Continue is active"
+
+            request_data: SrvReqData = SrvReqData()
+
+            # Request command
+            request_data.req_cmd = RequestCmd.continue_opt
+            # Later to set the circuit configuration index in case of multiple circuit configurations
+            request_data.c_configuration_index = 0
+            # Index of circuit filtered point (will be ignored)
+            request_data.c_filtered_point_index = 0
+            # Request continue
+            DctServer.srv_request_queue.put(request_data)
+            # Wait for response
+            data: bool = DctServer.srv_response_queue.get()
+            # Go back to main page
+            return RedirectResponse(url="/html_homepage1", status_code=303)
         elif action == "pause":
             DctServer.status_message = "Pause is active"
         elif action == "stop":
@@ -606,7 +680,7 @@ class DctServer:
 
         return DctServer.templates.TemplateResponse("control_page.html",
                                                     {"request": request, "url_back": url_back,
-                                                     "break_status": DctServer.break_status})
+                                                     "break_status": DctServer._breakpoint_flag})
 
     @staticmethod
     @app.get("/login", response_class=HTMLResponse, response_model=None)
@@ -661,36 +735,56 @@ class DctServer:
         return DctServer.templates.TemplateResponse("admin.html", {"request": request, "user": username})
 
     @staticmethod
-    @app.get("/pareto_front")
-    def get_pareto_front(request: Request, info_string: str = "", url_back: str = "") -> HTMLResponse:
+    @app.get("/pareto_front", response_class=HTMLResponse, response_model=None)
+    def get_pareto_front(request: Request, button_index: int | None, table_index: int | None, url_back: str = "") -> HTMLResponse:
         """Provide the Pareto-front.
 
         Later to replace by the selected Pareto-front
         :param request: Request information of the client request
         :type  request: Request
-        :param info_string: Information to add to html-sheet
-        :type  info_string: str
+        :param button_index: Index of selected button, if a button was pressed
+        :type  button_index: int
+        :param table_index: Index of selected table in case of a button press
+        :type  table_index: int
         :param url_back: Uniform resource locator for jump back
         :type  url_back: str
         :return: html-page
         :rtype:  HTMLResponse
         """
-        # Later to replace by request of optuna Pareto front data
-        original_html = DctServer.load_optuna_html_file(DctServer._optuna_path)
+        # Check for valid parameters
+        if button_index is not None and table_index is not None:
+            pareto_front_source, item_configuration_index = DctServer._calculate_key_parameter(button_index, table_index,
+                                                                                               DctServer._c_filtered_point_index, 1)
+        else:
+            pareto_front_source, item_configuration_index = DctServer._calculate_key_parameter(-1, -1, 0, 0)
 
-        # Add information and back-button
-        insert_html = "<h1>Actual Pareto front</h1>" + "<p>" + info_string + "</p>"
-        insert_html = insert_html + "<button onclick=\"location.href='" + url_back
-        insert_html = insert_html + "'\">Back to main menue</button> "
+        # Init request for main process
+        request_data = SrvReqData()
+        request_data.req_cmd = RequestCmd.pareto_front
+        # Later to set the circuit configuration index in case of multiple circuit configurations
+        request_data.c_configuration_index = 0
+        # Set remaining request parameter
+        request_data.item_configuration_index = item_configuration_index
+        request_data.pareto_source = pareto_front_source
+        # Index of circuit filtered point
+        request_data.c_filtered_point_index = DctServer._c_filtered_point_index
+        # Request continue
+        DctServer.srv_request_queue.put(request_data)
+        # Wait for response
+        html_data: srv_ctl_dtos.QueueParetoFrontData = DctServer.srv_response_queue.get()
 
-        # Search for tag body
-        body_index = original_html.lower().find("<body>")
-        if body_index == -1:
-            return HTMLResponse(content="Error: <body> Tag not found", status_code=500)
-
-        # Seek position to add
-        insertion_point = body_index + len("<body>")
-        # Add values
-        modified_html = (original_html[:insertion_point] + "\n" + insert_html + "\n" + original_html[insertion_point:])
-
-        return HTMLResponse(content=modified_html)
+        # Check if result is not valid
+        if not html_data.validity:
+            # Invalid result page                                                                  })
+            return DctServer.templates.TemplateResponse("pareto_front.html",
+                                                        {"request": request,
+                                                         "info_string": html_data.evaluation_info,
+                                                         "pareto_front": "No data available",
+                                                         "url_back": url_back})
+        else:
+            # Add information and back-button
+            return DctServer.templates.TemplateResponse("pareto_front.html",
+                                                        {"request": request,
+                                                         "info_string": html_data.evaluation_info,
+                                                         "pareto_front": html_data.parto_front_optuna,
+                                                         "url_back": url_back})

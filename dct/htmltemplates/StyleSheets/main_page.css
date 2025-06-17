@@ -41,14 +41,14 @@ body {
 
 .row_legend {
     display: flex;
-    margin-bottom: 0px; /* weniger Abstand zwischen Zeilen */
-    line-height: 0;     /* kompakte Zeilenhöhe */
+    margin-bottom: 0px; /* less space between the lines*/
+    line-height: 0;
 }
 
 .col_legend {
     padding: 0px 2px;
     display: flex;
-    align-items: center;  /* Inhalt (Bild oder Text) vertikal zentrieren */
+    align-items: center;  /* Center content */
 }
 
 .col_legend img {
@@ -72,7 +72,7 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px; /* Abstand zum Grid */
+    margin-top: 20px; /* Space to grid */
 }
 
 /* Tabellenrahmen und Styling */
@@ -84,8 +84,8 @@ th, td {
 
 
 button:disabled {
-    background-color: #ccc;  /* grey color*/
-    color: #666;             /* grey font */
+    background-color: #ccc;  /* gray color*/
+    color: #666;             /* gray font */
     cursor: not-allowed;      /* Show forbidden cursor */
 }
 

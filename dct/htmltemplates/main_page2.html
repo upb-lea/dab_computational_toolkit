@@ -12,10 +12,10 @@
         <div class="row">
             <div class="col">
                 <div class="row_time">
-                    <p class="proc_time">Processing time:</p>
+                    <p class="process_time">Processing time:</p>
                 </div>
                 <div class="row_time">
-                    <p class="tot_time">{{ conf_proc_time }}</p>
+                    <p class="tot_time">{{ configuration_process_time }}</p>
                 </div>
             </div>
             <div class="col">
@@ -27,7 +27,7 @@
             </div>
             <div class="col">
                 {% if user %}
-                    <div class="row"><p>Eingeloggt als: {{ user }}</p></div>
+                    <div class="row"><p>Logged in as: {{ user }}</p></div>
                     <div class="row"><button onclick="location.href='/html_homepage1/?action=logout'">Logout</button></div>
                 {% else %}
                     <div class="row"><button onclick="location.href='/login'">Login Dialog</button></div>
@@ -45,30 +45,29 @@
                         <th colspan="7">Circuit optimization</th>
                     </tr>
                     <tr>
-                        <th>Name of conf.</th>
+                        <th>Name of configuration</th>
                         <th>Number of trials</th>
                         <th>Name of filtered points</th>
                         <th>Processing time</th>
                         <th>Status</th>
-                        <th>Show Pareto-front</th>
+                        <th>Show Pareto front</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>{{ c_table_data.conf_name }}</td>
                         <td>{{ c_table_data.nb_trails }}</td>
-                        <td> Hallo
-
+                        <td>
                             <form method="GET" action="/html_homepage2">
-                                <select name = "c_filt_pt_ID" onchange="this.form.submit()">
-                                {% for list_entry in c_table_data.filt_pts_name_list %}
-                                    <option value={{ list_entry[1] }} {% if c_filt_pt_ID == list_entry[1]|int %}selected{% endif %}>{{ list_entry[0]}}</option>
+                                <select name = "c_selected_filtered_point_index" onchange="this.form.submit()">
+                                {% for list_entry in c_table_data.c_filtered_points_name_list %}
+                                    <option value={{ list_entry[1] }} {% if c_selected_filtered_point_index == list_entry[1]|int %}selected{% endif %}>{{ list_entry[0]}}</option>
                                 {% endfor %}
                                 </select>
                             </form>
 
                         </td>
-                        <td>{{ c_table_data.proc_time }}</td>
+                        <td>{{ c_table_data.process_time }}</td>
                         <td>
                             <img src="{{ c_table_data.image_link }}" alt="Status Icon" width="20" height="20">
                         </td>
@@ -76,7 +75,7 @@
                         {% if c_table_data.status == 'Idle' %}
                             <button disabled>Show Pareto front</button>
                         {% else %}
-                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_id={{ c_table_data.index}}&table_id=1'">Show Pareto front</button>
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ c_table_data.index}}&table_index=1'">Show Pareto front</button>
                         {% endif %}
                         </td>
                     </tr>
@@ -91,12 +90,12 @@
                         <th colspan="7">Inductor optimization</th>
                     </tr>
                     <tr>
-                        <th>Name of conf.</th>
+                        <th>Name of configuration</th>
                         <th>Number of trials</th>
                         <th>Number of filtered points</th>
                         <th>Processing time</th>
                         <th>Status</th>
-                        <th>Show Pareto-front</th>
+                        <th>Show Pareto front</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,7 +104,7 @@
                         <td>{{ item.conf_name }}</td>
                         <td>{{ item.nb_trails }}</td>
                         <td>{{ item.nb_filt_pts }}</td>
-                        <td>{{ item.proc_time }}</td>
+                        <td>{{ item.process_time }}</td>
                         <td>
                             <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
                         </td>
@@ -113,7 +112,7 @@
                         {% if item.status == 'Idle' %}
                             <button disabled>Show Pareto front</button>
                         {% else %}
-                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_id={{ item.index}}&table_id=2'">Show Pareto front</button>
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ item.index}}&table_index=2'">Show Pareto front</button>
                         {% endif %}
                         </td>
                     </tr>
@@ -131,12 +130,12 @@
                         </th>
                     </tr>
                     <tr>
-                        <th>Name of conf.</th>
+                        <th>Name of configuration</th>
                         <th>Number of trials</th>
                         <th>Number of filtered points</th>
                         <th>Processing time</th>
                         <th>Status</th>
-                        <th>Show Pareto-front</th>
+                        <th>Show Pareto front</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -145,7 +144,7 @@
                         <td>{{ item.conf_name }}</td>
                         <td>{{ item.nb_trails }}</td>
                         <td>{{ item.nb_filt_pts }}</td>
-                        <td>{{ item.proc_time }}</td>
+                        <td>{{ item.process_time }}</td>
                         <td>
                             <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
                         </td>
@@ -153,7 +152,7 @@
                         {% if item.status == 'Idle' %}
                             <button disabled>Show Pareto front</button>
                         {% else %}
-                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_id={{ item.index}}&table_id=3'">Show Pareto front</button>
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ item.index}}&table_index=3'">Show Pareto front</button>
                         {% endif %}
                         </td>
                     </tr>
@@ -169,12 +168,12 @@
                         <th colspan="6">Heat sink optimization</th>
                     </tr>
                     <tr>
-                        <th>Name of conf.</th>
+                        <th>Name of configuration</th>
                         <th>Number of trials</th>
                         <th>Number of filtered points</th>
                         <th>Processing time</th>
                         <th>Status</th>
-                        <th>Show Pareto-front</th>
+                        <th>Show Pareto front</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -183,7 +182,7 @@
                         <td>{{ item.conf_name }}</td>
                         <td>{{ item.nb_trails }}</td>
                         <td>{{ item.nb_filt_pts }}</td>
-                        <td>{{ item.proc_time }}</td>
+                        <td>{{ item.process_time }}</td>
                         <td>
                             <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
                         </td>
@@ -191,7 +190,7 @@
                         {% if item.status == 'Idle' %}
                             <button disabled>Show Pareto front</button>
                         {% else %}
-                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_id={{ item.index}}&table_id=4'">Show Pareto front</button>
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ item.index}}&table_index=4'">Show Pareto front</button>
                         {% endif %}
                         </td>
                     </tr>
@@ -207,18 +206,18 @@
                         <th colspan="5">Summary</th>
                     </tr>
                     <tr>
-                        <th>Name of circuit conf.</th>
+                        <th>Name of circuit configuration</th>
                         <th>Processing time</th>
                         <th>Nb. of comninations</th>
                         <th>Status</th>
-                        <th>Show Pareto-front</th>
+                        <th>Show Pareto front</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in s_table_data %}
                     <tr>
                         <td>{{ item.conf_name }}</td>
-                        <td>{{ item.proc_time }}</td>
+                        <td>{{ item.process_time }}</td>
                         <td>{{ item.nb_of_combinations }}</td>
                         <td>
                             <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
@@ -227,7 +226,7 @@
                         {% if item.status == 'Idle' %}
                             <button disabled>Show Pareto front</button>
                         {% else %}
-                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_id=0&table_id=5'">Show Pareto front</button>
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index=0&table_index=5'">Show Pareto front</button>
                         {% endif %}
                         </td>
                     </tr>
