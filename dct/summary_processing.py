@@ -3,6 +3,9 @@
 import os
 import pickle
 import logging
+import time
+import threading
+import copy
 
 # 3rd party libraries
 import pandas as pd
@@ -12,6 +15,8 @@ import numpy as np
 import dct
 from heat_sink_optimization import ThermalCalcSupport as thr_sup
 import hct
+from dct.server_ctl_dtos import ProgressData
+
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +24,11 @@ class DctSummaryProcessing:
     """Perform the summary calculation based on optimization results."""
 
     # Variable declaration
+
+    """Initialize the configuration list for the circuit optimizations."""
+    _s_lock_stat: threading.Lock = threading.Lock()
+    # Initialize the staticical data (For more configuration it needs to become instance instead of static
+    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
 
     # Areas and transistor cooling parameter
     copper_coin_area_1: float
@@ -95,6 +105,25 @@ class DctSummaryProcessing:
         return successful_init
 
     @staticmethod
+    def get_progress_data() -> ProgressData:
+        """Provide the progress data of the optimization.
+
+        :return: Progress data: Processing start time, actual processing time, number of filtered operation points and status.
+        :rtype: ProgressData
+        """
+        # Lock statistical performance data access
+        with DctSummaryProcessing._s_lock_stat:
+            # Update statistical data if optimisation is runningw
+            if DctSummaryProcessing._progress_data.status == 1:
+                DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
+                # Check for valid entry
+                if DctSummaryProcessing._progress_data.run_time < 0:
+                    DctSummaryProcessing._progress_data.run_time = 0.0
+                    DctSummaryProcessing._progress_data.start_time = time.perf_counter()
+
+        return copy.deepcopy(DctSummaryProcessing._progress_data)
+
+    @staticmethod
     def _generate_magnetic_number_list(act_dir_name: str) -> tuple[bool, list[str]]:
         """Generate a list of the numbers from filenames.
 
@@ -163,6 +192,11 @@ class DctSummaryProcessing:
         # Variable declaration
         # Result DataFrame
         df = pd.DataFrame()
+
+        # Update statistical data
+        with DctSummaryProcessing._s_lock_stat:
+            DctSummaryProcessing._progress_data.start_time = time.perf_counter()
+            DctSummaryProcessing._progress_data.status = 1
 
         # iterate circuit numbers
         for circuit_number in filter_data.filtered_list_id:
@@ -396,3 +430,17 @@ class DctSummaryProcessing:
 
         # save full summary
         act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/df_w_hs.csv")
+
+        # Update statistical data for summary processing finalized
+        # Update statistical data
+        with DctSummaryProcessing._s_lock_stat:
+            if DctSummaryProcessing._progress_data.status == 1:
+                DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
+                # Check for valid entry
+                if DctSummaryProcessing._progress_data.run_time < 0:
+                    DctSummaryProcessing._progress_data.run_time = 0.0
+                # Set Status to done
+                DctSummaryProcessing._progress_data.status = 2
+            else:
+                # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
+                pass

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimization Control</title>
+    <link rel="stylesheet" href="/StyleSheets/main_page.css">
+</head>
+<body>
+
+    <div class="container">
+    {% if break_status==1 %}
+        <h1>Control menu</h1>
+        <div class="row">
+            <div class="col">
+                <button class="command" onclick="location.href='/control_page/?action=continue'">Continue</button>
+            </div>
+            <div class="col">
+                <p class="infotext">Continue the optimization</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="command" onclick="location.href='/control_page/?action=stop'">Stop</button>
+            </div>
+            <div class="col">
+                <p class="infotext">Stop the measurment and terminate the program</p>
+            </div>
+        </div>
+    {% else %}
+        <h1>Control menu</h1>
+        <div class="row">
+            <div class="col">
+                <button class="command" onclick="location.href='/control_page/?action=continue'">Continue</button>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <p class="infotext">Stops the optimization at next possible breakpoint and terminate the program</p>
+                </div>
+                <div class="row">
+                    <p class="infotext">This does not lead to data loss</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="commandred" onclick="location.href='/control_page/?action=stop'">Stop</button>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <p class="infotext">Stop the measurment and terminate the program</p>
+                </div>
+                <div class="row">
+                    <p class="infotext">This leads to data loss!!!</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+        <div class="row">
+            <button onclick="location.href='{{url_back}}'">Back to main menu</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Pareto front diagram</title>
+    <!-- <link rel="stylesheet" href="/StyleSheets/main_page.css?v=5">  -->
+</head>
+<body>
+    <h1>Actual Pareto front</h1>
+    <div class="single">{{ info_string }} </div>
+    <button onclick="location.href='{{ url_back }}'">Back to main menue</button>
+    <h1>Optuna Pareto front result</h1>
+    <div class="container">
+        {{ pareto_front  | safe }}
+    </div>
+</body>
+</html>

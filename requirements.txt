@@ -4,8 +4,11 @@ pyqt5
 tqdm
 optuna
 plotly
+uvicorn
+fastapi
+itsdangerous
+python-multipart
 pydantic
-
 # libraries provided by LEA
 pygeckocircuits2
 transistordatabase
