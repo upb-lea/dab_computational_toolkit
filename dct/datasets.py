@@ -25,8 +25,8 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, v1_nom: float, v1_min: float, v1_max: float, v1_step: int, v2_nom: float, v2_min: float,
-                    v2_max: float, v2_step: int, p_min: float, p_max: float, p_nom: float, p_step: int,
+    def init_config(name: str, v1_min: float, v1_max: float, v1_step: int, v2_min: float,
+                    v2_max: float, v2_step: int, p_min: float, p_max: float, p_step: int,
                     n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
         """
@@ -34,16 +34,12 @@ class HandleDabDto:
 
         :param name: name of the simulation
         :type name: str
-        :param v1_nom: V1 nominal voltage
-        :type v1_nom: float
         :param v1_min: V1 minimum voltage
         :type v1_min: float
         :param v1_max: V1 maximum voltage
         :type v1_max: float
         :param v1_step: V1 voltage steps
         :type v1_step: int
-        :param v2_nom: V2 nominal voltage
-        :type v2_nom: float
         :param v2_min: V2 minimum voltage
         :type v2_min: float
         :param v2_max: V2 maximum voltage
@@ -54,8 +50,6 @@ class HandleDabDto:
         :type p_min: float
         :param p_max: P maximum power
         :type p_max: float
-        :param p_nom: P nominal power
-        :type p_nom: float
         :param p_step: P power steps
         :type p_step: int
         :param n: transformer transfer ratio
@@ -78,17 +72,14 @@ class HandleDabDto:
         :type c_par_2: float
         :return:
         """
-        input_configuration = d_dtos.CircuitConfig(V1_nom=np.array(v1_nom),
-                                                   V1_min=np.array(v1_min),
+        input_configuration = d_dtos.CircuitConfig(V1_min=np.array(v1_min),
                                                    V1_max=np.array(v1_max),
                                                    V1_step=np.array(v1_step),
-                                                   V2_nom=np.array(v2_nom),
                                                    V2_min=np.array(v2_min),
                                                    V2_max=np.array(v2_max),
                                                    V2_step=np.array(v2_step),
                                                    P_min=np.array(p_min),
                                                    P_max=np.array(p_max),
-                                                   P_nom=np.array(p_nom),
                                                    P_step=np.array(p_step),
                                                    n=np.array(n),
                                                    Ls=np.array(ls),

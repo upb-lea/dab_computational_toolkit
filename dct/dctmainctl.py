@@ -401,9 +401,9 @@ class DctMainCtl:
         )
 
         output_range = p_dtos.CircuitOutputRange(
-            v_1_min_nom_max_list=toml_circuit.output_range.v_1_min_nom_max_list,
-            v_2_min_nom_max_list=toml_circuit.output_range.v_2_min_nom_max_list,
-            p_min_nom_max_list=toml_circuit.output_range.p_min_nom_max_list,
+            v_1_min_nom_max_list=toml_circuit.output_range.v_1_min_max_list,
+            v_2_min_nom_max_list=toml_circuit.output_range.v_2_min_max_list,
+            p_min_nom_max_list=toml_circuit.output_range.p_min_max_list,
             steps_per_direction=toml_circuit.output_range.steps_per_direction)
 
         filter = p_dtos.CircuitFilter(

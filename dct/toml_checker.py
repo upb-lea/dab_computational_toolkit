@@ -106,9 +106,9 @@ class TomlCircuitParetoDesignSpace(BaseModel):
 class TomlCircuitOutputRange(BaseModel):
     """Definition of the DAB operating area."""
 
-    v_1_min_nom_max_list: list
-    v_2_min_nom_max_list: list
-    p_min_nom_max_list: list
+    v_1_min_max_list: list
+    v_2_min_max_list: list
+    p_min_max_list: list
     steps_per_direction: int
 
 class TomlCircuitFilterDistance(BaseModel):
