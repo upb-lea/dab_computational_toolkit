@@ -123,15 +123,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.Ls"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.Ls</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.P_max"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_max</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.P_min"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_min</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.P_nom"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_nom</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.P_step"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.P_step</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V1_max"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_max</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V1_min"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_min</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V1_nom"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_nom</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V1_step"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V1_step</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V2_max"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_max</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V2_min"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_min</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V2_nom"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_nom</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.V2_step"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.V2_step</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.c_par_1"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.c_par_1</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.CircuitConfig.c_par_2"><code class="docutils literal notranslate"><span class="pre">CircuitConfig.c_par_2</span></code></a></li>
@@ -464,10 +461,10 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.TomlCircuitOutputRange"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.model_config"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.model_config</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.p_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.p_min_nom_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.p_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.p_min_max_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.steps_per_direction"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.steps_per_direction</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.v_1_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.v_1_min_nom_max_list</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.v_2_min_nom_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.v_2_min_nom_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.v_1_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.v_1_min_max_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dct.TomlCircuitOutputRange.v_2_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlCircuitOutputRange.v_2_min_max_list</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.TomlCircuitParetoDabDesign"><code class="docutils literal notranslate"><span class="pre">TomlCircuitParetoDabDesign</span></code></a><ul>
@@ -700,7 +697,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#dct.get_free_port"><code class="docutils literal notranslate"><span class="pre">get_free_port()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.global_plot_settings_font_latex"><code class="docutils literal notranslate"><span class="pre">global_plot_settings_font_latex()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.global_plot_settings_font_sansserif"><code class="docutils literal notranslate"><span class="pre">global_plot_settings_font_sansserif()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dct.load_dab_specification"><code class="docutils literal notranslate"><span class="pre">load_dab_specification()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.plot_calc_i_hf_waveforms"><code class="docutils literal notranslate"><span class="pre">plot_calc_i_hf_waveforms()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.plot_calc_waveforms"><code class="docutils literal notranslate"><span class="pre">plot_calc_waveforms()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dct.plot_calculation_results"><code class="docutils literal notranslate"><span class="pre">plot_calculation_results()</span></code></a></li>
@@ -1083,11 +1079,6 @@
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.CircuitConfig.P_nom">
-<span class="sig-name descname"><span class="pre">P_nom</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float64</span></em><a class="headerlink" href="#dct.CircuitConfig.P_nom" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="dct.CircuitConfig.P_step">
 <span class="sig-name descname"><span class="pre">P_step</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float64</span></em><a class="headerlink" href="#dct.CircuitConfig.P_step" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1103,11 +1094,6 @@
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.CircuitConfig.V1_nom">
-<span class="sig-name descname"><span class="pre">V1_nom</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float64</span></em><a class="headerlink" href="#dct.CircuitConfig.V1_nom" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="dct.CircuitConfig.V1_step">
 <span class="sig-name descname"><span class="pre">V1_step</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float64</span></em><a class="headerlink" href="#dct.CircuitConfig.V1_step" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1120,11 +1106,6 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dct.CircuitConfig.V2_min">
 <span class="sig-name descname"><span class="pre">V2_min</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float64</span></em><a class="headerlink" href="#dct.CircuitConfig.V2_min" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dct.CircuitConfig.V2_nom">
-<span class="sig-name descname"><span class="pre">V2_nom</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float64</span></em><a class="headerlink" href="#dct.CircuitConfig.V2_nom" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2355,23 +2336,20 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dct.HandleDabDto.init_config">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_nom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_nom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_nom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transistor_dto_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TransistorDTO" title="dct.datasets_dtos.TransistorDTO"><span class="pre">TransistorDTO</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transistor_dto_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TransistorDTO" title="dct.datasets_dtos.TransistorDTO"><span class="pre">TransistorDTO</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_par_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_par_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dct.CircuitDabDTO" title="dct.datasets_dtos.CircuitDabDTO"><span class="pre">CircuitDabDTO</span></a></span></span><a class="headerlink" href="#dct.HandleDabDto.init_config" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">init_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transistor_dto_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TransistorDTO" title="dct.datasets_dtos.TransistorDTO"><span class="pre">TransistorDTO</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transistor_dto_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dct.TransistorDTO" title="dct.datasets_dtos.TransistorDTO"><span class="pre">TransistorDTO</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_par_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_par_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dct.CircuitDabDTO" title="dct.datasets_dtos.CircuitDabDTO"><span class="pre">CircuitDabDTO</span></a></span></span><a class="headerlink" href="#dct.HandleDabDto.init_config" title="Link to this definition"></a></dt>
 <dd><p>Initialize the DAB structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – name of the simulation</p></li>
-<li><p><strong>v1_nom</strong> (<em>float</em>) – V1 nominal voltage</p></li>
 <li><p><strong>v1_min</strong> (<em>float</em>) – V1 minimum voltage</p></li>
 <li><p><strong>v1_max</strong> (<em>float</em>) – V1 maximum voltage</p></li>
 <li><p><strong>v1_step</strong> (<em>int</em>) – V1 voltage steps</p></li>
-<li><p><strong>v2_nom</strong> (<em>float</em>) – V2 nominal voltage</p></li>
 <li><p><strong>v2_min</strong> (<em>float</em>) – V2 minimum voltage</p></li>
 <li><p><strong>v2_max</strong> (<em>float</em>) – V2 maximum voltage</p></li>
 <li><p><strong>v2_step</strong> (<em>int</em>) – V2 voltage steps</p></li>
 <li><p><strong>p_min</strong> (<em>float</em>) – P minimum power</p></li>
 <li><p><strong>p_max</strong> (<em>float</em>) – P maximum power</p></li>
-<li><p><strong>p_nom</strong> (<em>float</em>) – P nominal power</p></li>
 <li><p><strong>p_step</strong> (<em>int</em>) – P power steps</p></li>
 <li><p><strong>n</strong> (<em>float</em>) – transformer transfer ratio</p></li>
 <li><p><strong>ls</strong> (<em>float</em>) – series inductance</p></li>
@@ -3271,7 +3249,7 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dct.TomlCircuitOutputRange">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">TomlCircuitOutputRange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_1_min_nom_max_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_2_min_nom_max_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_min_nom_max_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_per_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.TomlCircuitOutputRange" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">TomlCircuitOutputRange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_1_min_max_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_2_min_max_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_min_max_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_per_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dct.TomlCircuitOutputRange" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>Definition of the DAB operating area.</p>
 <dl class="py attribute">
@@ -3281,8 +3259,8 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.TomlCircuitOutputRange.p_min_nom_max_list">
-<span class="sig-name descname"><span class="pre">p_min_nom_max_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#dct.TomlCircuitOutputRange.p_min_nom_max_list" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dct.TomlCircuitOutputRange.p_min_max_list">
+<span class="sig-name descname"><span class="pre">p_min_max_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#dct.TomlCircuitOutputRange.p_min_max_list" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -3291,13 +3269,13 @@ Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.TomlCircuitOutputRange.v_1_min_nom_max_list">
-<span class="sig-name descname"><span class="pre">v_1_min_nom_max_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#dct.TomlCircuitOutputRange.v_1_min_nom_max_list" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dct.TomlCircuitOutputRange.v_1_min_max_list">
+<span class="sig-name descname"><span class="pre">v_1_min_max_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#dct.TomlCircuitOutputRange.v_1_min_max_list" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dct.TomlCircuitOutputRange.v_2_min_nom_max_list">
-<span class="sig-name descname"><span class="pre">v_2_min_nom_max_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#dct.TomlCircuitOutputRange.v_2_min_nom_max_list" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dct.TomlCircuitOutputRange.v_2_min_max_list">
+<span class="sig-name descname"><span class="pre">v_2_min_max_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#dct.TomlCircuitOutputRange.v_2_min_max_list" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -4512,23 +4490,6 @@ everything must be numpy!</p>
 <dt class="sig sig-object py" id="dct.global_plot_settings_font_sansserif">
 <span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">global_plot_settings_font_sansserif</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dct.global_plot_settings_font_sansserif" title="Link to this definition"></a></dt>
 <dd><p>Set the plot fonts to Sans-Serif-Font.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dct.load_dab_specification">
-<span class="sig-prename descclassname"><span class="pre">dct.</span></span><span class="sig-name descname"><span class="pre">load_dab_specification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dab_configuration_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_in_mesh_per_direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#dct.CircuitDabDTO" title="dct.datasets_dtos.CircuitDabDTO"><span class="pre">CircuitDabDTO</span></a></span></span><a class="headerlink" href="#dct.load_dab_specification" title="Link to this definition"></a></dt>
-<dd><p>Load some predefined DAB specification from different lab samples or papers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dab_configuration_name</strong> (<em>str</em>) – configuration name, which is from [“initial”, “Everts”, “initial_reversed”]</p></li>
-<li><p><strong>steps_in_mesh_per_direction</strong> (<em>int</em><em> | </em><em>None</em>) – Steps in each mesh direction (v_1, v_2, p_out), optional, e.g. 2: 2x2x2 = 8 simulations, 4: 4x4x4 = 64 simulations</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py function">
