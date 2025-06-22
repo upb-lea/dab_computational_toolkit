@@ -22,9 +22,9 @@ import json
 
 # own libraries
 import dct
-import toml_checker as tc
-import dct.circuit_optimization_dtos as p_dtos
-import server_ctl_dtos as srv_ctl_dtos
+from dct import toml_checker as tc
+from dct import circuit_optimization_dtos as p_dtos
+from dct import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
 from dct import InductorOptimization
 from dct import TransformerOptimization
@@ -32,7 +32,7 @@ from dct import HeatSinkOptimization
 from dct import ParetoPlots
 from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
-from summary_processing import DctSummaryProcessing as spro
+from dct.summary_processing import DctSummaryProcessing as spro
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import SrvReqData
 from dct.server_ctl import RequestCmd
@@ -177,6 +177,7 @@ class DctMainCtl:
         """
         # return value init to false and tomlData to empty
         is_toml_file_existing = False
+        config = None
 
         # Separate filename and path
         toml_file_directory = os.path.dirname(toml_file)
@@ -186,12 +187,16 @@ class DctMainCtl:
             # check filename
             if os.path.isfile(toml_file):
                 with open(toml_file, "rb") as f:
-                    config = tomllib.load(f)
-                is_toml_file_existing = True
+                    try:
+                        config = tomllib.load(f)
+                        is_toml_file_existing = True
+                    except (tomllib.TOMLDecodeError) as e:
+                        # File is not conform to toml-format
+                        logger.warning(f"toml-file is not conform to toml-format:\n{e}")
             else:
-                print(f"File {toml_file} does not exists!")
+                logger.warning(f"File {toml_file} does not exists!")
         else:
-            print(f"Path {toml_file_directory} does not exists!")
+            logger.warning(f"Path {toml_file_directory} does not exists!")
 
         return is_toml_file_existing, config
 

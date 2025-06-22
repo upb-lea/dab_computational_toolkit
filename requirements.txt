@@ -9,6 +9,7 @@ fastapi
 itsdangerous
 python-multipart
 pydantic
+toml
 # libraries provided by LEA
 pygeckocircuits2
 transistordatabase

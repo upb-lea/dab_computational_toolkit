@@ -13,7 +13,7 @@ import numpy as np
 
 # own libraries
 import dct
-from heat_sink_optimization import ThermalCalcSupport as thr_sup
+from dct.heat_sink_optimization import ThermalCalcSupport as thr_sup
 import hct
 from dct.server_ctl_dtos import ProgressData
 
