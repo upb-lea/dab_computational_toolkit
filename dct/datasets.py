@@ -18,6 +18,7 @@ import dct.mod_zvs as mod
 import dct.currents as dct_currents
 import dct.geckosimulation as dct_gecko
 import dct.losses as dct_loss
+import dct.sampling as sampling
 
 logger = logging.getLogger(__name__)
 
@@ -184,17 +185,34 @@ class HandleDabDto:
         :return: CalcFromConfig
         :rtype: CalcFromCircuitConfig
         """
-        mesh_V1, mesh_V2, mesh_P = np.meshgrid(
-            np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
-            np.linspace(config.V2_min, config.V2_max, int(config.V2_step)), np.linspace(config.P_min, config.P_max, int(config.P_step)),
-            sparse=False)
+        number_of_samples = 100
+        sampling_method = "latin_hypercube"
+        dim_1_user_given_points = [180, 190, 200]
+        dim_2_user_given_points = [710, 700, 740]
+        dim_3_user_given_points = [-2000, 1800, 2000]
+
+        # choose sampling method
+        if sampling_method == "meshgrid":
+            v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
+                np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
+                np.linspace(config.V2_min, config.V2_max, int(config.V2_step)), np.linspace(config.P_min, config.P_max, int(config.P_step)),
+                sparse=False)
+
+        elif sampling_method == "latin_hypercube":
+            v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
+                config.V1_min, config.V1_max, config.V2_min, config.V2_max, config.P_min, config.P_max,
+                total_number_points=number_of_samples, dim_1_user_given_points_list=dim_1_user_given_points,
+                dim_2_user_given_points_list=dim_2_user_given_points, dim_3_user_given_points_list=dim_3_user_given_points)
+        else:
+            raise ValueError("sampling_method not correct defined.")
+
 
         Lc2_ = config.Lc2 * config.n ** 2
 
         calc_from_config = d_dtos.CalcFromCircuitConfig(
-            mesh_V1=mesh_V1,
-            mesh_V2=mesh_V2,
-            mesh_P=mesh_P,
+            mesh_V1=np.atleast_3d(v1_operating_points),
+            mesh_V2=np.atleast_3d(v2_operating_points),
+            mesh_P=np.atleast_3d(p_operating_points),
             Lc2_=Lc2_,
             t_j_1=config.transistor_dto_1.t_j_max_op,
             t_j_2=config.transistor_dto_2.t_j_max_op,

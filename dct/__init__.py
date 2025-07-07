@@ -27,3 +27,4 @@ from dct.inductor_optimization_dtos import *
 from dct.transformer_optimization_dtos import *
 from dct.plot_control import *
 from dct.generate_toml import *
+from dct.sampling import *
