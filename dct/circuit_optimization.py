@@ -22,6 +22,7 @@ import dct.datasets_dtos as d_dtos
 import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
 from dct.server_ctl_dtos import ProgressData
+from dct.server_ctl_dtos import ProgressStatus
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,8 @@ class CircuitOptimization:
     """Initialize the configuration list for the circuit optimizations."""
     _c_lock_stat: threading.Lock = threading.Lock()
     # Initialize the staticical data (For more configuration it needs to become instance instead of static
-    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
+    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+                                                progress_status=ProgressStatus.Idle)
     # Study in memory
     study_in_memory: optuna.Study
 
@@ -106,7 +108,7 @@ class CircuitOptimization:
         # Lock statistical performance data access
         with CircuitOptimization._c_lock_stat:
             # Update statistical data if optimisation is runningw
-            if CircuitOptimization._progress_data.status == 1:
+            if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
                 CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
                 # Check for valid entry
                 if CircuitOptimization._progress_data.run_time < 0:
@@ -124,7 +126,7 @@ class CircuitOptimization:
         :rtype: str
         """
         # Variable declaration
-        pareto_html = ""
+        pareto_html: str = ""
 
         if CircuitOptimization.study_in_memory is not None:
             fig = optuna.visualization.plot_pareto_front(CircuitOptimization.study_in_memory)
@@ -356,7 +358,7 @@ class CircuitOptimization:
         # Update statistical data
         with CircuitOptimization._c_lock_stat:
             CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
-            CircuitOptimization._progress_data.status = 1
+            CircuitOptimization._progress_data.progress_status = ProgressStatus.InProgress
 
         # introduce study in storage, e.g. sqlite or mysql
         if database_type == 'sqlite':
@@ -801,13 +803,13 @@ class CircuitOptimization:
 
         # Update statistical data
         with CircuitOptimization._c_lock_stat:
-            if CircuitOptimization._progress_data.status == 1:
+            if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
                 CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
                 # Check for valid entry
                 if CircuitOptimization._progress_data.run_time < 0:
                     CircuitOptimization._progress_data.run_time = 0.0
                 # Set Status to done
-                CircuitOptimization._progress_data.status = 2
+                CircuitOptimization._progress_data.progress_status = ProgressStatus.Done
             else:
                 # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
                 pass

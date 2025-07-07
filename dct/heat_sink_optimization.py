@@ -12,6 +12,7 @@ import logging
 import hct
 import dct
 from dct.server_ctl_dtos import ProgressData
+from dct.server_ctl_dtos import ProgressStatus
 from dct.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,8 @@ class HeatSinkOptimization:
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
         self._hct_config: hct.OptimizationParameters
-        self._progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0.0, nb_of_filtered_points=0, status=0)
+        self._progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0.0, number_of_filtered_points=0,
+                                                         progress_status=ProgressStatus.Idle)
         self._h_lock_stat: threading.Lock = threading.Lock()
 
     def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
@@ -93,7 +95,7 @@ class HeatSinkOptimization:
         # Lock statistical performance data access
         with self._h_lock_stat:
             # Update statistical data if optimisation is running
-            if self._progress_data.status == 1:
+            if self._progress_data.progress_status == ProgressStatus.InProgress:
                 self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
                 # Check for valid entry
                 if self._progress_data.run_time < 0:
@@ -138,7 +140,7 @@ class HeatSinkOptimization:
         with self._h_lock_stat:
             self._progress_data.start_time = time.perf_counter()
             self._progress_data.run_time = 0.0
-            self._progress_data.status = 1
+            self._progress_data.progress_status = ProgressStatus.InProgress
 
         # Perform optimization
         # Debug switch
@@ -157,7 +159,7 @@ class HeatSinkOptimization:
             if self._progress_data.run_time < 0:
                 self._progress_data.run_time = 0.0
                 self._progress_data.start_time = time.perf_counter()
-            self._progress_data.status = 2
+            self._progress_data.progress_status = ProgressStatus.Done
 
 class ThermalCalcSupport:
     """Provides functions to calculate the thermal resistance."""

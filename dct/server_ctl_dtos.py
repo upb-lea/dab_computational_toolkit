@@ -2,9 +2,20 @@
 
 # python libraries
 import dataclasses
+from enum import Enum
+from typing import Any
 
 # own libraries
 
+
+# Structure class of ProgressStatus
+class ProgressStatus(Enum):
+    """Enum of progress status."""
+
+    Idle = 0            # Calculation not started
+    InProgress = 1      # Calculation started
+    Done = 2            # Calculation performed, results are available
+    Skipped = 3         # Skip calculation and use results of previous calculation
 
 @dataclasses.dataclass
 class RunTimeMeasure:
@@ -23,39 +34,39 @@ class ProgressData:
 
     start_time: float
     run_time: float
-    nb_of_filtered_points: int
-    status: int
+    number_of_filtered_points: int
+    progress_status: ProgressStatus
 
 @dataclasses.dataclass
 class ConfigurationDataEntryDto:
     """DTO for queue configuration data information transfer."""
 
-    conf_name: str
-    nb_of_trials: int
+    configuration_name: str
+    number_of_trials: int
     progress_data: ProgressData
 
 @dataclasses.dataclass
 class CircuitConfigurationDataDto:
     """DTO for queue circuit configuration information transfer."""
 
-    conf_name: str
-    nb_of_trials: int
-    filtered_points_name_list: list[str]
+    configuration_name: str
+    number_of_trials: int
+    filtered_points_name_list: list[tuple[str, int] | Any]
     progress_data: ProgressData
 
 @dataclasses.dataclass
 class SummaryDataEntryDto:
     """DTO for queue summary information transfer."""
 
-    conf_name: str
-    nb_of_combinations: int
+    configuration_name: str
+    number_of_combinations: int
     progress_data: ProgressData
 
 @dataclasses.dataclass
 class MagneticDataEntryDto:
     """DTO for queue summary information transfer."""
 
-    circuit_configuration_name: str
+    magnetic_configuration_name: str
     number_calculations: int
     number_performed_calculations: int
     progress_data: ProgressData

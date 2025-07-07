@@ -30,3 +30,4 @@ from dct.generate_toml import *
 # supervision class
 from dct.server_ctl import *
 from dct.server_ctl_dtos import *
+from dct.dctmainctl import *

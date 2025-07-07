@@ -15,6 +15,7 @@ import tqdm
 import femmt as fmt
 import dct.inductor_optimization_dtos
 from dct.server_ctl_dtos import ProgressData
+from dct.server_ctl_dtos import ProgressStatus
 
 # configure root logger
 logger = logging.getLogger(__name__)
@@ -81,7 +82,8 @@ class InductorOptimization:
             material_data_sources=act_material_data_sources)
 
         # Initialize the staticical data
-        stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
+        stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+                                                    progress_status=ProgressStatus.Idle)
 
         # Create the io_config_list for all trials
         for circuit_trial_number in filter_data.filtered_list_id:
@@ -125,25 +127,26 @@ class InductorOptimization:
         :rtype: ProgressData
         """
         # Variable deklaration and default initialisation
-        ret_stat_data: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0,
-                                                   status=0)
+        ret_progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+                                                       progress_status=ProgressStatus.Idle)
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
             # Lock statistical performance data access (ASA: Possible Bug)
             # with self._i_lock_stat:  -> ASA: Later to repair
             # Update statistical data if optimisation is running
-            if self._optimization_config_list[filtered_list_id].progress_data.status == 1:
+            if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
                 self._optimization_config_list[filtered_list_id].progress_data.run_time = (
                     time.perf_counter() - self._optimization_config_list[filtered_list_id].progress_data.start_time)
                 # Check for valid entry
                 if self._optimization_config_list[filtered_list_id].progress_data.run_time < 0:
                     self._optimization_config_list[filtered_list_id].progress_data.run_time = 0.0
                     self._optimization_config_list[filtered_list_id].progress_data.start_time = time.perf_counter()
-            else:
-                ret_stat_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
 
-        return copy.deepcopy(ret_stat_data)
+            # Create a copy of actual data
+            ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
+
+        return ret_progress_data
 
     def get_number_of_performed_calculations(self) -> int:
         """Provide the number of performed calculations.
@@ -182,7 +185,7 @@ class InductorOptimization:
         # Process_number are unclear (Usage in femmt)
         process_number = 1
 
-        nb_of_filtered_points = 0
+        number_of_filtered_points = 0
 
         # Load configuration
         circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
@@ -226,7 +229,7 @@ class InductorOptimization:
             re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
 
             # Overtake the filtered operation points
-            nb_of_filtered_points = len(re_simulate_numbers)
+            number_of_filtered_points = len(re_simulate_numbers)
 
             for re_simulate_number in re_simulate_numbers:
                 logger.info(f"{re_simulate_number=}")
@@ -287,7 +290,7 @@ class InductorOptimization:
                         break
 
         # returns the number of filtered results
-        return nb_of_filtered_points
+        return number_of_filtered_points
 
     def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
                              factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
@@ -320,10 +323,10 @@ class InductorOptimization:
             # Update statistical data
             with self._i_lock_stat:
                 act_optimization_configuration.progress_data.start_time = time.perf_counter()
-                act_optimization_configuration.progress_data.status = 1
+                act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
             # Perform optimization
-            nb_fil_pt = self._optimize(
+            number_of_filtered_points = self._optimize(
                 act_optimization_configuration.circuit_id,
                 act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
                 factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
@@ -331,8 +334,8 @@ class InductorOptimization:
             # Update statistical data
             with self._i_lock_stat:
                 act_optimization_configuration.progress_data.run_time = time.perf_counter() - act_optimization_configuration.progress_data.start_time
-                act_optimization_configuration.progress_data.nb_of_filtered_points = nb_fil_pt
-                act_optimization_configuration.progress_data.status = 2
+                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_points
+                act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
                 # Increment performed calculation counter
                 self._number_performed_calculations = self._number_performed_calculations + 1
 

@@ -1,4 +1,6 @@
 """Server control class to visualize current metrics."""
+
+# python libraries
 import multiprocessing
 from multiprocessing import Queue
 import threading
@@ -8,6 +10,7 @@ from os.path import abspath
 from typing import Any
 from enum import Enum
 
+# 3rd party libraries
 import uvicorn
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.templating import Jinja2Templates
@@ -17,7 +20,7 @@ from starlette.templating import _TemplateResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 # own libraries
-import dct.server_ctl_dtos as srv_ctl_dtos
+import dct.server_ctl_dtos as server_ctl_dtos
 
 # Structure classes
 # Structure class of request command
@@ -40,11 +43,11 @@ class ParetoFrontSource(Enum):
     pareto_summary = 4      # Request Pareto front of the summary?
 
 # Structure class of request
-class SrvReqData:
+class ServerRequestData:
     """Request command structure."""
 
     # Request command
-    req_cmd: RequestCmd
+    request_cmd: RequestCmd
     # Pareto front source
     pareto_source: ParetoFrontSource
     # Index of the circuit configuration
@@ -58,7 +61,7 @@ class DctServer:
     """Server to visualize the actual progress and calculated Pareto-fronts."""
 
     # Methode deklaration
-    srv_thread: threading.Thread
+    server_thread: threading.Thread
 
     # Allocate FastAPI-Server
     app = FastAPI()
@@ -74,28 +77,26 @@ class DctServer:
     # Currently dummy password, later to secure in specific way
     users = {"Andi": "hallo"}
 
-    status_text = ["Idle", "InProgress", "Done", "Skipped"]
-
-    # Status icon definition to display
+    # Progress status icon definition to display
     icon = ["StyleSheets/OptIdle.png", "StyleSheets/OptInProgress.png", "StyleSheets/OptDone.png",
             "StyleSheets/OptSkipped.png"]
 
     # Allocate multi processing variables
-    srv_request_queue: Queue
-    srv_response_queue: Queue
+    server_request_queue: Queue
+    server_response_queue: Queue
 
     # ASA Create switch for release
     # Release:
     # _ssl_cert = os.getenv("SSL_CERT_PATH", "ssl/cert.pem")  # Default for development
     # _ssl_key = os.getenv("SSL_KEY_PATH", "ssl/key.pem")
     # Development
-    _ssl_cert = abspath("ssl/cert.pem")  # Default für Entwicklung
+    _ssl_cert = abspath("ssl/cert.pem")  # Default for developement
     _ssl_key = abspath("ssl/key.pem")
     _optuna_path = abspath("htmltemplates/OptunaOrg.html")
 
     status_message = "Wait for button press!"  # Initial text
     # Server object
-    srv_obj: uvicorn.Server
+    server_object: uvicorn.Server
     # Shared memory variable
     req_stop = multiprocessing.Value('i', 0)
     stop_flag = multiprocessing.Value('i', 0)
@@ -104,7 +105,7 @@ class DctServer:
     # program exit flag
     _prog_exit_flag = False
     # Server supervision
-    _srv_supervision = None
+    _server_supervision = None
     # Selected configuration index
     _c_config_index = 0
     # Selected filtered point index
@@ -133,13 +134,13 @@ class DctServer:
         return request.session.get("user")
 
     @staticmethod
-    def start_dct_server(act_srv_request_queue: Queue, act_srv_response_queue: Queue, program_exit_flag: bool) -> None:
+    def start_dct_server(act_server_request_queue: Queue, act_server_response_queue: Queue, program_exit_flag: bool) -> None:
         """Start the server to control and supervise simulation.
 
-        :param act_srv_request_queue: Queue object to request data from main process
-        :type  act_srv_request_queue: Queue
-        :param act_srv_response_queue: Queue object to responds to server process
-        :type  act_srv_response_queue: Queue
+        :param act_server_request_queue: Queue object to request data from main process
+        :type  act_server_request_queue: Queue
+        :param act_server_response_queue: Queue object to responds to server process
+        :type  act_server_response_queue: Queue
         :param program_exit_flag: Flag, which indicates to terminate the program on request
         :type  program_exit_flag: boolean
         """
@@ -147,14 +148,14 @@ class DctServer:
 
         # Start the server process
         DctServer._server_process = multiprocessing.Process(target=DctServer._run_server,
-                                                            args=(act_srv_request_queue, act_srv_response_queue,))
+                                                            args=(act_server_request_queue, act_server_response_queue,))
         DctServer._server_process.start()
 
         # Check if server process supervision is to start due to program exit requested by server
         if DctServer._prog_exit_flag:
             # Create thread for the serversupervision and start it
-            DctServer._srv_supervision = threading.Thread(target=DctServer._supervise_server_stop, daemon=True)
-            DctServer._srv_supervision.start()
+            DctServer._server_supervision = threading.Thread(target=DctServer._supervise_server_stop, daemon=True)
+            DctServer._server_supervision.start()
 
     @staticmethod
     def stop_dct_server() -> None:
@@ -168,8 +169,8 @@ class DctServer:
         if DctServer._server_process is not None:
             DctServer._server_process.join(5)
         # Stop server supervision if started
-        if DctServer._srv_supervision is not None:
-            DctServer._srv_supervision.join(5)
+        if DctServer._server_supervision is not None:
+            DctServer._server_supervision.join(5)
 
     @staticmethod
     def _supervise_server_stop() -> None:
@@ -189,25 +190,25 @@ class DctServer:
                 break
 
     @staticmethod
-    def _run_server(act_srv_request_queue: Queue, act_srv_response_queue: Queue) -> None:
+    def _run_server(act_server_request_queue: Queue, act_server_response_queue: Queue) -> None:
         """Start the FastAPI-Server.
 
-        :param act_srv_request_queue: Queue object to request data from main process
-        :type  act_srv_request_queue: Queue
-        :param act_srv_response_queue: Queue object to responds to server process
-        :type  act_srv_response_queue: Queue
+        :param act_server_request_queue: Queue object to request data from main process
+        :type  act_server_request_queue: Queue
+        :param act_server_response_queue: Queue object to responds to server process
+        :type  act_server_response_queue: Queue
         """
         # Overtake the shared memory variable
-        DctServer.srv_request_queue = act_srv_request_queue
-        DctServer.srv_response_queue = act_srv_response_queue
+        DctServer.server_request_queue = act_server_request_queue
+        DctServer.server_response_queue = act_server_response_queue
         # Start the server (blocking call)
         config = uvicorn.Config(DctServer.app, host="127.0.0.1", port=8008, log_level="info",
                                 ssl_keyfile=DctServer._ssl_key, ssl_certfile=DctServer._ssl_cert)
 
-        DctServer.srv_obj = uvicorn.Server(config)
+        DctServer.server_object = uvicorn.Server(config)
         # Create thread for the server and start it
-        DctServer.srv_thread = threading.Thread(target=DctServer.dct_server_thread, daemon=True)
-        DctServer.srv_thread.start()
+        DctServer.server_thread = threading.Thread(target=DctServer.dct_server_thread, daemon=True)
+        DctServer.server_thread.start()
         # Supervice if the server is stopped by main
         while True:
             # Reduce CPU-supervise load by toggle each second
@@ -217,9 +218,9 @@ class DctServer:
                 break
 
         # Stop the server
-        DctServer.srv_obj.should_exit = True
+        DctServer.server_object.should_exit = True
         # Wait for thread stop
-        DctServer.srv_thread.join()
+        DctServer.server_thread.join()
         # Set server stop flag to 0
         DctServer.stop_flag.value = 1
 
@@ -227,14 +228,14 @@ class DctServer:
     def dct_server_thread() -> None:
         """Start the FastAPI-server."""
         # Start the server in a blocking call
-        DctServer.srv_obj.run()
+        DctServer.server_object.run()
 
     @staticmethod
-    def get_table_data(component_data_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]) -> list[dict]:
+    def get_table_data(component_data_list: list[server_ctl_dtos.ConfigurationDataEntryDto]) -> list[dict]:
         """Fill the table data to display progress based on the configuration progress data.
 
         :param component_data_list: List of configuration data for progress reporting
-        :type  component_data_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
+        :type  component_data_list: list[server_ctl_dtos.ConfigurationDataEntryDto]
         :return: List of dict with the formatted entries
         :rtype:  list[dict]
         """
@@ -246,22 +247,22 @@ class DctServer:
 
         # Loop over the configurations
         for entry in component_data_list:
-            table_data.append({"conf_name": entry.conf_name, "nb_trails": entry.nb_of_trials,
-                               "nb_filt_pts": entry.progress_data.nb_of_filtered_points,
+            table_data.append({"conf_name": entry.configuration_name, "nb_trails": entry.number_of_trials,
+                               "nb_filt_pts": entry.progress_data.number_of_filtered_points,
                                "process_time": DctServer.get_format_time(entry.progress_data.run_time),
-                               "image_link": DctServer.icon[entry.progress_data.status],
-                               "status": DctServer.status_text[entry.progress_data.status],
+                               "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                               "status": entry.progress_data.progress_status.name,
                                "index": index})
             # Increment index
             index = index + 1
         return table_data
 
     @staticmethod
-    def get_magnetic_table_data(magnetic_data_list: list[srv_ctl_dtos.MagneticDataEntryDto]) -> list[dict]:
+    def get_magnetic_table_data(magnetic_data_list: list[server_ctl_dtos.MagneticDataEntryDto]) -> list[dict]:
         """Fill the table data for display magnetic progress data of one configuration with filtered point name.
 
         :param magnetic_data_list: Configuration data of magnetic configuration for progress reporting (inductor or transformer)
-        :type  magnetic_data_list: list[srv_ctl_dtos.MagneticDataEntryDto]
+        :type  magnetic_data_list: list[server_ctl_dtos.MagneticDataEntryDto]
         :return: List of formatted entries for progress reporting
         :rtype:  list[dict]
         """
@@ -272,41 +273,41 @@ class DctServer:
         # Loop over the configurations
         for entry in magnetic_data_list:
             # Enter the table data
-            magnetic_table_data_list.append({"conf_name": entry.circuit_configuration_name,
+            magnetic_table_data_list.append({"conf_name": entry.magnetic_configuration_name,
                                              "number_performed_calculations": entry.number_performed_calculations,
                                              "number_calculations": entry.number_calculations,
                                              "progress_time": DctServer.get_format_time(entry.progress_data.run_time),
-                                             "image_link": DctServer.icon[entry.progress_data.status],
-                                             "status": DctServer.status_text[entry.progress_data.status], "index": 0})
+                                             "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                                             "status": entry.progress_data.progress_status.name, "index": 0})
 
         return magnetic_table_data_list
 
     @staticmethod
-    def get_circuit_table_data(circuit_data: srv_ctl_dtos.CircuitConfigurationDataDto) -> dict:
+    def get_circuit_table_data(circuit_data: server_ctl_dtos.CircuitConfigurationDataDto) -> dict:
         """Fill the table data for display circuit progress data of one configuration with filtered point name.
 
         :param circuit_data: Configuration data of circuit configuration for progress reporting
-        :type  circuit_data: srv_ctl_dtos.CircuitConfigurationDataDto
+        :type  circuit_data: server_ctl_dtos.CircuitConfigurationDataDto
         :return: Formatted entries of circuit configuration data for progress reporting
         :rtype:  dict
         """
         # Variable declaration
         # Enter the table data
-        circuit_table_data: dict = {"conf_name": circuit_data.conf_name,
-                                    "nb_trails": circuit_data.nb_of_trials,
+        circuit_table_data: dict = {"conf_name": circuit_data.configuration_name,
+                                    "nb_trails": circuit_data.number_of_trials,
                                     "c_filtered_points_name_list": circuit_data.filtered_points_name_list,
                                     "process_time": DctServer.get_format_time(circuit_data.progress_data.run_time),
-                                    "image_link": DctServer.icon[circuit_data.progress_data.status],
-                                    "status": DctServer.status_text[circuit_data.progress_data.status], "index": 0}
+                                    "image_link": DctServer.icon[circuit_data.progress_data.progress_status.value],
+                                    "status": circuit_data.progress_data.progress_status.name, "index": 0}
 
         return circuit_table_data
 
     @staticmethod
-    def get_heat_sink_table_data(act_heat_sink_data_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]) -> list[dict]:
+    def get_heat_sink_table_data(act_heat_sink_data_list: list[server_ctl_dtos.ConfigurationDataEntryDto]) -> list[dict]:
         """Fill the table data to display progress based on the configuration progress data.
 
         :param act_heat_sink_data_list: List of configuration data for progress reporting
-        :type  act_heat_sink_data_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
+        :type  act_heat_sink_data_list: list[server_ctl_dtos.ConfigurationDataEntryDto]
         :return: List of dict with the formatted entries
         :rtype:  list[dict]
         """
@@ -320,21 +321,21 @@ class DctServer:
         # Loop over the configurations
         for entry in act_heat_sink_data_list:
             # Enter the table data
-            heat_sink_table_data_list.append({"conf_name": entry.conf_name, "nb_trails": entry.nb_of_trials,
+            heat_sink_table_data_list.append({"conf_name": entry.configuration_name, "nb_trails": entry.number_of_trials,
                                               "process_time": DctServer.get_format_time(entry.progress_data.run_time),
-                                              "image_link": DctServer.icon[entry.progress_data.status],
-                                              "status": DctServer.status_text[entry.progress_data.status], "index": entry_index})
+                                              "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                                              "status": entry.progress_data.progress_status.name, "index": entry_index})
             # Increment index
             entry_index = entry_index + 1
 
         return heat_sink_table_data_list
 
     @staticmethod
-    def get_summary_table_data(act_summary_data_list: list[srv_ctl_dtos.SummaryDataEntryDto]) -> list[dict]:
+    def get_summary_table_data(act_summary_data_list: list[server_ctl_dtos.SummaryDataEntryDto]) -> list[dict]:
         """Fill the table data to display summary progress based on the configuration progress data.
 
         :param act_summary_data_list: List of configuration data for progress reporting
-        :type  act_summary_data_list: list[srv_ctl_dtos.SummaryDataEntryDto]
+        :type  act_summary_data_list: list[server_ctl_dtos.SummaryDataEntryDto]
         :return: List of dict with the formatted entries
         :rtype:  list[dict]
         """
@@ -348,10 +349,10 @@ class DctServer:
         # Loop over the configurations
         for entry in act_summary_data_list:
             # Enter the table data
-            summary_table_data_list.append({"conf_name": entry.conf_name, "process_time": DctServer.get_format_time(entry.progress_data.run_time),
-                                            "nb_of_combinations": entry.nb_of_combinations,
-                                            "image_link": DctServer.icon[entry.progress_data.status],
-                                            "status": DctServer.status_text[entry.progress_data.status], "index": entry_index})
+            summary_table_data_list.append({"conf_name": entry.configuration_name, "process_time": DctServer.get_format_time(entry.progress_data.run_time),
+                                            "nb_of_combinations": entry.number_of_combinations,
+                                            "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                                            "status": entry.progress_data.progress_status.name, "index": entry_index})
             # Increment index
             entry_index = entry_index + 1
 
@@ -502,19 +503,19 @@ class DctServer:
                                                              "break_status": break_status})
 
         # Init request for main process
-        request_data = SrvReqData()
-        request_data.req_cmd = RequestCmd.page_main
+        request_data = ServerRequestData()
+        request_data.request_cmd = RequestCmd.page_main
         # Later to set the circuit configuration index in case of multiple circuit configurations
         request_data.c_configuration_index = 0
 
         # Request data from main process
-        DctServer.srv_request_queue.put(request_data)
+        DctServer.server_request_queue.put(request_data)
         # Wait for response
-        data: srv_ctl_dtos.QueueMainData = DctServer.srv_response_queue.get()
+        data: server_ctl_dtos.QueueMainData = DctServer.server_response_queue.get()
 
         # Add content circuit config
         # Create list (in future it is a list of configurations)
-        circuit_conf_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = data.circuit_list
+        circuit_conf_list: list[server_ctl_dtos.ConfigurationDataEntryDto] = data.circuit_list
         table_data_circuit = DctServer.get_table_data(circuit_conf_list)
 
         table_main_data_inductor = DctServer.get_magnetic_table_data(data.inductor_main_list)
@@ -588,8 +589,8 @@ class DctServer:
                                                              "break_status": break_status})
 
         # Init request for main process
-        request_data = SrvReqData()
-        request_data.req_cmd = RequestCmd.page_detail
+        request_data = ServerRequestData()
+        request_data.request_cmd = RequestCmd.page_detail
         # Later to set the circuit configuration index in case of multiple circuit configurations
         request_data.c_configuration_index = 0
         # Check selected filtered point index
@@ -602,9 +603,9 @@ class DctServer:
         request_data.c_filtered_point_index = c_selected_filtered_point_index
 
         # Request data from main process
-        DctServer.srv_request_queue.put(request_data)
+        DctServer.server_request_queue.put(request_data)
         # Wait for response
-        data: srv_ctl_dtos.QueueDetailData = DctServer.srv_response_queue.get()
+        data: server_ctl_dtos.QueueDetailData = DctServer.server_response_queue.get()
 
         # Add content circuit config
         table_data_circuit = DctServer.get_circuit_table_data(data.circuit_data)
@@ -635,7 +636,7 @@ class DctServer:
                                                                         "t_table_data": table_data_transformer,
                                                                         "h_table_data": table_data_heat_sink,
                                                                         "s_table_data": table_data_summary,
-                                                                        "conf_process_time": DctServer.get_format_time(data.conf_process_time),
+                                                                        "configuration_process_time": DctServer.get_format_time(data.conf_process_time),
                                                                         "c_selected_filtered_point_index": c_selected_filtered_point_index,
                                                                         "text_message": DctServer.status_message,
                                                                         "break_pt_text": breakpoint_message,
@@ -658,18 +659,18 @@ class DctServer:
         if action == "continue":
             DctServer.status_message = "Continue is active"
 
-            request_data: SrvReqData = SrvReqData()
+            request_data: ServerRequestData = ServerRequestData()
 
             # Request command
-            request_data.req_cmd = RequestCmd.continue_opt
+            request_data.request_cmd = RequestCmd.continue_opt
             # Later to set the circuit configuration index in case of multiple circuit configurations
             request_data.c_configuration_index = 0
             # Index of circuit filtered point (will be ignored)
             request_data.c_filtered_point_index = 0
             # Request continue
-            DctServer.srv_request_queue.put(request_data)
+            DctServer.server_request_queue.put(request_data)
             # Wait for response
-            data: bool = DctServer.srv_response_queue.get()
+            data: bool = DctServer.server_response_queue.get()
             # Go back to main page
             return RedirectResponse(url="/html_homepage1", status_code=303)
         elif action == "pause":
@@ -759,8 +760,8 @@ class DctServer:
             pareto_front_source, item_configuration_index = DctServer._calculate_key_parameter(-1, -1, 0, 0)
 
         # Init request for main process
-        request_data = SrvReqData()
-        request_data.req_cmd = RequestCmd.pareto_front
+        request_data = ServerRequestData()
+        request_data.request_cmd = RequestCmd.pareto_front
         # Later to set the circuit configuration index in case of multiple circuit configurations
         request_data.c_configuration_index = 0
         # Set remaining request parameter
@@ -769,9 +770,9 @@ class DctServer:
         # Index of circuit filtered point
         request_data.c_filtered_point_index = DctServer._c_filtered_point_index
         # Request continue
-        DctServer.srv_request_queue.put(request_data)
+        DctServer.server_request_queue.put(request_data)
         # Wait for response
-        html_data: srv_ctl_dtos.QueueParetoFrontData = DctServer.srv_response_queue.get()
+        html_data: server_ctl_dtos.QueueParetoFrontData = DctServer.server_response_queue.get()
 
         # Check if result is not valid
         if not html_data.validity:
