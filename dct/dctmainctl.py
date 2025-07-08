@@ -166,7 +166,7 @@ class DctMainCtl:
         with open(json_filepath, 'w', encoding='utf8') as json_file:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
-    def load_toml_file(self, toml_file: str) -> tuple[bool, dict]:
+    def load_toml_file(self, toml_file: str) -> tuple[bool, dict[str, Any]]:
         """
         Load the toml configuration data to a dictionary.
 
@@ -177,7 +177,7 @@ class DctMainCtl:
         """
         # return value init to false and tomlData to empty
         is_toml_file_existing = False
-        config = None
+        config: dict[str, Any] = {}
 
         # Separate filename and path
         toml_file_directory = os.path.dirname(toml_file)
@@ -200,8 +200,7 @@ class DctMainCtl:
 
         return is_toml_file_existing, config
 
-    @staticmethod
-    def load_generate_logging_config(logging_config_file: str) -> None:
+    def load_generate_logging_config(self, logging_config_file: str) -> None:
         """
         Read the logging configuration file and configure the logger.
 
@@ -231,8 +230,7 @@ class DctMainCtl:
         else:
             logger.warning(f"Path {logging_conf_file_directory} does not exists!")
 
-    @staticmethod
-    def generate_conf_file(path: str) -> bool:
+    def generate_conf_file(self, path: str) -> bool:
         """
         Create and save the configuration file.
 
@@ -945,7 +943,7 @@ class DctMainCtl:
         # --------------------------
         # read logging for submodules
         logging_filename = os.path.join(workspace_path, "logging.conf")
-        DctMainCtl.load_generate_logging_config(logging_filename)
+        self.load_generate_logging_config(logging_filename)
 
         # --------------------------
         # Flow control

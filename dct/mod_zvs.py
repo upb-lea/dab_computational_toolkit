@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
             'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p']
 
-def calc_modulation_params(n: float, ls: float, lc1: float, lc2: float, fs: np.ndarray | int | float,
+def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: np.float64, fs: np.ndarray | int | float,
                            c_oss_1: np.ndarray, c_oss_2: np.ndarray,
                            v1: np.ndarray, v2: np.ndarray, power: np.ndarray) -> dict:
     """
@@ -150,7 +150,7 @@ def calc_modulation_params(n: float, ls: float, lc1: float, lc2: float, fs: np.n
     zvs[_Im2_mask] = True
 
     # Recalculate phi for negative power
-    phi_nP = - (tau1 + phi - tau2)
+    phi_nP = -(tau1 + phi - tau2)
     phi[_negative_power_mask] = phi_nP[_negative_power_mask]
 
     # Init return dict
@@ -179,19 +179,20 @@ def calc_modulation_params(n: float, ls: float, lc1: float, lc2: float, fs: np.n
     # debug(da_mod_results)
     return da_mod_results
 
-def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
+def _calc_interval_1(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_: np.float64,
+                     omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
                      v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Mode 2 Modulation (interval I) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad.
 
     :param n: transformer ratio
-    :type n: float
+    :type n: np.float64
     :param l_s: series inductance
-    :type l_s: float
+    :type l_s: np.float64
     :param l_c_b1: commutation inductance L_1
-    :type l_c_b1: float
+    :type l_c_b1: np.float64
     :param l_c_b2_: primary side reflected commutation inductance L_2
-    :type l_c_b2_: float
+    :type l_c_b2_: np.float64
     :param omega_s: omega_s = 2 * pi * f
     :type omega_s: float
     :param q_ab_req_b1: required coss charge for A/B-interval of bridge 1 semiconductors
@@ -231,19 +232,20 @@ def _calc_interval_1(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_
     return phi_rad, tau_1_rad, tau_2_rad
 
 
-def _calc_interval_2(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
+def _calc_interval_2(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_: np.float64,
+                     omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
                      v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Mode 2 Modulation (interval II) calculation, which will return phi_rad, tau_1_rad and tau_2_rad in rad.
 
     :param n: transformer ratio
-    :type n: float
+    :type n: np.float64
     :param l_s: series inductance
-    :type l_s: float
+    :type l_s: np.float64
     :param l_c_b1: commutation inductance L_1
-    :type l_c_b1: float
+    :type l_c_b1: np.float64
     :param l_c_b2_: primary side reflected commutation inductance L_2
-    :type l_c_b2_: float
+    :type l_c_b2_: np.float64
     :param omega_s: omega_s = 2 * pi * f
     :type omega_s: float
     :param q_ab_req_b1: required coss charge for A/B-interval of bridge 1 semiconductors
@@ -279,19 +281,20 @@ def _calc_interval_2(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_
     return phi_rad, tau_1_rad, tau_2_rad
 
 
-def _calc_interval_3(n: float, l_s: float, l_c_b1: float, l_c_b2_: float, omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
+def _calc_interval_3(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_: np.float64,
+                     omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
                      v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad.
 
     :param n: transformer ratio
-    :type n: float
+    :type n: np.float64
     :param l_s: series inductance
-    :type l_s: float
+    :type l_s: np.float64
     :param l_c_b1: commutation inductance L_1
-    :type l_c_b1: float
+    :type l_c_b1: np.float64
     :param l_c_b2_: primary side reflected commutation inductance L_2
-    :type l_c_b2_: float
+    :type l_c_b2_: np.float64
     :param omega_s: omega_s = 2 * pi * f
     :type omega_s: float
     :param q_ab_req_b1: required coss charge for A/B-interval of bridge 1 semiconductors
