@@ -5,6 +5,9 @@ import logging
 import json
 import pickle
 import datetime
+import time
+import threading
+import copy
 
 # 3rd party libraries
 import optuna
@@ -18,11 +21,21 @@ import dct.datasets_dtos
 import dct.datasets_dtos as d_dtos
 import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
+from dct.server_ctl_dtos import ProgressData
+from dct.server_ctl_dtos import ProgressStatus
 
 logger = logging.getLogger(__name__)
 
 class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
+
+    """Initialize the configuration list for the circuit optimizations."""
+    _c_lock_stat: threading.Lock = threading.Lock()
+    # Initialize the staticical data (For more configuration it needs to become instance instead of static
+    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+                                                progress_status=ProgressStatus.Idle)
+    # Study in memory
+    study_in_memory: optuna.Study
 
     @staticmethod
     def load_filepaths(project_directory: str) -> circuit_dtos.ParetoFilePaths:
@@ -84,6 +97,69 @@ class CircuitOptimization:
             if not isinstance(loaded_pareto_dto, circuit_dtos.CircuitParetoDabDesign):
                 raise TypeError(f"Loaded pickle file {loaded_pareto_dto} not of type CircuitParetoDabDesign.")
             return loaded_pareto_dto
+
+    @staticmethod
+    def get_progress_data() -> ProgressData:
+        """Provide the progress data of the optimization.
+
+        :return: Progress data: Processing start time, actual processing time, number of filtered operation points and status.
+        :rtype: ProgressData
+        """
+        # Lock statistical performance data access
+        with CircuitOptimization._c_lock_stat:
+            # Update statistical data if optimisation is runningw
+            if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
+                CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
+                # Check for valid entry
+                if CircuitOptimization._progress_data.run_time < 0:
+                    CircuitOptimization._progress_data.run_time = 0.0
+                    CircuitOptimization._progress_data.start_time = time.perf_counter()
+
+        return copy.deepcopy(CircuitOptimization._progress_data)
+
+    @staticmethod
+    def get_actual_pareto_html() -> str:
+        """
+        Read the current Pareto front from running optimization process.
+
+        :return: Pareto front html page
+        :rtype: str
+        """
+        # Variable declaration
+        pareto_html: str = ""
+
+        if CircuitOptimization.study_in_memory is not None:
+            fig = optuna.visualization.plot_pareto_front(CircuitOptimization.study_in_memory)
+            pareto_html = fig.to_html(full_html=False)
+
+        return pareto_html
+
+    @staticmethod
+    def get_pareto_html(study_name: str, path_name: str) -> str:
+        """
+        Read the current Pareto front from running optimization process.
+
+        :param study_name: Name of the optuna study
+        :type  study_name: str
+        :param path_name: Path where optuna study is located
+        :type  path_name: str
+
+        :return: Pareto front html page
+        :rtype: str
+        """
+        # Variable declaration
+        pareto_html = ""
+
+        # Load study from file
+        try:
+            study = optuna.load_study(study_name=study_name, storage="sqlite:///" + path_name)
+            fig = optuna.visualization.plot_pareto_front(study)
+            pareto_html = fig.to_html(full_html=False)
+        except KeyError:
+            # Warnung ausgeben als log
+            print(f"Study with name '{study_name}' are not found.")
+
+        return pareto_html
 
     @staticmethod
     def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
@@ -224,7 +300,7 @@ class CircuitOptimization:
         except KeyboardInterrupt:
             pass
         finally:
-            # study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
+            # study_in_storage.add_trials(CircuitOptimization.study_in_memory.trials[-number_trials:])
             logger.info(f"Finished {act_number_trials} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
             # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
@@ -279,6 +355,11 @@ class CircuitOptimization:
 
         fixed_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
 
+        # Update statistical data
+        with CircuitOptimization._c_lock_stat:
+            CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
+            CircuitOptimization._progress_data.progress_status = ProgressStatus.InProgress
+
         # introduce study in storage, e.g. sqlite or mysql
         if database_type == 'sqlite':
             # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
@@ -292,18 +373,20 @@ class CircuitOptimization:
                                                    load_if_exists=True, sampler=sampler)
 
             # Create study object in memory
-            study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
+            CircuitOptimization.study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
             # If trials exists, add them to study_in_memory
-            study_in_memory.add_trials(study_in_storage.trials)
+            CircuitOptimization.study_in_memory.add_trials(study_in_storage.trials)
             # Inform about sampler type
             logger.info(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
             # actual number of trials
-            overtaken_no_trials = len(study_in_memory.trials)
+            overtaken_no_trials = len(CircuitOptimization.study_in_memory.trials)
             # Start optimization
-            CircuitOptimization.run_optimization_sqlite(study_in_memory, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            CircuitOptimization.run_optimization_sqlite(CircuitOptimization.study_in_memory, dab_config.circuit_study_name,
+                                                        number_trials, dab_config, fixed_parameters)
             # Store memory to storage
-            study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-            logger.info(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials = {len(study_in_memory.trials)} trials.")
+            study_in_storage.add_trials(CircuitOptimization.study_in_memory.trials[-number_trials:])
+            logger.info(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials ="
+                        f"{len(CircuitOptimization.study_in_memory.trials)} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
             CircuitOptimization.save_config(dab_config)
 
@@ -717,3 +800,16 @@ class CircuitOptimization:
         for dto in smallest_dto_list:
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+
+        # Update statistical data
+        with CircuitOptimization._c_lock_stat:
+            if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
+                CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
+                # Check for valid entry
+                if CircuitOptimization._progress_data.run_time < 0:
+                    CircuitOptimization._progress_data.run_time = 0.0
+                # Set Status to done
+                CircuitOptimization._progress_data.progress_status = ProgressStatus.Done
+            else:
+                # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
+                pass
