@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimization Control</title>
+    <link rel="stylesheet" href="/StyleSheets/main_page.css?v=5">
+</head>
+<body>
+    <div class="container">
+        <h1>Optimization project directory: 2025-01-31_example</h1>
+        <div class="row">
+            <div class="col">
+                <div class="row_time">
+                    <p class="process_time">Processing time:</p>
+                </div>
+                <div class="row_time">
+                    <p class="tot_time">{{ configuration_process_time }}</p>
+                </div>
+            </div>
+            <div class="col">
+                {% if user %}
+                    <div class="row"><button class="command" onclick="location.href='/html_homepage2/?action=control_sheet'">Enter control page</button></div>
+                {% else %}
+                    <div class="row"><button class="command" disabled>Enter control page</button></div>
+                {% endif %}
+            </div>
+            <div class="col">
+                {% if user %}
+                    <div class="row"><p>Logged in as: {{ user }}</p></div>
+                    <div class="row"><button onclick="location.href='/html_homepage1/?action=logout'">Logout</button></div>
+                {% else %}
+                    <div class="row"><button onclick="location.href='/login'">Login Dialog</button></div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <button onclick="location.href='/html_homepage1/'">Back to main menu</button>
+        </div>
+        <!-- Table for circuit optimization -->
+        <div class="row">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="7">Circuit optimization</th>
+                    </tr>
+                    <tr>
+                        <th>Name of configuration</th>
+                        <th>Number of trials</th>
+                        <th>Name of filtered points</th>
+                        <th>Processing time</th>
+                        <th>Status</th>
+                        <th>Show Pareto front</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ c_table_data.conf_name }}</td>
+                        <td>{{ c_table_data.nb_trails }}</td>
+                        <td>
+                            <form method="GET" action="/html_homepage2">
+                                <select name = "c_selected_filtered_point_index" onchange="this.form.submit()">
+                                {% for list_entry in c_table_data.c_filtered_points_name_list %}
+                                    <option value={{ list_entry[1] }} {% if c_selected_filtered_point_index == list_entry[1]|int %}selected{% endif %}>{{ list_entry[0]}}</option>
+                                {% endfor %}
+                                </select>
+                            </form>
+
+                        </td>
+                        <td>{{ c_table_data.process_time }}</td>
+                        <td>
+                            <img src="{{ c_table_data.image_link }}" alt="Status Icon" width="20" height="20">
+                        </td>
+                        <td>
+                        {% if c_table_data.status == 'Idle' %}
+                            <button disabled>Show Pareto front</button>
+                        {% else %}
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ c_table_data.index}}&table_index=1'">Show Pareto front</button>
+                        {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Table for inductor optimization -->
+        <div class="row">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="7">Inductor optimization</th>
+                    </tr>
+                    <tr>
+                        <th>Name of configuration</th>
+                        <th>Number of trials</th>
+                        <th>Number of filtered points</th>
+                        <th>Processing time</th>
+                        <th>Status</th>
+                        <th>Show Pareto front</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in i_table_data %}
+                    <tr>
+                        <td>{{ item.conf_name }}</td>
+                        <td>{{ item.nb_trails }}</td>
+                        <td>{{ item.nb_filt_pts }}</td>
+                        <td>{{ item.process_time }}</td>
+                        <td>
+                            <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
+                        </td>
+                        <td>
+                        {% if item.status == 'Idle' %}
+                            <button disabled>Show Pareto front</button>
+                        {% else %}
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ item.index}}&table_index=2'">Show Pareto front</button>
+                        {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Table for transformer optimization -->
+        <div class="row">
+            <table>
+
+                <thead>
+                    <tr>
+                        <th colspan="7">Transformer optimization
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>Name of configuration</th>
+                        <th>Number of trials</th>
+                        <th>Number of filtered points</th>
+                        <th>Processing time</th>
+                        <th>Status</th>
+                        <th>Show Pareto front</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in t_table_data %}
+                    <tr>
+                        <td>{{ item.conf_name }}</td>
+                        <td>{{ item.nb_trails }}</td>
+                        <td>{{ item.nb_filt_pts }}</td>
+                        <td>{{ item.process_time }}</td>
+                        <td>
+                            <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
+                        </td>
+                        <td>
+                        {% if item.status == 'Idle' %}
+                            <button disabled>Show Pareto front</button>
+                        {% else %}
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ item.index}}&table_index=3'">Show Pareto front</button>
+                        {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Table for heat sink optimization -->
+        <div class="row">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="6">Heat sink optimization</th>
+                    </tr>
+                    <tr>
+                        <th>Name of configuration</th>
+                        <th>Number of trials</th>
+                        <th>Number of filtered points</th>
+                        <th>Processing time</th>
+                        <th>Status</th>
+                        <th>Show Pareto front</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in h_table_data %}
+                    <tr>
+                        <td>{{ item.conf_name }}</td>
+                        <td>{{ item.nb_trails }}</td>
+                        <td>{{ item.nb_filt_pts }}</td>
+                        <td>{{ item.process_time }}</td>
+                        <td>
+                            <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
+                        </td>
+                        <td>
+                        {% if item.status == 'Idle' %}
+                            <button disabled>Show Pareto front</button>
+                        {% else %}
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index={{ item.index}}&table_index=4'">Show Pareto front</button>
+                        {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Table for summary -->
+        <div class="row">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="5">Summary</th>
+                    </tr>
+                    <tr>
+                        <th>Name of circuit configuration</th>
+                        <th>Processing time</th>
+                        <th>Nb. of comninations</th>
+                        <th>Status</th>
+                        <th>Show Pareto front</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in s_table_data %}
+                    <tr>
+                        <td>{{ item.conf_name }}</td>
+                        <td>{{ item.process_time }}</td>
+                        <td>{{ item.nb_of_combinations }}</td>
+                        <td>
+                            <img src="{{ item.image_link }}" alt="Status Icon" width="20" height="20">
+                        </td>
+                        <td>
+                        {% if item.status == 'Idle' %}
+                            <button disabled>Show Pareto front</button>
+                        {% else %}
+                            <button onclick="location.href='/html_homepage2?action=pareto_circuit&button_index=0&table_index=5'">Show Pareto front</button>
+                        {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Legende -->
+        <div class="row_legend">
+            <p>Legende:</p>
+        </div>
+        <div class="row_legend">
+            <div class="col_legend">
+                <img src="StyleSheets/OptIdle.png"  alt="Status Icon">
+            </div>
+            <div class="col_legend">
+                <p>Status: Not started</p>
+            </div>
+        </div>
+        <div class="row_legend">
+            <div class="col_legend">
+                <img src="StyleSheets/OptInProgress.png"  alt="Status Icon">
+            </div>
+            <div class="col_legend">
+                <p>Status: In progress</p>
+            </div>
+        </div>
+        <div class="row_legend">
+            <div class="col_legend">
+                <img src="StyleSheets/OptDone.png"  alt="Status Icon">
+            </div>
+            <div class="col_legend">
+                <p>Status: Done</p>
+            </div>
+        </div>
+        <div class="row_legend">
+            <div class="col_legend">
+                <img src="StyleSheets/OptSkipped.png"  alt="Status Icon">
+            </div>
+            <div class="col_legend text-container">
+                <p>Status: Skipped</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
