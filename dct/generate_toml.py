@@ -107,7 +107,13 @@ def generate_circuit_toml(working_directory: str) -> None:
         v_1_min_max_list=[690, 710]
         v_2_min_max_list=[175, 295]
         p_min_max_list=[-2000, 2200]
-        steps_per_direction=3
+        
+    [sampling]
+        sampling_method="latin_hypercube"
+        sampling_points=4
+        v_1_additional_user_point_list=[700]
+        v_2_additional_user_point_list=[180]
+        p_additional_user_point_list=[2000]
     
     [filter_distance]
         number_filtered_designs = 1
