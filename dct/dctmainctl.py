@@ -177,7 +177,7 @@ class DctMainCtl:
         """
         # return value init to false and tomlData to empty
         is_toml_file_existing = False
-        config = None
+        config: dict[str, Any] = {}
 
         # Separate filename and path
         toml_file_directory = os.path.dirname(toml_file)
@@ -218,14 +218,22 @@ class DctMainCtl:
             # check filename
             if os.path.isfile(logging_config_file):
                 with open(logging_config_file, "rb") as f:
-                    logging.config.fileConfig(logging_config_file)
-                    logger.info(f"Found existing logging configuration {logging_config_file}.")
+                    try:
+                        # logger.info(f"Found existing logging configuration {logging_config_file}.")
+                        logging.config.fileConfig(logging_config_file, disable_existing_loggers=False)
+                        # logger.level(0)
+                    except:
+                        logger.warning(f"Logging configuration file {logging_config_file} is inconsistent.")
+                    else:
+                        logger.info(f"Found existing logging configuration {logging_config_file}.")
             else:
                 logger.info("Generate a new logging.conf file.")
                 generate_logging_config(logging_conf_file_directory)
+                # Reset to standard file name
+                logging_config_file = os.path.join(logging_conf_file_directory,"logging.conf")
                 if os.path.isfile(logging_config_file):
                     with open(logging_config_file, "rb") as f:
-                        logging.config.fileConfig(logging_config_file)
+                        logging.config.fileConfig(logging_config_file, disable_existing_loggers=False)
                 else:
                     raise ValueError("logging.conf can not be generated.")
         else:
@@ -258,6 +266,9 @@ class DctMainCtl:
         :param study_file_name : Name of the study files (without extension)
         :type  study_file_name : str
         """
+        # Variable declaration
+        is_study_found: bool = False
+
         # Check if folder exists
         if os.path.exists(folder_name):
             # Delete all content of the folder
@@ -272,6 +283,13 @@ class DctMainCtl:
                 elif os.path.isfile(full_path) and os.path.splitext(item)[0] == study_file_name:
                     # Delete this file
                     os.remove(full_path)
+                    # Set the flag that study is found and deleted
+                    is_study_found = True
+            # Check, if the study is not found
+            if not is_study_found:
+                logger.info(f"File of study {study_file_name} does not exists in {folder_name}!")
+        else:
+            logger.info(f"Path {folder_name} does not exists!")
 
     def user_input_break_point(self, break_point_key: str, info: str) -> None:
         """
@@ -310,9 +328,9 @@ class DctMainCtl:
             if os.path.isfile(target_file):
                 is_study_existing = True
             else:
-                print(f"File {target_file} does not exists!")
+                logger.info(f"File {target_file} does not exists!")
         else:
-            print(f"Path {study_path} does not exists!")
+            logger.info(f"Path {study_path} does not exists!")
 
         # True = study exists
         return is_study_existing
