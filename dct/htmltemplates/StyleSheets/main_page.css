@@ -68,14 +68,14 @@ body {
     border: 1px solid black;
 }
 
-/* Tabelle bekommt extra Platz */
+/* Table setting */
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px; /* Space to grid */
 }
 
-/* Tabellenrahmen und Styling */
+/* Table frame setting and style */
 th, td {
     border: 1px solid black;
     padding: 10px;

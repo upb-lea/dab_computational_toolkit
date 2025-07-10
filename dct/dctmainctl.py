@@ -22,7 +22,7 @@ import json
 
 # own libraries
 import dct
-from dct import toml_checker as tc
+from dct import toml_checker as tc, ProgressStatus
 from dct import circuit_optimization_dtos as p_dtos
 from dct import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
@@ -34,7 +34,7 @@ from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.summary_processing import DctSummaryProcessing as spro
 from dct.server_ctl import DctServer as ServerCtl
-from dct.server_ctl import SrvReqData
+from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
 from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
@@ -166,7 +166,7 @@ class DctMainCtl:
         with open(json_filepath, 'w', encoding='utf8') as json_file:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
-    def load_toml_file(self, toml_file: str) -> tuple[bool, dict]:
+    def load_toml_file(self, toml_file: str) -> tuple[bool, dict[str, Any]]:
         """
         Load the toml configuration data to a dictionary.
 
@@ -200,8 +200,7 @@ class DctMainCtl:
 
         return is_toml_file_existing, config
 
-    @staticmethod
-    def load_generate_logging_config(logging_config_file: str) -> None:
+    def load_generate_logging_config(self, logging_config_file: str) -> None:
         """
         Read the logging configuration file and configure the logger.
 
@@ -239,8 +238,7 @@ class DctMainCtl:
         else:
             logger.warning(f"Path {logging_conf_file_directory} does not exists!")
 
-    @staticmethod
-    def generate_conf_file(path: str) -> bool:
+    def generate_conf_file(self, path: str) -> bool:
         """
         Create and save the configuration file.
 
@@ -495,75 +493,78 @@ class DctMainCtl:
         # Variable declaration and initialisation
 
         # Initialize the staticical data
-        progress_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
+        progress_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+                                                        progress_status=ProgressStatus.Idle)
 
         # Create data for the queue objects
         # Circuit
         circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
-        # Inductor
-        inductor_main_list: list[srv_ctl_dtos.MagneticDataEntryDto] = []
-        # Transformer
-        transformer_main_list: list[srv_ctl_dtos.MagneticDataEntryDto] = []
         # Workaround until circuit_configuration_file is a list
         configuration_file_list = [act_toml_prog_flow.configuration_data_files.circuit_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
-            circuit_data_entry = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name=entry,
-                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
-                progress_data=copy.deepcopy(progress_data_init))
-            # Update dependent magnetic lists
-            inductor_data_entry = srv_ctl_dtos.MagneticDataEntryDto(
-                circuit_configuration_name=entry,
-                number_performed_calculations=0,
-                number_calculations=0,
-                progress_data=copy.deepcopy(progress_data_init))
-            transformer_data_entry = srv_ctl_dtos.MagneticDataEntryDto(
-                circuit_configuration_name=entry,
-                number_performed_calculations=0,
-                number_calculations=0,
+            circuit_main_entry = srv_ctl_dtos.ConfigurationDataEntryDto(
+                configuration_name=entry,
+                number_of_trials=act_toml_prog_flow.circuit.number_of_trials,
                 progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.circuit.calculation_mode == "skip":
-                circuit_data_entry.progress_data.status = 3
-            if act_toml_prog_flow.inductor.calculation_mode == "skip":
-                inductor_data_entry.progress_data.status = 3
-            if act_toml_prog_flow.transformer.calculation_mode == "skip":
-                transformer_data_entry.progress_data.status = 3
+                circuit_main_entry.progress_data.progress_status = ProgressStatus.Skipped
             # Overtake the list entries
-            circuit_list.append(circuit_data_entry)
-            inductor_main_list.append(inductor_data_entry)
-            transformer_main_list.append(transformer_data_entry)
+            circuit_list.append(circuit_main_entry)
 
+        # Inductor
+        inductor_main_list: list[srv_ctl_dtos.MagneticDataEntryDto] = []
         # Inductor list (entry per configuration)
         inductor_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until inductor_configuration_file is no list
         configuration_file_list = [act_toml_prog_flow.configuration_data_files.inductor_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
+            # Update dependent magnetic lists (homepage 1)
+            inductor_main_entry = srv_ctl_dtos.MagneticDataEntryDto(
+                magnetic_configuration_name=entry,
+                number_performed_calculations=0,
+                number_calculations=0,
+                progress_data=copy.deepcopy(progress_data_init))
+            # Update dependent magnetic lists (homepage 2)
             inductor_data = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name=entry,
-                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
+                configuration_name=entry,
+                number_of_trials=act_toml_prog_flow.inductor.number_of_trials,
                 progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.inductor.calculation_mode == "skip":
-                inductor_data.progress_data.status = 3
-                # Count all filtered points
-                inductor_data.progress_data.nb_of_filtered_points = 110
+                inductor_main_entry.progress_data.progress_status = ProgressStatus.Skipped
+                inductor_data.progress_data.progress_status = ProgressStatus.Skipped
+            # Add elements to list
+            inductor_main_list.append(inductor_main_entry)
             inductor_list.append(inductor_data)
+
+        # Transformer
+        transformer_main_list: list[srv_ctl_dtos.MagneticDataEntryDto] = []
         # Transformer data (List per configuration)
         transformer_list: list[srv_ctl_dtos.ConfigurationDataEntryDto] = []
         # Workaround until transformer_configuration_file is no list
         configuration_file_list = [act_toml_prog_flow.configuration_data_files.transformer_configuration_file]
         # Add entries per configuration
         for entry in configuration_file_list:
+            # Update dependent magnetic lists (homepage 1)
+            transformer_main_entry = srv_ctl_dtos.MagneticDataEntryDto(
+                magnetic_configuration_name=entry,
+                number_performed_calculations=0,
+                number_calculations=0,
+                progress_data=copy.deepcopy(progress_data_init))
+            # Update dependent magnetic lists (homepage 2)
             transformer_data = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name=entry,
-                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
+                configuration_name=entry,
+                number_of_trials=act_toml_prog_flow.transformer.number_of_trials,
                 progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.transformer.calculation_mode == "skip":
-                transformer_data.progress_data.status = 3
+                transformer_main_entry.progress_data.progress_status = ProgressStatus.Skipped
+                transformer_data.progress_data.progress_status = ProgressStatus.Skipped
+            # Add elements to list
+            transformer_main_list.append(transformer_main_entry)
             transformer_list.append(transformer_data)
 
         # Heat_sink data (List per configuration)
@@ -573,12 +574,12 @@ class DctMainCtl:
         # Add entries per configuration
         for entry in configuration_file_list:
             heat_sink_data = srv_ctl_dtos.ConfigurationDataEntryDto(
-                conf_name=entry,
-                nb_of_trials=act_toml_prog_flow.circuit.number_of_trials,
+                configuration_name=entry,
+                number_of_trials=act_toml_prog_flow.circuit.number_of_trials,
                 progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
             if act_toml_prog_flow.inductor.calculation_mode == "skip":
-                heat_sink_data.progress_data.status = 3
+                heat_sink_data.progress_data.progress_status = ProgressStatus.Skipped
             heat_sink_list.append(heat_sink_data)
 
         # Summary data (List per circuit configuration)
@@ -588,8 +589,8 @@ class DctMainCtl:
         # Add entries per configuration
         for entry in configuration_file_list:
             summary_data = srv_ctl_dtos.SummaryDataEntryDto(
-                conf_name=entry,
-                nb_of_combinations=0,
+                configuration_name=entry,
+                number_of_combinations=0,
                 progress_data=copy.deepcopy(progress_data_init))
             summary_list.append(summary_data)
 
@@ -604,10 +605,10 @@ class DctMainCtl:
         """
         # Circuit
         # Check if circuit optimization is not skipped
-        if self._circuit_list[0].progress_data.status != 3:
+        if self._circuit_list[0].progress_data.progress_status != ProgressStatus.Skipped:
             self._circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Workaround for number of filtered points
-        self._circuit_list[0].progress_data.nb_of_filtered_points = len(self._filtered_list_id_ref)
+        self._circuit_list[0].progress_data.number_of_filtered_points = len(self._filtered_list_id_ref)
         # Inductor
         # Check if inductor is initialized,if not initialized progress data are valid
         if self.inductor_optimization is not None:
@@ -662,12 +663,12 @@ class DctMainCtl:
             filtered_points_name_list.append(list_item)
 
         # Check if circuit optimization is not skipped
-        if self._circuit_list[0].progress_data.status != 3:
+        if self._circuit_list[0].progress_data.progress_status != ProgressStatus.Skipped:
             self._circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Add remaining data
         circuit_data_entry: srv_ctl_dtos.CircuitConfigurationDataDto = srv_ctl_dtos.CircuitConfigurationDataDto(
-            conf_name=self._circuit_list[0].conf_name,
-            nb_of_trials=self._circuit_list[0].nb_of_trials,
+            configuration_name=self._circuit_list[0].configuration_name,
+            number_of_trials=self._circuit_list[0].number_of_trials,
             filtered_points_name_list=filtered_points_name_list,
             progress_data=self._circuit_list[0].progress_data
         )
@@ -676,14 +677,14 @@ class DctMainCtl:
         # Check if inductor is initialized,if not initialized progress data are valid
         if self.inductor_optimization is not None:
             self._inductor_list[0].progress_data = self.inductor_optimization.get_progress_data(filtered_pt_id)
-        elif self._inductor_list[0].progress_data.status == 3:
-            self._inductor_list[0].progress_data.nb_of_filtered_points = self._inductor_number_filtered_points_skip_list[filtered_pt_id]
+        elif self._inductor_list[0].progress_data.progress_status == ProgressStatus.Skipped:
+            self._inductor_list[0].progress_data.number_of_filtered_points = self._inductor_number_filtered_points_skip_list[filtered_pt_id]
         # Transformer
         # Check if transformer is initialized,if not initialized progress data are valid
         if self.transformer_optimization is not None:
             self._transformer_list[0].progress_data = self.transformer_optimization.get_progress_data(filtered_pt_id)
-        elif self._inductor_list[0].progress_data.status == 3:
-            self._transformer_list[0].progress_data.nb_of_filtered_points = self._transformer_number_filtered_points_skip_list[filtered_pt_id]
+        elif self._inductor_list[0].progress_data.progress_status == ProgressStatus.Skipped:
+            self._transformer_list[0].progress_data.number_of_filtered_points = self._transformer_number_filtered_points_skip_list[filtered_pt_id]
         # Heat sink
         # Check if heat sink is initialized,if not initialized progress data are valid
         if self.heat_sink_optimization is not None:
@@ -743,15 +744,15 @@ class DctMainCtl:
         # Process the input data to find the Pareto front data
         if pareto_source == ParetoFrontSource.pareto_circuit:
             # Pareto front of circuit
-            if self._circuit_list[c_configuration_index].progress_data.status == 1:
+            if self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.InProgress:
                 # Get Pareto front from memory
-                response_data.evaluation_info = f"Circuit configuration file: {self._circuit_list[c_configuration_index].conf_name}"
+                response_data.evaluation_info = f"Circuit configuration file: {self._circuit_list[c_configuration_index].configuration_name}"
                 response_data.parto_front_optuna = dct.CircuitOptimization.get_actual_pareto_html()
-            elif not self._circuit_list[c_configuration_index].progress_data.status == 0:
+            elif not self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.Idle:
                 # Get Pareto front from file
                 if self.check_study_data(self._circuit_study_data.optimization_directory,
                                          self._circuit_study_data.study_name):
-                    response_data.evaluation_info = f"Circuit configuration: {self._circuit_list[c_configuration_index].conf_name}"
+                    response_data.evaluation_info = f"Circuit configuration: {self._circuit_list[c_configuration_index].configuration_name}"
                     response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(self._circuit_study_data.study_name,
                                                                                                os.path.join(self._circuit_study_data.optimization_directory,
                                                                                                             self._circuit_study_data.study_name+".sqlite3"))
@@ -773,16 +774,16 @@ class DctMainCtl:
                         # response_data.evaluation_info = f"Inductor configuration: {self._inductor_list[i_configuration_index].conf_name}"
                         response_data.evaluation_info = "Pareto front calculation is started..."
                         # response_data.parto_front_optuna = self.inductor_optimization.get_actual_pareto_html()
-                    elif not self._inductor_list[0].progress_data.status == 0:
+                    elif not self._inductor_list[0].progress_data.progress_status == ProgressStatus.Idle:
                         is_pareto_file_available = True
-                if is_pareto_file_available or self._inductor_list[0].progress_data.status == 3:
+                if is_pareto_file_available or self._inductor_list[0].progress_data.progress_status == ProgressStatus.Skipped:
                     # Get Pareto front from file
                     # Assemble path name
                     sqlite_file_path = os.path.join(self._inductor_study_data.optimization_directory,
                                                     filtered_points_name_list[c_filtered_point_index][0],
                                                     self._inductor_study_data.study_name)
                     if self.check_study_data(sqlite_file_path, self._inductor_study_data.study_name):
-                        response_data.evaluation_info = (f"Inductor configuration file: {self._inductor_list[item_configuration_index].conf_name}"
+                        response_data.evaluation_info = (f"Inductor configuration file: {self._inductor_list[item_configuration_index].configuration_name}"
                                                          f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}")
                         response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
                             self._inductor_study_data.study_name, os.path.join(sqlite_file_path, self._inductor_study_data.study_name + ".sqlite3"))
@@ -804,17 +805,19 @@ class DctMainCtl:
                         # Get Pareto front from memory (Still not available. Femmt-update needed)
                         response_data.evaluation_info = "Pareto front calculation is started..."
                         # response_data.parto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
-                    elif not self._transformer_list[0].progress_data.status == 0:
+                    elif not self._transformer_list[0].progress_data.progress_status == ProgressStatus.Idle:
                         is_pareto_file_available = True
-                if is_pareto_file_available or self._transformer_list[0].progress_data.status == 3:
+                if is_pareto_file_available or self._transformer_list[0].progress_data.progress_status == ProgressStatus.Skipped:
                     # Get Pareto front from file
                     # Assemble path name
                     sqlite_file_path = os.path.join(self._transformer_study_data.optimization_directory,
                                                     filtered_points_name_list[c_filtered_point_index][0],
                                                     self._transformer_study_data.study_name)
                     if self.check_study_data(sqlite_file_path, self._transformer_study_data.study_name):
-                        response_data.evaluation_info = (f"Transformer configuration file: {self._transformer_list[item_configuration_index].conf_name}"
-                                                         f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}")
+                        response_data.evaluation_info = (
+                            f"Transformer configuration file: {self._transformer_list[item_configuration_index].configuration_name}"
+                            f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}"
+                        )
                         response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
                             self._transformer_study_data.study_name, os.path.join(sqlite_file_path, self._transformer_study_data.study_name + ".sqlite3"))
                 else:
@@ -835,12 +838,12 @@ class DctMainCtl:
                         # Get Pareto front from memory (Still not available. Femmt-update needed)
                         response_data.evaluation_info = "Pareto front calculation is started..."
                         # response_data.parto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
-                    elif not self._heat_sink_list[item_configuration_index].progress_data.status == 0:
+                    elif not self._heat_sink_list[item_configuration_index].progress_data.progress_status == ProgressStatus.Idle:
                         is_pareto_file_available = True
-                if is_pareto_file_available or self._heat_sink_list[item_configuration_index].progress_data.status == 3:
+                if is_pareto_file_available or self._heat_sink_list[item_configuration_index].progress_data.progress_status == ProgressStatus.Skipped:
                     # Get Pareto front from file
                     if self.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
-                        response_data.evaluation_info = f"Heat sink configuration file: {self._heat_sink_list[item_configuration_index].conf_name}"
+                        response_data.evaluation_info = f"Heat sink configuration file: {self._heat_sink_list[item_configuration_index].configuration_name}"
                         response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
                             self._heat_sink_study_data.study_name, os.path.join(self._heat_sink_study_data.optimization_directory,
                                                                                 self._heat_sink_study_data.study_name + ".sqlite3"))
@@ -865,21 +868,21 @@ class DctMainCtl:
         """
         while True:
             # Wait for the request
-            request: SrvReqData = act_srv_request_queue.get()
+            request: ServerRequestData = act_srv_request_queue.get()
             # Evaluate request
-            if request.req_cmd == RequestCmd.page_main:
+            if request.request_cmd == RequestCmd.page_main:
                 # Process request and send response
                 srv_main_data = self._get_page_main_data()
                 act_srv_response_queue.put(srv_main_data)
-            elif request.req_cmd == RequestCmd.page_detail:
+            elif request.request_cmd == RequestCmd.page_detail:
                 # Process request and send response
                 srv_detail_data = self._get_page_detail_data(request.c_filtered_point_index)
                 act_srv_response_queue.put(srv_detail_data)
-            elif request.req_cmd == RequestCmd.continue_opt:
+            elif request.request_cmd == RequestCmd.continue_opt:
                 self._break_point_flag = False
                 self._break_point_message = ""
                 act_srv_response_queue.put(True)
-            elif request.req_cmd == RequestCmd.pareto_front:
+            elif request.request_cmd == RequestCmd.pareto_front:
                 pareto_front_data_queue = self._request_pareto_front(request.pareto_source, request.c_configuration_index,
                                                                      request.item_configuration_index, request.c_filtered_point_index)
                 act_srv_response_queue.put(pareto_front_data_queue)
@@ -958,7 +961,7 @@ class DctMainCtl:
         # --------------------------
         # read logging for submodules
         logging_filename = os.path.join(workspace_path, "logging.conf")
-        DctMainCtl.load_generate_logging_config(logging_filename)
+        self.load_generate_logging_config(logging_filename)
 
         # --------------------------
         # Flow control
@@ -1228,7 +1231,7 @@ class DctMainCtl:
         # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip":
             # Set the status to InProgress
-            self._inductor_main_list[0].progress_data.status = 1
+            self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.inductor.calculation_mode == "new":
@@ -1245,7 +1248,7 @@ class DctMainCtl:
                 toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
             # Set the status to Done
-            self._inductor_main_list[0].progress_data.status = 3
+            self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Skipped
 
         # Stop the inductor processing time measurement
         self._inductor_progress_time[0].stop_trigger()
@@ -1263,7 +1266,7 @@ class DctMainCtl:
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.transformer.calculation_mode == "skip":
             # Set the status to InProgress
-            self._transformer_main_list[0].progress_data.status = 1
+            self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
             # Check, if old study is to delete, if available
             if toml_prog_flow.transformer.calculation_mode == "new":
                 # Delete old transformer study
@@ -1279,7 +1282,7 @@ class DctMainCtl:
                 toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
             # Set the status to Done
-            self._transformer_main_list[0].progress_data.status = 3
+            self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Skipped
 
         # Stop the transformer processing time measurement
         self._transformer_progress_time[0].stop_trigger()

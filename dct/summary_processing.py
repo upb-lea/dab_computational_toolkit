@@ -13,6 +13,7 @@ import numpy as np
 
 # own libraries
 import dct
+from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport as thr_sup
 import hct
 from dct.server_ctl_dtos import ProgressData
@@ -28,7 +29,8 @@ class DctSummaryProcessing:
     """Initialize the configuration list for the circuit optimizations."""
     _s_lock_stat: threading.Lock = threading.Lock()
     # Initialize the staticical data (For more configuration it needs to become instance instead of static
-    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, nb_of_filtered_points=0, status=0)
+    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+                                                progress_status=ProgressStatus.Idle)
 
     # Areas and transistor cooling parameter
     copper_coin_area_1: float
@@ -114,7 +116,7 @@ class DctSummaryProcessing:
         # Lock statistical performance data access
         with DctSummaryProcessing._s_lock_stat:
             # Update statistical data if optimisation is runningw
-            if DctSummaryProcessing._progress_data.status == 1:
+            if DctSummaryProcessing._progress_data.progress_status == ProgressStatus.InProgress:
                 DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
                 # Check for valid entry
                 if DctSummaryProcessing._progress_data.run_time < 0:
@@ -196,7 +198,7 @@ class DctSummaryProcessing:
         # Update statistical data
         with DctSummaryProcessing._s_lock_stat:
             DctSummaryProcessing._progress_data.start_time = time.perf_counter()
-            DctSummaryProcessing._progress_data.status = 1
+            DctSummaryProcessing._progress_data.progress_status = ProgressStatus.InProgress
 
         # iterate circuit numbers
         for circuit_number in filter_data.filtered_list_id:
@@ -434,7 +436,7 @@ class DctSummaryProcessing:
         # Update statistical data for summary processing finalized
         # Update statistical data
         with DctSummaryProcessing._s_lock_stat:
-            if DctSummaryProcessing._progress_data.status == 1:
+            if DctSummaryProcessing._progress_data.progress_status == ProgressStatus.InProgress:
                 DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
                 # Check for valid entry
                 if DctSummaryProcessing._progress_data.run_time < 0:
