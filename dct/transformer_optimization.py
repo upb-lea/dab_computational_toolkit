@@ -297,16 +297,14 @@ class TransformerOptimization:
 
                         current_waveform = np.array([time, current])
 
-                        if debug:
-                            logger.info(f"{current_waveform=}")
-                            logger.info("----------------------")
-                            logger.info("Re-simulation of:")
-                            logger.info(f"   * Circuit study: {filter_data.circuit_study_name}")
-                            logger.info(f"   * Circuit trial: {circuit_id}")
-                            logger.info(f"   * Transformer study: {act_sto_config.transformer_study_name}")
-                            logger.info(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                        logger.debug(f"{current_waveform=}")
+                        logger.debug("----------------------")
+                        logger.debug("Re-simulation of:")
+                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                        logger.debug(f"   * Circuit trial: {circuit_id}")
+                        logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
+                        logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
 
-                        logger.info(f"{current_waveform=}")
                         # workaround for comma problem. Read a random csv file and set back the delimiter.
                         # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 

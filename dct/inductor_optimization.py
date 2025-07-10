@@ -232,7 +232,8 @@ class InductorOptimization:
             number_of_filtered_points = len(re_simulate_numbers)
 
             for re_simulate_number in re_simulate_numbers:
-                logger.info(f"{re_simulate_number=}")
+                logger.info(f"re_simulate_number: \n"
+                            f"{re_simulate_number}")
                 df_geometry_re_simulation_number = df_fem_reluctance[
                     df_fem_reluctance["number"] == float(re_simulate_number)]
 

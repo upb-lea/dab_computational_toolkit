@@ -28,10 +28,6 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
     if not os.path.exists(directory):
         os.mkdir(directory)
     name = 'mod_zvs'
-    comment = 'Only modulation calculation results for mod_zvs with V1 {}, V2 {} and P {} steps.'.format(
-        int(dab_config.input_config.V1_step),
-        int(dab_config.input_config.V2_step),
-        int(dab_config.input_config.P_step))
 
     plt = PlotDAB(is_latex=False)
 
@@ -51,7 +47,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                         tab_title='OptZVS Modulation Angles (U_1 = {:.1f}V)'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
                         )
     fname = name + '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
-    fcomment = comment + ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
+    fcomment = 'View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot all modulation angles but separately with autoscale
@@ -72,7 +68,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                          ax=plt.figs_axes[-1][1][2],
                          xlabel='P / W', ylabel='U2 / V', title='tau2 in rad')
     fname = name + '_V1_{:.0f}V_autoscale'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
-    fcomment = comment + ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
+    fcomment = 'View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot a cross-section through the V2 plane
@@ -91,7 +87,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                         tab_title='OptZVS Modulation Angles (U_2 = {:.1f}V)'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
                         )
     fname = name + '_V2_{:.0f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
-    fcomment = comment + ' View plane: V_2 = {:.1f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
+    fcomment = 'View plane: V_2 = {:.1f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot Coss and Qoss of transistor 1

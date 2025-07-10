@@ -280,5 +280,7 @@ TemplateResponse
 MagneticDataEntryDto
 ParetoFrontSource
 ProgressData
-
+latin
+poisson
+ValueError
 

@@ -406,12 +406,19 @@ class DctMainCtl:
         output_range = p_dtos.CircuitOutputRange(
             v_1_min_nom_max_list=toml_circuit.output_range.v_1_min_max_list,
             v_2_min_nom_max_list=toml_circuit.output_range.v_2_min_max_list,
-            p_min_nom_max_list=toml_circuit.output_range.p_min_max_list,
-            steps_per_direction=toml_circuit.output_range.steps_per_direction)
+            p_min_nom_max_list=toml_circuit.output_range.p_min_max_list)
 
         filter = p_dtos.CircuitFilter(
             number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
             difference_percentage=toml_circuit.filter_distance.difference_percentage
+        )
+
+        sampling = p_dtos.CircuitSampling(
+            sampling_method=toml_circuit.sampling.sampling_method,
+            sampling_points=toml_circuit.sampling.sampling_points,
+            v_1_additional_user_point_list=toml_circuit.sampling.v_1_additional_user_point_list,
+            v_2_additional_user_point_list=toml_circuit.sampling.v_2_additional_user_point_list,
+            p_additional_user_point_list=toml_circuit.sampling.p_additional_user_point_list
         )
 
         circuit_dto = p_dtos.CircuitParetoDabDesign(
@@ -419,6 +426,7 @@ class DctMainCtl:
             project_directory=toml_prog_flow.general.project_directory,
             design_space=design_space,
             output_range=output_range,
+            sampling=sampling,
             filter=filter)
 
         return circuit_dto

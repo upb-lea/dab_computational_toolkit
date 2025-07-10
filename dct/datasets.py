@@ -19,6 +19,7 @@ import dct.currents as dct_currents
 import dct.geckosimulation as dct_gecko
 import dct.losses as dct_loss
 import dct.sampling as sampling
+from dct import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,8 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, v1_min: float, v1_max: float, v1_step: int, v2_min: float,
-                    v2_max: float, v2_step: int, p_min: float, p_max: float, p_step: int,
-                    n: float, ls: float, lc1: float, lc2: float, fs: float,
+    def init_config(name: str, v1_min: float, v1_max: float, v2_min: float, v2_max: float, p_min: float, p_max: float,
+                    sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
         """
         Initialize the DAB structure.
@@ -39,20 +39,16 @@ class HandleDabDto:
         :type v1_min: float
         :param v1_max: V1 maximum voltage
         :type v1_max: float
-        :param v1_step: V1 voltage steps
-        :type v1_step: int
         :param v2_min: V2 minimum voltage
         :type v2_min: float
         :param v2_max: V2 maximum voltage
         :type v2_max: float
-        :param v2_step: V2 voltage steps
-        :type v2_step: int
         :param p_min: P minimum power
         :type p_min: float
         :param p_max: P maximum power
         :type p_max: float
-        :param p_step: P power steps
-        :type p_step: int
+        :param sampling: Sampling parameters
+        :type sampling: d_dtos.Sampling
         :param n: transformer transfer ratio
         :type n: float
         :param ls: series inductance
@@ -75,13 +71,11 @@ class HandleDabDto:
         """
         input_configuration = d_dtos.CircuitConfig(V1_min=np.array(v1_min),
                                                    V1_max=np.array(v1_max),
-                                                   V1_step=np.array(v1_step),
                                                    V2_min=np.array(v2_min),
                                                    V2_max=np.array(v2_max),
-                                                   V2_step=np.array(v2_step),
                                                    P_min=np.array(p_min),
                                                    P_max=np.array(p_max),
-                                                   P_step=np.array(p_step),
+                                                   sampling=sampling,
                                                    n=np.array(n),
                                                    Ls=np.array(ls),
                                                    Lc1=np.array(lc1),
@@ -185,27 +179,27 @@ class HandleDabDto:
         :return: CalcFromConfig
         :rtype: CalcFromCircuitConfig
         """
-        number_of_samples = 100
-        sampling_method = "latin_hypercube"
-        dim_1_user_given_points = [180, 190, 200]
-        dim_2_user_given_points = [710, 700, 740]
-        dim_3_user_given_points = [-2000, 1800, 2000]
-
         # choose sampling method
-        if sampling_method == "meshgrid":
+        if config.sampling.sampling_method == "meshgrid":
+            steps_per_dimension = np.ceil(np.power(config.sampling.sampling_points, 1 / 3))
+            logger.info(f"number of sampling points has been updated from {config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
+            logger.info("Note: meshgrid sampling does not take user-given operating points into account")
             v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
-                np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
-                np.linspace(config.V2_min, config.V2_max, int(config.V2_step)), np.linspace(config.P_min, config.P_max, int(config.P_step)),
+                np.linspace(config.V1_min, config.V1_max, steps_per_dimension),
+                np.linspace(config.V2_min, config.V2_max, steps_per_dimension),
+                np.linspace(config.P_min, config.P_max, steps_per_dimension),
                 sparse=False)
-
-        elif sampling_method == "latin_hypercube":
+        elif config.sampling.sampling_method == "latin_hypercube":
             v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
                 config.V1_min, config.V1_max, config.V2_min, config.V2_max, config.P_min, config.P_max,
-                total_number_points=number_of_samples, dim_1_user_given_points_list=dim_1_user_given_points,
-                dim_2_user_given_points_list=dim_2_user_given_points, dim_3_user_given_points_list=dim_3_user_given_points)
+                total_number_points=config.sampling.sampling_points,
+                dim_1_user_given_points_list=config.sampling.v_1_additional_user_point_list,
+                dim_2_user_given_points_list=config.sampling.v_2_additional_user_point_list,
+                dim_3_user_given_points_list=config.sampling.p_additional_user_point_list)
+        elif config.sampling.sampling_method == "poisson_disk_sampling":
+            raise NotImplementedError("Not implemented yet.")
         else:
-            raise ValueError("sampling_method not correct defined.")
-
+            raise ValueError(f"sampling_method '{config.sampling.sampling_method}' not available.")
 
         Lc2_ = config.Lc2 * config.n ** 2
 

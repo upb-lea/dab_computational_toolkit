@@ -109,7 +109,15 @@ class TomlCircuitOutputRange(BaseModel):
     v_1_min_max_list: list
     v_2_min_max_list: list
     p_min_max_list: list
-    steps_per_direction: int
+
+class TomlSampling(BaseModel):
+    """Definition of the sampling method."""
+
+    sampling_method: Literal['latin_hypercube', 'meshgrid', 'poisson_disk_sampling']
+    sampling_points: int
+    v_1_additional_user_point_list: list[float]
+    v_2_additional_user_point_list: list[float]
+    p_additional_user_point_list: list[float]
 
 class TomlCircuitFilterDistance(BaseModel):
     """Toml checker class for CircuitFilterDistance."""
@@ -122,6 +130,7 @@ class TomlCircuitParetoDabDesign(BaseModel):
 
     design_space: TomlCircuitParetoDesignSpace
     output_range: TomlCircuitOutputRange
+    sampling: TomlSampling
     filter_distance: TomlCircuitFilterDistance
 
 # ######################################################
