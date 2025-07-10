@@ -19,7 +19,7 @@ import dct.currents as dct_currents
 import dct.geckosimulation as dct_gecko
 import dct.losses as dct_loss
 import dct.sampling as sampling
-from dct import CircuitSampling
+from dct.circuit_optimization_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
