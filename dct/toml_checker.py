@@ -106,8 +106,8 @@ class TomlCircuitParetoDesignSpace(BaseModel):
 class TomlCircuitOutputRange(BaseModel):
     """Definition of the DAB operating area."""
 
-    v_1_min_max_list: list
-    v_2_min_max_list: list
+    v1_min_max_list: list
+    v2_min_max_list: list
     p_min_max_list: list
 
 class TomlSampling(BaseModel):
@@ -115,8 +115,8 @@ class TomlSampling(BaseModel):
 
     sampling_method: Literal['latin_hypercube', 'meshgrid', 'poisson_disk_sampling']
     sampling_points: int
-    v_1_additional_user_point_list: list[float]
-    v_2_additional_user_point_list: list[float]
+    v1_additional_user_point_list: list[float]
+    v2_additional_user_point_list: list[float]
     p_additional_user_point_list: list[float]
 
 class TomlCircuitFilterDistance(BaseModel):

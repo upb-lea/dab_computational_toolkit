@@ -69,12 +69,12 @@ class HandleDabDto:
         :type c_par_2: float
         :return:
         """
-        input_configuration = d_dtos.CircuitConfig(V1_min=np.array(v1_min),
-                                                   V1_max=np.array(v1_max),
-                                                   V2_min=np.array(v2_min),
-                                                   V2_max=np.array(v2_max),
-                                                   P_min=np.array(p_min),
-                                                   P_max=np.array(p_max),
+        input_configuration = d_dtos.CircuitConfig(v1_min=np.array(v1_min),
+                                                   v1_max=np.array(v1_max),
+                                                   v2_min=np.array(v2_min),
+                                                   v2_max=np.array(v2_max),
+                                                   p_min=np.array(p_min),
+                                                   p_max=np.array(p_max),
                                                    sampling=sampling,
                                                    n=np.array(n),
                                                    Ls=np.array(ls),
@@ -143,8 +143,8 @@ class HandleDabDto:
         :return: DabDTO
         """
         gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
-            mesh_v1=dab_dto.calc_config.mesh_V1, mesh_v2=dab_dto.calc_config.mesh_V2,
-            mesh_p=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
+            mesh_v1=dab_dto.calc_config.mesh_v1, mesh_v2=dab_dto.calc_config.mesh_v2,
+            mesh_p=dab_dto.calc_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
             mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
             t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
             fs=dab_dto.input_config.fs, ls=dab_dto.input_config.Ls, lc1=dab_dto.input_config.Lc1,
@@ -185,16 +185,16 @@ class HandleDabDto:
             logger.info(f"number of sampling points has been updated from {config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
             v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
-                np.linspace(config.V1_min, config.V1_max, steps_per_dimension),
-                np.linspace(config.V2_min, config.V2_max, steps_per_dimension),
-                np.linspace(config.P_min, config.P_max, steps_per_dimension),
+                np.linspace(config.v1_min, config.v1_max, steps_per_dimension),
+                np.linspace(config.v2_min, config.v2_max, steps_per_dimension),
+                np.linspace(config.p_min, config.p_max, steps_per_dimension),
                 sparse=False)
         elif config.sampling.sampling_method == "latin_hypercube":
             v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
-                config.V1_min, config.V1_max, config.V2_min, config.V2_max, config.P_min, config.P_max,
+                config.v1_min, config.v1_max, config.v2_min, config.v2_max, config.p_min, config.p_max,
                 total_number_points=config.sampling.sampling_points,
-                dim_1_user_given_points_list=config.sampling.v_1_additional_user_point_list,
-                dim_2_user_given_points_list=config.sampling.v_2_additional_user_point_list,
+                dim_1_user_given_points_list=config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=config.sampling.v2_additional_user_point_list,
                 dim_3_user_given_points_list=config.sampling.p_additional_user_point_list)
         elif config.sampling.sampling_method == "poisson_disk_sampling":
             raise NotImplementedError("Not implemented yet.")
@@ -204,9 +204,9 @@ class HandleDabDto:
         Lc2_ = config.Lc2 * config.n ** 2
 
         calc_from_config = d_dtos.CalcFromCircuitConfig(
-            mesh_V1=np.atleast_3d(v1_operating_points),
-            mesh_V2=np.atleast_3d(v2_operating_points),
-            mesh_P=np.atleast_3d(p_operating_points),
+            mesh_v1=np.atleast_3d(v1_operating_points),
+            mesh_v2=np.atleast_3d(v2_operating_points),
+            mesh_p=np.atleast_3d(p_operating_points),
             Lc2_=Lc2_,
             t_j_1=config.transistor_dto_1.t_j_max_op,
             t_j_2=config.transistor_dto_2.t_j_max_op,
@@ -230,7 +230,7 @@ class HandleDabDto:
         :return: Modulation parameters.
         """
         result_dict = mod.calc_modulation_params(config.n, config.Ls, config.Lc1, config.Lc2, config.fs, c_oss_1=calc_config.c_oss_par_1,
-                                                 c_oss_2=calc_config.c_oss_par_2, v1=calc_config.mesh_V1, v2=calc_config.mesh_V2, power=calc_config.mesh_P)
+                                                 c_oss_2=calc_config.c_oss_par_2, v1=calc_config.mesh_v1, v2=calc_config.mesh_v2, power=calc_config.mesh_p)
 
         return d_dtos.CalcModulation(**result_dict)
 

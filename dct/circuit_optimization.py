@@ -192,10 +192,10 @@ class CircuitOptimization:
 
         dab_calc = d_sets.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
-            v1_min=dab_config.output_range.v_1_min_nom_max_list[0],
-            v1_max=dab_config.output_range.v_1_min_nom_max_list[1],
-            v2_min=dab_config.output_range.v_2_min_nom_max_list[0],
-            v2_max=dab_config.output_range.v_2_min_nom_max_list[1],
+            v1_min=dab_config.output_range.v1_min_nom_max_list[0],
+            v1_max=dab_config.output_range.v1_min_nom_max_list[1],
+            v2_min=dab_config.output_range.v2_min_nom_max_list[0],
+            v2_max=dab_config.output_range.v2_min_nom_max_list[1],
             p_min=dab_config.output_range.p_min_nom_max_list[0],
             p_max=dab_config.output_range.p_min_nom_max_list[1],
             sampling=dab_config.sampling,
@@ -492,10 +492,10 @@ class CircuitOptimization:
 
         dab_dto = d_sets.HandleDabDto.init_config(
             name=str(trial_number),
-            v1_min=dab_config.output_range.v_1_min_nom_max_list[0],
-            v1_max=dab_config.output_range.v_1_min_nom_max_list[1],
-            v2_min=dab_config.output_range.v_2_min_nom_max_list[0],
-            v2_max=dab_config.output_range.v_2_min_nom_max_list[1],
+            v1_min=dab_config.output_range.v1_min_nom_max_list[0],
+            v1_max=dab_config.output_range.v1_min_nom_max_list[1],
+            v2_min=dab_config.output_range.v2_min_nom_max_list[0],
+            v2_max=dab_config.output_range.v2_min_nom_max_list[1],
             p_min=dab_config.output_range.p_min_nom_max_list[0],
             p_max=dab_config.output_range.p_min_nom_max_list[1],
             sampling=dab_config.sampling,
@@ -533,10 +533,10 @@ class CircuitOptimization:
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
-                v1_min=dab_config.output_range.v_1_min_nom_max_list[0],
-                v1_max=dab_config.output_range.v_1_min_nom_max_list[1],
-                v2_min=dab_config.output_range.v_2_min_nom_max_list[0],
-                v2_max=dab_config.output_range.v_2_min_nom_max_list[1],
+                v1_min=dab_config.output_range.v1_min_nom_max_list[0],
+                v1_max=dab_config.output_range.v1_min_nom_max_list[1],
+                v2_min=dab_config.output_range.v2_min_nom_max_list[0],
+                v2_max=dab_config.output_range.v2_min_nom_max_list[1],
                 p_min=dab_config.output_range.p_min_nom_max_list[0],
                 p_max=dab_config.output_range.p_min_nom_max_list[1],
                 sampling=dab_config.sampling,

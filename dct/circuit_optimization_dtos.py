@@ -31,8 +31,8 @@ class CircuitParetoDesignSpace:
 class CircuitOutputRange:
     """Definition of the DAB operating area."""
 
-    v_1_min_nom_max_list: list
-    v_2_min_nom_max_list: list
+    v1_min_nom_max_list: list
+    v2_min_nom_max_list: list
     p_min_nom_max_list: list
 
 @dataclasses.dataclass
@@ -41,8 +41,8 @@ class CircuitSampling:
 
     sampling_method: str
     sampling_points: int
-    v_1_additional_user_point_list: list[float]
-    v_2_additional_user_point_list: list[float]
+    v1_additional_user_point_list: list[float]
+    v2_additional_user_point_list: list[float]
     p_additional_user_point_list: list[float]
 
 @dataclasses.dataclass
