@@ -292,8 +292,6 @@ class HandleDabDto:
         coss_int = np.vectorize(integrate)
         # get the qoss vector that has the resolution 1V from 0 to V_max
         v_vec = np.arange(coss.shape[0])
-        # get the qoss vector that fits the mesh_V scale
-        # v_vec = np.linspace(V_min, V_max, int(V_step))
         qoss = coss_int(v_vec)
 
         return qoss
@@ -344,34 +342,6 @@ class HandleDabDto:
         with open(f"{file}.pkl", 'wb') as output:
             pickle.dump(dab_dto, output, pickle.HIGHEST_PROTOCOL)
 
-        # prepare a all-in-one parallel file
-        # input_dict_to_store = dataclasses.asdict(dab_dto.input_config)
-        # calc_config_dict_to_store = dataclasses.asdict(dab_dto.calc_config)
-        # calc_modulation_dict_to_store = dataclasses.asdict(dab_dto.calc_modulation)
-        # calc_currents_dict_to_store = dataclasses.asdict(dab_dto.calc_currents)
-        # calc_losses_dict_to_store = dataclasses.asdict(dab_dto.calc_losses) if isinstance(dab_dto.calc_losses, CalcLosses) else None
-        # gecko_additional_params_dict_to_store = dataclasses.asdict(dab_dto.gecko_additional_params)
-        # gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
-        # inductor_losses_dict_to_store = dataclasses.asdict(dab_dto.inductor_losses) if isinstance(dab_dto.inductor_losses, InductorLosses) else None
-        #
-        # dict_to_store = {}
-        # dict_to_store["timestamp"] = dab_dto.timestamp
-        # dict_to_store["name"] = dab_dto.name
-        # dict_to_store["metadata"] = dab_dto.metadata
-        # dict_to_store.update(input_dict_to_store)
-        # dict_to_store.update(calc_config_dict_to_store)
-        # dict_to_store.update(calc_modulation_dict_to_store)
-        # dict_to_store.update(calc_currents_dict_to_store)
-        # if isinstance(dab_dto.calc_losses, CalcLosses):
-        #     dict_to_store.update(calc_losses_dict_to_store)
-        # dict_to_store.update(gecko_additional_params_dict_to_store)
-        # if isinstance(dab_dto.gecko_results, GeckoResults):
-        #     dict_to_store.update(gecko_results_dict_to_store)
-        # if isinstance(dab_dto.inductor_losses, InductorLosses):
-        #     dict_to_store.update(inductor_losses_dict_to_store)
-        #
-        # np.savez_compressed(**dict_to_store, file=file)
-
     @staticmethod
     def load_from_file(file: str) -> d_dtos.CircuitDabDTO:
         """
@@ -393,44 +363,6 @@ class HandleDabDto:
             if not isinstance(loaded_circuit_dto, d_dtos.CircuitDabDTO):
                 raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type CircuitDabDTO.")
             return loaded_circuit_dto
-
-        # decoded_data = np.load(file, allow_pickle=True)
-        # keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
-        # keys_of_gecko_waveform_dto = [field.name for field in dataclasses.fields(GeckoWaveforms)]
-        # keys_of_inductor_losses_dto = [field.name for field in dataclasses.fields(InductorLosses)]
-        #
-        # # if loaded results have all keys that are mandatory for the GeckoResults-Class:
-        # if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
-        #     gecko_results = GeckoResults(**decoded_data)
-        # else:
-        #     gecko_results = None
-        #
-        # # if loaded results have all keys that are mandatory for the GeckoWaveform-Class:
-        # if len(set(keys_of_gecko_waveform_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_waveform_dto):
-        #     gecko_waveforms = GeckoWaveforms(**decoded_data)
-        # else:
-        #     gecko_waveforms = None
-        #
-        # # if loaded results have all keys that are mandatory for the GeckoResults-Class:
-        # if len(set(keys_of_inductor_losses_dto) & set(list(decoded_data.keys()))) == len(keys_of_inductor_losses_dto):
-        #     inductor_losses = InductorLosses(**decoded_data)
-        # else:
-        #     inductor_losses = None
-        #
-        # dab_dto = d_dtos.CircuitDabDTO(name=str(decoded_data["name"]),
-        #                         timestamp=decoded_data["timestamp"],
-        #                         metadata=decoded_data["metadata"],
-        #                         input_config=CircuitConfig(**decoded_data),
-        #                         calc_config=CalcFromCircuitConfig(**decoded_data),
-        #                         calc_modulation=CalcModulation(**decoded_data),
-        #                         calc_currents=CalcCurrents(**decoded_data),
-        #                         calc_losses=None,
-        #                         gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
-        #                         gecko_results=gecko_results,
-        #                         gecko_waveforms=gecko_waveforms,
-        #                         inductor_losses=inductor_losses)
-        #
-        # return dab_dto
 
     @staticmethod
     def get_max_peak_waveform_transformer(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

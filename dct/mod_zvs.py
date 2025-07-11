@@ -55,7 +55,7 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     _IIm2_mask = np.full_like(v1, False)
     _IIIm1_mask = np.full_like(v1, False)
 
-    # Precalculate all required values
+    # Calculate all required values
     # Transform Lc2 to side 1
     Lc2_ = lc2 * n ** 2
     # Transform V2 to side 1
@@ -153,7 +153,7 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     phi_nP = -(tau1 + phi - tau2)
     phi[_negative_power_mask] = phi_nP[_negative_power_mask]
 
-    # Init return dict
+    # Initialize return dict
     da_mod_results: dict[str, np.ndarray | float | None] = dict()
     # Save the results in the dict
     # Convert phi because the math from the paper uses Middle-Pulse alignment, but we use First-Falling-Edge alignment!
@@ -176,7 +176,6 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # positive high power mode 1+
     da_mod_results[MOD_KEYS[10]] = np.bitwise_and(_positive_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
 
-    # debug(da_mod_results)
     return da_mod_results
 
 def _calc_interval_1(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_: np.float64,

@@ -119,8 +119,8 @@ class DctMainCtl:
         self._heat_sink_progress_time: list[DctMainCtl.RunTime] = []
         self._summary_progress_time: list[DctMainCtl.RunTime] = []
 
-        # Optimisation class instances
-        # circuit_optimisation is missing due to static class. Needs to be changed to instance class too.
+        # Optimization class instances
+        # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_id_ref: list[int] = []
         self.inductor_optimization: Optional[InductorOptimization] = None
         self.transformer_optimization: Optional[TransformerOptimization] = None
@@ -175,7 +175,7 @@ class DctMainCtl:
         :return: True, if the data could be loaded successful and the loaded dictionary
         :rtype: bool, dict
         """
-        # return value init to false and tomlData to empty
+        # return value initialization to false and toml Data to empty
         is_toml_file_existing = False
         config: dict[str, Any] = {}
 
@@ -295,8 +295,8 @@ class DctMainCtl:
         :return: True, if the optimization could be performed successful
         :rtype: bool
         """
-        # Variable defintion
-        # return value init to false
+        # Variable definition
+        # return value initialization to false
         is_study_existing = False
 
         # check path
@@ -377,7 +377,7 @@ class DctMainCtl:
                 # stop program
                 sys.exit()
         else:
-            # Remove breakpoint measage
+            # Remove breakpoint message
             self._break_point_message = ""
 
     def circuit_toml_2_dto(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
@@ -480,9 +480,9 @@ class DctMainCtl:
                 list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
                 list[ConfigurationDataEntryDto], list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]
         """
-        # Variable declaration and initialisation
+        # Variable declaration and initialization
 
-        # Initialize the staticical data
+        # Initialize the statistical data
         progress_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
                                                         progress_status=ProgressStatus.Idle)
 
@@ -711,7 +711,7 @@ class DctMainCtl:
         :rtype:  str
         """
         # Variable declaration
-        response_data = srv_ctl_dtos.QueueParetoFrontData(parto_front_optuna="",
+        response_data = srv_ctl_dtos.QueueParetoFrontData(pareto_front_optuna="",
                                                           validity=False,
                                                           evaluation_info="Unexpected error!")
 
@@ -737,15 +737,15 @@ class DctMainCtl:
             if self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.InProgress:
                 # Get Pareto front from memory
                 response_data.evaluation_info = f"Circuit configuration file: {self._circuit_list[c_configuration_index].configuration_name}"
-                response_data.parto_front_optuna = dct.CircuitOptimization.get_actual_pareto_html()
+                response_data.pareto_front_optuna = dct.CircuitOptimization.get_actual_pareto_html()
             elif not self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.Idle:
                 # Get Pareto front from file
                 if self.check_study_data(self._circuit_study_data.optimization_directory,
                                          self._circuit_study_data.study_name):
                     response_data.evaluation_info = f"Circuit configuration: {self._circuit_list[c_configuration_index].configuration_name}"
-                    response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(self._circuit_study_data.study_name,
-                                                                                               os.path.join(self._circuit_study_data.optimization_directory,
-                                                                                                            self._circuit_study_data.study_name+".sqlite3"))
+                    response_data.pareto_front_optuna = dct.CircuitOptimization.get_pareto_html(self._circuit_study_data.study_name,
+                                                                                                os.path.join(self._circuit_study_data.optimization_directory,
+                                                                                                             self._circuit_study_data.study_name+".sqlite3"))
             else:
                 response_data.evaluation_info = "Pareto front calculation still not started!"
         # Pareto front of inductor
@@ -763,7 +763,7 @@ class DctMainCtl:
                         # Get Pareto front from memory (Still not available. Femmt-update needed)
                         # response_data.evaluation_info = f"Inductor configuration: {self._inductor_list[i_configuration_index].conf_name}"
                         response_data.evaluation_info = "Pareto front calculation is started..."
-                        # response_data.parto_front_optuna = self.inductor_optimization.get_actual_pareto_html()
+                        # response_data.pareto_front_optuna = self.inductor_optimization.get_actual_pareto_html()
                     elif not self._inductor_list[0].progress_data.progress_status == ProgressStatus.Idle:
                         is_pareto_file_available = True
                 if is_pareto_file_available or self._inductor_list[0].progress_data.progress_status == ProgressStatus.Skipped:
@@ -775,7 +775,7 @@ class DctMainCtl:
                     if self.check_study_data(sqlite_file_path, self._inductor_study_data.study_name):
                         response_data.evaluation_info = (f"Inductor configuration file: {self._inductor_list[item_configuration_index].configuration_name}"
                                                          f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}")
-                        response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
+                        response_data.pareto_front_optuna = dct.CircuitOptimization.get_pareto_html(
                             self._inductor_study_data.study_name, os.path.join(sqlite_file_path, self._inductor_study_data.study_name + ".sqlite3"))
                 else:
                     # Pareto front is not available
@@ -794,7 +794,7 @@ class DctMainCtl:
                     if self._transformer_list[0].progress_data == 1:
                         # Get Pareto front from memory (Still not available. Femmt-update needed)
                         response_data.evaluation_info = "Pareto front calculation is started..."
-                        # response_data.parto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
+                        # response_data.pareto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
                     elif not self._transformer_list[0].progress_data.progress_status == ProgressStatus.Idle:
                         is_pareto_file_available = True
                 if is_pareto_file_available or self._transformer_list[0].progress_data.progress_status == ProgressStatus.Skipped:
@@ -808,7 +808,7 @@ class DctMainCtl:
                             f"Transformer configuration file: {self._transformer_list[item_configuration_index].configuration_name}"
                             f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}"
                         )
-                        response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
+                        response_data.pareto_front_optuna = dct.CircuitOptimization.get_pareto_html(
                             self._transformer_study_data.study_name, os.path.join(sqlite_file_path, self._transformer_study_data.study_name + ".sqlite3"))
                 else:
                     # Pareto front is not available
@@ -827,14 +827,14 @@ class DctMainCtl:
                     if self._transformer_list[item_configuration_index].progress_data == 1:
                         # Get Pareto front from memory (Still not available. Femmt-update needed)
                         response_data.evaluation_info = "Pareto front calculation is started..."
-                        # response_data.parto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
+                        # response_data.pareto_front_optuna = self.transformer_optimization.get_actual_pareto_html()
                     elif not self._heat_sink_list[item_configuration_index].progress_data.progress_status == ProgressStatus.Idle:
                         is_pareto_file_available = True
                 if is_pareto_file_available or self._heat_sink_list[item_configuration_index].progress_data.progress_status == ProgressStatus.Skipped:
                     # Get Pareto front from file
                     if self.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
                         response_data.evaluation_info = f"Heat sink configuration file: {self._heat_sink_list[item_configuration_index].configuration_name}"
-                        response_data.parto_front_optuna = dct.CircuitOptimization.get_pareto_html(
+                        response_data.pareto_front_optuna = dct.CircuitOptimization.get_pareto_html(
                             self._heat_sink_study_data.study_name, os.path.join(self._heat_sink_study_data.optimization_directory,
                                                                                 self._heat_sink_study_data.study_name + ".sqlite3"))
                 else:
@@ -843,7 +843,7 @@ class DctMainCtl:
         elif pareto_source == ParetoFrontSource.pareto_summary:
             pass
 
-        if not response_data.parto_front_optuna == "":
+        if not response_data.pareto_front_optuna == "":
             response_data.validity = True
 
         return response_data
@@ -913,7 +913,7 @@ class DctMainCtl:
         enable_ind_re_simulation = True
         enable_trans_re_simulation = True
 
-        # Server reqesponse thread handler
+        # Server response thread handler
         _srv_response_handler = None
         # Queues for request and response
         srv_request_queue: Queue = Queue()
@@ -1037,7 +1037,7 @@ class DctMainCtl:
                 for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
                     if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
                         filter_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
-                        # Store list id for progress (Wordaround)
+                        # Store list id for progress (Workaround)
                         self._filtered_list_id_ref = filter_data.filtered_list_id
                 if not filter_data.filtered_list_id:
                     raise ValueError(f"Filtered results folder {filter_data.filtered_list_pathname} is empty.")
@@ -1059,7 +1059,7 @@ class DctMainCtl:
 
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
-            # Initialize inductor_nbfiltpt_skip_list
+            # Initialize _inductor_number_filtered_points_skip_list
             self._inductor_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
 
@@ -1091,7 +1091,7 @@ class DctMainCtl:
 
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
-            # Initialize transformer_nbfiltpt_skip_list
+            # Initialize _transformer_number_filtered_points_skip_list
             self._transformer_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
             for id_entry in filter_data.filtered_list_id:
@@ -1203,7 +1203,7 @@ class DctMainCtl:
         # Stop the circuit processing time measurement (finally)
         self._circuit_progress_time[0].stop_trigger()
 
-        # Set the number of calculations for the magenetic components
+        # Set the number of calculations for the magnetic components
         self._inductor_main_list[0].number_calculations = len(self._filtered_list_id_ref)
         self._transformer_main_list[0].number_calculations = len(self._filtered_list_id_ref)
 
@@ -1314,7 +1314,7 @@ class DctMainCtl:
         # Start the summary processing time measurement
         self._summary_progress_time[0].reset_start_trigger()
 
-        # Initialisation thermal data
+        # Initialization thermal data
         if not spro.init_thermal_configuration(toml_heat_sink.thermal_resistance_data):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)

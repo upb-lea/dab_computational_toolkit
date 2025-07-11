@@ -31,7 +31,7 @@ class CircuitOptimization:
 
     """Initialize the configuration list for the circuit optimizations."""
     _c_lock_stat: threading.Lock = threading.Lock()
-    # Initialize the staticical data (For more configuration it needs to become instance instead of static
+    # Initialize the statistical data (For more configuration it needs to become instance instead of static
     _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
                                                 progress_status=ProgressStatus.Idle)
     # Study in memory
@@ -107,7 +107,7 @@ class CircuitOptimization:
         """
         # Lock statistical performance data access
         with CircuitOptimization._c_lock_stat:
-            # Update statistical data if optimisation is runningw
+            # Update statistical data if optimization is running
             if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
                 CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
                 # Check for valid entry
@@ -156,8 +156,7 @@ class CircuitOptimization:
             fig = optuna.visualization.plot_pareto_front(study)
             pareto_html = fig.to_html(full_html=False)
         except KeyError:
-            # Warnung ausgeben als log
-            print(f"Study with name '{study_name}' are not found.")
+            logger.warning(f"Study with name '{study_name}' are not found.")
 
         return pareto_html
 
@@ -301,7 +300,7 @@ class CircuitOptimization:
             # study_in_storage.add_trials(CircuitOptimization.study_in_memory.trials[-number_trials:])
             logger.info(f"Finished {act_number_trials} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
-            # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
+            # Save method from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
     @staticmethod
     def start_proceed_study(dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
