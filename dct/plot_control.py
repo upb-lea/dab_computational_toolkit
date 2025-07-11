@@ -58,19 +58,6 @@ class ParetoPlots:
         fig_name = fig_name.replace(".pdf", "")
         plt.savefig(f"{fig_name}.pdf")
 
-    # @staticmethod
-    # def study_to_df(toml_prog_flow: dct.FlowControl):
-    #     """Create a DataFrame from a study.
-    #
-    #     :param dab_config: DAB optimization configuration file
-    #     :type dab_config: p_dtos.CircuitParetoDabDesign
-    #     """
-    #     sqlite_storage_url = f"sqlite:///{toml_prog_flow.general.project_directory}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.sqlite3"
-    #
-    #     loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
-    #     df = loaded_study.trials_dataframe()
-    #     return df
-
     @staticmethod
     def read_circuit_numbers_from_filestructure(toml_prog_flow: dct.FlowControl) -> list[str]:
         """

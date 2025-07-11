@@ -28,19 +28,15 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
     if not os.path.exists(directory):
         os.mkdir(directory)
     name = 'mod_zvs'
-    comment = 'Only modulation calculation results for mod_zvs with V1 {}, V2 {} and P {} steps.'.format(
-        int(dab_config.input_config.V1_step),
-        int(dab_config.input_config.V2_step),
-        int(dab_config.input_config.P_step))
 
     plt = PlotDAB(is_latex=False)
 
     # Plot OptZVS mod results
     # Plot a cross-section through the V1 plane
-    v1_middle = int(np.shape(dab_config.calc_config.mesh_P)[1] / 2)
+    v1_middle = int(np.shape(dab_config.calc_config.mesh_p)[1] / 2)
     # Plot all modulation angles
-    plt.plot_modulation(dab_config.calc_config.mesh_P[:, v1_middle, :],
-                        dab_config.calc_config.mesh_V2[:, v1_middle, :],
+    plt.plot_modulation(dab_config.calc_config.mesh_p[:, v1_middle, :],
+                        dab_config.calc_config.mesh_v2[:, v1_middle, :],
                         dab_config.calc_modulation.phi[:, v1_middle, :],
                         dab_config.calc_modulation.tau1[:, v1_middle, :],
                         dab_config.calc_modulation.tau2[:, v1_middle, :],
@@ -48,38 +44,38 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                         mask2=dab_config.calc_modulation.mask_IIm2[:, v1_middle, :],
                         mask3=dab_config.calc_modulation.mask_IIIm1[:, v1_middle, :],
                         maskZVS=dab_config.calc_modulation.mask_zvs[:, v1_middle, :],
-                        tab_title='OptZVS Modulation Angles (U_1 = {:.1f}V)'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
+                        tab_title='OptZVS Modulation Angles (U_1 = {:.1f}V)'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
                         )
-    fname = name + '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
-    fcomment = comment + ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
+    fname = name + '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
+    fcomment = 'View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot all modulation angles but separately with autoscale
     plt.new_fig(nrows=1, ncols=3, tab_title='OptZVS Modulation Angles (autoscale)')
-    plt.subplot_contourf(dab_config.calc_config.mesh_P[:, v1_middle, :],
-                         dab_config.calc_config.mesh_V2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
+                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
                          dab_config.calc_modulation.phi[:, v1_middle, :],
                          ax=plt.figs_axes[-1][1][0],
                          xlabel='P / W', ylabel='U2 / V', title='phi in rad')
-    plt.subplot_contourf(dab_config.calc_config.mesh_P[:, v1_middle, :],
-                         dab_config.calc_config.mesh_V2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
+                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
                          dab_config.calc_modulation.tau1[:, v1_middle, :],
                          ax=plt.figs_axes[-1][1][1],
                          xlabel='P / W', ylabel='U2 / V', title='tau1 in rad')
-    plt.subplot_contourf(dab_config.calc_config.mesh_P[:, v1_middle, :],
-                         dab_config.calc_config.mesh_V2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
+                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
                          dab_config.calc_modulation.tau2[:, v1_middle, :],
                          ax=plt.figs_axes[-1][1][2],
                          xlabel='P / W', ylabel='U2 / V', title='tau2 in rad')
-    fname = name + '_V1_{:.0f}V_autoscale'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
-    fcomment = comment + ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_V1[0, v1_middle, 0])
+    fname = name + '_V1_{:.0f}V_autoscale'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
+    fcomment = 'View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot a cross-section through the V2 plane
-    v2_middle = int(np.shape(dab_config.calc_config.mesh_P)[0] / 2)
+    v2_middle = int(np.shape(dab_config.calc_config.mesh_p)[0] / 2)
 
-    plt.plot_modulation(dab_config.calc_config.mesh_P[v2_middle, :, :],
-                        dab_config.calc_config.mesh_V1[v2_middle, :, :],
+    plt.plot_modulation(dab_config.calc_config.mesh_p[v2_middle, :, :],
+                        dab_config.calc_config.mesh_v1[v2_middle, :, :],
                         dab_config.calc_modulation.phi[v2_middle, :, :],
                         dab_config.calc_modulation.tau1[v2_middle, :, :],
                         dab_config.calc_modulation.tau2[v2_middle, :, :],
@@ -88,10 +84,10 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                         mask3=dab_config.calc_modulation.mask_IIIm1[v2_middle, :, :],
                         maskZVS=dab_config.calc_modulation.mask_zvs[v2_middle, :, :],
                         Vnum=1,
-                        tab_title='OptZVS Modulation Angles (U_2 = {:.1f}V)'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
+                        tab_title='OptZVS Modulation Angles (U_2 = {:.1f}V)'.format(dab_config.calc_config.mesh_v2[v2_middle, 0, 0])
                         )
-    fname = name + '_V2_{:.0f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
-    fcomment = comment + ' View plane: V_2 = {:.1f}V'.format(dab_config.calc_config.mesh_V2[v2_middle, 0, 0])
+    fname = name + '_V2_{:.0f}V'.format(dab_config.calc_config.mesh_v2[v2_middle, 0, 0])
+    fcomment = 'View plane: V_2 = {:.1f}V'.format(dab_config.calc_config.mesh_v2[v2_middle, 0, 0])
     plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot Coss and Qoss of transistor 1

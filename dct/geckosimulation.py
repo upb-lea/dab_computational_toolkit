@@ -115,12 +115,12 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
     # Set a reasonable low zvs voltage limit below we assume zvs operation
     zvs_vlimit = 50
 
-    # init gecko waveform simulation
+    # Initialize gecko waveform simulation
     result_df = pd.DataFrame()
     gecko_waveforms_single_simulation = dict()
     gecko_waveforms_multiple_simulations: defaultdict = defaultdict(dict)
 
-    # Init arrays to store simulation results
+    # Initialize arrays to store simulation results
     da_sim_results: dict[str, np.ndarray] = dict()
     for k in l_means_keys:
         da_sim_results[k] = np.full_like(mod_phi, np.nan)
@@ -129,7 +129,7 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
     for k in l_min_keys:
         da_sim_results[k] = np.full_like(mod_phi, np.nan)
 
-    # Progressbar init, calc total number of iterations to simulate
+    # Progress bar initialization, calc total number of iterations to simulate
     pbar = tqdm.tqdm(total=mod_phi.size)
 
     # Find a free port if zero is given as port
@@ -176,14 +176,14 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
             gecko_dab_converter.set_nonlinear_file(['C11', 'C12', 'C13', 'C14'], c_oss_1_file)
             gecko_dab_converter.set_nonlinear_file(['C21', 'C22', 'C23', 'C24'], c_oss_2_file)
 
-            # Start the simulation and get the results. Do not set times here because it is set while init Gecko.
+            # Start the simulation and get the results. Do not set times here because it is set while Gecko initialization.
             gecko_dab_converter.run_simulation()
             values_mean = gecko_dab_converter.get_values(
                 nodes=l_means_keys,
                 operations=['mean'],
                 # Just use the last part, because the beginning is garbage
-                # simtime must be greater than 2*Ts
-                # Use only second half of simtime and make it multiple of Ts
+                # simulation time must be greater than 2*Ts
+                # Use only second half of simulation time and make it multiple of Ts
                 range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
                                   'end']
             )
@@ -191,8 +191,8 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
                 nodes=l_rms_keys,
                 operations=['rms'],
                 # Just use the last part, because the beginning is garbage
-                # simtime must be greater than 2*Ts
-                # Use only second half of simtime and make it multiple of Ts
+                # simulation time must be greater than 2*Ts
+                # Use only second half of simulation time and make it multiple of Ts
                 range_start_stop=[math.ceil(simtime * mesh_fs[vec_vvp].item() / 2) * 1 / mesh_fs[vec_vvp].item(),
                                   'end']
             )
@@ -200,7 +200,7 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
                 nodes=l_min_keys,
                 operations=['min'],
                 # Just use the last part, because the beginning is garbage
-                # Use the smallest possible timerange at the end
+                # Use the smallest possible time range at the end
                 range_start_stop=[2 * timestep, 'end']
             )
 
@@ -243,7 +243,7 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
                 gecko_waveforms_multiple_simulations[k][vec_vvp] = None
                 gecko_waveforms_multiple_simulations['time'] = None
 
-        # Progressbar update, default increment +1
+        # Progress bar update, default increment +1
         pbar.update()
 
     if not __debug__:
@@ -282,7 +282,7 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
     # Square I_rms before mean, because we need the relation P ~ R*I^2
     da_sim_results['I1_squared_total_mean'] = np.nanmean(da_sim_results['i_HF1'] ** 2)
 
-    # Progressbar end
+    # Progress bar end
     pbar.close()
 
     return da_sim_results, gecko_waveforms_multiple_simulations

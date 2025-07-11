@@ -44,17 +44,6 @@ class PlotWindow:
         layout = QVBoxLayout()
         new_tab.setLayout(layout)
 
-        # # Set some default spacings
-        # figure.subplots_adjust(left=0.05, right=0.98, bottom=0.08, top=0.91, wspace=0.06, hspace=0.2)
-        # if self.figsize == (16, 8):
-        #     figure.subplots_adjust(left=0.04, right=0.995, bottom=0.065, top=0.96, wspace=0.07, hspace=0.2)
-        # if self.figsize == (12.8, 8):
-        #     figure.subplots_adjust(left=0.05, right=0.98, bottom=0.06, top=0.96, wspace=0.12, hspace=0.2)
-        # if self.figsize == (10, 5):
-        #     figure.subplots_adjust(left=0.062, right=0.975, bottom=0.092, top=0.94, wspace=0.17, hspace=0.2)
-        # if self.figsize == (12, 5):
-        #     figure.subplots_adjust(left=0.062, right=0.97, bottom=0.117, top=0.935, wspace=0.17, hspace=0.25)
-        # for fontsize 16
         if self.figsize == (5, 4):
             figure.subplots_adjust(left=0.18, right=0.99, bottom=0.15, top=0.92, wspace=0.17, hspace=0.2)
         if self.figsize == (5, 5):

@@ -94,7 +94,7 @@ class HeatSinkOptimization:
         """
         # Lock statistical performance data access
         with self._h_lock_stat:
-            # Update statistical data if optimisation is running
+            # Update statistical data if optimization is running
             if self._progress_data.progress_status == ProgressStatus.InProgress:
                 self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
                 # Check for valid entry

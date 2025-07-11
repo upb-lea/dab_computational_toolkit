@@ -60,7 +60,7 @@ class ServerRequestData:
 class DctServer:
     """Server to visualize the actual progress and calculated Pareto-fronts."""
 
-    # Methode deklaration
+    # Method declaration
     server_thread: threading.Thread
 
     # Allocate FastAPI-Server
@@ -90,7 +90,7 @@ class DctServer:
     # _ssl_cert = os.getenv("SSL_CERT_PATH", "ssl/cert.pem")  # Default for development
     # _ssl_key = os.getenv("SSL_KEY_PATH", "ssl/key.pem")
     # Development
-    _ssl_cert = abspath("ssl/cert.pem")  # Default for developement
+    _ssl_cert = abspath("ssl/cert.pem")  # Default for development
     _ssl_key = abspath("ssl/key.pem")
     _optuna_path = abspath("htmltemplates/OptunaOrg.html")
 
@@ -117,7 +117,7 @@ class DctServer:
     # Debug
     break_status: int = 0
 
-    # Mount of stylesheet path
+    # Mount of style sheet path
     app.mount("/StyleSheets", StaticFiles(directory=os.path.join(_template_directory, "StyleSheets")), name="Stylesheets")
 
     @staticmethod
@@ -153,14 +153,14 @@ class DctServer:
 
         # Check if server process supervision is to start due to program exit requested by server
         if DctServer._prog_exit_flag:
-            # Create thread for the serversupervision and start it
+            # Create thread for the server supervision and start it
             DctServer._server_supervision = threading.Thread(target=DctServer._supervise_server_stop, daemon=True)
             DctServer._server_supervision.start()
 
     @staticmethod
     def stop_dct_server() -> None:
         """Stop the server for the control and supervision of the simulation."""
-        # Set program exit flag to false because program will be exit by themself
+        # Set program exit flag to false because program will be exit by themselves
         DctServer._prog_exit_flag = False
 
         # Request server to stop
@@ -175,7 +175,7 @@ class DctServer:
     @staticmethod
     def _supervise_server_stop() -> None:
         """Stop the supervision of the server in main process."""
-        # Supervice if the server is stopped by user request
+        # Supervise if the server is stopped by user request
         while True:
             # Reduce CPU-supervise load by toggle each second
             time.sleep(1)
@@ -209,7 +209,7 @@ class DctServer:
         # Create thread for the server and start it
         DctServer.server_thread = threading.Thread(target=DctServer.dct_server_thread, daemon=True)
         DctServer.server_thread.start()
-        # Supervice if the server is stopped by main
+        # Supervise if the server is stopped by main
         while True:
             # Reduce CPU-supervise load by toggle each second
             time.sleep(1)
@@ -713,7 +713,7 @@ class DctServer:
         """
         if DctServer.users.get(username) == password:
             request.session["user"] = username
-            # Send back success and request client to request base url '/' with GET-Methode (303)
+            # Send back success and request client to request base url '/' with GET-Method (303)
             return RedirectResponse(url="/", status_code=303)
         return DctServer.templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
@@ -787,5 +787,5 @@ class DctServer:
             return DctServer.templates.TemplateResponse("pareto_front.html",
                                                         {"request": request,
                                                          "info_string": html_data.evaluation_info,
-                                                         "pareto_front": html_data.parto_front_optuna,
+                                                         "pareto_front": html_data.pareto_front_optuna,
                                                          "url_back": url_back})

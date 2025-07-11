@@ -5,7 +5,7 @@ from functools import wraps
 import time
 
 # Set a global DEBUG variable to switch some debugging code.
-# This is evaluated a runtime, not like the Python __debug__ that is evaluated in preprocess.
+# This is evaluated a runtime, not like the Python __debug__ that is evaluated in a pre-process.
 DEBUG = False
 
 def timeit(func):
@@ -25,8 +25,6 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        # print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
-        # print(f'{total_time:.4f} seconds for Function {func.__name__}{args} {kwargs}')
         print(f'{total_time:.4f} seconds for Function {func.__name__}')
         return result
 

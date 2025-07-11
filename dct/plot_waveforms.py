@@ -62,8 +62,8 @@ def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: 
             plt.ylabel('i_L_s in A')
             plt.grid()
             plt.legend()
-            plot_info = (f", P= {dab_dto.calc_config.mesh_P[vec_vvp]} W "
-                         f"v1={dab_dto.calc_config.mesh_V1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_V2[vec_vvp]} V,"
+            plot_info = (f", P= {dab_dto.calc_config.mesh_p[vec_vvp]} W "
+                         f"v1={dab_dto.calc_config.mesh_v1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_v2[vec_vvp]} V,"
                          f"f={dab_dto.input_config.fs=}")
 
             if dab_dto.calc_modulation.mask_zvs[vec_vvp]:
@@ -151,8 +151,8 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_wavefo
             plt.ylabel('i_hf_1 in A')
             plt.grid()
             plt.legend()
-            plot_info = (f", P= {dab_dto.calc_config.mesh_P[vec_vvp]} W "
-                         f"v1={dab_dto.calc_config.mesh_V1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_V2[vec_vvp]} V,"
+            plot_info = (f", P= {dab_dto.calc_config.mesh_p[vec_vvp]} W "
+                         f"v1={dab_dto.calc_config.mesh_v1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_v2[vec_vvp]} V,"
                          f"f={dab_dto.input_config.fs=}")
 
             if dab_dto.calc_modulation.mask_zvs[vec_vvp]:

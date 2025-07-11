@@ -28,7 +28,7 @@ class DctSummaryProcessing:
 
     """Initialize the configuration list for the circuit optimizations."""
     _s_lock_stat: threading.Lock = threading.Lock()
-    # Initialize the staticical data (For more configuration it needs to become instance instead of static
+    # Initialize the statistical data (For more configuration it needs to become instance instead of static
     _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
                                                 progress_status=ProgressStatus.Idle)
 
@@ -69,7 +69,7 @@ class DctSummaryProcessing:
             tim_thickness=act_thermal_data.transistor_b2_cooling[0],
             tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
 
-        # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
+        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
         inductor_tim_thickness = act_thermal_data.inductor_cooling[0]
         inductor_tim_conductivity = act_thermal_data.inductor_cooling[1]
 
@@ -82,7 +82,7 @@ class DctSummaryProcessing:
             logger.info(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
             successful_init = False
 
-        # Thermal parameter for inductor: rth per area: List [tim_thickness, tim_conductivity]
+        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
         # ASA: Rename database class from InductiveElementCooling to MagneticElementCooling
         transformer_tim_thickness = act_thermal_data.transformer_cooling[0]
         transformer_tim_conductivity = act_thermal_data.transformer_cooling[1]
@@ -103,7 +103,7 @@ class DctSummaryProcessing:
         # Heat sink parameter:  List [t_ambient, t_hs_max]
         DctSummaryProcessing.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
                                                                                             t_hs_max=act_thermal_data.heat_sink[1])
-        # Return if initialisation was successful performed (True)
+        # Return if initialization was successful performed (True)
         return successful_init
 
     @staticmethod
@@ -115,7 +115,7 @@ class DctSummaryProcessing:
         """
         # Lock statistical performance data access
         with DctSummaryProcessing._s_lock_stat:
-            # Update statistical data if optimisation is runningw
+            # Update statistical data if optimization is running
             if DctSummaryProcessing._progress_data.progress_status == ProgressStatus.InProgress:
                 DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
                 # Check for valid entry
