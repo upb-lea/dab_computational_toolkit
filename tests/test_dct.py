@@ -246,9 +246,11 @@ def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data:
             else:
                 test_dct.load_generate_logging_config(filepath)
 
+            # Create wrong path string
+            wrong_path = os.path.join(tmpdir, "not_existing_folder")
             # Expected messages
             expected_message = ["",
-                                f"Path {os.path.join(tmpdir, "not_existing_folder")} does not exists!",
+                                f"Path {wrong_path} does not exists!",
                                 "Generate a new logging.conf file.",
                                 f"Logging configuration file {valid_filepath} is inconsistent."]
 
