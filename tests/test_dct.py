@@ -56,12 +56,12 @@ test_value = 10
     (test_valid_toml, True, True, exp_config, 0)
 ])
 # Unit test function
-def test_load_toml_file(capture_log: LogCaptureFixture, test_toml_data: str, is_path_existing: bool,
+def test_load_toml_file(caplog: LogCaptureFixture, test_toml_data: str, is_path_existing: bool,
                         is_exp_result_valid: bool, exp_toml_object: dict, exp_message_id: int) -> None:
     """Test the method load_toml_file.
 
-    :param capture_log: class instance for logger data
-    :type  capture_log: LogCaptureFixture
+    :param caplog: class instance for logger data
+    :type  caplog: LogCaptureFixture
     :param test_toml_data: Test data of the toml file
     :type  test_toml_data: str
     :param is_path_existing: Flag to indicate, if the path exists for the test
@@ -95,7 +95,7 @@ def test_load_toml_file(capture_log: LogCaptureFixture, test_toml_data: str, is_
             filepath = invalid_filepath
 
         # Perform the test
-        with capture_log.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO):
             is_result_valid, toml_object = test_dct.load_toml_file(filepath)
 
             # Expected messages
@@ -105,8 +105,8 @@ def test_load_toml_file(capture_log: LogCaptureFixture, test_toml_data: str, is_
                                 "toml-file is not conform to toml-format:\nExpected '=' after a key in a key/value pair (at line 2, column 7)"]
 
             # Evaluate the result
-            if len(capture_log.records) > 0:
-                assert capture_log.records[0].message == expected_message[exp_message_id]
+            if len(caplog.records) > 0:
+                assert caplog.records[0].message == expected_message[exp_message_id]
             else:
                 assert "" == expected_message[exp_message_id]
 
@@ -119,7 +119,7 @@ def test_load_toml_file(capture_log: LogCaptureFixture, test_toml_data: str, is_
 #########################################################################################################
 
 # Valid toml file
-tst_valid_logger_toml = """
+test_valid_logger_toml = """
 [loggers]
 keys=root,dct,transistordatabase,femmt,hct
 
@@ -170,7 +170,7 @@ datefmt=%Y-%m-%d %H:%M:%S
 """
 
 # Invalid toml file
-tst_invalid_logger_toml = """
+test_invalid_logger_toml = """
 [nix]
 keys=root,dct,transistordatabase,femmt,hct
 
@@ -186,27 +186,27 @@ handlers=console
 """
 
 # Skip file command
-@pytest.mark.skip(reason="Test of load_generate_logging_config is skipped")
+# @pytest.mark.skip(reason="Test of load_generate_logging_config is skipped")
 # test parameter list
 @pytest.mark.parametrize("test_toml_data, is_path_existing, is_file_existing, is_logger_to_restore, exp_message_id", [
     # --invalid inputs----
     # Path does not exist
-    (tst_valid_logger_toml, False, False, False, 1),
+    (test_valid_logger_toml, False, False, False, 1),
     # Input file, with wrong format
-    (tst_invalid_logger_toml, True, True, False, 3),
+    (test_invalid_logger_toml, True, True, False, 3),
     # Input file does not exist
-    (tst_valid_logger_toml, True, False, False, 2),
+    (test_valid_logger_toml, True, False, False, 2),
     # --valid inputs----
     # Valid input file exists
-    (tst_valid_logger_toml, True, True, True, 0)
+    (test_valid_logger_toml, True, True, True, 0)
 ])
 # Unit test function
-def test_load_generate_logging_config(capture_log: LogCaptureFixture, test_toml_data: str, is_path_existing: bool, is_file_existing: bool,
+def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data: str, is_path_existing: bool, is_file_existing: bool,
                                       is_logger_to_restore: bool, exp_message_id: int) -> None:
     """Test method load_generate_logging_config(logging_config_file: str) -> None: according values.
 
-    :param capture_log: class instance for logger data
-    :type  capture_log: LogCaptureFixture
+    :param caplog: class instance for logger data
+    :type  caplog: LogCaptureFixture
     :param test_toml_data: Test data to load by the method
     :type  test_toml_data: str
     :param is_path_existing: Flag to indicate, if the path exists for the test
@@ -239,10 +239,10 @@ def test_load_generate_logging_config(capture_log: LogCaptureFixture, test_toml_
             filepath = os.path.join(tmpdir, "not_existing_folder", "not_existing_file.toml")
 
         # Perform the test
-        with capture_log.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO):
             if is_logger_to_restore:
                 test_dct.load_generate_logging_config(filepath)
-                capture_log.set_level(logging.INFO)
+                caplog.set_level(logging.INFO)
             else:
                 test_dct.load_generate_logging_config(filepath)
 
@@ -252,8 +252,8 @@ def test_load_generate_logging_config(capture_log: LogCaptureFixture, test_toml_
                                 "Generate a new logging.conf file.",
                                 f"Logging configuration file {valid_filepath} is inconsistent."]
 
-            if len(capture_log.records) > 0:
-                assert capture_log.records[0].message == expected_message[exp_message_id]
+            if len(caplog.records) > 0:
+                assert caplog.records[0].message == expected_message[exp_message_id]
             else:
                 assert "" == expected_message[exp_message_id]
 
@@ -263,10 +263,10 @@ def test_load_generate_logging_config(capture_log: LogCaptureFixture, test_toml_
 #########################################################################################################
 
 # Valid toml file
-tst_ascii_file_data = "This is a test file"
+test_ascii_file_data = "This is a test file"
 
 # Skip file command
-@pytest.mark.skip(reason="Test of delete_study_content is skipped")
+# @pytest.mark.skip(reason="Test of delete_study_content is skipped")
 # test parameter list
 @pytest.mark.parametrize("is_path_existing, is_file_existing, exp_message_id", [
     # --invalid inputs----
@@ -279,11 +279,11 @@ tst_ascii_file_data = "This is a test file"
     (True, True, 0)
 ])
 # Unit test function
-def test_delete_study_content(capture_log: LogCaptureFixture, is_path_existing: bool, is_file_existing: bool, exp_message_id: int) -> None:
+def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool, is_file_existing: bool, exp_message_id: int) -> None:
     """Test method load_generate_logging_config(logging_config_file: str) -> None: according values.
 
-    :param capture_log: class instance for logger data
-    :type  capture_log: LogCaptureFixture
+    :param caplog: class instance for logger data
+    :type  caplog: LogCaptureFixture
     :param is_path_existing: Flag to indicate, if the path exists for the test
     :type  is_path_existing: bool
     :param is_file_existing: Flag to indicate, if the file exists for the test
@@ -307,7 +307,7 @@ def test_delete_study_content(capture_log: LogCaptureFixture, is_path_existing: 
         # Create 2 files
         # Ascii file
         with open(valid_asc_source, "w") as f:
-            f.write(tst_ascii_file_data)
+            f.write(test_ascii_file_data)
         # Binary file (1kb random data)
         with open(valid_bin_source, "wb") as f:
             f.write(os.urandom(1024))
@@ -336,15 +336,15 @@ def test_delete_study_content(capture_log: LogCaptureFixture, is_path_existing: 
             os.remove(valid_bin_source)
 
         # Perform the test
-        with capture_log.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO):
             test_dct.delete_study_content(path_name, os.path.splitext(study_bin_name)[0])
             # Expected messages
             expected_message = ["",
                                 f"Path {path_name} does not exists!",
                                 f"File of study {os.path.splitext(study_bin_name)[0]} does not exists in {path_name}!"]
 
-            if len(capture_log.records) > 0:
-                assert capture_log.records[0].message == expected_message[exp_message_id]
+            if len(caplog.records) > 0:
+                assert caplog.records[0].message == expected_message[exp_message_id]
             else:
                 assert "" == expected_message[exp_message_id]
 
@@ -357,7 +357,7 @@ def test_delete_study_content(capture_log: LogCaptureFixture, is_path_existing: 
 #########################################################################################################
 
 # Skip file command
-@pytest.mark.skip(reason="Test of check_study_data is skipped")
+# @pytest.mark.skip(reason="Test of check_study_data is skipped")
 # test parameter list
 @pytest.mark.parametrize("is_path_existing, is_file_existing, file_name, exp_message_id, exp_result", [
     # --invalid inputs----
@@ -374,12 +374,12 @@ def test_delete_study_content(capture_log: LogCaptureFixture, is_path_existing: 
     (True, True, "study_data.sqlite3", 0, True),
 ])
 # Unit test function
-def test_check_study_data(capture_log: LogCaptureFixture, is_path_existing: bool, is_file_existing: bool, file_name: str,
+def test_check_study_data(caplog: LogCaptureFixture, is_path_existing: bool, is_file_existing: bool, file_name: str,
                           exp_message_id: int, exp_result: bool) -> None:
     """Test method load_generate_logging_config(logging_config_file: str) -> None: according values.
 
-    :param capture_log: class instance for logger data
-    :type  capture_log: LogCaptureFixture
+    :param caplog: class instance for logger data
+    :type  caplog: LogCaptureFixture
     :param is_path_existing: Flag to indicate, if the path exists for the test
     :type  is_path_existing: bool
     :param is_file_existing: Flag to indicate, if the file exists for the test
@@ -414,15 +414,15 @@ def test_check_study_data(capture_log: LogCaptureFixture, is_path_existing: bool
         path_file_name = os.path.join(path_name, f"{target_study_name}.sqlite3")
 
         # Perform the test
-        with capture_log.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO):
             test_result = test_dct.check_study_data(path_name, target_study_name)
             # Expected messages
             expected_message = ["",
                                 f"Path {path_name} does not exists!",
                                 f"File {path_file_name} does not exists!"]
 
-            if len(capture_log.records) > 0:
-                assert capture_log.records[0].message == expected_message[exp_message_id]
+            if len(caplog.records) > 0:
+                assert caplog.records[0].message == expected_message[exp_message_id]
             else:
                 assert "" == expected_message[exp_message_id]
 
@@ -434,7 +434,7 @@ def test_check_study_data(capture_log: LogCaptureFixture, is_path_existing: bool
 #########################################################################################################
 
 # Skip file command
-@pytest.mark.skip(reason="Test of get_number_of_pkl_files is skipped")
+# @pytest.mark.skip(reason="Test of get_number_of_pkl_files is skipped")
 # test parameter list
 @pytest.mark.parametrize("is_path_existing, number_of_pkl_files, prefix, exp_message_id", [
     # --invalid usecase----
@@ -450,11 +450,11 @@ def test_check_study_data(capture_log: LogCaptureFixture, is_path_existing: bool
 
 ])
 # Unit test function
-def test_get_number_of_pkl_files(capture_log: LogCaptureFixture, is_path_existing: bool, number_of_pkl_files: int, prefix: str, exp_message_id: int) -> None:
+def test_get_number_of_pkl_files(caplog: LogCaptureFixture, is_path_existing: bool, number_of_pkl_files: int, prefix: str, exp_message_id: int) -> None:
     """Test method load_generate_logging_config.
 
-    :param capture_log: class instance for logger data
-    :type  capture_log: LogCaptureFixture
+    :param caplog: class instance for logger data
+    :type  caplog: LogCaptureFixture
     :param is_path_existing: Flag to indicate, if the path exists for the test
     :type  is_path_existing: bool
     :param number_of_pkl_files: Number of pkl-files
@@ -487,14 +487,14 @@ def test_get_number_of_pkl_files(capture_log: LogCaptureFixture, is_path_existin
             path_name = os.path.join(tmpdir, "not_existing_folder")
 
         # Perform the test
-        with capture_log.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO):
             test_result = test_dct.get_number_of_pkl_files(path_name)
             # Expected messages
             expected_message = ["",
                                 f"Path {path_name} does not exists!"]
 
-            if len(capture_log.records) > 0:
-                assert capture_log.records[0].message == expected_message[exp_message_id]
+            if len(caplog.records) > 0:
+                assert caplog.records[0].message == expected_message[exp_message_id]
             else:
                 assert "" == expected_message[exp_message_id]
 

@@ -282,5 +282,6 @@ ParetoFrontSource
 ProgressData
 LogCaptureFixture
 CaptureFixture
+caplog
 dctmainctl
 
