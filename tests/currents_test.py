@@ -1,4 +1,4 @@
-"""Pytests for the current calculation."""
+"""Python tests for the current calculation."""
 # python libraries
 
 # own libraries
