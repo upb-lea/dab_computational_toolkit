@@ -5,6 +5,7 @@ matrix:
     d: en_US
   sources:
   - dct/*.py
+  - tests/*.py
   dictionary:
     wordlists:
       - docs/wordlist

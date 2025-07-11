@@ -229,7 +229,7 @@ class DctMainCtl:
                 logger.info("Generate a new logging.conf file.")
                 generate_logging_config(logging_conf_file_directory)
                 # Reset to standard file name
-                logging_config_file = os.path.join(logging_conf_file_directory,"logging.conf")
+                logging_config_file = os.path.join(logging_conf_file_directory, "logging.conf")
                 if os.path.isfile(logging_config_file):
                     with open(logging_config_file, "rb") as f:
                         logging.config.fileConfig(logging_config_file, disable_existing_loggers=False)
@@ -333,7 +333,7 @@ class DctMainCtl:
         # True = study exists
         return is_study_existing
 
-    def get_nb_of_pkl_files(self, filtered_file_path: str) -> int:
+    def get_number_of_pkl_files(self, filtered_file_path: str) -> int:
         """Count the number of files with extension 'pkl'.
 
         If the optimization is skipped the number of filtered points reflected by the number of pkl-files
@@ -345,17 +345,19 @@ class DctMainCtl:
         :rtype: int
         """
         # Number of pkl-files in this folder
-        nb_of_files = 0
+        number_of_files = 0
 
         # check path
         if os.path.exists(filtered_file_path):
             # Loop over the files
             for filename in os.listdir(filtered_file_path):
                 if filename.endswith('.pkl') and os.path.isfile(os.path.join(filtered_file_path, filename)):
-                    nb_of_files = nb_of_files + 1
+                    number_of_files = number_of_files + 1
+        else:
+            logger.info(f"Path {filtered_file_path} does not exists!")
 
         # Return the number of files with extension pkl
-        return nb_of_files
+        return number_of_files
 
     def check_breakpoint(self, break_point_key: str, info: str) -> None:
         """
@@ -395,7 +397,7 @@ class DctMainCtl:
                 # stop program
                 sys.exit()
         else:
-            # Remove breakpoint measage
+            # Remove breakpoint message
             self._break_point_message = ""
 
     def circuit_toml_2_dto(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
@@ -1080,8 +1082,8 @@ class DctMainCtl:
                 # Check, if data are available (skip case)
                 if self.check_study_data(inductor_results_datapath, self._inductor_study_data.study_name):
                     self._inductor_number_filtered_points_skip_list.append(
-                        self.get_nb_of_pkl_files(os.path.join(inductor_results_datapath,
-                                                              "09_circuit_dtos_incl_inductor_losses")))
+                        self.get_number_of_pkl_files(os.path.join(inductor_results_datapath,
+                                                                  "09_circuit_dtos_incl_inductor_losses")))
                 else:
                     raise ValueError(
                         f"Study {self._inductor_study_data.study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
@@ -1112,8 +1114,8 @@ class DctMainCtl:
                 # Check, if data are available (skip case)
                 if self.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
                     self._transformer_number_filtered_points_skip_list.append(
-                        self.get_nb_of_pkl_files(os.path.join(transformer_results_datapath,
-                                                              "09_circuit_dtos_incl_transformer_losses")))
+                        self.get_number_of_pkl_files(os.path.join(transformer_results_datapath,
+                                                                  "09_circuit_dtos_incl_transformer_losses")))
                 else:
                     raise ValueError(
                         f"Study {self._transformer_study_data.study_name} in path {transformer_results_datapath}"

@@ -442,7 +442,7 @@ class DctSummaryProcessing:
                 if DctSummaryProcessing._progress_data.run_time < 0:
                     DctSummaryProcessing._progress_data.run_time = 0.0
                 # Set Status to done
-                DctSummaryProcessing._progress_data.status = 2
+                DctSummaryProcessing._progress_data.progress_status = ProgressStatus.Done
             else:
                 # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
                 pass
