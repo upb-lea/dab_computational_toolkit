@@ -268,6 +268,8 @@
 </li>
       <li><a href="intro.html#dct.DctMainCtl.check_study_data">check_study_data() (dct.DctMainCtl method)</a>
 </li>
+      <li><a href="intro.html#dct.check_user_points_in_min_max_region">check_user_points_in_min_max_region() (in module dct)</a>
+</li>
       <li><a href="intro.html#dct.Circuit">Circuit (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.CondBreakpoints.circuit">circuit (dct.CondBreakpoints attribute)</a>
@@ -327,6 +329,8 @@
       <li><a href="intro.html#dct.CircuitParetoDabDesign">CircuitParetoDabDesign (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.CircuitParetoDesignSpace">CircuitParetoDesignSpace (class in dct)</a>
+</li>
+      <li><a href="intro.html#dct.CircuitSampling">CircuitSampling (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.PlotDAB.close">close() (dct.PlotDAB method)</a>
 
@@ -909,6 +913,8 @@
         <li><a href="intro.html#dct.TomlCircuitParetoDesignSpace.l_s_min_max_list">(dct.TomlCircuitParetoDesignSpace attribute)</a>
 </li>
       </ul></li>
+      <li><a href="intro.html#dct.latin_hypercube">latin_hypercube() (in module dct)</a>
+</li>
       <li><a href="intro.html#dct.CircuitConfig.Lc1">Lc1 (dct.CircuitConfig attribute)</a>
 </li>
       <li><a href="intro.html#dct.CircuitConfig.Lc2">Lc2 (dct.CircuitConfig attribute)</a>
@@ -917,10 +923,10 @@
 </li>
       <li><a href="intro.html#dct.TomlHeatSinkDesignSpace.length_l_list">length_l_list (dct.TomlHeatSinkDesignSpace attribute)</a>
 </li>
-      <li><a href="intro.html#dct.TomlInductorDesignSpace.litz_wire_list">litz_wire_list (dct.TomlInductorDesignSpace attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="intro.html#dct.TomlInductorDesignSpace.litz_wire_list">litz_wire_list (dct.TomlInductorDesignSpace attribute)</a>
+</li>
       <li><a href="intro.html#dct.CircuitOptimization.load_config">load_config() (dct.CircuitOptimization static method)</a>
 </li>
       <li><a href="intro.html#dct.CircuitOptimization.load_csv_to_df">load_csv_to_df() (dct.CircuitOptimization static method)</a>
@@ -993,11 +999,11 @@
 </li>
       <li><a href="intro.html#dct.TomlTransformerSettings.mesh_accuracy">mesh_accuracy (dct.TomlTransformerSettings attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CalcFromCircuitConfig.mesh_P">mesh_P (dct.CalcFromCircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CalcFromCircuitConfig.mesh_p">mesh_p (dct.CalcFromCircuitConfig attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CalcFromCircuitConfig.mesh_V1">mesh_V1 (dct.CalcFromCircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CalcFromCircuitConfig.mesh_v1">mesh_v1 (dct.CalcFromCircuitConfig attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CalcFromCircuitConfig.mesh_V2">mesh_V2 (dct.CalcFromCircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CalcFromCircuitConfig.mesh_v2">mesh_v2 (dct.CalcFromCircuitConfig attribute)</a>
 </li>
       <li><a href="intro.html#dct.CircuitDabDTO.metadata">metadata (dct.CircuitDabDTO attribute)</a>
 </li>
@@ -1053,6 +1059,8 @@
         <li><a href="intro.html#dct.TomlInductorInsulation.model_config">(dct.TomlInductorInsulation attribute)</a>
 </li>
         <li><a href="intro.html#dct.TomlMaterialDataSources.model_config">(dct.TomlMaterialDataSources attribute)</a>
+</li>
+        <li><a href="intro.html#dct.TomlSampling.model_config">(dct.TomlSampling attribute)</a>
 </li>
         <li><a href="intro.html#dct.TomlTransformer.model_config">(dct.TomlTransformer attribute)</a>
 </li>
@@ -1182,6 +1190,14 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="intro.html#dct.CircuitSampling.p_additional_user_point_list">p_additional_user_point_list (dct.CircuitSampling attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.Sampling.p_additional_user_point_list">(dct.Sampling attribute)</a>
+</li>
+        <li><a href="intro.html#dct.TomlSampling.p_additional_user_point_list">(dct.TomlSampling attribute)</a>
+</li>
+      </ul></li>
       <li><a href="intro.html#dct.InductorResults.p_combined_losses">p_combined_losses (dct.InductorResults attribute)</a>
 
       <ul>
@@ -1202,15 +1218,13 @@
 </li>
       <li><a href="intro.html#dct.CalcLosses.p_m2_conduction">p_m2_conduction (dct.CalcLosses attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.P_max">P_max (dct.CircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CircuitConfig.p_max">p_max (dct.CircuitConfig attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.P_min">P_min (dct.CircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CircuitConfig.p_min">p_min (dct.CircuitConfig attribute)</a>
 </li>
       <li><a href="intro.html#dct.TomlCircuitOutputRange.p_min_max_list">p_min_max_list (dct.TomlCircuitOutputRange attribute)</a>
 </li>
       <li><a href="intro.html#dct.CircuitOutputRange.p_min_nom_max_list">p_min_nom_max_list (dct.CircuitOutputRange attribute)</a>
-</li>
-      <li><a href="intro.html#dct.CircuitConfig.P_step">P_step (dct.CircuitConfig attribute)</a>
 </li>
       <li><a href="intro.html#dct.GeckoResults.p_sw1">p_sw1 (dct.GeckoResults attribute)</a>
 </li>
@@ -1225,6 +1239,8 @@
       <li><a href="intro.html#dct.RequestCmd.pareto_front">pareto_front (dct.RequestCmd attribute)</a>
 </li>
       <li><a href="intro.html#dct.CircuitOptimization.pareto_front_from_df">pareto_front_from_df() (dct.CircuitOptimization static method)</a>
+</li>
+      <li><a href="intro.html#dct.QueueParetoFrontData.pareto_front_optuna">pareto_front_optuna (dct.QueueParetoFrontData attribute)</a>
 </li>
       <li><a href="intro.html#dct.ParetoFrontSource.pareto_heat_sink">pareto_heat_sink (dct.ParetoFrontSource attribute)</a>
 </li>
@@ -1241,8 +1257,6 @@
       <li><a href="intro.html#dct.ParetoFrontSource">ParetoFrontSource (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.ParetoPlots">ParetoPlots (class in dct)</a>
-</li>
-      <li><a href="intro.html#dct.QueueParetoFrontData.parto_front_optuna">parto_front_optuna (dct.QueueParetoFrontData attribute)</a>
 </li>
       <li><a href="intro.html#dct.FastAPI.patch">patch() (dct.FastAPI method)</a>
 </li>
@@ -1294,6 +1308,8 @@
         <li><a href="intro.html#dct.plot_rms_current">(in module dct)</a>
 </li>
       </ul></li>
+      <li><a href="intro.html#dct.plot_samples">plot_samples() (in module dct)</a>
+</li>
       <li><a href="intro.html#dct.ParetoPlots.plot_summary">plot_summary() (dct.ParetoPlots static method)</a>
 </li>
       <li><a href="intro.html#dct.ParetoPlots.plot_transformer_results">plot_transformer_results() (dct.ParetoPlots static method)</a>
@@ -1422,11 +1438,39 @@
 </li>
       <li><a href="intro.html#dct.GeckoResults.S24_p_sw">S24_p_sw (dct.GeckoResults attribute)</a>
 </li>
+      <li><a href="intro.html#dct.Sampling">Sampling (class in dct)</a>
+</li>
+      <li><a href="intro.html#dct.CircuitConfig.sampling">sampling (dct.CircuitConfig attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.CircuitParetoDabDesign.sampling">(dct.CircuitParetoDabDesign attribute)</a>
+</li>
+        <li><a href="intro.html#dct.TomlCircuitParetoDabDesign.sampling">(dct.TomlCircuitParetoDabDesign attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="intro.html#dct.CircuitSampling.sampling_method">sampling_method (dct.CircuitSampling attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.Sampling.sampling_method">(dct.Sampling attribute)</a>
+</li>
+        <li><a href="intro.html#dct.TomlSampling.sampling_method">(dct.TomlSampling attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="intro.html#dct.CircuitSampling.sampling_points">sampling_points (dct.CircuitSampling attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.Sampling.sampling_points">(dct.Sampling attribute)</a>
+</li>
+        <li><a href="intro.html#dct.TomlSampling.sampling_points">(dct.TomlSampling attribute)</a>
+</li>
+      </ul></li>
       <li><a href="intro.html#dct.HandleDabDto.save">save() (dct.HandleDabDto static method)</a>
 </li>
       <li><a href="intro.html#dct.CircuitOptimization.save_config">save_config() (dct.CircuitOptimization static method)</a>
 </li>
       <li><a href="intro.html#dct.PlotDAB.save_fig">save_fig() (dct.PlotDAB method)</a>
+</li>
+      <li><a href="intro.html#dct.CircuitOptimization.save_study_results_pareto">save_study_results_pareto() (dct.CircuitOptimization static method)</a>
 </li>
       <li><a href="intro.html#dct.TomlTransformerDesignSpace.secondary_litz_wire_list">secondary_litz_wire_list (dct.TomlTransformerDesignSpace attribute)</a>
 </li>
@@ -1462,9 +1506,9 @@
         <li><a href="intro.html#dct.PlotWindow.show">(dct.PlotWindow method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.show_plot">show_plot() (in module dct)</a>
-</li>
-      <li><a href="intro.html#dct.CircuitOptimization.show_study_results">show_study_results() (dct.CircuitOptimization static method)</a>
 </li>
       <li><a href="intro.html#dct.GeckoAdditionalParameters.simfilepath">simfilepath (dct.GeckoAdditionalParameters attribute)</a>
 </li>
@@ -1476,8 +1520,6 @@
 </li>
       <li><a href="intro.html#dct.StackedTransformerResults.stacked_transformer_trial_number">stacked_transformer_trial_number (dct.StackedTransformerResults attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.StackedTransformerResults">StackedTransformerResults (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.DctServer.start_dct_server">start_dct_server() (dct.DctServer static method)</a>
@@ -1492,12 +1534,6 @@
 </li>
       <li><a href="intro.html#dct.DctServer.status_message">status_message (dct.DctServer attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitOutputRange.steps_per_direction">steps_per_direction (dct.CircuitOutputRange attribute)</a>
-
-      <ul>
-        <li><a href="intro.html#dct.TomlCircuitOutputRange.steps_per_direction">(dct.TomlCircuitOutputRange attribute)</a>
-</li>
-      </ul></li>
       <li><a href="intro.html#dct.DctServer.stop_dct_server">stop_dct_server() (dct.DctServer static method)</a>
 </li>
       <li><a href="intro.html#dct.DctServer.stop_flag">stop_flag (dct.DctServer attribute)</a>
@@ -1658,6 +1694,8 @@
 </li>
       <li><a href="intro.html#dct.TomlMaterialDataSources">TomlMaterialDataSources (class in dct)</a>
 </li>
+      <li><a href="intro.html#dct.TomlSampling">TomlSampling (class in dct)</a>
+</li>
       <li><a href="intro.html#dct.TomlTransformer">TomlTransformer (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.TomlTransformerBoundaryConditions">TomlTransformerBoundaryConditions (class in dct)</a>
@@ -1754,27 +1792,39 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="intro.html#dct.CircuitConfig.V1_max">V1_max (dct.CircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CircuitSampling.v1_additional_user_point_list">v1_additional_user_point_list (dct.CircuitSampling attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.Sampling.v1_additional_user_point_list">(dct.Sampling attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.V1_min">V1_min (dct.CircuitConfig attribute)</a>
+        <li><a href="intro.html#dct.TomlSampling.v1_additional_user_point_list">(dct.TomlSampling attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.V1_step">V1_step (dct.CircuitConfig attribute)</a>
+      </ul></li>
+      <li><a href="intro.html#dct.CircuitConfig.v1_max">v1_max (dct.CircuitConfig attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.V2_max">V2_max (dct.CircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CircuitConfig.v1_min">v1_min (dct.CircuitConfig attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.V2_min">V2_min (dct.CircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.TomlCircuitOutputRange.v1_min_max_list">v1_min_max_list (dct.TomlCircuitOutputRange attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitConfig.V2_step">V2_step (dct.CircuitConfig attribute)</a>
+      <li><a href="intro.html#dct.CircuitOutputRange.v1_min_nom_max_list">v1_min_nom_max_list (dct.CircuitOutputRange attribute)</a>
 </li>
-      <li><a href="intro.html#dct.TomlCircuitOutputRange.v_1_min_max_list">v_1_min_max_list (dct.TomlCircuitOutputRange attribute)</a>
+      <li><a href="intro.html#dct.CircuitSampling.v2_additional_user_point_list">v2_additional_user_point_list (dct.CircuitSampling attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.Sampling.v2_additional_user_point_list">(dct.Sampling attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitOutputRange.v_1_min_nom_max_list">v_1_min_nom_max_list (dct.CircuitOutputRange attribute)</a>
+        <li><a href="intro.html#dct.TomlSampling.v2_additional_user_point_list">(dct.TomlSampling attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="intro.html#dct.TomlCircuitOutputRange.v_2_min_max_list">v_2_min_max_list (dct.TomlCircuitOutputRange attribute)</a>
+      <li><a href="intro.html#dct.CircuitConfig.v2_max">v2_max (dct.CircuitConfig attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitOutputRange.v_2_min_nom_max_list">v_2_min_nom_max_list (dct.CircuitOutputRange attribute)</a>
+      <li><a href="intro.html#dct.CircuitConfig.v2_min">v2_min (dct.CircuitConfig attribute)</a>
+</li>
+      <li><a href="intro.html#dct.TomlCircuitOutputRange.v2_min_max_list">v2_min_max_list (dct.TomlCircuitOutputRange attribute)</a>
+</li>
+      <li><a href="intro.html#dct.CircuitOutputRange.v2_min_nom_max_list">v2_min_nom_max_list (dct.CircuitOutputRange attribute)</a>
 </li>
       <li><a href="intro.html#dct.GeckoResults.v_dc1">v_dc1 (dct.GeckoResults attribute)</a>
 </li>
