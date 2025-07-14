@@ -18,6 +18,8 @@ import dct.mod_zvs as mod
 import dct.currents as dct_currents
 import dct.geckosimulation as dct_gecko
 import dct.losses as dct_loss
+import dct.sampling as sampling
+from dct.circuit_optimization_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +27,8 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, v1_min: float, v1_max: float, v1_step: int, v2_min: float,
-                    v2_max: float, v2_step: int, p_min: float, p_max: float, p_step: int,
-                    n: float, ls: float, lc1: float, lc2: float, fs: float,
+    def init_config(name: str, v1_min: float, v1_max: float, v2_min: float, v2_max: float, p_min: float, p_max: float,
+                    sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
         """
         Initialize the DAB structure.
@@ -38,20 +39,16 @@ class HandleDabDto:
         :type v1_min: float
         :param v1_max: V1 maximum voltage
         :type v1_max: float
-        :param v1_step: V1 voltage steps
-        :type v1_step: int
         :param v2_min: V2 minimum voltage
         :type v2_min: float
         :param v2_max: V2 maximum voltage
         :type v2_max: float
-        :param v2_step: V2 voltage steps
-        :type v2_step: int
         :param p_min: P minimum power
         :type p_min: float
         :param p_max: P maximum power
         :type p_max: float
-        :param p_step: P power steps
-        :type p_step: int
+        :param sampling: Sampling parameters
+        :type sampling: d_dtos.Sampling
         :param n: transformer transfer ratio
         :type n: float
         :param ls: series inductance
@@ -72,15 +69,13 @@ class HandleDabDto:
         :type c_par_2: float
         :return:
         """
-        input_configuration = d_dtos.CircuitConfig(V1_min=np.array(v1_min),
-                                                   V1_max=np.array(v1_max),
-                                                   V1_step=np.array(v1_step),
-                                                   V2_min=np.array(v2_min),
-                                                   V2_max=np.array(v2_max),
-                                                   V2_step=np.array(v2_step),
-                                                   P_min=np.array(p_min),
-                                                   P_max=np.array(p_max),
-                                                   P_step=np.array(p_step),
+        input_configuration = d_dtos.CircuitConfig(v1_min=np.array(v1_min),
+                                                   v1_max=np.array(v1_max),
+                                                   v2_min=np.array(v2_min),
+                                                   v2_max=np.array(v2_max),
+                                                   p_min=np.array(p_min),
+                                                   p_max=np.array(p_max),
+                                                   sampling=sampling,
                                                    n=np.array(n),
                                                    Ls=np.array(ls),
                                                    Lc1=np.array(lc1),
@@ -148,8 +143,8 @@ class HandleDabDto:
         :return: DabDTO
         """
         gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
-            mesh_v1=dab_dto.calc_config.mesh_V1, mesh_v2=dab_dto.calc_config.mesh_V2,
-            mesh_p=dab_dto.calc_config.mesh_P, mod_phi=dab_dto.calc_modulation.phi,
+            mesh_v1=dab_dto.calc_config.mesh_v1, mesh_v2=dab_dto.calc_config.mesh_v2,
+            mesh_p=dab_dto.calc_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
             mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
             t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
             fs=dab_dto.input_config.fs, ls=dab_dto.input_config.Ls, lc1=dab_dto.input_config.Lc1,
@@ -184,17 +179,34 @@ class HandleDabDto:
         :return: CalcFromConfig
         :rtype: CalcFromCircuitConfig
         """
-        mesh_V1, mesh_V2, mesh_P = np.meshgrid(
-            np.linspace(config.V1_min, config.V1_max, int(config.V1_step)),
-            np.linspace(config.V2_min, config.V2_max, int(config.V2_step)), np.linspace(config.P_min, config.P_max, int(config.P_step)),
-            sparse=False)
+        # choose sampling method
+        if config.sampling.sampling_method == "meshgrid":
+            steps_per_dimension = np.ceil(np.power(config.sampling.sampling_points, 1 / 3))
+            logger.info(f"number of sampling points has been updated from {config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
+            logger.info("Note: meshgrid sampling does not take user-given operating points into account")
+            v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
+                np.linspace(config.v1_min, config.v1_max, steps_per_dimension),
+                np.linspace(config.v2_min, config.v2_max, steps_per_dimension),
+                np.linspace(config.p_min, config.p_max, steps_per_dimension),
+                sparse=False)
+        elif config.sampling.sampling_method == "latin_hypercube":
+            v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
+                config.v1_min, config.v1_max, config.v2_min, config.v2_max, config.p_min, config.p_max,
+                total_number_points=config.sampling.sampling_points,
+                dim_1_user_given_points_list=config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=config.sampling.v2_additional_user_point_list,
+                dim_3_user_given_points_list=config.sampling.p_additional_user_point_list)
+        elif config.sampling.sampling_method == "poisson_disk_sampling":
+            raise NotImplementedError("Not implemented yet.")
+        else:
+            raise ValueError(f"sampling_method '{config.sampling.sampling_method}' not available.")
 
         Lc2_ = config.Lc2 * config.n ** 2
 
         calc_from_config = d_dtos.CalcFromCircuitConfig(
-            mesh_V1=mesh_V1,
-            mesh_V2=mesh_V2,
-            mesh_P=mesh_P,
+            mesh_v1=np.atleast_3d(v1_operating_points),
+            mesh_v2=np.atleast_3d(v2_operating_points),
+            mesh_p=np.atleast_3d(p_operating_points),
             Lc2_=Lc2_,
             t_j_1=config.transistor_dto_1.t_j_max_op,
             t_j_2=config.transistor_dto_2.t_j_max_op,
@@ -218,7 +230,7 @@ class HandleDabDto:
         :return: Modulation parameters.
         """
         result_dict = mod.calc_modulation_params(config.n, config.Ls, config.Lc1, config.Lc2, config.fs, c_oss_1=calc_config.c_oss_par_1,
-                                                 c_oss_2=calc_config.c_oss_par_2, v1=calc_config.mesh_V1, v2=calc_config.mesh_V2, power=calc_config.mesh_P)
+                                                 c_oss_2=calc_config.c_oss_par_2, v1=calc_config.mesh_v1, v2=calc_config.mesh_v2, power=calc_config.mesh_p)
 
         return d_dtos.CalcModulation(**result_dict)
 
@@ -280,8 +292,6 @@ class HandleDabDto:
         coss_int = np.vectorize(integrate)
         # get the qoss vector that has the resolution 1V from 0 to V_max
         v_vec = np.arange(coss.shape[0])
-        # get the qoss vector that fits the mesh_V scale
-        # v_vec = np.linspace(V_min, V_max, int(V_step))
         qoss = coss_int(v_vec)
 
         return qoss
@@ -332,34 +342,6 @@ class HandleDabDto:
         with open(f"{file}.pkl", 'wb') as output:
             pickle.dump(dab_dto, output, pickle.HIGHEST_PROTOCOL)
 
-        # prepare a all-in-one parallel file
-        # input_dict_to_store = dataclasses.asdict(dab_dto.input_config)
-        # calc_config_dict_to_store = dataclasses.asdict(dab_dto.calc_config)
-        # calc_modulation_dict_to_store = dataclasses.asdict(dab_dto.calc_modulation)
-        # calc_currents_dict_to_store = dataclasses.asdict(dab_dto.calc_currents)
-        # calc_losses_dict_to_store = dataclasses.asdict(dab_dto.calc_losses) if isinstance(dab_dto.calc_losses, CalcLosses) else None
-        # gecko_additional_params_dict_to_store = dataclasses.asdict(dab_dto.gecko_additional_params)
-        # gecko_results_dict_to_store = dataclasses.asdict(dab_dto.gecko_results) if isinstance(dab_dto.gecko_results, GeckoResults) else None
-        # inductor_losses_dict_to_store = dataclasses.asdict(dab_dto.inductor_losses) if isinstance(dab_dto.inductor_losses, InductorLosses) else None
-        #
-        # dict_to_store = {}
-        # dict_to_store["timestamp"] = dab_dto.timestamp
-        # dict_to_store["name"] = dab_dto.name
-        # dict_to_store["metadata"] = dab_dto.metadata
-        # dict_to_store.update(input_dict_to_store)
-        # dict_to_store.update(calc_config_dict_to_store)
-        # dict_to_store.update(calc_modulation_dict_to_store)
-        # dict_to_store.update(calc_currents_dict_to_store)
-        # if isinstance(dab_dto.calc_losses, CalcLosses):
-        #     dict_to_store.update(calc_losses_dict_to_store)
-        # dict_to_store.update(gecko_additional_params_dict_to_store)
-        # if isinstance(dab_dto.gecko_results, GeckoResults):
-        #     dict_to_store.update(gecko_results_dict_to_store)
-        # if isinstance(dab_dto.inductor_losses, InductorLosses):
-        #     dict_to_store.update(inductor_losses_dict_to_store)
-        #
-        # np.savez_compressed(**dict_to_store, file=file)
-
     @staticmethod
     def load_from_file(file: str) -> d_dtos.CircuitDabDTO:
         """
@@ -381,44 +363,6 @@ class HandleDabDto:
             if not isinstance(loaded_circuit_dto, d_dtos.CircuitDabDTO):
                 raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type CircuitDabDTO.")
             return loaded_circuit_dto
-
-        # decoded_data = np.load(file, allow_pickle=True)
-        # keys_of_gecko_result_dto = [field.name for field in dataclasses.fields(GeckoResults)]
-        # keys_of_gecko_waveform_dto = [field.name for field in dataclasses.fields(GeckoWaveforms)]
-        # keys_of_inductor_losses_dto = [field.name for field in dataclasses.fields(InductorLosses)]
-        #
-        # # if loaded results have all keys that are mandatory for the GeckoResults-Class:
-        # if len(set(keys_of_gecko_result_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_result_dto):
-        #     gecko_results = GeckoResults(**decoded_data)
-        # else:
-        #     gecko_results = None
-        #
-        # # if loaded results have all keys that are mandatory for the GeckoWaveform-Class:
-        # if len(set(keys_of_gecko_waveform_dto) & set(list(decoded_data.keys()))) == len(keys_of_gecko_waveform_dto):
-        #     gecko_waveforms = GeckoWaveforms(**decoded_data)
-        # else:
-        #     gecko_waveforms = None
-        #
-        # # if loaded results have all keys that are mandatory for the GeckoResults-Class:
-        # if len(set(keys_of_inductor_losses_dto) & set(list(decoded_data.keys()))) == len(keys_of_inductor_losses_dto):
-        #     inductor_losses = InductorLosses(**decoded_data)
-        # else:
-        #     inductor_losses = None
-        #
-        # dab_dto = d_dtos.CircuitDabDTO(name=str(decoded_data["name"]),
-        #                         timestamp=decoded_data["timestamp"],
-        #                         metadata=decoded_data["metadata"],
-        #                         input_config=CircuitConfig(**decoded_data),
-        #                         calc_config=CalcFromCircuitConfig(**decoded_data),
-        #                         calc_modulation=CalcModulation(**decoded_data),
-        #                         calc_currents=CalcCurrents(**decoded_data),
-        #                         calc_losses=None,
-        #                         gecko_additional_params=GeckoAdditionalParameters(**decoded_data),
-        #                         gecko_results=gecko_results,
-        #                         gecko_waveforms=gecko_waveforms,
-        #                         inductor_losses=inductor_losses)
-        #
-        # return dab_dto
 
     @staticmethod
     def get_max_peak_waveform_transformer(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -355,31 +355,31 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
     mode_2_mask = np.bitwise_or(calc_modulation.mask_Im2, calc_modulation.mask_IIm2)
 
     # calculate current values for l_s depend on angles. Modulation modes are taken into account
-    d = config.n * calc_from_config.mesh_V2 / calc_from_config.mesh_V1
+    d = config.n * calc_from_config.mesh_v2 / calc_from_config.mesh_v1
 
     # currents in l_s for mode 2, mode 1+ and mode 1-
     m2_i_l_s_alpha, m2_i_l_s_beta, m2_i_l_s_gamma, m2_i_l_s_delta = _calc_l_s_mode_2_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, d, config.fs, config.Ls)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_v1, d, config.fs, config.Ls)
     m1p_i_l_s_alpha, m1p_i_l_s_beta, m1p_i_l_s_gamma, m1p_i_l_s_delta = _calc_l_s_mode_1_plus_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_V1, config.fs, config.Ls)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_v1, config.fs, config.Ls)
     m1n_i_l_s_alpha, m1n_i_l_s_beta, m1n_i_l_s_gamma, m1n_i_l_s_delta = _calc_l_s_mode_1_minus_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_V1, config.fs, config.Ls)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, d, calc_from_config.mesh_v1, config.fs, config.Ls)
 
     # currents in l_1 for mode 2, mode 1+ and mode 1-
     m2_i_l_1_alpha, m2_i_l_1_beta, m2_i_l_1_gamma, m2_i_l_1_delta = _calc_l_1_mode_2_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_v1, config.fs, config.Lc1)
     m1p_i_l_1_alpha, m1p_i_l_1_beta, m1p_i_l_1_gamma, m1p_i_l_1_delta = _calc_l_1_mode_1_plus_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_v1, config.fs, config.Lc1)
     m1n_i_l_1_alpha, m1n_i_l_1_beta, m1n_i_l_1_gamma, m1n_i_l_1_delta = _calc_l_1_mode_1_minus_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V1, config.fs, config.Lc1)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_v1, config.fs, config.Lc1)
 
     # currents in l_2 for mode 2 and mode 1+
     m2_i_l_2_alpha, m2_i_l_2_beta, m2_i_l_2_gamma, m2_i_l_2_delta = _calc_l_2_mode_2_currents(
-        calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
+        calc_modulation.tau2, calc_from_config.mesh_v2, config.fs, config.Lc2)
     m1p_i_l_2_alpha, m1p_i_l_2_beta, m1p_i_l_2_gamma, m1p_i_l_2_delta = _calc_l_2_mode_1_plus_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_v2, config.fs, config.Lc2)
     m1n_i_l_2_alpha, m1n_i_l_2_beta, m1n_i_l_2_gamma, m1n_i_l_2_delta = _calc_l_2_mode_1_minus_currents(
-        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_V2, config.fs, config.Lc2)
+        calc_modulation.phi, calc_modulation.tau1, calc_modulation.tau2, calc_from_config.mesh_v2, config.fs, config.Lc2)
 
     # generate the output current for l_s, distinguish between mode 1+, mode 2 and mode 1-
     i_l_s_alpha = np.full_like(m1p_i_l_s_alpha, np.nan)
