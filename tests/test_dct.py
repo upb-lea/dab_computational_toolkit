@@ -1,14 +1,14 @@
 """Unit tests for class dctmainctl."""
 
 # python libraries
-import pytest
-from _pytest.logging import LogCaptureFixture
 import os
 import shutil
 import tempfile
 import logging
 
 # 3rd party libraries
+import pytest
+from _pytest.logging import LogCaptureFixture
 
 # own libraries
 import dct

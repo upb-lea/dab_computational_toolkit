@@ -218,9 +218,7 @@ class DctMainCtl:
             if os.path.isfile(logging_config_file):
                 with open(logging_config_file, "rb") as f:
                     try:
-                        # logger.info(f"Found existing logging configuration {logging_config_file}.")
-                        logging.config.fileConfig(logging_config_file, disable_existing_loggers=False)
-                        # logger.level(0)
+                        logging.config.fileConfig(logging_config_file)
                     except:
                         logger.warning(f"Logging configuration file {logging_config_file} is inconsistent.")
                     else:
@@ -232,7 +230,7 @@ class DctMainCtl:
                 logging_config_file = os.path.join(logging_conf_file_directory, "logging.conf")
                 if os.path.isfile(logging_config_file):
                     with open(logging_config_file, "rb") as f:
-                        logging.config.fileConfig(logging_config_file, disable_existing_loggers=False)
+                        logging.config.fileConfig(logging_config_file)
                 else:
                     raise ValueError("logging.conf can not be generated.")
         else:
