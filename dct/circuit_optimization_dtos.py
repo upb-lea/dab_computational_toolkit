@@ -41,6 +41,7 @@ class CircuitSampling:
 
     sampling_method: str
     sampling_points: int
+    sampling_random_seed: int | None
     v1_additional_user_point_list: list[float]
     v2_additional_user_point_list: list[float]
     p_additional_user_point_list: list[float]

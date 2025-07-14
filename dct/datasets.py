@@ -26,7 +26,7 @@ class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, mesh_v1, mesh_v2, mesh_p,
+    def init_config(name: str, mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                     sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
         """
@@ -34,18 +34,12 @@ class HandleDabDto:
 
         :param name: name of the simulation
         :type name: str
-        :param v1_min: V1 minimum voltage
-        :type v1_min: float
-        :param v1_max: V1 maximum voltage
-        :type v1_max: float
-        :param v2_min: V2 minimum voltage
-        :type v2_min: float
-        :param v2_max: V2 maximum voltage
-        :type v2_max: float
-        :param p_min: P minimum power
-        :type p_min: float
-        :param p_max: P maximum power
-        :type p_max: float
+        :param mesh_v1: mesh or hypercube sampling for v1
+        :type mesh_v1: np.ndarray
+        :param mesh_v2: mesh or hypercube sampling for v2
+        :type mesh_v2: np.ndarray
+        :param mesh_p: mesh or hypercube sampling for p
+        :type mesh_p: np.ndarray
         :param sampling: Sampling parameters
         :type sampling: d_dtos.Sampling
         :param n: transformer transfer ratio
@@ -139,8 +133,8 @@ class HandleDabDto:
         :return: DabDTO
         """
         gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
-            mesh_v1=dab_dto.calc_config.mesh_v1, mesh_v2=dab_dto.calc_config.mesh_v2,
-            mesh_p=dab_dto.calc_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
+            mesh_v1=dab_dto.input_config.mesh_v1, mesh_v2=dab_dto.input_config.mesh_v2,
+            mesh_p=dab_dto.input_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
             mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
             t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
             fs=dab_dto.input_config.fs, ls=dab_dto.input_config.Ls, lc1=dab_dto.input_config.Lc1,
@@ -175,7 +169,6 @@ class HandleDabDto:
         :return: CalcFromConfig
         :rtype: CalcFromCircuitConfig
         """
-
         Lc2_ = config.Lc2 * config.n ** 2
 
         calc_from_config = d_dtos.CalcFromCircuitConfig(

@@ -243,9 +243,9 @@ class CircuitOptimization:
             logger.info(f"number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
             v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
-                np.linspace(dab_config.v1_min, dab_config.v1_max, steps_per_dimension),
-                np.linspace(dab_config.v2_min, dab_config.v2_max, steps_per_dimension),
-                np.linspace(dab_config.p_min, dab_config.p_max, steps_per_dimension),
+                np.linspace(dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
+                np.linspace(dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
+                np.linspace(dab_config.output_range.p_min_max_list[0], dab_config.output_range.p_min_max_list[1], steps_per_dimension),
                 sparse=False)
         elif dab_config.sampling.sampling_method == "latin_hypercube":
             v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
@@ -255,7 +255,7 @@ class CircuitOptimization:
                 total_number_points=dab_config.sampling.sampling_points,
                 dim_1_user_given_points_list=dab_config.sampling.v1_additional_user_point_list,
                 dim_2_user_given_points_list=dab_config.sampling.v2_additional_user_point_list,
-                dim_3_user_given_points_list=dab_config.sampling.p_additional_user_point_list)
+                dim_3_user_given_points_list=dab_config.sampling.p_additional_user_point_list, sampling_random_seed=dab_config.sampling.sampling_random_seed)
         elif dab_config.sampling.sampling_method == "poisson_disk_sampling":
             raise NotImplementedError("Not implemented yet.")
         else:
@@ -271,7 +271,7 @@ class CircuitOptimization:
         logger.info(f"{v1_operating_points.size=}")
 
         if weight_sum > 1 or weight_sum < 0:
-            raise ValueError(f"Sum of weighting point list must be within 0 and 1.")
+            raise ValueError("Sum of weighting point list must be within 0 and 1.")
         else:
             leftover_auto_weight = (1 - weight_sum) / (v1_operating_points.size - given_user_points)
             logger.info(f"Auto-weight given for all other {v1_operating_points.size - given_user_points} operating points: {leftover_auto_weight}")
@@ -534,14 +534,13 @@ class CircuitOptimization:
         logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
+        fix_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+
         dab_dto = d_sets.HandleDabDto.init_config(
             name=str(trial_number),
-            v1_min=dab_config.output_range.v1_min_max_list[0],
-            v1_max=dab_config.output_range.v1_min_max_list[1],
-            v2_min=dab_config.output_range.v2_min_max_list[0],
-            v2_max=dab_config.output_range.v2_min_max_list[1],
-            p_min=dab_config.output_range.p_min_max_list[0],
-            p_max=dab_config.output_range.p_min_max_list[1],
+            mesh_v1=fix_parameters.mesh_v1,
+            mesh_v2=fix_parameters.mesh_v2,
+            mesh_p=fix_parameters.mesh_p,
             sampling=dab_config.sampling,
             n=trials_dict["n_suggest"],
             ls=trials_dict["l_s_suggest"],
@@ -571,7 +570,7 @@ class CircuitOptimization:
 
         dab_dto_list = []
 
-        print(df)
+        fix_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
 
         for index, _ in df.iterrows():
             transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_1_name_suggest"][index])
@@ -579,9 +578,9 @@ class CircuitOptimization:
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
-                mesh_v1=None,
-                mesh_v2=None,
-                mesh_p=None,
+                mesh_v1=fix_parameters.mesh_v1,
+                mesh_v2=fix_parameters.mesh_v2,
+                mesh_p=fix_parameters.mesh_p,
                 sampling=dab_config.sampling,
                 n=df["params_n_suggest"][index].item(),
                 ls=df["params_l_s_suggest"][index].item(),

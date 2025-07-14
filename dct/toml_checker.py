@@ -115,6 +115,7 @@ class TomlSampling(BaseModel):
 
     sampling_method: Literal['latin_hypercube', 'meshgrid', 'poisson_disk_sampling']
     sampling_points: int
+    sampling_random_seed: int | Literal["random"]
     v1_additional_user_point_list: list[float]
     v2_additional_user_point_list: list[float]
     p_additional_user_point_list: list[float]
