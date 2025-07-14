@@ -38,7 +38,8 @@ def latin_hypercube(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_
     :param dim_1_user_given_points_list: user-given points for dimension 1, e.g. [695, 705]
     :param dim_2_user_given_points_list: user-given points for dimension 2, e.g. [289, 299]
     :param dim_3_user_given_points_list: user-given points for dimension 3, e.g. [-1300, 1530]
-    :return:
+    :return: dim_1_all_points, dim_2_all_points, dim_3_all_points
+    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray]
     """
     # check if user points are within the given limits
     check_user_points_in_min_max_region([dim_1_min, dim_1_max], dim_1_user_given_points_list)

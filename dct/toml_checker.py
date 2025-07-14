@@ -118,6 +118,7 @@ class TomlSampling(BaseModel):
     v1_additional_user_point_list: list[float]
     v2_additional_user_point_list: list[float]
     p_additional_user_point_list: list[float]
+    additional_user_weighting_point_list: list[float]
 
 class TomlCircuitFilterDistance(BaseModel):
     """Toml checker class for CircuitFilterDistance."""
