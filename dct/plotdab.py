@@ -43,7 +43,7 @@ class PlotDAB:
         self.figsize = figsize
         plt.rcParams.update({'figure.figsize': figsize})
         self.fontsize = fontsize
-        # Create empty list to store the fig and axe handlers
+        # Create empty list to store the fig and axis handlers
         self.figs_axes = []
         # Switch between latex math usage and plain text where possible
         # Note: For latex to work you must have it installed on your system!
@@ -83,7 +83,6 @@ class PlotDAB:
             if self.figsize == (5, 4):
                 fig.subplots_adjust(left=0.18, right=0.99, bottom=0.15, top=0.92, wspace=0.17, hspace=0.2)
             if self.figsize == (5, 5):
-                # fig.subplots_adjust(left=0.15, right=0.98, bottom=0.12, top=0.94, wspace=0.17, hspace=0.2)
                 fig.subplots_adjust(left=0.17, right=0.98, bottom=0.12, top=0.94, wspace=0.17, hspace=0.2)
             if self.figsize == (10, 5):
                 fig.subplots_adjust(left=0.077, right=0.955, bottom=0.127, top=0.935, wspace=0.17, hspace=0.25)
@@ -213,7 +212,6 @@ class PlotDAB:
         # plot
         fig = fig_axes[0]
         axs = fig_axes[1]
-        # fig.suptitle("subtitle")
         # fig.tight_layout()
         cf = axs[0].contourf(x, y, z1)
         axs[1].contourf(x, y, z2)
@@ -304,8 +302,6 @@ class PlotDAB:
 
         # Apply the limits to the colorbar. That way the colorbar does not depend on one plot.
         mappable = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=pz_min, vmax=pz_max), cmap=cmap)
-        # cbar = fig.colorbar(mappable, ax=axs[0], pad=0.001, boundaries=np.linspace(pz_min, pz_max, num_cont_lines),
-        #                     ticks=[-np.pi / 4, -np.pi / 8, 0, np.pi / 8, np.pi / 4])
         cbar = fig.colorbar(mappable, ax=axs[0], pad=0.001,
                             ticks=[-np.pi / 4, -np.pi / 8, 0, np.pi / 8, np.pi / 4])
         if self.latex:
@@ -499,7 +495,6 @@ class PlotDAB:
         for ax in axs.flat:
             ax.set(xlabel='P / W', ylabel='U2 / V')
             ax.label_outer()
-        # fig.colorbar(cf, ax=axs.ravel().tolist())
         fig.colorbar(cf, ax=axs)
 
         # plt.show()
@@ -575,10 +570,6 @@ class PlotDAB:
 
         # check if z input matrix is out of None's only. If True, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
-        # search_nones = z.copy()
-        # search_nones[np.isnan(search_nones)] = 1
-        # if np.sum(search_nones) == np.size(search_nones):
-        #     raise Exception("in subplot_contourf(), z input out of None's only is not allowed")
         if np.all(np.isnan(z)):
             warnings.warn(f'subplot_contourf(): z input {z} out of NaN only is not allowed!', stacklevel=2)
 
@@ -593,7 +584,7 @@ class PlotDAB:
             raise TypeError("Failure in assignment.")
         if z_max is None:  # mypy issue handling
             raise TypeError("Failure in assignment.")
-        # To prevent error in cbar and get at least a plot even it is one color
+        # To prevent error in color bar and get at least a plot even it is one color
         if z_min == z_max and z_min is not None and z_max is not None:
             z_min = z_min - z_min * 0.1
             z_max = z_max + z_max * 0.1
@@ -628,10 +619,6 @@ class PlotDAB:
             # generate matrix for foreground, 100% visible
             z_nan = z * nan_matrix
 
-            # plot foreground, 100% visible
-            # Note: levels taken from first plot
-            # cs_full = ax.contourf(x, y, z_nan.clip(z_min, z_max), num_cont_lines, alpha=1, antialiased=True, cmap=cmap,
-            #                       vmin=z_min, vmax=z_max, levels=cs_background.levels)
             cs_full = ax.contourf(x, y, z_nan.clip(z_min, z_max), levels=levels, alpha=1, antialiased=True, cmap=cmap,
                                   vmin=z_min, vmax=z_max)
             if mask1 is not None:
@@ -654,12 +641,6 @@ class PlotDAB:
             cb.ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2g'))
         else:
             cb.ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
-        # else:
-        # These give a non-discrete colorbar
-        # cb = plt.colorbar(mappable=mappable, ax=ax)
-        # cb = plt.colorbar(cs_full)
-        # Should make the colorbar discrete but does it?
-        # cb.ax.locator_params(nbins=num_cont_lines)
         ax.grid()
         if clabel:
             ax.clabel(cs_full, inline=1, inline_spacing=inlinespacing, fontsize=10, fmt='%1.1f', colors='k')
@@ -739,10 +720,6 @@ class PlotDAB:
 
         # check if z input matrix is out of None's only. If True, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
-        # search_nones = z.copy()
-        # search_nones[np.isnan(search_nones)] = 1
-        # if np.sum(search_nones) == np.size(search_nones):
-        #     raise Exception("in subplot_contourf(), z input out of None's only is not allowed")
         if np.all(np.isnan(z)):
             warnings.warn(f'subplot_contourf(): z input {z} out of NaN only is not allowed!', stacklevel=2)
 
@@ -757,7 +734,7 @@ class PlotDAB:
             raise TypeError("Failure in assignment.")
         if z_max is None:  # mypy issue handling
             raise TypeError("Failure in assignment.")
-        # To prevent error in cbar and get at least a plot even it is one color
+        # To prevent error in color bar and get at least a plot even it is one color
         if z_min == z_max:
             z_min = z_min - z_min * 0.1
         # Set fixed cont_lines
@@ -798,8 +775,6 @@ class PlotDAB:
         # Apply the limits to the colorbar. That way the colorbar does not depend on one plot.
         mappable = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=z_min, vmax=z_max), cmap=cmap)
         cb = plt.colorbar(mappable=mappable, ax=ax, boundaries=np.linspace(z_min, z_max, num_cont_lines + 1))
-        # cb = plt.colorbar(mappable=mappable, ax=ax)
-        # cb = plt.colorbar(cs_full)
         cb.ax.locator_params(nbins=num_cont_lines)
         ax.grid()
         if clabel:
@@ -1127,9 +1102,6 @@ def plot_modulation(x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray
     filename = os.path.abspath(filename)
     fname = filename + '.png'
     fig.savefig(fname=fname, metadata=metadata)
-    # Save as PDF
-    # fname = filename + '.pdf'
-    # fig.savefig(fname=fname, metadata=metadata)
 
 
 @timeit
@@ -1156,7 +1128,6 @@ def plot_rms_current(mesh_v2: np.ndarray, mesh_p: np.ndarray, mvvp_i_ls: np.ndar
     for ax in axs.flat:
         ax.set(xlabel='P / W', ylabel='U2 / V')
         ax.label_outer()
-    # fig.colorbar(cf, ax=axs.ravel().tolist())
     fig.colorbar(cf, ax=axs)
 
     # plt.show()

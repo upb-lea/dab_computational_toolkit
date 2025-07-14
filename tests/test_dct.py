@@ -20,7 +20,7 @@ pytestlogger = logging.getLogger(__name__)
 # test of load_toml_file
 #########################################################################################################
 
-# Testresults
+# Test results
 exp_config = {'integer_value': {'test_value': 10}, 'string': {'test_string': 'Hello'}}
 
 # Invalid toml file
@@ -40,7 +40,7 @@ test_string = "Hello"
 test_value = 10
 """
 
-# Skip file command
+# Skip unit test command
 # @pytest.mark.skip(reason="Test of load_toml_file is skipped")
 # test parameter list
 @pytest.mark.parametrize("test_toml_data, is_path_existing, is_exp_result_valid, exp_toml_object, exp_message_id", [
@@ -185,18 +185,18 @@ level=INFO
 handlers=console
 """
 
-# Skip file command
+# Skip unit test command
 # @pytest.mark.skip(reason="Test of load_generate_logging_config is skipped")
 # test parameter list
 @pytest.mark.parametrize("test_toml_data, is_path_existing, is_file_existing, is_logger_to_restore, exp_message_id", [
-    # --invalid inputs----
+    # --invalid input parameter----
     # Path does not exist
     (test_valid_logger_toml, False, False, False, 1),
     # Input file, with wrong format
     (test_invalid_logger_toml, True, True, False, 3),
     # Input file does not exist
     (test_valid_logger_toml, True, False, False, 2),
-    # --valid inputs----
+    # --valid input parameter----
     # Valid input file exists
     (test_valid_logger_toml, True, True, True, 0)
 ])
@@ -267,14 +267,14 @@ def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data:
 # Valid toml file
 test_ascii_file_data = "This is a test file"
 
-# Skip file command
+# Skip unit test command
 # @pytest.mark.skip(reason="Test of delete_study_content is skipped")
 # test parameter list
 @pytest.mark.parametrize("is_path_existing, is_file_existing, exp_message_id", [
-    # --invalid inputs----
+    # --invalid input parameter----
     # Path does not exist
     (False, False, 1),
-    # --valid inputs----
+    # --valid input parameter----
     # Input file does not exist
     (True, False, 2),
     # Valid input file exists
@@ -307,18 +307,18 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
         valid_asc_source = os.path.join(tmpdir, study_asc_name)
         valid_bin_source = os.path.join(tmpdir, study_bin_name)
         # Create 2 files
-        # Ascii file
+        # text file
         with open(valid_asc_source, "w") as f:
             f.write(test_ascii_file_data)
-        # Binary file (1kb random data)
+        # Binary file (1 kilo byte random data)
         with open(valid_bin_source, "wb") as f:
             f.write(os.urandom(1024))
-        # Create subfolders (3 levels) and store files within each level
+        # Create sub folders (3 levels) and store files within each level
         actual_dir = tmpdir
         for level in ["level1", "level2", "level3"]:
             actual_dir = os.path.join(actual_dir, level)
             os.makedirs(actual_dir, exist_ok=True)
-            # Copy ascii file
+            # Copy test file
             target_file = os.path.join(actual_dir, study_asc_name)
             shutil.copy(valid_asc_source, target_file)
             # Copy binary file
@@ -333,7 +333,7 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
 
         # Check, if files not exists
         if not is_file_existing:
-            # Delete the files at tmpdir
+            # Delete the files at temporary folder
             os.remove(valid_asc_source)
             os.remove(valid_bin_source)
 
@@ -358,11 +358,11 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
 # test of check_study_data
 #########################################################################################################
 
-# Skip file command
+# Skip unit test command
 # @pytest.mark.skip(reason="Test of check_study_data is skipped")
 # test parameter list
 @pytest.mark.parametrize("is_path_existing, is_file_existing, file_name, exp_message_id, exp_result", [
-    # --invalid inputs----
+    # --invalid input parameter----
     # Path does not exist
     (False, False, "study_data.sqlite3", 1, False),
     # File does not exists
@@ -371,7 +371,7 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
     (True, True, "wrong_study_data.sqlite3", 2, False),
     # Filename extension is wrong
     (True, True, "study_data.text", 2, False),
-    # --valid inputs----
+    # --valid input parameter----
     # Input file does not exist
     (True, True, "study_data.sqlite3", 0, True),
 ])
@@ -435,14 +435,14 @@ def test_check_study_data(caplog: LogCaptureFixture, is_path_existing: bool, is_
 # test of get_number_of_pkl_files
 #########################################################################################################
 
-# Skip file command
+# Skip unit test command
 # @pytest.mark.skip(reason="Test of get_number_of_pkl_files is skipped")
 # test parameter list
 @pytest.mark.parametrize("is_path_existing, number_of_pkl_files, prefix, exp_message_id", [
-    # --invalid usecase----
+    # --invalid input parameter----
     # Path does not exist
     (False, 0, "", 1),
-    # --valid usecases----
+    # --valid input parameter----
     # No pkl-file exists
     (True, 0, "", 0),
     # 10 pkl files without prefix
@@ -516,5 +516,5 @@ def test_get_number_of_pkl_files(caplog: LogCaptureFixture, is_path_existing: bo
 #########################################################################################################
 
 #########################################################################################################
-# test of get_init_queue_data
+# test of get_initialization_queue_data
 #########################################################################################################

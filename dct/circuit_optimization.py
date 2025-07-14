@@ -31,7 +31,7 @@ class CircuitOptimization:
 
     """Initialize the configuration list for the circuit optimizations."""
     _c_lock_stat: threading.Lock = threading.Lock()
-    # Initialize the staticical data (For more configuration it needs to become instance instead of static
+    # Initialize the statistical data (For more configuration it needs to become instance instead of static
     _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
                                                 progress_status=ProgressStatus.Idle)
     # Study in memory
@@ -107,7 +107,7 @@ class CircuitOptimization:
         """
         # Lock statistical performance data access
         with CircuitOptimization._c_lock_stat:
-            # Update statistical data if optimisation is runningw
+            # Update statistical data if optimization is running
             if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
                 CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
                 # Check for valid entry
@@ -156,8 +156,7 @@ class CircuitOptimization:
             fig = optuna.visualization.plot_pareto_front(study)
             pareto_html = fig.to_html(full_html=False)
         except KeyError:
-            # Warnung ausgeben als log
-            print(f"Study with name '{study_name}' are not found.")
+            logger.warning(f"Study with name '{study_name}' are not found.")
 
         return pareto_html
 
@@ -193,15 +192,13 @@ class CircuitOptimization:
 
         dab_calc = d_sets.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
-            v1_min=dab_config.output_range.v_1_min_nom_max_list[0],
-            v1_max=dab_config.output_range.v_1_min_nom_max_list[1],
-            v1_step=dab_config.output_range.steps_per_direction,
-            v2_min=dab_config.output_range.v_2_min_nom_max_list[0],
-            v2_max=dab_config.output_range.v_2_min_nom_max_list[1],
-            v2_step=dab_config.output_range.steps_per_direction,
+            v1_min=dab_config.output_range.v1_min_nom_max_list[0],
+            v1_max=dab_config.output_range.v1_min_nom_max_list[1],
+            v2_min=dab_config.output_range.v2_min_nom_max_list[0],
+            v2_max=dab_config.output_range.v2_min_nom_max_list[1],
             p_min=dab_config.output_range.p_min_nom_max_list[0],
             p_max=dab_config.output_range.p_min_nom_max_list[1],
-            p_step=dab_config.output_range.steps_per_direction,
+            sampling=dab_config.sampling,
             n=n_suggest,
             ls=l_s_suggest,
             fs=f_s_suggest,
@@ -303,7 +300,7 @@ class CircuitOptimization:
             # study_in_storage.add_trials(CircuitOptimization.study_in_memory.trials[-number_trials:])
             logger.info(f"Finished {act_number_trials} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
-            # Save methode from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
+            # Save method from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
     @staticmethod
     def start_proceed_study(dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
@@ -390,6 +387,8 @@ class CircuitOptimization:
             logger.info(f"current time: {datetime.datetime.now()}")
             CircuitOptimization.save_config(dab_config)
 
+            CircuitOptimization.save_study_results_pareto(dab_config, show_results=False)
+
         elif database_type == 'mysql':
 
             # connection to MySQL-database
@@ -447,13 +446,15 @@ class CircuitOptimization:
 #            Optimization.save_config(dab_config)
 
     @staticmethod
-    def show_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign) -> None:
+    def save_study_results_pareto(dab_config: circuit_dtos.CircuitParetoDabDesign, show_results: bool = False) -> None:
         """Show the results of a study.
 
         A local .html file is generated under config.working_directory to store the interactive plotly plots on disk.
 
         :param dab_config: DAB optimization configuration file
         :type dab_config: p_dtos.CircuitParetoDabDesign
+        :param show_results: True to directly open the browser to show the study results.
+        :type show_results: bool
         """
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
         database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
@@ -464,7 +465,8 @@ class CircuitOptimization:
         fig.write_html(
             f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}"
             f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
-        fig.show()
+        if show_results:
+            fig.show()
 
     @staticmethod
     def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None) -> dct.CircuitDabDTO:
@@ -490,15 +492,13 @@ class CircuitOptimization:
 
         dab_dto = d_sets.HandleDabDto.init_config(
             name=str(trial_number),
-            v1_min=dab_config.output_range.v_1_min_nom_max_list[0],
-            v1_max=dab_config.output_range.v_1_min_nom_max_list[1],
-            v1_step=dab_config.output_range.steps_per_direction,
-            v2_min=dab_config.output_range.v_2_min_nom_max_list[0],
-            v2_max=dab_config.output_range.v_2_min_nom_max_list[1],
-            v2_step=dab_config.output_range.steps_per_direction,
+            v1_min=dab_config.output_range.v1_min_nom_max_list[0],
+            v1_max=dab_config.output_range.v1_min_nom_max_list[1],
+            v2_min=dab_config.output_range.v2_min_nom_max_list[0],
+            v2_max=dab_config.output_range.v2_min_nom_max_list[1],
             p_min=dab_config.output_range.p_min_nom_max_list[0],
             p_max=dab_config.output_range.p_min_nom_max_list[1],
-            p_step=dab_config.output_range.steps_per_direction,
+            sampling=dab_config.sampling,
             n=trials_dict["n_suggest"],
             ls=trials_dict["l_s_suggest"],
             fs=trials_dict["f_s_suggest"],
@@ -533,15 +533,13 @@ class CircuitOptimization:
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
-                v1_min=dab_config.output_range.v_1_min_nom_max_list[0],
-                v1_max=dab_config.output_range.v_1_min_nom_max_list[1],
-                v1_step=dab_config.output_range.steps_per_direction,
-                v2_min=dab_config.output_range.v_2_min_nom_max_list[0],
-                v2_max=dab_config.output_range.v_2_min_nom_max_list[1],
-                v2_step=dab_config.output_range.steps_per_direction,
+                v1_min=dab_config.output_range.v1_min_nom_max_list[0],
+                v1_max=dab_config.output_range.v1_min_nom_max_list[1],
+                v2_min=dab_config.output_range.v2_min_nom_max_list[0],
+                v2_max=dab_config.output_range.v2_min_nom_max_list[1],
                 p_min=dab_config.output_range.p_min_nom_max_list[0],
                 p_max=dab_config.output_range.p_min_nom_max_list[1],
-                p_step=dab_config.output_range.steps_per_direction,
+                sampling=dab_config.sampling,
                 n=df["params_n_suggest"][index].item(),
                 ls=df["params_l_s_suggest"][index].item(),
                 fs=df["params_f_s_suggest"][index].item(),

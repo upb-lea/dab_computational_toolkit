@@ -66,7 +66,7 @@ class TransformerOptimization:
             iso_primary_to_secondary=toml_transformer.insulation.iso_primary_to_secondary
         )
 
-        # Init the material data source
+        # Initialize the material data source
         material_data_sources = fmt.StackedTransformerMaterialDataSources(
             permeability_datasource=fmt.MaterialDataSource.Measurement,
             permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
@@ -112,7 +112,7 @@ class TransformerOptimization:
             material_data_sources=material_data_sources
         )
 
-        # Initialize the staticical data
+        # Initialize the statistical data
         stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
         # Create the sto_config_list for all trials
@@ -166,7 +166,7 @@ class TransformerOptimization:
         :return: Progress data: Processing start time, actual processing time, number of filtered transformer Pareto front points and status.
         :rtype: ProgressData
         """
-        # Variable deklaration and default initialisation
+        # Variable declaration and default initialization
         ret_progress_data: ProgressData = ProgressData(
             start_time=0.0, run_time=0, number_of_filtered_points=0,
             progress_status=ProgressStatus.Idle)
@@ -175,7 +175,7 @@ class TransformerOptimization:
         if len(self._optimization_config_list) > filtered_list_id:
             # Lock statistical performance data access   (ASA: Possible Bug)
             # with self._t_lock_stat: -> ASA: Later to repair
-            # Update statistical data if optimisation is running
+            # Update statistical data if optimization is running
             if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
                 self._optimization_config_list[filtered_list_id].progress_data.run_time = (
                     time.perf_counter() - self._optimization_config_list[filtered_list_id].progress_data.start_time)
@@ -297,16 +297,14 @@ class TransformerOptimization:
 
                         current_waveform = np.array([time, current])
 
-                        if debug:
-                            logger.info(f"{current_waveform=}")
-                            logger.info("----------------------")
-                            logger.info("Re-simulation of:")
-                            logger.info(f"   * Circuit study: {filter_data.circuit_study_name}")
-                            logger.info(f"   * Circuit trial: {circuit_id}")
-                            logger.info(f"   * Transformer study: {act_sto_config.transformer_study_name}")
-                            logger.info(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                        logger.debug(f"{current_waveform=}")
+                        logger.debug("----------------------")
+                        logger.debug("Re-simulation of:")
+                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                        logger.debug(f"   * Circuit trial: {circuit_id}")
+                        logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
+                        logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
 
-                        logger.info(f"{current_waveform=}")
                         # workaround for comma problem. Read a random csv file and set back the delimiter.
                         # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 

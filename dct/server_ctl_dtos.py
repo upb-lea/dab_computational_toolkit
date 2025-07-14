@@ -101,6 +101,6 @@ class QueueDetailData:
 class QueueParetoFrontData:
     """DTO for one shared memory data exchange within a queue."""
 
-    parto_front_optuna: str
+    pareto_front_optuna: str
     evaluation_info: str
     validity: bool
