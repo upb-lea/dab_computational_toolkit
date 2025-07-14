@@ -338,12 +338,12 @@ ProgressStatus
 plotWindow
 None's
 rc
-
 # remove later
 hopt
 agg
-
-
-
-
+LogCaptureFixture
+CaptureFixture
+caplog
+dctmainctl
+pytest
 
