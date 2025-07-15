@@ -18,6 +18,7 @@
 [sampling]
     sampling_method="latin_hypercube"
     sampling_points=10
+    sampling_random_seed=10
     v1_additional_user_point_list=[700, 705]
     v2_additional_user_point_list=[200, 290]
     p_additional_user_point_list=[-1800, 1700]
