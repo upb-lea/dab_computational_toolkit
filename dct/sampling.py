@@ -20,7 +20,7 @@ def check_user_points_in_min_max_region(dim_min_max_list: list[float], dim_point
     """
     for point in dim_points_list:
         if point < dim_min_max_list[0] or point > dim_min_max_list[1]:
-            raise ValueError(f"Incorrect user-given operating point {point} not within {dim_min_max_list[0]} and {dim_points_list[1]}.")
+            raise ValueError(f"Incorrect user-given operating point {point} not within {dim_min_max_list[0]} and {dim_min_max_list[1]}.")
 
 def latin_hypercube(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_max: float, dim_3_min: float, dim_3_max: float, total_number_points: int,
                     dim_1_user_given_points_list: list[float], dim_2_user_given_points_list: list[float], dim_3_user_given_points_list: list[float],
