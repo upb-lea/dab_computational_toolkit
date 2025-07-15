@@ -212,9 +212,13 @@ class CircuitOptimization:
                 or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
-        # Calculate the cost function. Mean for not-NaN values, as there will be too many NaN results.
+        # Calculate the cost function.
         i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
-        i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
+        # consider weighting
+        i_cost_matrix_weighted = i_cost_matrix * fixed_parameters.mesh_weights
+
+        # Mean for not-NaN values, as there will be too many NaN results.
+        i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
         return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
 
@@ -239,9 +243,9 @@ class CircuitOptimization:
 
         # choose sampling method
         if dab_config.sampling.sampling_method == "meshgrid":
-            steps_per_dimension = np.ceil(np.power(dab_config.sampling.sampling_points, 1 / 3))
-            logger.info(f"number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
-            logger.info("Note: meshgrid sampling does not take user-given operating points into account")
+            steps_per_dimension = int(np.ceil(np.power(dab_config.sampling.sampling_points, 1 / 3)))
+            print(f"number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
+            print("Note: meshgrid sampling does not take user-given operating points into account")
             v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
                 np.linspace(dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
                 np.linspace(dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
@@ -265,27 +269,31 @@ class CircuitOptimization:
 
         # calculate weighting
         weight_sum = np.sum(dab_config.sampling.additional_user_weighting_point_list)
-        logger.info(f"{weight_sum=}")
+        logger.debug(f"{weight_sum=}")
         given_user_points = len(dab_config.sampling.v1_additional_user_point_list)
-        logger.info(f"{given_user_points=}")
-        logger.info(f"{v1_operating_points.size=}")
+        logger.debug(f"{given_user_points=}")
+        logger.debug(f"{v1_operating_points.size=}")
 
         if weight_sum > 1 or weight_sum < 0:
             raise ValueError("Sum of weighting point list must be within 0 and 1.")
         else:
             leftover_auto_weight = (1 - weight_sum) / (v1_operating_points.size - given_user_points)
             logger.info(f"Auto-weight given for all other {v1_operating_points.size - given_user_points} operating points: {leftover_auto_weight}")
+            # default case, same weights for all points
             weights = np.full_like(v1_operating_points, leftover_auto_weight)
-            weights[-len(dab_config.sampling.additional_user_weighting_point_list):] = dab_config.sampling.additional_user_weighting_point_list
-            logger.info(f"{weights=}")
-            logger.info(f"Double check: Sum of weights = {np.sum(weights)}")
+            if dab_config.sampling.additional_user_weighting_point_list:
+                logger.debug("Given user weighting point list detected, fill up with user-given weights.")
+                weights[-len(dab_config.sampling.additional_user_weighting_point_list):] = dab_config.sampling.additional_user_weighting_point_list
+            logger.debug(f"{weights=}")
+            logger.debug(f"Double check: Sum of weights = {np.sum(weights)}")
 
         fix_parameters = d_dtos.FixedParameters(
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
             mesh_v1=np.atleast_3d(v1_operating_points),
             mesh_v2=np.atleast_3d(v2_operating_points),
-            mesh_p=np.atleast_3d(p_operating_points)
+            mesh_p=np.atleast_3d(p_operating_points),
+            mesh_weights=np.atleast_3d(weights)
         )
         return fix_parameters
 

@@ -28,6 +28,7 @@ class FixedParameters:
     mesh_v1: np.ndarray
     mesh_v2: np.ndarray
     mesh_p: np.ndarray
+    mesh_weights: np.ndarray
 
 @dataclasses.dataclass
 class Sampling:

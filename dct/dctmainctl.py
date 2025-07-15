@@ -431,7 +431,7 @@ class DctMainCtl:
             difference_percentage=toml_circuit.filter_distance.difference_percentage
         )
 
-        # None can not be handled by toml correct, so this is a workaround. By default "random" in toml equals "None"
+        # None can not be handled by toml correct, so this is a workaround. By default, "random" in toml equals "None"
         local_sampling_random_seed: int | None = None
         # In case of a concrete seed was given, overwrite None with the given one
         if isinstance(toml_circuit.sampling.sampling_random_seed, int):

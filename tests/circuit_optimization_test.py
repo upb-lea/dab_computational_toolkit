@@ -1,0 +1,78 @@
+"""Python tests for the circuit optimization."""
+# python libraries
+
+# own libraries
+import dct
+
+# 3rd party libraries
+import pytest
+from numpy.testing import assert_array_equal
+
+design_space = dct.CircuitParetoDesignSpace(
+    f_s_min_max_list=[100_000, 200_000],
+    l_s_min_max_list=[10e-6, 10e-3],
+    l_1_min_max_list=[10e-6, 10e-3],
+    l_2__min_max_list=[10e-6, 10e-3],
+    n_min_max_list=[1, 3],
+    transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J'],
+    transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J'],
+    c_par_1=1e-12,
+    c_par_2=1e-12)
+
+output_range = dct.CircuitOutputRange(
+    v1_min_max_list=[690, 710],
+    v2_min_max_list=[175, 295],
+    p_min_max_list=[-2000, 2000])
+
+filter = dct.CircuitFilter(
+    number_filtered_designs=1,
+    difference_percentage=5)
+
+@pytest.mark.parametrize(
+    "sampling_method, v1_additional_user_point_list, v2_additional_user_point_list, p_additional_user_point_list, "
+    "additional_user_weighting_point_list, result_weighting",
+    [
+        # user-given operating points
+        ("latin_hypercube", [700], [200], [1000], [0.5], [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]]),
+        # no user-given operating points
+        ("latin_hypercube", [], [], [], [], [[[0.2], [0.2], [0.2], [0.2], [0.2]]]),
+        # meshgrid, no user-given operating points. Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
+        ("meshgrid", [], [], [], [], [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]])
+    ]
+)
+def test_calculate_fix_parameters(sampling_method: str, v1_additional_user_point_list: list[float], v2_additional_user_point_list: list[float],
+                                  p_additional_user_point_list: list[float], additional_user_weighting_point_list: list[float],
+                                  result_weighting: list[float]) -> None:
+    """
+    Unit test to check the fix parameters, especially the sampling.
+
+    :param sampling_method: sampling method
+    :param v1_additional_user_point_list: user-given operating points for v1
+    :param v2_additional_user_point_list: user-given operating points for v2
+    :param p_additional_user_point_list: user-given operating points for power
+    :param additional_user_weighting_point_list: user-given operating point weighting
+    :param result_weighting: unit test results
+    """
+    # set up sampling
+    sampling = dct.CircuitSampling(
+        sampling_method=sampling_method,
+        sampling_points=5,
+        sampling_random_seed=1,
+        v1_additional_user_point_list=v1_additional_user_point_list,
+        v2_additional_user_point_list=v2_additional_user_point_list,
+        p_additional_user_point_list=p_additional_user_point_list,
+        additional_user_weighting_point_list=additional_user_weighting_point_list
+    )
+
+    # set up input configuration
+    dab_config = dct.CircuitParetoDabDesign(
+        circuit_study_name="test",
+        project_directory="",
+        design_space=design_space,
+        output_range=output_range,
+        sampling=sampling,
+        filter=filter)
+
+    output = dct.CircuitOptimization.calculate_fix_parameters(dab_config)
+
+    assert_array_equal(result_weighting, output.mesh_weights)
