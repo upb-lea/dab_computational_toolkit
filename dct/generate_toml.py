@@ -111,6 +111,7 @@ def generate_circuit_toml(working_directory: str) -> None:
     [sampling]
         sampling_method="latin_hypercube"
         sampling_points=4
+        sampling_random_seed=10
         v1_additional_user_point_list=[700]
         v2_additional_user_point_list=[180]
         p_additional_user_point_list=[2000]
