@@ -268,9 +268,14 @@ class CircuitOptimization:
         logger.debug(f"{v1_operating_points=}")
 
         # calculate weighting
-        weight_sum = np.sum(dab_config.sampling.additional_user_weighting_point_list)
-        logger.debug(f"{weight_sum=}")
-        given_user_points = len(dab_config.sampling.v1_additional_user_point_list)
+
+        if dab_config.sampling.sampling_method == "meshgrid":
+            weight_sum = 0
+            given_user_points = 0
+        else:
+            weight_sum = np.sum(dab_config.sampling.additional_user_weighting_point_list)
+            logger.debug(f"{weight_sum=}")
+            given_user_points = len(dab_config.sampling.v1_additional_user_point_list)
         logger.debug(f"{given_user_points=}")
         logger.debug(f"{v1_operating_points.size=}")
 
@@ -281,7 +286,8 @@ class CircuitOptimization:
             logger.info(f"Auto-weight given for all other {v1_operating_points.size - given_user_points} operating points: {leftover_auto_weight}")
             # default case, same weights for all points
             weights = np.full_like(v1_operating_points, leftover_auto_weight)
-            if dab_config.sampling.additional_user_weighting_point_list:
+            # for user point weightings, both lists must be filled.
+            if dab_config.sampling.additional_user_weighting_point_list and dab_config.sampling.sampling_method != "meshgrid":
                 logger.debug("Given user weighting point list detected, fill up with user-given weights.")
                 weights[-len(dab_config.sampling.additional_user_weighting_point_list):] = dab_config.sampling.additional_user_weighting_point_list
             logger.debug(f"{weights=}")

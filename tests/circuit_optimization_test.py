@@ -30,19 +30,23 @@ filter = dct.CircuitFilter(
 
 @pytest.mark.parametrize(
     "sampling_method, v1_additional_user_point_list, v2_additional_user_point_list, p_additional_user_point_list, "
-    "additional_user_weighting_point_list, result_weighting",
+    "additional_user_weighting_point_list, expected_exception, result_weighting",
     [
         # user-given operating points
-        ("latin_hypercube", [700], [200], [1000], [0.5], [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]]),
+        ("latin_hypercube", [700], [200], [1000], [0.5], None, [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]]),
         # no user-given operating points
-        ("latin_hypercube", [], [], [], [], [[[0.2], [0.2], [0.2], [0.2], [0.2]]]),
+        ("latin_hypercube", [], [], [], [], None, [[[0.2], [0.2], [0.2], [0.2], [0.2]]]),
         # meshgrid, no user-given operating points. Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
-        ("meshgrid", [], [], [], [], [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]])
+        ("meshgrid", [], [], [], [], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]]),
+        # meshgrid, with user-given operating points (will be ignored). Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
+        ("meshgrid", [700], [200], [1000], [0.5], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]]),
+        # value error expected
+        ("latin_hypercube", [700], [200], [1000], [1.5], ValueError, None),
     ]
 )
 def test_calculate_fix_parameters(sampling_method: str, v1_additional_user_point_list: list[float], v2_additional_user_point_list: list[float],
                                   p_additional_user_point_list: list[float], additional_user_weighting_point_list: list[float],
-                                  result_weighting: list[float]) -> None:
+                                  expected_exception: type, result_weighting: list[float]) -> None:
     """
     Unit test to check the fix parameters, especially the sampling.
 
@@ -51,6 +55,7 @@ def test_calculate_fix_parameters(sampling_method: str, v1_additional_user_point
     :param v2_additional_user_point_list: user-given operating points for v2
     :param p_additional_user_point_list: user-given operating points for power
     :param additional_user_weighting_point_list: user-given operating point weighting
+    :param expected_exception: expected exception
     :param result_weighting: unit test results
     """
     # set up sampling
@@ -73,6 +78,9 @@ def test_calculate_fix_parameters(sampling_method: str, v1_additional_user_point
         sampling=sampling,
         filter=filter)
 
-    output = dct.CircuitOptimization.calculate_fix_parameters(dab_config)
-
-    assert_array_equal(result_weighting, output.mesh_weights)
+    if expected_exception:
+        with pytest.raises(expected_exception):
+            output = dct.CircuitOptimization.calculate_fix_parameters(dab_config)
+    else:
+        output = dct.CircuitOptimization.calculate_fix_parameters(dab_config)
+        assert_array_equal(result_weighting, output.mesh_weights)

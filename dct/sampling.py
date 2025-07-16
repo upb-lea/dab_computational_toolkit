@@ -49,6 +49,9 @@ def latin_hypercube(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_
     check_user_points_in_min_max_region([dim_2_min, dim_2_max], dim_2_user_given_points_list)
     check_user_points_in_min_max_region([dim_3_min, dim_3_max], dim_3_user_given_points_list)
 
+    if len(dim_1_user_given_points_list) != len(dim_2_user_given_points_list) or len(dim_1_user_given_points_list) != len(dim_3_user_given_points_list):
+        raise ValueError("User-given points incomplete.")
+
     lower_bounds = [dim_1_min, dim_2_min, dim_3_min]
     upper_bounds = [dim_1_max, dim_2_max, dim_3_max]
 
