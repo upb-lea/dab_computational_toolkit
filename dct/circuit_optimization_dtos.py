@@ -3,6 +3,10 @@
 import dataclasses
 
 # 3rd party libraries
+
+# own libraries
+from dct.circuit_enums import SamplingEnum
+
 @dataclasses.dataclass
 class ParetoFilePaths:
     """File paths for the sub simulation optimization parts."""
@@ -39,7 +43,7 @@ class CircuitOutputRange:
 class CircuitSampling:
     """Definition of the sampling method."""
 
-    sampling_method: str
+    sampling_method: SamplingEnum
     sampling_points: int
     sampling_random_seed: int | None
     v1_additional_user_point_list: list[float]

@@ -1,6 +1,12 @@
 """Classes and toml checker for the flow control."""
-from pydantic import BaseModel
+# python libraries
 from typing import Literal
+
+# 3rd party libraries
+from pydantic import BaseModel
+
+# own libraries
+from dct.circuit_enums import SamplingEnum
 
 # ######################################################
 # flow control
@@ -113,7 +119,7 @@ class TomlCircuitOutputRange(BaseModel):
 class TomlSampling(BaseModel):
     """Definition of the sampling method."""
 
-    sampling_method: Literal['latin_hypercube', 'meshgrid', 'poisson_disk_sampling']
+    sampling_method: SamplingEnum
     sampling_points: int
     sampling_random_seed: int | Literal["random"]
     v1_additional_user_point_list: list[float]

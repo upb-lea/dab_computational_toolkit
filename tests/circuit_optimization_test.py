@@ -33,18 +33,18 @@ filter = dct.CircuitFilter(
     "additional_user_weighting_point_list, expected_exception, result_weighting",
     [
         # user-given operating points
-        ("latin_hypercube", [700], [200], [1000], [0.5], None, [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]]),
+        (dct.SamplingEnum.latin_hypercube, [700], [200], [1000], [0.5], None, [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]]),
         # no user-given operating points
-        ("latin_hypercube", [], [], [], [], None, [[[0.2], [0.2], [0.2], [0.2], [0.2]]]),
+        (dct.SamplingEnum.latin_hypercube, [], [], [], [], None, [[[0.2], [0.2], [0.2], [0.2], [0.2]]]),
         # meshgrid, no user-given operating points. Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
-        ("meshgrid", [], [], [], [], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]]),
+        (dct.SamplingEnum.meshgrid, [], [], [], [], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]]),
         # meshgrid, with user-given operating points (will be ignored). Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
-        ("meshgrid", [700], [200], [1000], [0.5], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]]),
+        (dct.SamplingEnum.meshgrid, [700], [200], [1000], [0.5], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]]),
         # value error expected
-        ("latin_hypercube", [700], [200], [1000], [1.5], ValueError, None),
+        (dct.SamplingEnum.latin_hypercube, [700], [200], [1000], [1.5], ValueError, None),
     ]
 )
-def test_calculate_fix_parameters(sampling_method: str, v1_additional_user_point_list: list[float], v2_additional_user_point_list: list[float],
+def test_calculate_fix_parameters(sampling_method: dct.SamplingEnum, v1_additional_user_point_list: list[float], v2_additional_user_point_list: list[float],
                                   p_additional_user_point_list: list[float], additional_user_weighting_point_list: list[float],
                                   expected_exception: type, result_weighting: list[float]) -> None:
     """

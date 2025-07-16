@@ -24,6 +24,7 @@ import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.circuit_enums import SamplingEnum
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +243,7 @@ class CircuitOptimization:
             transistor_2_dto_list.append(d_sets.HandleTransistorDto.tdb_to_transistor_dto(transistor))
 
         # choose sampling method
-        if dab_config.sampling.sampling_method == "meshgrid":
+        if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
             steps_per_dimension = int(np.ceil(np.power(dab_config.sampling.sampling_points, 1 / 3)))
             logger.info(f"number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
@@ -251,7 +252,7 @@ class CircuitOptimization:
                 np.linspace(dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
                 np.linspace(dab_config.output_range.p_min_max_list[0], dab_config.output_range.p_min_max_list[1], steps_per_dimension),
                 sparse=False)
-        elif dab_config.sampling.sampling_method == "latin_hypercube":
+        elif dab_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
             v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
                 dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1],
                 dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1],
@@ -260,8 +261,6 @@ class CircuitOptimization:
                 dim_1_user_given_points_list=dab_config.sampling.v1_additional_user_point_list,
                 dim_2_user_given_points_list=dab_config.sampling.v2_additional_user_point_list,
                 dim_3_user_given_points_list=dab_config.sampling.p_additional_user_point_list, sampling_random_seed=dab_config.sampling.sampling_random_seed)
-        elif dab_config.sampling.sampling_method == "poisson_disk_sampling":
-            raise NotImplementedError("Not implemented yet.")
         else:
             raise ValueError(f"sampling_method '{dab_config.sampling.sampling_method}' not available.")
 
@@ -269,7 +268,7 @@ class CircuitOptimization:
 
         # calculate weighting
 
-        if dab_config.sampling.sampling_method == "meshgrid":
+        if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
             weight_sum = 0
             given_user_points = 0
         else:
@@ -287,7 +286,7 @@ class CircuitOptimization:
             # default case, same weights for all points
             weights = np.full_like(v1_operating_points, leftover_auto_weight)
             # for user point weightings, both lists must be filled.
-            if dab_config.sampling.additional_user_weighting_point_list and dab_config.sampling.sampling_method != "meshgrid":
+            if dab_config.sampling.additional_user_weighting_point_list and dab_config.sampling.sampling_method != SamplingEnum.meshgrid:
                 logger.debug("Given user weighting point list detected, fill up with user-given weights.")
                 weights[-len(dab_config.sampling.additional_user_weighting_point_list):] = dab_config.sampling.additional_user_weighting_point_list
             logger.debug(f"{weights=}")
