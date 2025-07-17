@@ -338,6 +338,7 @@ ProgressStatus
 plotWindow
 None's
 rc
+uvicorn
 # remove later
 hopt
 agg
