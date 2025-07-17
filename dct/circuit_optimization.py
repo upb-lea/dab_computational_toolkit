@@ -245,7 +245,7 @@ class CircuitOptimization:
         # choose sampling method
         if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
             steps_per_dimension = int(np.ceil(np.power(dab_config.sampling.sampling_points, 1 / 3)))
-            logger.info(f"number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
+            logger.info(f"Number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
             v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
                 np.linspace(dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
