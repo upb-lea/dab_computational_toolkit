@@ -266,7 +266,7 @@ def generate_logging_config(working_directory: str) -> None:
     :type working_directory: str
     """
     logging_data_config = '''[loggers]
-keys=root,dct,transistordatabase,femmt,hct
+keys=root,dct,transistordatabase,femmt,hct,uvicorn
 
 [handlers]
 keys=console
@@ -301,6 +301,12 @@ propagate=0
 level=INFO
 handlers=console
 qualname=hct
+propagate=0
+
+[logger_uvicorn]
+level=INFO
+handlers=console
+qualname=uvicorn
 propagate=0
 
 [handler_console]

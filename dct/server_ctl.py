@@ -202,8 +202,8 @@ class DctServer:
         DctServer.server_request_queue = act_server_request_queue
         DctServer.server_response_queue = act_server_response_queue
         # Start the server (blocking call)
-        config = uvicorn.Config(DctServer.app, host="127.0.0.1", port=8008, log_level="info",
-                                ssl_keyfile=DctServer._ssl_key, ssl_certfile=DctServer._ssl_cert)
+        config = uvicorn.Config(DctServer.app, host="127.0.0.1", port=8008,
+                                ssl_keyfile=DctServer._ssl_key, ssl_certfile=DctServer._ssl_cert, log_config=None)
 
         DctServer.server_object = uvicorn.Server(config)
         # Create thread for the server and start it
