@@ -111,6 +111,7 @@ def generate_circuit_toml(working_directory: str) -> None:
     [sampling]
         sampling_method="latin_hypercube"
         sampling_points=4
+        sampling_random_seed=10
         v1_additional_user_point_list=[700]
         v2_additional_user_point_list=[180]
         p_additional_user_point_list=[2000]
@@ -265,7 +266,7 @@ def generate_logging_config(working_directory: str) -> None:
     :type working_directory: str
     """
     logging_data_config = '''[loggers]
-keys=root,dct,transistordatabase,femmt,hct
+keys=root,dct,transistordatabase,femmt,hct,uvicorn
 
 [handlers]
 keys=console
@@ -300,6 +301,12 @@ propagate=0
 level=INFO
 handlers=console
 qualname=hct
+propagate=0
+
+[logger_uvicorn]
+level=INFO
+handlers=console
+qualname=uvicorn
 propagate=0
 
 [handler_console]

@@ -20,10 +20,11 @@ def check_user_points_in_min_max_region(dim_min_max_list: list[float], dim_point
     """
     for point in dim_points_list:
         if point < dim_min_max_list[0] or point > dim_min_max_list[1]:
-            raise ValueError(f"Incorrect user-given operating point {point} not within {dim_min_max_list[0]} and {dim_points_list[1]}.")
+            raise ValueError(f"Incorrect user-given operating point {point} not within {dim_min_max_list[0]} and {dim_min_max_list[1]}.")
 
 def latin_hypercube(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_max: float, dim_3_min: float, dim_3_max: float, total_number_points: int,
-                    dim_1_user_given_points_list: list[float], dim_2_user_given_points_list: list[float], dim_3_user_given_points_list: list[float]) \
+                    dim_1_user_given_points_list: list[float], dim_2_user_given_points_list: list[float], dim_3_user_given_points_list: list[float],
+                    sampling_random_seed: int | None) \
         -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Latin hypercube sampling for a given 3-dimensional user input.
@@ -38,18 +39,24 @@ def latin_hypercube(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_
     :param dim_1_user_given_points_list: user-given points for dimension 1, e.g. [695, 705]
     :param dim_2_user_given_points_list: user-given points for dimension 2, e.g. [289, 299]
     :param dim_3_user_given_points_list: user-given points for dimension 3, e.g. [-1300, 1530]
-    :return:
+    :param sampling_random_seed: random seed for the hypercube sampling (reproducible)
+    :type sampling_random_seed: int
+    :return: dim_1_all_points, dim_2_all_points, dim_3_all_points
+    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray]
     """
     # check if user points are within the given limits
     check_user_points_in_min_max_region([dim_1_min, dim_1_max], dim_1_user_given_points_list)
     check_user_points_in_min_max_region([dim_2_min, dim_2_max], dim_2_user_given_points_list)
     check_user_points_in_min_max_region([dim_3_min, dim_3_max], dim_3_user_given_points_list)
 
+    if len(dim_1_user_given_points_list) != len(dim_2_user_given_points_list) or len(dim_1_user_given_points_list) != len(dim_3_user_given_points_list):
+        raise ValueError("User-given points incomplete.")
+
     lower_bounds = [dim_1_min, dim_2_min, dim_3_min]
     upper_bounds = [dim_1_max, dim_2_max, dim_3_max]
 
     # latin hypercube sampler
-    sampler = qmc.LatinHypercube(d=3)
+    sampler = qmc.LatinHypercube(d=3, rng=sampling_random_seed)
     sample = sampler.random(n=total_number_points)
 
     # scale latin hypercube samples to the three dimensions

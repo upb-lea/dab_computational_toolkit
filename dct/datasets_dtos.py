@@ -25,6 +25,10 @@ class FixedParameters:
 
     transistor_1_dto_list: list[TransistorDTO]
     transistor_2_dto_list: list[TransistorDTO]
+    mesh_v1: np.ndarray
+    mesh_v2: np.ndarray
+    mesh_p: np.ndarray
+    mesh_weights: np.ndarray
 
 @dataclasses.dataclass
 class Sampling:
@@ -35,17 +39,15 @@ class Sampling:
     v1_additional_user_point_list: list[float]
     v2_additional_user_point_list: list[float]
     p_additional_user_point_list: list[float]
+    additional_user_weighting_point_list: list[float]
 
 @dataclasses.dataclass(init=False)
 class CircuitConfig:
     """Input configuration DTO for the DAB converter."""
 
-    v1_min: np.float64
-    v1_max: np.float64
-    v2_min: np.float64
-    v2_max: np.float64
-    p_min: np.float64
-    p_max: np.float64
+    mesh_v1: np.ndarray
+    mesh_v2: np.ndarray
+    mesh_p: np.ndarray
     sampling: Sampling
     n: np.float64
     Ls: np.float64
@@ -88,9 +90,6 @@ class GeckoAdditionalParameters:
 class CalcFromCircuitConfig:
     """DTO calculates parameters for the next simulations, which can be derived from the input values."""
 
-    mesh_v1: np.ndarray
-    mesh_v2: np.ndarray
-    mesh_p: np.ndarray
     Lc2_: np.ndarray
     t_j_1: np.float64
     t_j_2: np.float64
