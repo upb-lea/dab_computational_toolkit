@@ -472,25 +472,35 @@ class DctMainCtl:
         folder_exclusion = ['00_femmt_simulation']
 
         # Define the path to the zip archive
-        zip_path = f'{toml_prog_flow.general.project_directory}_archived_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")}.zip'
+        zip_file_name = f'{toml_prog_flow.general.project_directory}_archived_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")}.zip'
 
-        # Create the zip archive
-        with zipfile.ZipFile(zip_path, 'w') as zip_archive:
-            for folder in folder_selection:
-                for root, dirs, files in os.walk(folder):
-                    for dir in dirs:
-                        dir_path = os.path.join(root, dir)
-                        relative_path = os.path.relpath(dir_path, folder)
-                        if fnmatch.fnmatch(relative_path, '*/' + folder_exclusion[0] + '/*') or relative_path.endswith('/' + folder_exclusion[0]):
-                            dirs.remove(dir)  # Exclude the subfolder
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        relative_path = os.path.relpath(file_path, folder)
-                        if relative_path.startswith(folder_exclusion[0] + '/') or relative_path.endswith('/' + folder_exclusion[0]):
-                            continue  # Exclude the file if it is in an excluded folder
-                        zip_archive.write(file_path, relative_path)
+        # Check if path exists
+        if os.path.exists(folder_selection[0]):
 
-        print('Zip archive created:', zip_path)
+            # Get target folder name for the zip file
+            zip_file_path = os.path.join(os.path.dirname(folder_selection[0]), zip_file_name)
+
+            # Create the zip archive
+            with zipfile.ZipFile(zip_file_path, 'w') as zip_archive:
+                for folder in folder_selection:
+                    for root, dirs, files in os.walk(folder):
+                        for dir in dirs:
+                            dir_path = os.path.join(root, dir)
+                            relative_path = os.path.relpath(dir_path, folder)
+                            if fnmatch.fnmatch(relative_path, '*/' + folder_exclusion[0] + '/*') or relative_path.endswith('/' + folder_exclusion[0]):
+                                dirs.remove(dir)  # Exclude the subfolder
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            relative_path = os.path.relpath(file_path, folder)
+                            if relative_path.startswith(folder_exclusion[0] + '/') or relative_path.endswith('/' + folder_exclusion[0]):
+                                continue  # Exclude the file if it is in an excluded folder
+                            zip_archive.write(file_path, relative_path)
+            # Notify user
+            logger.info(f"Zip archive created:{zip_file_path}")
+
+        else:
+            # Warn user
+            logger.warning(f"Path {folder_selection[0]} does not exists!")
 
     def get_initialization_queue_data(self, act_toml_prog_flow: tc.FlowControl) \
         -> tuple[list[ConfigurationDataEntryDto], list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
