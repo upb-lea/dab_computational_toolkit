@@ -344,6 +344,9 @@ agg
 LogCaptureFixture
 CaptureFixture
 caplog
+capsys
 dctmainctl
-pytest
+ascii
+
+
 
