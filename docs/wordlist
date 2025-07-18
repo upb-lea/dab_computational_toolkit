@@ -339,6 +339,7 @@ plotWindow
 None's
 rc
 uvicorn
+pytest
 # remove later
 hopt
 agg
