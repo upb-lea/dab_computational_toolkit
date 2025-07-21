@@ -121,7 +121,7 @@ class DctMainCtl:
 
         # Optimization class instances
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
-        self._filtered_list_id_ref: list[int] = []
+        self._filtered_list_files: list[str] = []
         self.inductor_optimization: Optional[InductorOptimization] = None
         self.transformer_optimization: Optional[TransformerOptimization] = None
         self.heat_sink_optimization: Optional[HeatSinkOptimization] = None
@@ -593,10 +593,10 @@ class DctMainCtl:
         for entry in configuration_file_list:
             heat_sink_data = srv_ctl_dtos.ConfigurationDataEntryDto(
                 configuration_name=entry,
-                number_of_trials=act_toml_prog_flow.circuit.number_of_trials,
+                number_of_trials=act_toml_prog_flow.heat_sink.number_of_trials,
                 progress_data=copy.deepcopy(progress_data_init))
             #  If optimization is skipped, set the status to 'skip'
-            if act_toml_prog_flow.inductor.calculation_mode == "skip":
+            if act_toml_prog_flow.heat_sink.calculation_mode == "skip":
                 heat_sink_data.progress_data.progress_status = ProgressStatus.Skipped
             heat_sink_list.append(heat_sink_data)
 
@@ -626,7 +626,7 @@ class DctMainCtl:
         if self._circuit_list[0].progress_data.progress_status != ProgressStatus.Skipped:
             self._circuit_list[0].progress_data = dct.CircuitOptimization.get_progress_data()
         # Workaround for number of filtered points
-        self._circuit_list[0].progress_data.number_of_filtered_points = len(self._filtered_list_id_ref)
+        self._circuit_list[0].progress_data.number_of_filtered_points = len(self._filtered_list_files)
         # Inductor
         # Check if inductor is initialized,if not initialized progress data are valid
         if self.inductor_optimization is not None:
@@ -675,8 +675,8 @@ class DctMainCtl:
         filtered_points_name_list: list[tuple[str, int] | Any] = []
         # Workaround: Convert the filtered file list
         entry_id = 0
-        for entry in self._filtered_list_id_ref:
-            list_item = [str(entry), entry_id]
+        for entry in self._filtered_list_files:
+            list_item = [entry, entry_id]
             entry_id = entry_id + 1
             filtered_points_name_list.append(list_item)
 
@@ -747,8 +747,8 @@ class DctMainCtl:
         filtered_points_name_list: list[tuple[str, int] | Any] = []
         # Workaround: Convert the filtered file list
         entry_id = 0
-        for entry in self._filtered_list_id_ref:
-            list_item = [str(entry), entry_id]
+        for entry in self._filtered_list_files:
+            list_item = [entry, entry_id]
             entry_id = entry_id + 1
             filtered_points_name_list.append(list_item)
 
@@ -928,7 +928,7 @@ class DctMainCtl:
             with self._key_input_lock:
                 self._key_input_string = key_input_string
 
-    def run_optimization_from_toml_configs(self, workspace_path: str) -> None:
+    def run_optimization_from_toml_configurations(self, workspace_path: str) -> None:
         """Perform the main program.
 
         This function corresponds to 'main', which is called after the instance of the class are created.
@@ -1028,7 +1028,7 @@ class DctMainCtl:
         summary_data = dct.StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
 
         filter_data = dct.FilterData(
-            filtered_list_id=[],
+            filtered_list_files=[],
             filtered_list_pathname=os.path.join(
                 project_directory, toml_prog_flow.circuit.subdirectory,
                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
@@ -1064,10 +1064,10 @@ class DctMainCtl:
                 # Add filtered result list
                 for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
                     if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
-                        filter_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
+                        filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
                         # Store list id for progress (Workaround)
-                        self._filtered_list_id_ref = filter_data.filtered_list_id
-                if not filter_data.filtered_list_id:
+                        self._filtered_list_files = filter_data.filtered_list_files
+                if not filter_data.filtered_list_files:
                     raise ValueError(f"Filtered results folder {filter_data.filtered_list_pathname} is empty.")
             else:
                 raise ValueError(f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist.")
@@ -1091,7 +1091,7 @@ class DctMainCtl:
             self._inductor_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
 
-            for id_entry in filter_data.filtered_list_id:
+            for id_entry in filter_data.filtered_list_files:
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(self._inductor_study_data.optimization_directory,
                                                          str(id_entry), self._inductor_study_data.study_name)
@@ -1122,7 +1122,7 @@ class DctMainCtl:
             # Initialize _transformer_number_filtered_points_skip_list
             self._transformer_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
-            for id_entry in filter_data.filtered_list_id:
+            for id_entry in filter_data.filtered_list_files:
                 # Assemble pathname
                 transformer_results_datapath = os.path.join(self._transformer_study_data.optimization_directory,
                                                             str(id_entry),
@@ -1223,17 +1223,17 @@ class DctMainCtl:
             # Add filtered result list
             for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
                 if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
-                    filter_data.filtered_list_id.append(int(os.path.splitext(filtered_circuit_result)[0]))
+                    filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
 
             # Workaround: Set filtered result id list here, later to handle in circuit_optimization
-            self._filtered_list_id_ref = filter_data.filtered_list_id
+            self._filtered_list_files = filter_data.filtered_list_files
 
         # Stop the circuit processing time measurement (finally)
         self._circuit_progress_time[0].stop_trigger()
 
         # Set the number of calculations for the magnetic components
-        self._inductor_main_list[0].number_calculations = len(self._filtered_list_id_ref)
-        self._transformer_main_list[0].number_calculations = len(self._filtered_list_id_ref)
+        self._inductor_main_list[0].number_calculations = len(self._filtered_list_files)
+        self._transformer_main_list[0].number_calculations = len(self._filtered_list_files)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
@@ -1408,4 +1408,4 @@ if __name__ == "__main__":
         # Convert it to the absolute path
         arg1 = os.path.abspath(arg1)
     # Execute program
-    dct_mctl.run_optimization_from_toml_configs(arg1)
+    dct_mctl.run_optimization_from_toml_configurations(arg1)

@@ -179,7 +179,7 @@ class InductorResults:
     p_combined_losses: np.ndarray
     volume: float
     area_to_heat_sink: float
-    circuit_trial_number: int
+    circuit_trial_file: str
     inductor_trial_number: int
 
     def __init__(self, **kwargs):
@@ -195,7 +195,7 @@ class StackedTransformerResults:
     p_combined_losses: np.ndarray
     volume: float
     area_to_heat_sink: float
-    circuit_trial_number: int
+    circuit_trial_file: str
     stacked_transformer_trial_number: int
 
     def __init__(self, **kwargs):
@@ -320,6 +320,6 @@ class StudyData:
 class FilterData:
     """Information about the filtered circuit designs."""
 
-    filtered_list_id: list[int]
+    filtered_list_files: list[str]
     filtered_list_pathname: str
     circuit_study_name: str

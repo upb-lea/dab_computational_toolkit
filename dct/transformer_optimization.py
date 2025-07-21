@@ -115,9 +115,9 @@ class TransformerOptimization:
         # Initialize the statistical data
         stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
-        # Create the sto_config_list for all trials
-        for circuit_trial_number in filter_data.filtered_list_id:
-            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
+        # Create the sto_config_list for all filtered circuit trials
+        for circuit_trial_file in filter_data.filtered_list_files:
+            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
 
             # Check filename
             if os.path.isfile(circuit_filepath):
@@ -132,7 +132,6 @@ class TransformerOptimization:
 
                 # Generate new sto_config
                 next_io_config = copy.deepcopy(sto_config)
-                # Add dynamic values to next_io_config
                 # target parameters
                 next_io_config.l_s12_target = float(transformer_target_params.l_s12_target)
                 next_io_config.l_h_target = float(transformer_target_params.l_h_target)
@@ -142,9 +141,9 @@ class TransformerOptimization:
                 next_io_config.time_current_2_vec = transformer_target_params.time_current_2_vec
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
-                    = os.path.join(study_data.optimization_directory, str(circuit_trial_number), sto_config.stacked_transformer_study_name)
+                    = os.path.join(study_data.optimization_directory, str(circuit_trial_file), sto_config.stacked_transformer_study_name)
                 transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(
-                    circuit_id=circuit_trial_number,
+                    circuit_filtered_point_filename=circuit_trial_file,
                     progress_data=copy.deepcopy(stat_data_init),
                     transformer_optimization_dto=next_io_config)
 
@@ -197,13 +196,13 @@ class TransformerOptimization:
         """
         return self._number_performed_calculations
 
-    def _optimize(self, circuit_id: int, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+    def _optimize(self, circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
                   act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> int:
         """
         Perform the optimization.
 
-        :param circuit_id: List of circuit trial numbers to perform transformer optimization
-        :type circuit_id: list
+        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
+        :type circuit_filtered_point_file: str
         :param act_sto_config: Process number (in case of parallel computing)
         :type act_sto_config: int
         :param act_target_number_trials: Number of trials for the reluctance model optimization
@@ -224,7 +223,7 @@ class TransformerOptimization:
         number_of_filtered_points = 0
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
         # Check number of trials
         if act_target_number_trials > 0:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(
@@ -301,7 +300,7 @@ class TransformerOptimization:
                         logger.debug("----------------------")
                         logger.debug("Re-simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_id}")
+                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
                         logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                         logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
 
@@ -317,7 +316,7 @@ class TransformerOptimization:
                         p_combined_losses=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_number=circuit_id,
+                        circuit_trial_file=circuit_filtered_point_file,
                         stacked_transformer_trial_number=re_simulate_number
                     )
 
@@ -366,15 +365,16 @@ class TransformerOptimization:
             act_optimization_configuration.progress_data.start_time = time.perf_counter()
             act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            nb_fil_pt = self._optimize(act_optimization_configuration.circuit_id,
-                                       act_optimization_configuration.transformer_optimization_dto,
-                                       filter_data, target_number_trials, factor_dc_min_losses,
-                                       factor_dc_max_losses, enable_operating_range_simulation, debug)
+            number_filtered_point = self._optimize(act_optimization_configuration.circuit_filtered_point_filename,
+                                                   act_optimization_configuration.transformer_optimization_dto,
+                                                   filter_data, target_number_trials, factor_dc_min_losses,
+                                                   factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             # Update statistical data
             #  with self._t_lock_stat:
-            act_optimization_configuration.progress_data.run_time = time.perf_counter() - act_optimization_configuration.progress_data.start_time
-            act_optimization_configuration.progress_data.number_of_filtered_points = nb_fil_pt
+            act_optimization_configuration.progress_data.run_time = (
+                time.perf_counter() - act_optimization_configuration.progress_data.start_time)
+            act_optimization_configuration.progress_data.number_of_filtered_points = number_filtered_point
             act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
             # Increment performed calculation counter
             self._number_performed_calculations = self._number_performed_calculations + 1
