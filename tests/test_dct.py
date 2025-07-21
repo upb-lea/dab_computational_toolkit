@@ -686,7 +686,7 @@ def test_circuit_toml_2_dto(test_index: int) -> None:
     # Length of string_test_arrays
     str_list_len = len(string_test_arrays)
 
-    str_sampling_methode_values: list[str] = ["latin_hypercube", "meshgrid", "poisson_disk_sampling"]
+    str_sampling_methode_values: list[str] = ["latin_hypercube", "meshgrid"]
     str_sampling_len = len(str_sampling_methode_values)
 
     # Constant values of FlowControl
@@ -715,11 +715,13 @@ def test_circuit_toml_2_dto(test_index: int) -> None:
             v2_min_max_list=float_test_arrays[(test_index + 6) % float_list_len],
             p_min_max_list=float_test_arrays[test_index % float_list_len]),
         sampling=tc.TomlSampling(
-            sampling_method="latin_hypercube",
+            sampling_method=dct.SamplingEnum.latin_hypercube,
             sampling_points=int_test_values[test_index % int_test_len],
+            sampling_random_seed=10,
             v1_additional_user_point_list=float_test_arrays[(test_index + 1) % float_list_len],
             v2_additional_user_point_list=float_test_arrays[(test_index + 2) % float_list_len],
-            p_additional_user_point_list=float_test_arrays[test_index % float_list_len]),
+            p_additional_user_point_list=float_test_arrays[test_index % float_list_len],
+            additional_user_weighting_point_list=[0.5, 0.5]),
         filter_distance=tc.TomlCircuitFilterDistance(
             number_filtered_designs=int_test_values[(test_index + 1) % int_test_len],
             difference_percentage=float_test_values[(test_index + 3) % float_test_len]))
@@ -741,9 +743,9 @@ def test_circuit_toml_2_dto(test_index: int) -> None:
     assert result.design_space.transistor_2_name_list == test_parameter_1.design_space.transistor_2_name_list
     assert result.design_space.c_par_1 == test_parameter_1.design_space.c_par_1
     assert result.design_space.c_par_2 == test_parameter_1.design_space.c_par_2
-    assert result.output_range.v1_min_nom_max_list == test_parameter_1.output_range.v1_min_max_list
-    assert result.output_range.v2_min_nom_max_list == test_parameter_1.output_range.v2_min_max_list
-    assert result.output_range.p_min_nom_max_list == test_parameter_1.output_range.p_min_max_list
+    assert result.output_range.v1_min_max_list == test_parameter_1.output_range.v1_min_max_list
+    assert result.output_range.v2_min_max_list == test_parameter_1.output_range.v2_min_max_list
+    assert result.output_range.p_min_max_list == test_parameter_1.output_range.p_min_max_list
     assert result.sampling.sampling_method == test_parameter_1.sampling.sampling_method
     assert result.sampling.sampling_points == test_parameter_1.sampling.sampling_points
     assert result.sampling.v1_additional_user_point_list == test_parameter_1.sampling.v1_additional_user_point_list

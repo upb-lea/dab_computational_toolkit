@@ -32,10 +32,10 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
     if not isinstance(dab_config.gecko_results, d_dtos.GeckoResults):
         raise TypeError(f"{dab_config.gecko_results} is not of Type GeckoResults.")
     # Plot a cross-section through the V1 plane
-    v1_middle = int(np.shape(dab_config.calc_config.mesh_p)[1] / 2)
-    logger.info('View plane: U_1 = {:.1f}V'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0]))
-    simulation_name += '_V1_{:.0f}V'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
-    comment += ' View plane: V_1 = {:.1f}V'.format(dab_config.calc_config.mesh_v1[0, v1_middle, 0])
+    v1_middle = int(np.shape(dab_config.input_config.mesh_p)[1] / 2)
+    logger.info('View plane: U_1 = {:.1f}V'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0]))
+    simulation_name += '_V1_{:.0f}V'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0])
+    comment += ' View plane: V_1 = {:.1f}V'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0])
 
     plt = PlotDAB(is_latex=False, show=show_plot, figsize=(15, 5), fontsize=22)
 
@@ -75,8 +75,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
             maskZVS = None  # type: ignore
 
     # Plot all modulation angles
-    plt.plot_modulation(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                        dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.plot_modulation(dab_config.input_config.mesh_p[:, v1_middle, :],
+                        dab_config.input_config.mesh_v2[:, v1_middle, :],
                         dab_config.calc_modulation.phi[:, v1_middle, :],
                         dab_config.calc_modulation.tau1[:, v1_middle, :],
                         dab_config.calc_modulation.tau2[:, v1_middle, :],
@@ -91,9 +91,9 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
 
     # v_ds plots
     plt.new_fig(nrows=1, ncols=2, tab_title=modulation_name + ' ZVS')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
-                         dab_config.gecko_results.v_ds_S11_sw_on[:, v1_middle, :] / dab_config.calc_config.mesh_v1[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
+                         dab_config.gecko_results.v_ds_S11_sw_on[:, v1_middle, :] / dab_config.input_config.mesh_v1[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
                          mask3=mask3,
@@ -103,9 +103,9 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          ylabel=r'$U_\mathrm{DC2} \:/\: \mathrm{V}$',
                          title=r'$u_\mathrm{DS,S11,sw-on} \:/\: U_\mathrm{DC1}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
-                         dab_config.gecko_results.v_ds_S23_sw_on[:, v1_middle, :] / dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
+                         dab_config.gecko_results.v_ds_S23_sw_on[:, v1_middle, :] / dab_config.input_config.mesh_v2[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
                          mask3=mask3,
@@ -119,8 +119,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
 
     # i_l plots 'i_HF1_S11_sw_on', 'i_HF2_S23_sw_on'
     plt.new_fig(nrows=1, ncols=2, tab_title=modulation_name + ' i_L')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.i_HF1_S11_sw_on[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -129,8 +129,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          ylabel=r'$U_\mathrm{DC2} \:/\: \mathrm{V}$',
                          title=r'$i_\mathrm{1,S11,sw-on} \:/\: \mathrm{A}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.i_HF2_S23_sw_on[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -143,8 +143,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
 
     # Total loss
     plt.new_fig(nrows=1, ncols=3, tab_title=modulation_name + ' Total Loss')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.power_deviation[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -155,8 +155,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          ylabel=r'$U_\mathrm{DC2} \:/\: \mathrm{V}$',
                          title=r'$P_\mathrm{out,Sim} \:/\: P_\mathrm{out,desired}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.p_sw1[:, v1_middle, :] + dab_config.gecko_results.p_sw2[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -164,8 +164,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          ax=plt.figs_axes[-1][1][1],
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$P_\mathrm{sw,total} \:/\: \mathrm{W}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.p_cond1[:, v1_middle, :] + dab_config.gecko_results.p_cond2[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -178,8 +178,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
 
     # Plot power loss
     plt.new_fig(nrows=1, ncols=4, tab_title=modulation_name + ' Power Loss')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.S11_p_sw[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -187,8 +187,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          ax=plt.figs_axes[-1][1][0],
                          xlabel=r'$P \:/\: \mathrm{W}$', ylabel=r'$U_\mathrm{DC2} \:/\: \mathrm{V}$',
                          title=r'$P_\mathrm{S11,sw} \:/\: \mathrm{W}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.S11_p_cond[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -196,8 +196,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          ax=plt.figs_axes[-1][1][1],
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$P_\mathrm{S11,cond} \:/\: \mathrm{W}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.S23_p_sw[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -205,8 +205,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          ax=plt.figs_axes[-1][1][2],
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$P_\mathrm{S23,sw} \:/\: \mathrm{W}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.S23_p_cond[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -219,8 +219,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
 
     # Plot inductor currents
     plt.new_fig(nrows=1, ncols=3, tab_title=modulation_name + ' Inductor currents')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.i_HF1[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -229,8 +229,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          ylabel=r'$U_\mathrm{DC2} \:/\: \mathrm{V}$',
                          title=r'$I_\mathrm{1} \:/\: \mathrm{A}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.i_Lc1[:, v1_middle, :],
                          mask1=mask1,
                          mask2=mask2,
@@ -238,8 +238,8 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          ax=plt.figs_axes[-1][1][1],
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$I_\mathrm{L1} \:/\: \mathrm{A}$')
-    plt.subplot_contourf(dab_config.calc_config.mesh_p[:, v1_middle, :],
-                         dab_config.calc_config.mesh_v2[:, v1_middle, :],
+    plt.subplot_contourf(dab_config.input_config.mesh_p[:, v1_middle, :],
+                         dab_config.input_config.mesh_v2[:, v1_middle, :],
                          dab_config.gecko_results.i_Lc2[:, v1_middle, :] / dab_config.input_config.n,
                          mask1=mask1,
                          mask2=mask2,

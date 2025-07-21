@@ -15,6 +15,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
+import dct.sampling as sampling
 
 import dct.datasets_dtos
 # own libraries
@@ -23,6 +24,7 @@ import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.circuit_enums import SamplingEnum
 
 logger = logging.getLogger(__name__)
 
@@ -192,12 +194,9 @@ class CircuitOptimization:
 
         dab_calc = d_sets.HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
-            v1_min=dab_config.output_range.v1_min_nom_max_list[0],
-            v1_max=dab_config.output_range.v1_min_nom_max_list[1],
-            v2_min=dab_config.output_range.v2_min_nom_max_list[0],
-            v2_max=dab_config.output_range.v2_min_nom_max_list[1],
-            p_min=dab_config.output_range.p_min_nom_max_list[0],
-            p_max=dab_config.output_range.p_min_nom_max_list[1],
+            mesh_v1=fixed_parameters.mesh_v1,
+            mesh_v2=fixed_parameters.mesh_v2,
+            mesh_p=fixed_parameters.mesh_p,
             sampling=dab_config.sampling,
             n=n_suggest,
             ls=l_s_suggest,
@@ -214,9 +213,13 @@ class CircuitOptimization:
                 or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
-        # Calculate the cost function. Mean for not-NaN values, as there will be too many NaN results.
+        # Calculate the cost function.
         i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
-        i_cost = np.mean(i_cost_matrix[~np.isnan(i_cost_matrix)])
+        # consider weighting
+        i_cost_matrix_weighted = i_cost_matrix * fixed_parameters.mesh_weights
+
+        # Mean for not-NaN values, as there will be too many NaN results.
+        i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
         return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
 
@@ -239,9 +242,63 @@ class CircuitOptimization:
         for transistor in dab_config.design_space.transistor_2_name_list:
             transistor_2_dto_list.append(d_sets.HandleTransistorDto.tdb_to_transistor_dto(transistor))
 
+        # choose sampling method
+        if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
+            steps_per_dimension = int(np.ceil(np.power(dab_config.sampling.sampling_points, 1 / 3)))
+            logger.info(f"Number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
+            logger.info("Note: meshgrid sampling does not take user-given operating points into account")
+            v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
+                np.linspace(dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
+                np.linspace(dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
+                np.linspace(dab_config.output_range.p_min_max_list[0], dab_config.output_range.p_min_max_list[1], steps_per_dimension),
+                sparse=False)
+        elif dab_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
+            v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
+                dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1],
+                dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1],
+                dab_config.output_range.p_min_max_list[0], dab_config.output_range.p_min_max_list[1],
+                total_number_points=dab_config.sampling.sampling_points,
+                dim_1_user_given_points_list=dab_config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=dab_config.sampling.v2_additional_user_point_list,
+                dim_3_user_given_points_list=dab_config.sampling.p_additional_user_point_list, sampling_random_seed=dab_config.sampling.sampling_random_seed)
+        else:
+            raise ValueError(f"sampling_method '{dab_config.sampling.sampling_method}' not available.")
+
+        logger.debug(f"{v1_operating_points=}")
+
+        # calculate weighting
+
+        if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
+            weight_sum = 0
+            given_user_points = 0
+        else:
+            weight_sum = np.sum(dab_config.sampling.additional_user_weighting_point_list)
+            logger.debug(f"{weight_sum=}")
+            given_user_points = len(dab_config.sampling.v1_additional_user_point_list)
+        logger.debug(f"{given_user_points=}")
+        logger.debug(f"{v1_operating_points.size=}")
+
+        if weight_sum > 1 or weight_sum < 0:
+            raise ValueError("Sum of weighting point list must be within 0 and 1.")
+        else:
+            leftover_auto_weight = (1 - weight_sum) / (v1_operating_points.size - given_user_points)
+            logger.info(f"Auto-weight given for all other {v1_operating_points.size - given_user_points} operating points: {leftover_auto_weight}")
+            # default case, same weights for all points
+            weights = np.full_like(v1_operating_points, leftover_auto_weight)
+            # for user point weightings, both lists must be filled.
+            if dab_config.sampling.additional_user_weighting_point_list and dab_config.sampling.sampling_method != SamplingEnum.meshgrid:
+                logger.debug("Given user weighting point list detected, fill up with user-given weights.")
+                weights[-len(dab_config.sampling.additional_user_weighting_point_list):] = dab_config.sampling.additional_user_weighting_point_list
+            logger.debug(f"{weights=}")
+            logger.debug(f"Double check: Sum of weights = {np.sum(weights)}")
+
         fix_parameters = d_dtos.FixedParameters(
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
+            mesh_v1=np.atleast_3d(v1_operating_points),
+            mesh_v2=np.atleast_3d(v2_operating_points),
+            mesh_p=np.atleast_3d(p_operating_points),
+            mesh_weights=np.atleast_3d(weights)
         )
         return fix_parameters
 
@@ -490,14 +547,13 @@ class CircuitOptimization:
         logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
+        fix_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+
         dab_dto = d_sets.HandleDabDto.init_config(
             name=str(trial_number),
-            v1_min=dab_config.output_range.v1_min_nom_max_list[0],
-            v1_max=dab_config.output_range.v1_min_nom_max_list[1],
-            v2_min=dab_config.output_range.v2_min_nom_max_list[0],
-            v2_max=dab_config.output_range.v2_min_nom_max_list[1],
-            p_min=dab_config.output_range.p_min_nom_max_list[0],
-            p_max=dab_config.output_range.p_min_nom_max_list[1],
+            mesh_v1=fix_parameters.mesh_v1,
+            mesh_v2=fix_parameters.mesh_v2,
+            mesh_p=fix_parameters.mesh_p,
             sampling=dab_config.sampling,
             n=trials_dict["n_suggest"],
             ls=trials_dict["l_s_suggest"],
@@ -527,18 +583,17 @@ class CircuitOptimization:
 
         dab_dto_list = []
 
+        fix_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+
         for index, _ in df.iterrows():
             transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_1_name_suggest"][index])
             transistor_dto_2 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_2_name_suggest"][index])
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
-                v1_min=dab_config.output_range.v1_min_nom_max_list[0],
-                v1_max=dab_config.output_range.v1_min_nom_max_list[1],
-                v2_min=dab_config.output_range.v2_min_nom_max_list[0],
-                v2_max=dab_config.output_range.v2_min_nom_max_list[1],
-                p_min=dab_config.output_range.p_min_nom_max_list[0],
-                p_max=dab_config.output_range.p_min_nom_max_list[1],
+                mesh_v1=fix_parameters.mesh_v1,
+                mesh_v2=fix_parameters.mesh_v2,
+                mesh_p=fix_parameters.mesh_p,
                 sampling=dab_config.sampling,
                 n=df["params_n_suggest"][index].item(),
                 ls=df["params_l_s_suggest"][index].item(),
