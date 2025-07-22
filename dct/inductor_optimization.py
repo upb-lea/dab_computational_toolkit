@@ -86,8 +86,8 @@ class InductorOptimization:
                                                     progress_status=ProgressStatus.Idle)
 
         # Create the io_config_list for all trials
-        for circuit_trial_number in filter_data.filtered_list_id:
-            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_number}.pkl")
+        for circuit_trial_file in filter_data.filtered_list_files:
+            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
             # Check filename
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
@@ -99,15 +99,13 @@ class InductorOptimization:
                 # Generate new io_config
                 next_io_config = copy.deepcopy(io_config_gen)
                 act_time_current_vec = np.array([time, i_l_1_max_current_waveform])
-                # Add dynamic values to next_io_config
-                next_io_config.circuit_trial_number = circuit_trial_number
-
                 next_io_config.target_inductance = circuit_dto.input_config.Lc1
                 next_io_config.time_current_vec = act_time_current_vec
                 next_io_config.inductor_optimization_directory = os.path.join(
-                    study_data.optimization_directory, str(circuit_trial_number), study_data.study_name)
+                    study_data.optimization_directory, circuit_trial_file, study_data.study_name)
                 inductor_dto = dct.inductor_optimization_dtos.InductorOptimizationDto(
-                    circuit_id=circuit_trial_number, progress_data=copy.deepcopy(stat_data_init), inductor_optimization_dto=next_io_config)
+                    circuit_filtered_point_filename=circuit_trial_file, progress_data=copy.deepcopy(stat_data_init),
+                    inductor_optimization_dto=next_io_config)
                 self._optimization_config_list.append(inductor_dto)
             else:
                 logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
@@ -160,14 +158,14 @@ class InductorOptimization:
         return act_number_performed_calculations
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def _optimize(self, circuit_id: int, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
+    def _optimize(self, circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
                   enable_operating_range_simulation: bool, debug: bool) -> int:
         """
         Perform the optimization.
 
-        :param circuit_id: Name of the filtered optimal electrical circuit
-        :type  circuit_id: int
+        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
+        :type  circuit_filtered_point_file: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
@@ -188,7 +186,7 @@ class InductorOptimization:
         number_of_filtered_points = 0
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -263,7 +261,7 @@ class InductorOptimization:
                             logger.info("----------------------")
                             logger.info("All operating point simulation of:")
                             logger.info(f"   * Circuit study: {filter_data.circuit_study_name}")
-                            logger.info(f"   * Circuit trial: {circuit_id}")
+                            logger.info(f"   * Circuit trial: {circuit_filtered_point_file}")
                             logger.info(f"   * Inductor study: {act_io_config.inductor_study_name}")
                             logger.info(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
@@ -277,7 +275,7 @@ class InductorOptimization:
                         p_combined_losses=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_number=circuit_id,
+                        circuit_trial_file=circuit_filtered_point_file,
                         inductor_trial_number=re_simulate_number,
                     )
 
@@ -327,7 +325,7 @@ class InductorOptimization:
 
             # Perform optimization
             number_of_filtered_points = self._optimize(
-                act_optimization_configuration.circuit_id,
+                act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
                 factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 

@@ -12,6 +12,6 @@ from dct.server_ctl_dtos import ProgressData
 class InductorOptimizationDto:
     """DTO for the inductor optimization."""
 
-    circuit_id: int
+    circuit_filtered_point_filename: str
     progress_data: ProgressData
     inductor_optimization_dto: fmt.InductorOptimizationDTO

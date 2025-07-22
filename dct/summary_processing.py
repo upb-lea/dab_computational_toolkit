@@ -201,9 +201,9 @@ class DctSummaryProcessing:
             DctSummaryProcessing._progress_data.progress_status = ProgressStatus.InProgress
 
         # iterate circuit numbers
-        for circuit_number in filter_data.filtered_list_id:
+        for circuit_trial_file in filter_data.filtered_list_files:
             # Assemble pkl-filename
-            circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_number}.pkl")
+            circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
 
             # Get circuit results
             circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
@@ -239,13 +239,13 @@ class DctSummaryProcessing:
                 circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
             # End: ASA: No influence by inductor or transformer ################################
 
-            logger.info(f"{circuit_number=}")
+            logger.info(f"{circuit_trial_file=}")
 
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
 
                 # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losses
-                inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, str(circuit_number),
+                inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file,
                                                          inductor_study_name,
                                                          "09_circuit_dtos_incl_inductor_losses")
 
@@ -265,8 +265,8 @@ class DctSummaryProcessing:
                     with open(inductor_filepath_number, 'rb') as pickle_file_data:
                         inductor_dto = pickle.load(pickle_file_data)
 
-                    if int(inductor_dto.circuit_trial_number) != int(circuit_number):
-                        raise ValueError(f"{inductor_dto.circuit_trial_number=} != {circuit_number}")
+                    if inductor_dto.circuit_trial_file != circuit_trial_file:
+                        raise ValueError(f"{inductor_dto.circuit_trial_file=} != {circuit_trial_file}")
                     if int(inductor_dto.inductor_trial_number) != int(inductor_number):
                         raise ValueError(f"{inductor_dto.inductor_trial_number=} != {inductor_number}")
 
@@ -277,7 +277,7 @@ class DctSummaryProcessing:
 
                         # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losses
                         stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
-                                                                            str(circuit_number),
+                                                                            circuit_trial_file,
                                                                             stacked_transformer_study_name,
                                                                             "09_circuit_dtos_incl_transformer_losses")
 
@@ -297,8 +297,8 @@ class DctSummaryProcessing:
                             with open(stacked_transformer_filepath_number, 'rb') as pickle_file_data:
                                 transformer_dto = pickle.load(pickle_file_data)
 
-                            if int(transformer_dto.circuit_trial_number) != int(circuit_number):
-                                raise ValueError(f"{transformer_dto.circuit_trial_number=} != {circuit_number}")
+                            if transformer_dto.circuit_trial_file != circuit_trial_file:
+                                raise ValueError(f"{transformer_dto.circuit_trial_file=} != {circuit_trial_file}")
                             if int(transformer_dto.stacked_transformer_trial_number) != int(stacked_transformer_number):
                                 raise ValueError(f"{transformer_dto.stacked_transformer_trial_number=} != {stacked_transformer_number}")
 
@@ -340,7 +340,7 @@ class DctSummaryProcessing:
 
                             data = {
                                 # circuit
-                                "circuit_number": circuit_number,
+                                "circuit_trial_file": circuit_trial_file,
                                 "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
                                 "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
                                 "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],

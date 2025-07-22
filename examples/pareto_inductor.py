@@ -7,7 +7,6 @@ import logging
 import sys
 
 # 3rd party libraries
-import pandas as pd
 import numpy as np
 import tqdm
 
@@ -37,13 +36,13 @@ material_data_sources = fmt.InductorMaterialDataSources(
 )
 
 
-def simulation(circuit_trial_numbers: list, process_number: int, target_number_trials: int,
+def simulation(circuit_trial_files: list[str], process_number: int, target_number_trials: int,
                filter_factor: float = 1.0, re_simulate: bool = False, debug: bool = False) -> None:
     """
     Simulate.
 
-    :param circuit_trial_numbers: List of circuit trial numbers to perform inductor optimization
-    :type circuit_trial_numbers: list
+    :param circuit_trial_files: List of circuit trial numbers to perform inductor optimization
+    :type circuit_trial_files:  list[str]
     :param process_number: Process number (in case of parallel computing)
     :type process_number: int
     :param target_number_trials: Number of trials for the reluctance model optimization
@@ -57,8 +56,8 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
     """
     filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
-    for circuit_trial_number in circuit_trial_numbers:
-        circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_number}.pkl")
+    for circuit_trial_file in circuit_trial_files:
+        circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results", f"{circuit_trial_file}.pkl")
 
         circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
         # get the peak current waveform
@@ -112,10 +111,10 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
             df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
             # fmt.InductorOptimization.FemSimulation.fem_vs_reluctance_pareto(df_fem_reluctance)
 
-            config_filepath = os.path.join(filepaths.inductor, circuit_study_name, str(circuit_trial_number), inductor_study_name, f"{inductor_study_name}.pkl")
+            config_filepath = os.path.join(filepaths.inductor, circuit_study_name, str(circuit_trial_file), inductor_study_name, f"{inductor_study_name}.pkl")
 
             # workaround for comma problem. Read a random csv file and set back the delimiter.
-            pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+            # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
 
             # sweep through all current waveforms
             i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
@@ -150,7 +149,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                             print("----------------------")
                             print("Re-simulation of:")
                             print(f"   * Circuit study: {circuit_study_name}")
-                            print(f"   * Circuit trial: {circuit_trial_number}")
+                            print(f"   * Circuit trial: {circuit_trial_file}")
                             print(f"   * Inductor study: {inductor_study_name}")
                             print(f"   * Inductor re-simulation trial: {re_simulate_number}")
 
@@ -163,7 +162,7 @@ def simulation(circuit_trial_numbers: list, process_number: int, target_number_t
                         p_combined_losses=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_number=circuit_trial_number,
+                        circuit_trial_file=circuit_trial_file,
                         inductor_trial_number=re_simulate_number,
                     )
 
@@ -190,17 +189,17 @@ if __name__ == '__main__':
     inductor_study_name = "inductor_01"
 
     # inductor optimization
-    process_circuit_trial_numbers = [682]
+    process_circuit_trial_files = ["872"]
 
     filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
     circuit_filepath = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
     objects = os.scandir(circuit_filepath)
-    all_circuit_trial_numbers = [entity.name.replace(".pkl", "") for entity in objects]
+    all_circuit_trial_files = [entity.name.replace(".pkl", "") for entity in objects]
 
     # check for empty list
-    if not process_circuit_trial_numbers:
+    if not process_circuit_trial_files:
         # define circuit numbers per process
-        process_circuit_trial_numbers = [all_circuit_trial_numbers[index] for index in range(0, len(all_circuit_trial_numbers))
-                                         if (index + 1 - process_number) % total_processes == 0]
+        process_circuit_trial_files = [all_circuit_trial_files[index] for index in range(0, len(all_circuit_trial_files))
+                                       if (index + 1 - process_number) % total_processes == 0]
 
-    simulation(process_circuit_trial_numbers, process_number=process_number, target_number_trials=1100, filter_factor=0.02, re_simulate=True, debug=False)
+    simulation(process_circuit_trial_files, process_number=process_number, target_number_trials=100, filter_factor=0.02, re_simulate=True, debug=False)
