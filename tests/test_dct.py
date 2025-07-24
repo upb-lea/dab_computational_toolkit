@@ -1071,7 +1071,6 @@ def test__get_page_main_data(caplog: LogCaptureFixture, test_index: int) -> None
     exp_result_queue_detail_data.heat_sink_list[0].progress_data = copy.deepcopy(progress_data_heat_sink)
     exp_result_queue_detail_data.summary_data.progress_data = copy.deepcopy(progress_data_summary)
 
-
     # Create the instance
     test_dct: dct.DctMainCtl = dct.DctMainCtl()
     # Allocate dct timer members

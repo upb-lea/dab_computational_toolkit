@@ -140,7 +140,6 @@ class DctSummaryProcessing:
 
         return copy.deepcopy(self._progress_data)
 
-
     def _generate_magnetic_number_list(self, act_dir_name: str) -> tuple[bool, list[str]]:
         """Generate a list of the numbers from filenames.
 
@@ -413,7 +412,6 @@ class DctSummaryProcessing:
         df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
         # Save results to file (ASA : later to store only on demand)
         df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
-
 
         # Start the progress time measurement
         with self._s_lock_stat:
