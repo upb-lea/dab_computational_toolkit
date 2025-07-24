@@ -15,6 +15,8 @@ import femmt as fmt
 class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
 
+    circuit_optimization: dct.CircuitOptimization = dct.CircuitOptimization()
+
     @staticmethod
     def generate_pdf_pareto(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
                             x_label: str, y_label: str, label_list: list[str | None], fig_name: str) -> None:
@@ -82,10 +84,11 @@ class ParetoPlots:
         :type toml_prog_flow: tc.FlowControl
         """
         # load circuit configuration file
-        dab_config = dct.CircuitOptimization.load_config(
-            toml_prog_flow.general.project_directory, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+        dab_config = ParetoPlots.circuit_optimization.load_config(
+            toml_prog_flow.general.project_directory, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(
+                ".toml", ""))
         # generate circuit dataframe
-        df_circuit = dct.CircuitOptimization.study_to_df(dab_config)
+        df_circuit = ParetoPlots.circuit_optimization.study_to_df(dab_config)
 
         fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "circuit")
 
@@ -233,8 +236,8 @@ class ParetoPlots:
         """
         df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.summary.subdirectory}/df_w_hs.csv")
 
-        df_filtered = dct.CircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
-                                                        factor_min_dc_losses=0.001, factor_max_dc_losses=10)
+        df_filtered = ParetoPlots.circuit_optimization.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                                 factor_min_dc_losses=0.001, factor_max_dc_losses=10)
 
         dct.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)

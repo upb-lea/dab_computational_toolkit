@@ -17,10 +17,13 @@ circuit_study_name = "circuit_01"
 inductor_study_name_list = ["inductor_01"]
 stacked_transformer_study_name_list = ["transformer_01"]
 
+# Allocate instance CircuitOptimization
+circuit_optimization: dct.CircuitOptimization = dct.CircuitOptimization()
+
 df = pd.DataFrame()
 
 # load project file paths
-filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+filepaths = circuit_optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
 circuit_filepath_results = os.path.join(filepaths.circuit, circuit_study_name, "filtered_results")
 circuit_objects = os.scandir(circuit_filepath_results)

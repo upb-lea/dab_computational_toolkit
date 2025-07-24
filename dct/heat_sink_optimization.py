@@ -1,7 +1,6 @@
 """Inductor optimization class."""
 # python libraries
 import os
-import time
 import copy
 import threading
 import logging
@@ -13,6 +12,7 @@ import hct
 import dct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)
@@ -23,12 +23,14 @@ class HeatSinkOptimization:
     # Simulation configuration list
     _hct_config: hct.OptimizationParameters
     _progress_data: ProgressData
+    _progress_run_time: RunTime
 
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
         self._hct_config: hct.OptimizationParameters
-        self._progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0.0, number_of_filtered_points=0,
+        self._progress_data: ProgressData = ProgressData(run_time=0.0, number_of_filtered_points=0,
                                                          progress_status=ProgressStatus.Idle)
+        self._progress_run_time: RunTime = RunTime()
         self._h_lock_stat: threading.Lock = threading.Lock()
 
     def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
@@ -94,19 +96,15 @@ class HeatSinkOptimization:
         """
         # Lock statistical performance data access
         with self._h_lock_stat:
-            # Update statistical data if optimization is running
+            # Check if list is in progress
             if self._progress_data.progress_status == ProgressStatus.InProgress:
-                self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
-                # Check for valid entry
-                if self._progress_data.run_time < 0:
-                    self._progress_data.run_time = 0.0
-                    self._progress_data.start_time = time.perf_counter()
+                # Update statistical data if optimization is running
+                self._progress_data.run_time = self._progress_run_time.get_runtime()
 
         return copy.deepcopy(self._progress_data)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    @staticmethod
-    def _optimize(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool) -> None:
+    def _optimize(self, act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool) -> None:
         """
         Perform the simulation.
 
@@ -136,10 +134,10 @@ class HeatSinkOptimization:
         :param debug: Debug mode flag
         :type  debug: bool
         """
-        # Update statistical data
+        # Start the progress time measurement
         with self._h_lock_stat:
-            self._progress_data.start_time = time.perf_counter()
-            self._progress_data.run_time = 0.0
+            self._progress_run_time.reset_start_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.InProgress
 
         # Perform optimization
@@ -150,22 +148,18 @@ class HeatSinkOptimization:
                 if target_number_trials > 100:
                     target_number_trials = 100
 
-        HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
+        self._optimize(self._hct_config, target_number_trials, debug)
 
         # Update statistical data
         with self._h_lock_stat:
-            self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
-            # Check for valid entry
-            if self._progress_data.run_time < 0:
-                self._progress_data.run_time = 0.0
-                self._progress_data.start_time = time.perf_counter()
+            self._progress_run_time.stop_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.Done
 
 class ThermalCalcSupport:
     """Provides functions to calculate the thermal resistance."""
 
-    @staticmethod
-    def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55e-3,
+    def calculate_r_th_copper_coin(self, cooling_area: float, height_pcb: float = 1.55e-3,
                                    height_pcb_heat_sink: float = 3.0e-3) -> tuple[float, float]:
         """
         Calculate the thermal resistance of the copper coin.
@@ -194,8 +188,7 @@ class ThermalCalcSupport:
 
         return r_copper_coin, effective_bottom_cooling_area
 
-    @staticmethod
-    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
+    def calculate_r_th_tim(self, copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
         """
         Calculate the thermal resistance of the thermal interface material (TIM).
 

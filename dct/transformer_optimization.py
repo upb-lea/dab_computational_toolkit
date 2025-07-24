@@ -6,7 +6,6 @@ import copy
 import logging
 import os.path
 import pickle
-import time
 import threading
 
 # 3rd party libraries
@@ -18,6 +17,7 @@ import dct.transformer_optimization_dtos
 import femmt as fmt
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +27,14 @@ class TransformerOptimization:
     # List with configurations to optimize and lock variable
     _optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto]
     _t_lock_stat: threading.Lock
+    _progress_run_time: RunTime
 
     def __init__(self) -> None:
         """Initialize the configuration list for the transformer optimizations."""
         self._optimization_config_list = []
         self._t_lock_stat: threading.Lock = threading.Lock()
         self._number_performed_calculations: int = 0
+        self._progress_run_time: RunTime = RunTime()
 
     def generate_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
@@ -113,7 +115,7 @@ class TransformerOptimization:
         )
 
         # Initialize the statistical data
-        stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
+        stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
         # Create the sto_config_list for all filtered circuit trials
         for circuit_trial_file in filter_data.filtered_list_files:
@@ -167,24 +169,20 @@ class TransformerOptimization:
         """
         # Variable declaration and default initialization
         ret_progress_data: ProgressData = ProgressData(
-            start_time=0.0, run_time=0, number_of_filtered_points=0,
+            run_time=0, number_of_filtered_points=0,
             progress_status=ProgressStatus.Idle)
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
-            # Lock statistical performance data access   (ASA: Possible Bug)
-            # with self._t_lock_stat: -> ASA: Later to repair
-            # Update statistical data if optimization is running
-            if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
-                self._optimization_config_list[filtered_list_id].progress_data.run_time = (
-                    time.perf_counter() - self._optimization_config_list[filtered_list_id].progress_data.start_time)
-                # Check for valid entry
-                if self._optimization_config_list[filtered_list_id].progress_data.run_time < 0:
-                    self._optimization_config_list[filtered_list_id].progress_data.run_time = 0.0
-                    self._optimization_config_list[filtered_list_id].progress_data.start_time = time.perf_counter()
+            # Lock statistical performance data access (ASA: Possible Bug)
+            with self._t_lock_stat:
+                # Check if list is in progress
+                if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
+                    # Update statistical data
+                    self._optimization_config_list[filtered_list_id].progress_data.run_time = self._progress_run_time.get_runtime()
 
-            # Create a copy of actual data
-            ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
+                # Create a copy of actual data
+                ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
 
         return ret_progress_data
 
@@ -361,23 +359,24 @@ class TransformerOptimization:
                         target_number_trials = 100
 
             # Update statistical data
-            # with self._t_lock_stat:
-            act_optimization_configuration.progress_data.start_time = time.perf_counter()
-            act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
+            with self._t_lock_stat:
+                self._progress_run_time.reset_start_trigger()
+                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            number_filtered_point = self._optimize(act_optimization_configuration.circuit_filtered_point_filename,
-                                                   act_optimization_configuration.transformer_optimization_dto,
-                                                   filter_data, target_number_trials, factor_dc_min_losses,
-                                                   factor_dc_max_losses, enable_operating_range_simulation, debug)
+            number_of_filtered_point = self._optimize(act_optimization_configuration.circuit_filtered_point_filename,
+                                                      act_optimization_configuration.transformer_optimization_dto,
+                                                      filter_data, target_number_trials, factor_dc_min_losses,
+                                                      factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             # Update statistical data
-            #  with self._t_lock_stat:
-            act_optimization_configuration.progress_data.run_time = (
-                time.perf_counter() - act_optimization_configuration.progress_data.start_time)
-            act_optimization_configuration.progress_data.number_of_filtered_points = number_filtered_point
-            act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
-            # Increment performed calculation counter
-            self._number_performed_calculations = self._number_performed_calculations + 1
+            with self._t_lock_stat:
+                self._progress_run_time.stop_trigger()
+                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_point
+                act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
+                # Increment performed calculation counter
+                self._number_performed_calculations = self._number_performed_calculations + 1
 
             if debug:
                 # stop after one circuit run
