@@ -194,7 +194,8 @@ class TransformerOptimization:
         """
         return self._number_performed_calculations
 
-    def _optimize(self, circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+    @staticmethod
+    def _optimize(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
                   act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> int:
         """
         Perform the optimization.
@@ -364,10 +365,11 @@ class TransformerOptimization:
                 act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
                 act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            number_of_filtered_point = self._optimize(act_optimization_configuration.circuit_filtered_point_filename,
-                                                      act_optimization_configuration.transformer_optimization_dto,
-                                                      filter_data, target_number_trials, factor_dc_min_losses,
-                                                      factor_dc_max_losses, enable_operating_range_simulation, debug)
+            number_of_filtered_point = TransformerOptimization._optimize(
+                act_optimization_configuration.circuit_filtered_point_filename,
+                act_optimization_configuration.transformer_optimization_dto,
+                filter_data, target_number_trials, factor_dc_min_losses,
+                factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             # Update statistical data
             with self._t_lock_stat:

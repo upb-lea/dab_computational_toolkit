@@ -97,9 +97,9 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
 
     if expected_exception:
         with pytest.raises(expected_exception):
-            test_object.calculate_fix_parameters(dab_config)
+            dct.CircuitOptimization.calculate_fixed_parameters(dab_config)
     else:
-        output = test_object.calculate_fix_parameters(dab_config)
+        output = dct.CircuitOptimization.calculate_fixed_parameters(dab_config)
         assert_array_equal(result_weighting, output.mesh_weights)
 
         for info_message_id in expected_message_id_list:

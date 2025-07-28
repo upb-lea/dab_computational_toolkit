@@ -87,7 +87,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                         tab_title=modulation_name + ' Modulation Angles'
                         )
     fname = 'mod_' + modulation_name + '_' + simulation_name + '_' + 'fig1'
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
 
     # v_ds plots
     plt.new_fig(nrows=1, ncols=2, tab_title=modulation_name + ' ZVS')
@@ -115,7 +115,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$u_\mathrm{DS,S23,sw-on} \:/\: U_\mathrm{DC2}$')
     fname = 'mod_' + modulation_name + '_' + simulation_name + '_' + 'fig2'
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
 
     # i_l plots 'i_HF1_S11_sw_on', 'i_HF2_S23_sw_on'
     plt.new_fig(nrows=1, ncols=2, tab_title=modulation_name + ' i_L')
@@ -139,7 +139,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$i_\mathrm{2,S23,sw-on} \:/\: \mathrm{A}$')
     fname = 'mod_' + modulation_name + '_' + simulation_name + '_' + 'fig3'
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
 
     # Total loss
     plt.new_fig(nrows=1, ncols=3, tab_title=modulation_name + ' Total Loss')
@@ -174,7 +174,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$P_\mathrm{cond,total} \:/\: \mathrm{W}$')
     fname = 'mod_' + modulation_name + '_' + simulation_name + '_' + 'fig4'
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
 
     # Plot power loss
     plt.new_fig(nrows=1, ncols=4, tab_title=modulation_name + ' Power Loss')
@@ -215,7 +215,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$P_\mathrm{S23,cond} \:/\: \mathrm{W}$')
     fname = 'mod_' + modulation_name + '_' + simulation_name + '_' + 'fig5'
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
 
     # Plot inductor currents
     plt.new_fig(nrows=1, ncols=3, tab_title=modulation_name + ' Inductor currents')
@@ -248,7 +248,7 @@ def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_n
                          xlabel=r'$P \:/\: \mathrm{W}$',
                          title=r'$I^\prime_\mathrm{L2} \:/\: \mathrm{A}$')
     fname = 'mod_' + modulation_name + '_' + simulation_name + '_' + 'fig6'
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, comment, timestamp=False)
     if not show_plot:
         plt.close()
 

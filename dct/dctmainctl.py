@@ -81,7 +81,8 @@ class DctMainCtl:
         self._break_point_flag = False
         self._break_point_message: str = ""
 
-    def set_up_folder_structure(self, toml_prog_flow: tc.FlowControl) -> None:
+    @staticmethod
+    def set_up_folder_structure(toml_prog_flow: tc.FlowControl) -> None:
         """
         Set up the folder structure for the subprojects.
 
@@ -110,7 +111,8 @@ class DctMainCtl:
         with open(json_filepath, 'w', encoding='utf8') as json_file:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
 
-    def load_toml_file(self, toml_file: str) -> tuple[bool, dict[str, Any]]:
+    @staticmethod
+    def load_toml_file(toml_file: str) -> tuple[bool, dict[str, Any]]:
         """
         Load the toml configuration data to a dictionary.
 
@@ -144,7 +146,8 @@ class DctMainCtl:
 
         return is_toml_file_existing, config
 
-    def load_generate_logging_config(self, logging_config_file: str) -> None:
+    @staticmethod
+    def load_generate_logging_config(logging_config_file: str) -> None:
         """
         Read the logging configuration file and configure the logger.
 
@@ -193,9 +196,13 @@ class DctMainCtl:
         :rtype: bool
 
         """
-        return False
+        # Dummy code to satisfy ruff
+        return_value: bool = self._break_point_flag and False
 
-    def delete_study_content(self, folder_name: str, study_file_name: str = "") -> None:
+        return return_value
+
+    @staticmethod
+    def delete_study_content(folder_name: str, study_file_name: str = "") -> None:
         """
         Delete the study files and the femmt folders.
 
@@ -243,7 +250,8 @@ class DctMainCtl:
         # Still not defined
         pass
 
-    def check_study_data(self, study_path: str, study_name: str) -> bool:
+    @staticmethod
+    def check_study_data(study_path: str, study_name: str) -> bool:
         """
         Verify if the study path and sqlite3-database file exists.
 
@@ -275,7 +283,8 @@ class DctMainCtl:
         # True = study exists
         return is_study_existing
 
-    def get_number_of_pkl_files(self, filtered_file_path: str) -> int:
+    @staticmethod
+    def get_number_of_pkl_files(filtered_file_path: str) -> int:
         """Count the number of files with extension 'pkl'.
 
         If the optimization is skipped the number of filtered points reflected by the number of pkl-files
@@ -342,7 +351,8 @@ class DctMainCtl:
             # Remove breakpoint message
             self._break_point_message = ""
 
-    def circuit_toml_2_dto(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
+    @staticmethod
+    def circuit_toml_2_dto(toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
         """
         Circuit toml file to circuit_dto file.
 
@@ -401,7 +411,8 @@ class DctMainCtl:
 
         return circuit_dto
 
-    def generate_zip_archive(self, toml_prog_flow: tc.FlowControl) -> None:
+    @staticmethod
+    def generate_zip_archive(toml_prog_flow: tc.FlowControl) -> None:
         """
         Generate a zip archive from the given simulation results to transfer to another computer.
 
@@ -446,7 +457,8 @@ class DctMainCtl:
             # Warn user
             logger.warning(f"Path {folder_selection[0]} does not exists!")
 
-    def get_initialization_queue_data(self, act_toml_prog_flow: tc.FlowControl) \
+    @staticmethod
+    def get_initialization_queue_data(act_toml_prog_flow: tc.FlowControl) \
         -> tuple[list[ConfigurationDataEntryDto], list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
                  list[srv_ctl_dtos.MagneticDataEntryDto], list[ConfigurationDataEntryDto],
                  list[ConfigurationDataEntryDto], list[SummaryDataEntryDto]]:
@@ -1174,7 +1186,7 @@ class DctMainCtl:
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
             # Calculate the filtered results
-            self._circuit_optimization.filter_study_results(dab_config=config_circuit)
+            self._circuit_optimization.filter_study_results()
             # Get filtered result path
 
             # Add filtered result list
@@ -1220,7 +1232,7 @@ class DctMainCtl:
                 toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
 
             # Set the status to Done
-            self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Skipped
+            self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
 
         # Stop the inductor processing time measurement
         self._inductor_progress_time[0].stop_trigger()
@@ -1254,7 +1266,7 @@ class DctMainCtl:
                 toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
 
             # Set the status to Done
-            self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Skipped
+            self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
 
         # Stop the transformer processing time measurement
         self._transformer_progress_time[0].stop_trigger()
@@ -1299,9 +1311,8 @@ class DctMainCtl:
         stacked_transformer_study_names = [self._transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_processing.generate_result_database(
-            self._circuit_study_data, self._inductor_study_data, self._transformer_study_data,
-            self._heat_sink_study_data, summary_data, inductor_study_names,
-            stacked_transformer_study_names, filter_data)
+            self._inductor_study_data, self._transformer_study_data, summary_data,
+            inductor_study_names, stacked_transformer_study_names, filter_data)
         #  Select the needed heat sink configuration
         self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 

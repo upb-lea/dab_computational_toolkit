@@ -4,6 +4,7 @@ import os
 import copy
 import threading
 import logging
+from typing import Optional
 
 # 3rd party libraries
 
@@ -27,7 +28,7 @@ class HeatSinkOptimization:
 
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
-        self._hct_config: hct.OptimizationParameters
+        self._hct_config: Optional[hct.OptimizationParameters] = None
         self._progress_data: ProgressData = ProgressData(run_time=0.0, number_of_filtered_points=0,
                                                          progress_status=ProgressStatus.Idle)
         self._progress_run_time: RunTime = RunTime()
@@ -104,7 +105,8 @@ class HeatSinkOptimization:
         return copy.deepcopy(self._progress_data)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def _optimize(self, act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool) -> None:
+    @staticmethod
+    def _optimize(act_hct_config: hct.OptimizationParameters, target_number_trials: int, debug: bool) -> None:
         """
         Perform the simulation.
 
@@ -148,7 +150,11 @@ class HeatSinkOptimization:
                 if target_number_trials > 100:
                     target_number_trials = 100
 
-        self._optimize(self._hct_config, target_number_trials, debug)
+        if self._hct_config is not None:
+            HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
+        else:
+            logger.warning("Method 'generate_optimization_list' is not called.\n"
+                           "No list is generated so that no simulation can be performed!")
 
         # Update statistical data
         with self._h_lock_stat:
@@ -159,7 +165,8 @@ class HeatSinkOptimization:
 class ThermalCalcSupport:
     """Provides functions to calculate the thermal resistance."""
 
-    def calculate_r_th_copper_coin(self, cooling_area: float, height_pcb: float = 1.55e-3,
+    @staticmethod
+    def calculate_r_th_copper_coin(cooling_area: float, height_pcb: float = 1.55e-3,
                                    height_pcb_heat_sink: float = 3.0e-3) -> tuple[float, float]:
         """
         Calculate the thermal resistance of the copper coin.
@@ -188,7 +195,8 @@ class ThermalCalcSupport:
 
         return r_copper_coin, effective_bottom_cooling_area
 
-    def calculate_r_th_tim(self, copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
+    @staticmethod
+    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
         """
         Calculate the thermal resistance of the thermal interface material (TIM).
 

@@ -140,7 +140,8 @@ class DctSummaryProcessing:
 
         return copy.deepcopy(self._progress_data)
 
-    def _generate_magnetic_number_list(self, act_dir_name: str) -> tuple[bool, list[str]]:
+    @staticmethod
+    def _generate_magnetic_number_list(act_dir_name: str) -> tuple[bool, list[str]]:
         """Generate a list of the numbers from filenames.
 
         :param act_dir_name : Name of the directory containing the files
@@ -180,19 +181,15 @@ class DctSummaryProcessing:
 
         return is_magnetic_list_generated, magnetic_result_numbers
 
-    def generate_result_database(self, circuit_study_data: dct.StudyData, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
-                                 heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_inductor_study_names: list[str],
+    def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
+                                 summary_data: dct.StudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
-        :param circuit_study_data: circuit study data
-        :type circuit_study_data: dct.StudyData
         :param inductor_study_data: inductor study data
         :type inductor_study_data: dct.StudyData
         :param transformer_study_data: transformer study data
         :type transformer_study_data: dct.StudyData
-        :param heat_sink_study_data: heat sink study data
-        :type heat_sink_study_data: dct.StudyData
         :param summary_data: Information about the summary name and path
         :type summary_data: dct.StudyData
         :param act_inductor_study_names: List of names with inductor studies which are to process
@@ -266,7 +263,7 @@ class DctSummaryProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    self._generate_magnetic_number_list(inductor_filepath_results))
+                    DctSummaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -298,7 +295,7 @@ class DctSummaryProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            self._generate_magnetic_number_list(stacked_transformer_filepath_results))
+                            DctSummaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit

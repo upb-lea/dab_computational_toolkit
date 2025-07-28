@@ -156,7 +156,8 @@ class InductorOptimization:
         return act_number_performed_calculations
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def _optimize(self, circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
+    @staticmethod
+    def _optimize(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
                   enable_operating_range_simulation: bool, debug: bool) -> int:
         """
@@ -325,7 +326,7 @@ class InductorOptimization:
                 act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
             # Perform optimization
-            number_of_filtered_points = self._optimize(
+            number_of_filtered_points = InductorOptimization._optimize(
                 act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
                 factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
