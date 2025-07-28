@@ -99,11 +99,11 @@ class TomlCircuitParetoDesignSpace(BaseModel):
     """Definition of the hardware design space for electronic components."""
 
     # DAB optimization parameters
-    f_s_min_max_list: list
-    l_s_min_max_list: list
-    l_1_min_max_list: list
-    l_2__min_max_list: list
-    n_min_max_list: list
+    f_s_min_max_list: list[float]
+    l_s_min_max_list: list[float]
+    l_1_min_max_list: list[float]
+    l_2__min_max_list: list[float]
+    n_min_max_list: list[float]
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
     c_par_1: float
@@ -112,9 +112,9 @@ class TomlCircuitParetoDesignSpace(BaseModel):
 class TomlCircuitOutputRange(BaseModel):
     """Definition of the DAB operating area."""
 
-    v1_min_max_list: list
-    v2_min_max_list: list
-    p_min_max_list: list
+    v1_min_max_list: list[float]
+    v2_min_max_list: list[float]
+    p_min_max_list: list[float]
 
 class TomlSampling(BaseModel):
     """Definition of the sampling method."""
@@ -150,10 +150,10 @@ class TomlInductorDesignSpace(BaseModel):
 
     core_name_list: list[str]
     material_name_list: list[str]
-    litz_wire_list: list[str]
-    core_inner_diameter_list: list[float]
-    window_h_list: list[float]
-    window_w_list: list[float]
+    litz_wire_name_list: list[str]
+    core_inner_diameter_min_max_list: list[float]
+    window_h_min_max_list: list[float]
+    window_w_min_max_list: list[float]
 
 class TomlInductorInsulation(BaseModel):
     """Toml checker class for InductorInsulation."""
@@ -278,12 +278,12 @@ class TomlHeatSinkSettings(BaseModel):
 class TomlHeatSinkDesignSpace(BaseModel):
     """Toml checker for HeatSinkDesignSpace."""
 
-    height_c_list: list[float]
-    width_b_list: list[float]
-    length_l_list: list[float]
-    height_d_list: list[float]
-    number_fins_n_list: list[int]
-    thickness_fin_t_list: list[float]
+    height_c_min_max_list: list[float]
+    width_b_min_max_list: list[float]
+    length_l_min_max_list: list[float]
+    height_d_min_max_list: list[float]
+    number_fins_n_min_max_list: list[int]
+    thickness_fin_t_min_max_list: list[float]
 
 class TomlHeatSinkSummaryData(BaseModel):
     """Toml checker for HeatSinkSummaryData."""
