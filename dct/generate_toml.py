@@ -134,10 +134,10 @@ def generate_inductor_toml(working_directory: str) -> None:
     [design_space]
         core_name_list=["PQ 50/50", "PQ 50/40", "PQ 40/40", "PQ 40/30", "PQ 35/35", "PQ 32/30", "PQ 32/20", "PQ 26/25", "PQ 26/20", "PQ 20/20", "PQ 20/16"]
         material_name_list=["3C95"]
-        litz_wire_list=["1.5x105x0.1", "1.4x200x0.071", "1.1x60x0.1"]
-        core_inner_diameter_list=[]
-        window_h_list=[]
-        window_w_list=[]
+        litz_wire_name_list=["1.5x105x0.1", "1.4x200x0.071", "1.1x60x0.1"]
+        core_inner_diameter_min_max_list=[]
+        window_h_min_max_list=[]
+        window_w_min_max_list=[]
     
     [boundary_conditions]
         temperature=100
@@ -226,12 +226,12 @@ def generate_heat_sink_toml(working_directory: str) -> None:
     """
     toml_data = '''
     [design_space]
-        height_c_list=[0.02, 0.08]
-        width_b_list=[0.02, 0.08]
-        length_l_list=[0.08, 0.20]
-        height_d_list=[0.001, 0.003]
-        number_fins_n_list=[5, 20]
-        thickness_fin_t_list=[1e-3, 5e-3]
+        height_c_min_max_list=[0.02, 0.08]
+        width_b_min_max_list=[0.02, 0.08]
+        length_l_min_max_list=[0.08, 0.20]
+        height_d_min_max_list=[0.001, 0.003]
+        number_fins_n_min_max_list=[5, 20]
+        thickness_fin_t_min_max_list=[1e-3, 5e-3]
     
     [boundary_conditions]
         t_ambient=40

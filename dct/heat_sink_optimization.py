@@ -68,12 +68,12 @@ class HeatSinkOptimization:
                                                           toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
 
             # geometry parameters
-            height_c_list=toml_heat_sink.design_space.height_c_list,
-            width_b_list=toml_heat_sink.design_space.width_b_list,
-            length_l_list=toml_heat_sink.design_space.length_l_list,
-            height_d_list=toml_heat_sink.design_space.height_d_list,
-            number_fins_n_list=toml_heat_sink.design_space.number_fins_n_list,
-            thickness_fin_t_list=toml_heat_sink.design_space.thickness_fin_t_list,
+            height_c_min_max_list=toml_heat_sink.design_space.height_c_min_max_list,
+            width_b_min_max_list=toml_heat_sink.design_space.width_b_min_max_list,
+            length_l_min_max_list=toml_heat_sink.design_space.length_l_min_max_list,
+            height_d_min_max_list=toml_heat_sink.design_space.height_d_min_max_list,
+            number_fins_n_min_max_list=toml_heat_sink.design_space.number_fins_n_min_max_list,
+            thickness_fin_t_min_max_list=toml_heat_sink.design_space.thickness_fin_t_min_max_list,
             fan_list=fan_list,
 
             # boundary conditions
