@@ -99,7 +99,7 @@ class TomlCircuitParetoDesignSpace(BaseModel):
     """Definition of the hardware design space for electronic components."""
 
     # DAB optimization parameters
-    f_s_min_max_list: list[float]
+    f_s_min_max_list: list[int]
     l_s_min_max_list: list[float]
     l_1_min_max_list: list[float]
     l_2__min_max_list: list[float]
