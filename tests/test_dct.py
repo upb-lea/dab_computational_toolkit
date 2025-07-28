@@ -701,7 +701,7 @@ def test_circuit_toml_2_dto(test_index: int) -> None:
     # Initialize the test parameter
     test_parameter_1: tc.TomlCircuitParetoDabDesign = tc.TomlCircuitParetoDabDesign(
         design_space=tc.TomlCircuitParetoDesignSpace(
-            f_s_min_max_list=float_test_arrays[test_index % float_list_len],
+            f_s_min_max_list=int_test_arrays[test_index % int_list_len],
             l_1_min_max_list=float_test_arrays[(test_index + 1) % float_list_len],
             l_2__min_max_list=float_test_arrays[(test_index + 2) % float_list_len],
             l_s_min_max_list=float_test_arrays[(test_index + 3) % float_list_len],
