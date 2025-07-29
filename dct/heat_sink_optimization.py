@@ -4,7 +4,6 @@ import os
 import copy
 import threading
 import logging
-from typing import Optional
 
 # 3rd party libraries
 
@@ -28,7 +27,7 @@ class HeatSinkOptimization:
 
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
-        self._hct_config: Optional[hct.OptimizationParameters] = None
+        self._hct_config: hct.OptimizationParameters | None = None
         self._progress_data: ProgressData = ProgressData(run_time=0.0, number_of_filtered_points=0,
                                                          progress_status=ProgressStatus.Idle)
         self._progress_run_time: RunTime = RunTime()
@@ -153,8 +152,8 @@ class HeatSinkOptimization:
         if self._hct_config is not None:
             HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
         else:
-            logger.warning("Method 'generate_optimization_list' is not called.\n"
-                           "No list is generated so that no simulation can be performed!")
+            logger.warning("Method 'generate_optimization_list' is not called!\n"
+                           "    No list is generated so that no simulation can be performed!")
 
         # Update statistical data
         with self._h_lock_stat:

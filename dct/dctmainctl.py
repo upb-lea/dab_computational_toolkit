@@ -13,7 +13,7 @@ import zipfile
 import fnmatch
 import time
 from multiprocessing import Queue
-from typing import Optional, Any
+from typing import Any
 import logging
 
 # 3rd party libraries
@@ -64,11 +64,11 @@ class DctMainCtl:
         # Optimization class instances
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_files: list[str] = []
-        self._circuit_optimization: Optional[CircuitOptimization] = None
-        self._inductor_optimization: Optional[InductorOptimization] = None
-        self._transformer_optimization: Optional[TransformerOptimization] = None
-        self._heat_sink_optimization: Optional[HeatSinkOptimization] = None
-        self._summary_processing: Optional[DctSummaryProcessing] = None
+        self._circuit_optimization: CircuitOptimization  | None = None
+        self._inductor_optimization: InductorOptimization | None = None
+        self._transformer_optimization: TransformerOptimization | None = None
+        self._heat_sink_optimization: HeatSinkOptimization | None = None
+        self._summary_processing: DctSummaryProcessing | None = None
 
         # Filtered point results in case of skip
         self._inductor_number_filtered_points_skip_list: list[int] = []
@@ -1224,7 +1224,8 @@ class DctMainCtl:
 
             # Allocate and initialize inductor configuration
             self._inductor_optimization = InductorOptimization()
-            self._inductor_optimization.generate_optimization_list(toml_inductor, self._inductor_study_data, filter_data)
+            self._inductor_optimization.generate_optimization_list(toml_inductor, self._inductor_study_data,
+                                                                   filter_data)
 
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler(

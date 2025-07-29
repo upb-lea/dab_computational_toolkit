@@ -7,7 +7,6 @@ import pickle
 import datetime
 import threading
 import copy
-from typing import Optional
 
 # 3rd party libraries
 import optuna
@@ -36,10 +35,10 @@ class CircuitOptimization:
     _c_lock_stat: threading.Lock
     _progress_data: ProgressData
     _progress_run_time: RunTime
-    _dab_config: Optional[circuit_dtos.CircuitParetoDabDesign]
-    _study_in_memory: Optional[optuna.Study]
-    _study_in_storage: Optional[optuna.Study]
-    _fixed_parameters: Optional[d_dtos.FixedParameters]
+    _dab_config: circuit_dtos.CircuitParetoDabDesign | None
+    _study_in_memory: optuna.Study | None
+    _study_in_storage: optuna.Study | None
+    _fixed_parameters: d_dtos.FixedParameters | None
 
     def __init__(self):
         """Initialize the configuration list for the circuit optimizations."""
@@ -86,7 +85,7 @@ class CircuitOptimization:
         """Save the actual configuration file as pickle file on the disk."""
         # Check if a configuration is loaded
         if self._dab_config is None:
-            logger.warning("Circuit configuration is empty!\n Configuration is not saved!")
+            logger.warning("Circuit configuration is empty!\n    Configuration is not saved!")
             return
 
         filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
@@ -117,7 +116,7 @@ class CircuitOptimization:
 
         return loaded_pareto_dto
 
-    def get_config(self) -> Optional[circuit_dtos.CircuitParetoDabDesign]:
+    def get_config(self) -> circuit_dtos.CircuitParetoDabDesign | None:
         """
         Return the actual loaded configuration file.
 
