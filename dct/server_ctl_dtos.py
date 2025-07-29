@@ -4,9 +4,10 @@
 import dataclasses
 from enum import Enum
 from typing import Any
+import threading
+import time
 
 # own libraries
-
 
 # Structure class of ProgressStatus
 class ProgressStatus(Enum):
@@ -32,7 +33,6 @@ class RunTimeMeasure:
 class ProgressData:
     """Statistic data of heat sink optimization."""
 
-    start_time: float
     run_time: float
     number_of_filtered_points: int
     progress_status: ProgressStatus
@@ -104,3 +104,58 @@ class QueueParetoFrontData:
     pareto_front_optuna: str
     evaluation_info: str
     validity: bool
+
+
+# Class for runtime measurement
+class RunTimeMeasurement:
+    """Runtime class for measure processing time."""
+
+    def __init__(self) -> None:
+        self._start_time: float = 0.0
+        self._run_time: float = 0.0
+        self._timer_flag: bool = False
+        self._timer_lock: threading.Lock = threading.Lock()
+
+    def reset_start_trigger(self) -> None:
+        """Reset and start the timer."""
+        with self._timer_lock:
+            self._start_time = time.perf_counter()
+            self._run_time = 0.0
+            self._timer_flag = True
+
+    def continue_trigger(self) -> None:
+        """Continue the timer without reset."""
+        if not self._timer_flag:
+            with self._timer_lock:
+                self._start_time = time.perf_counter() - self._run_time
+                self._timer_flag = True
+
+    def stop_trigger(self) -> None:
+        """Stop the timer."""
+        if self._timer_flag:
+            with self._timer_lock:
+                self._timer_flag = False
+                self._run_time = time.perf_counter() - self._start_time
+
+    def is_timer_active(self) -> bool:
+        """Provide the timer state.
+
+        :return: True, if the time is active
+        :rtype: bool
+        """
+        return self._timer_flag
+
+    def get_runtime(self) -> float:
+        """Provide the current measured time since timer start.
+
+        :return: time in seconds
+        :rtype: float
+        """
+        # Variable declaration
+        run_time: float = 0.0
+        with self._timer_lock:
+            if self._timer_flag:
+                run_time = time.perf_counter() - self._start_time
+            else:
+                run_time = self._run_time
+        return run_time

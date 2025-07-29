@@ -5,7 +5,6 @@ import logging
 import json
 import pickle
 import datetime
-import time
 import threading
 import copy
 
@@ -24,6 +23,7 @@ import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 
 logger = logging.getLogger(__name__)
@@ -31,13 +31,29 @@ logger = logging.getLogger(__name__)
 class CircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
-    """Initialize the configuration list for the circuit optimizations."""
-    _c_lock_stat: threading.Lock = threading.Lock()
-    # Initialize the statistical data (For more configuration it needs to become instance instead of static
-    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
-                                                progress_status=ProgressStatus.Idle)
-    # Study in memory
-    study_in_memory: optuna.Study
+    # Declaration of member types
+    _c_lock_stat: threading.Lock
+    _progress_data: ProgressData
+    _progress_run_time: RunTime
+    _dab_config: circuit_dtos.CircuitParetoDabDesign | None
+    _study_in_memory: optuna.Study | None
+    _study_in_storage: optuna.Study | None
+    _fixed_parameters: d_dtos.FixedParameters | None
+
+    def __init__(self):
+        """Initialize the configuration list for the circuit optimizations."""
+        # Variable allocation
+        self._c_lock_stat = threading.Lock()
+        # Initialize the statistical data (For more configuration it needs to become instance instead of static
+        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0,
+                                           progress_status=ProgressStatus.Idle)
+        self._progress_run_time = RunTime()
+        self._dab_config = None
+        self._is_study_available = False
+
+        self._study_in_memory = None
+        self._study_in_storage = None
+        self._fixed_parameters = None
 
     @staticmethod
     def load_filepaths(project_directory: str) -> circuit_dtos.ParetoFilePaths:
@@ -65,22 +81,21 @@ class CircuitOptimization:
         )
         return file_path_dto
 
+    def save_config(self) -> None:
+        """Save the actual configuration file as pickle file on the disk."""
+        # Check if a configuration is loaded
+        if self._dab_config is None:
+            logger.warning("Circuit configuration is empty!\n    Configuration is not saved!")
+            return
+
+        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+
+        os.makedirs(self._dab_config.project_directory, exist_ok=True)
+        with open(f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.pkl", 'wb') as output:
+            pickle.dump(self._dab_config, output, pickle.HIGHEST_PROTOCOL)
+
     @staticmethod
-    def save_config(config: circuit_dtos.CircuitParetoDabDesign) -> None:
-        """
-        Save the configuration file as pickle file on the disk.
-
-        :param config: configuration
-        :type config: InductorOptimizationDTO
-        """
-        filepaths = CircuitOptimization.load_filepaths(config.project_directory)
-
-        os.makedirs(config.project_directory, exist_ok=True)
-        with open(f"{filepaths.circuit}/{config.circuit_study_name}/{config.circuit_study_name}.pkl", 'wb') as output:
-            pickle.dump(config, output, pickle.HIGHEST_PROTOCOL)
-
-    @staticmethod
-    def load_config(circuit_project_directory: str, circuit_study_name: str) -> circuit_dtos.CircuitParetoDabDesign:
+    def load_stored_config(circuit_project_directory: str, circuit_study_name: str) -> circuit_dtos.CircuitParetoDabDesign:
         """
         Load pickle configuration file from disk.
 
@@ -98,29 +113,37 @@ class CircuitOptimization:
             loaded_pareto_dto = pickle.load(pickle_file_data)
             if not isinstance(loaded_pareto_dto, circuit_dtos.CircuitParetoDabDesign):
                 raise TypeError(f"Loaded pickle file {loaded_pareto_dto} not of type CircuitParetoDabDesign.")
-            return loaded_pareto_dto
 
-    @staticmethod
-    def get_progress_data() -> ProgressData:
+        return loaded_pareto_dto
+
+    def get_config(self) -> circuit_dtos.CircuitParetoDabDesign | None:
+        """
+        Return the actual loaded configuration file.
+
+        :return: Configuration file as p_dtos.DabDesign
+        :rtype: p_dtos.CircuitParetoDabDesign
+        """
+        if self._dab_config is None:
+            logger.warning("Configuration is not loaded!")
+
+        return copy.deepcopy(self._dab_config)
+
+    def get_progress_data(self) -> ProgressData:
         """Provide the progress data of the optimization.
 
         :return: Progress data: Processing start time, actual processing time, number of filtered operation points and status.
         :rtype: ProgressData
         """
         # Lock statistical performance data access
-        with CircuitOptimization._c_lock_stat:
-            # Update statistical data if optimization is running
-            if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
-                CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
-                # Check for valid entry
-                if CircuitOptimization._progress_data.run_time < 0:
-                    CircuitOptimization._progress_data.run_time = 0.0
-                    CircuitOptimization._progress_data.start_time = time.perf_counter()
+        with self._c_lock_stat:
+            # Check if list is in progress
+            if self._progress_data.progress_status == ProgressStatus.InProgress:
+                # Update statistical data if optimization is running
+                self._progress_data.run_time = self._progress_run_time.get_runtime()
 
-        return copy.deepcopy(CircuitOptimization._progress_data)
+        return copy.deepcopy(self._progress_data)
 
-    @staticmethod
-    def get_actual_pareto_html() -> str:
+    def get_actual_pareto_html(self) -> str:
         """
         Read the current Pareto front from running optimization process.
 
@@ -130,8 +153,8 @@ class CircuitOptimization:
         # Variable declaration
         pareto_html: str = ""
 
-        if CircuitOptimization.study_in_memory is not None:
-            fig = optuna.visualization.plot_pareto_front(CircuitOptimization.study_in_memory)
+        if self._study_in_memory is not None:
+            fig = optuna.visualization.plot_pareto_front(self._study_in_memory)
             pareto_html = fig.to_html(full_html=False)
 
         return pareto_html
@@ -163,7 +186,7 @@ class CircuitOptimization:
         return pareto_html
 
     @staticmethod
-    def objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
+    def _objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
         """
         Objective function to optimize.
 
@@ -224,57 +247,58 @@ class CircuitOptimization:
         return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
 
     @staticmethod
-    def calculate_fix_parameters(dab_config: circuit_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
+    def calculate_fixed_parameters(act_dab_config: circuit_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
         """
         Calculate time-consuming parameters which are same for every single simulation.
 
-        :param dab_config: DAB circuit configuration
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :param act_dab_config: DAB circuit configuration
+        :type act_dab_config: circuit_dtos.CircuitParetoDabDesign
         :return: Fix parameters (transistor DTOs)
         :rtype: d_dtos.FixedParameters
         """
         transistor_1_dto_list = []
         transistor_2_dto_list = []
 
-        for transistor in dab_config.design_space.transistor_1_name_list:
+        for transistor in act_dab_config.design_space.transistor_1_name_list:
             transistor_1_dto_list.append(d_sets.HandleTransistorDto.tdb_to_transistor_dto(transistor))
 
-        for transistor in dab_config.design_space.transistor_2_name_list:
+        for transistor in act_dab_config.design_space.transistor_2_name_list:
             transistor_2_dto_list.append(d_sets.HandleTransistorDto.tdb_to_transistor_dto(transistor))
 
         # choose sampling method
-        if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
-            steps_per_dimension = int(np.ceil(np.power(dab_config.sampling.sampling_points, 1 / 3)))
-            logger.info(f"Number of sampling points has been updated from {dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
+        if act_dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
+            steps_per_dimension = int(np.ceil(np.power(act_dab_config.sampling.sampling_points, 1 / 3)))
+            logger.info(f"Number of sampling points has been updated from {act_dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
             v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
-                np.linspace(dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
-                np.linspace(dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
-                np.linspace(dab_config.output_range.p_min_max_list[0], dab_config.output_range.p_min_max_list[1], steps_per_dimension),
+                np.linspace(act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
+                np.linspace(act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
+                np.linspace(act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1], steps_per_dimension),
                 sparse=False)
-        elif dab_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
+        elif act_dab_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
             v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
-                dab_config.output_range.v1_min_max_list[0], dab_config.output_range.v1_min_max_list[1],
-                dab_config.output_range.v2_min_max_list[0], dab_config.output_range.v2_min_max_list[1],
-                dab_config.output_range.p_min_max_list[0], dab_config.output_range.p_min_max_list[1],
-                total_number_points=dab_config.sampling.sampling_points,
-                dim_1_user_given_points_list=dab_config.sampling.v1_additional_user_point_list,
-                dim_2_user_given_points_list=dab_config.sampling.v2_additional_user_point_list,
-                dim_3_user_given_points_list=dab_config.sampling.p_additional_user_point_list, sampling_random_seed=dab_config.sampling.sampling_random_seed)
+                act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1],
+                act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1],
+                act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1],
+                total_number_points=act_dab_config.sampling.sampling_points,
+                dim_1_user_given_points_list=act_dab_config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=act_dab_config.sampling.v2_additional_user_point_list,
+                dim_3_user_given_points_list=act_dab_config.sampling.p_additional_user_point_list,
+                sampling_random_seed=act_dab_config.sampling.sampling_random_seed)
         else:
-            raise ValueError(f"sampling_method '{dab_config.sampling.sampling_method}' not available.")
+            raise ValueError(f"sampling_method '{act_dab_config.sampling.sampling_method}' not available.")
 
         logger.debug(f"{v1_operating_points=}")
 
         # calculate weighting
 
-        if dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
+        if act_dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
             weight_sum = 0
             given_user_points = 0
         else:
-            weight_sum = np.sum(dab_config.sampling.additional_user_weighting_point_list)
+            weight_sum = np.sum(act_dab_config.sampling.additional_user_weighting_point_list)
             logger.debug(f"{weight_sum=}")
-            given_user_points = len(dab_config.sampling.v1_additional_user_point_list)
+            given_user_points = len(act_dab_config.sampling.v1_additional_user_point_list)
         logger.debug(f"{given_user_points=}")
         logger.debug(f"{v1_operating_points.size=}")
 
@@ -286,13 +310,13 @@ class CircuitOptimization:
             # default case, same weights for all points
             weights = np.full_like(v1_operating_points, leftover_auto_weight)
             # for user point weightings, both lists must be filled.
-            if dab_config.sampling.additional_user_weighting_point_list and dab_config.sampling.sampling_method != SamplingEnum.meshgrid:
+            if act_dab_config.sampling.additional_user_weighting_point_list and act_dab_config.sampling.sampling_method != SamplingEnum.meshgrid:
                 logger.debug("Given user weighting point list detected, fill up with user-given weights.")
-                weights[-len(dab_config.sampling.additional_user_weighting_point_list):] = dab_config.sampling.additional_user_weighting_point_list
+                weights[-len(act_dab_config.sampling.additional_user_weighting_point_list):] = act_dab_config.sampling.additional_user_weighting_point_list
             logger.debug(f"{weights=}")
             logger.debug(f"Double check: Sum of weights = {np.sum(weights)}")
 
-        fix_parameters = d_dtos.FixedParameters(
+        return d_dtos.FixedParameters(
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
             mesh_v1=np.atleast_3d(v1_operating_points),
@@ -300,67 +324,63 @@ class CircuitOptimization:
             mesh_p=np.atleast_3d(p_operating_points),
             mesh_weights=np.atleast_3d(weights)
         )
-        return fix_parameters
 
-    # Add for Parallelization: Optimization function
-    @staticmethod
-    def run_optimization_sqlite(act_study: optuna.Study, act_study_name: str, act_number_trials: int, act_dab_config: circuit_dtos.CircuitParetoDabDesign,
-                                act_fixed_parameters: d_dtos.FixedParameters) -> None:
+    def run_optimization_sqlite(self, act_number_trials: int) -> None:
         """Proceed a study which is stored as sqlite database.
 
-        :param act_study: Study information configuration
-        :type  act_study: optuna.Study
-        :param act_study_name: Study information configuration
-        :type  act_study_name: str
-        :param act_number_trials: Number of trials adding to the existing study
         :type act_number_trials: int
-        :param act_dab_config: DAB optimization configuration file
-        :type act_dab_config: p_dtos.CircuitParetoDabDesign
-        :param act_fixed_parameters: fix configuration parameters for the optimization process
-        :type act_fixed_parameters: d_dtos.FixedParameters
+        :param act_number_trials: Number of optimization trials
         """
+        if self._dab_config is None:
+            logger.warning("Circuit configuration is not initialized!")
+            return
+        elif self._fixed_parameters is None:
+            logger.warning("Parameter calculation is missing!")
+            return
+        elif self._study_in_memory is None:
+            logger.warning("Study is not initialized!")
+            return
+
         # Function to execute
-        func = lambda trial: CircuitOptimization.objective(trial, act_dab_config, act_fixed_parameters)
+        func = lambda trial: CircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
 
         try:
-            act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
+            self._study_in_memory.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
         except KeyboardInterrupt:
             pass
 
-    @staticmethod
-    def run_optimization_mysql(act_storage_url: str, act_study_name: str, act_number_trials: int, act_dab_config: circuit_dtos.CircuitParetoDabDesign,
-                               act_fixed_parameters: d_dtos.FixedParameters) -> None:
+    def run_optimization_mysql(self, act_storage_url: str, act_number_trials: int) -> None:
         """Proceed a study which is stored as sqlite database.
 
         :param act_storage_url: url-Name of the database path
         :type act_storage_url: str
-        :param act_study_name: Study information configuration
-        :type  act_study_name: str
         :param act_number_trials: Number of trials adding to the existing study
         :type  act_number_trials: int
-        :param act_dab_config: DAB optimization configuration file
-        :type act_dab_config: p_dtos.CircuitParetoDabDesign
-        :param act_fixed_parameters: fix configuration parameters for the optimization process
-        :type act_fixed_parameters: d_dtos.FixedParameters
         """
+        if self._dab_config is None:
+            logger.warning("Circuit configuration is not initialized!")
+            return
+        elif self._fixed_parameters is None:
+            logger.warning("Parameter calculation is missing!")
+            return
+
         # Function to execute
-        func = lambda trial: CircuitOptimization.objective(trial, act_dab_config, act_fixed_parameters)
+        func = lambda trial: CircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
 
         # Each process create his own study instance with the same database and study name
-        act_study = optuna.load_study(storage=act_storage_url, study_name=act_study_name)
+        act_study = optuna.load_study(storage=act_storage_url, study_name=self._dab_config.circuit_study_name)
         # Run optimization
         try:
             act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
         except KeyboardInterrupt:
             pass
         finally:
-            # study_in_storage.add_trials(CircuitOptimization.study_in_memory.trials[-number_trials:])
+            # study_in_storage.add_trials(act_study_name.trials[-number_trials:])
             logger.info(f"Finished {act_number_trials} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
             # Save method from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
-    @staticmethod
-    def start_proceed_study(dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
+    def start_proceed_study(self, dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
                             database_type: str = 'sqlite',
                             sampler: optuna.samplers.BaseSampler = optuna.samplers.NSGAIIISampler()) -> None:
         """Proceed a study which is stored as sqlite database.
@@ -374,15 +394,18 @@ class CircuitOptimization:
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
-        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
+        # Overtake configuration (Later this is to do by 'generate_optimization_list' or correspondent method
+        self._dab_config = copy.deepcopy(dab_config)
 
-        circuit_study_working_directory = os.path.join(filepaths.circuit, dab_config.circuit_study_name)
-        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{dab_config.circuit_study_name}.sqlite3")
+        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+
+        circuit_study_working_directory = os.path.join(filepaths.circuit, self._dab_config.circuit_study_name)
+        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{self._dab_config.circuit_study_name}.sqlite3")
 
         if os.path.exists(circuit_study_sqlite_database):
             logger.info("Existing circuit study found. Proceeding.")
         else:
-            os.makedirs(f"{filepaths.circuit}/{dab_config.circuit_study_name}", exist_ok=True)
+            os.makedirs(f"{filepaths.circuit}/{self._dab_config.circuit_study_name}", exist_ok=True)
 
         # set logging verbosity: https://optuna.readthedocs.io/en/stable/reference/generated/optuna.logger.set_verbosity.html#optuna.logging.set_verbosity
         # .INFO: all messages (default)
@@ -391,28 +414,25 @@ class CircuitOptimization:
         optuna.logging.set_verbosity(optuna.logging.ERROR)
 
         # check for differences with the old configuration file
-        config_on_disk_filepath = f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.pkl"
+        config_on_disk_filepath = f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
-            config_on_disk = CircuitOptimization.load_config(dab_config.project_directory, dab_config.circuit_study_name)
-            difference = deepdiff.DeepDiff(config_on_disk, dab_config, ignore_order=True, significant_digits=10)
+            config_on_disk = CircuitOptimization.load_stored_config(self._dab_config.project_directory, self._dab_config.circuit_study_name)
+            difference = deepdiff.DeepDiff(config_on_disk, self._dab_config, ignore_order=True, significant_digits=10)
             if difference:
-                print("Configuration file has changed from previous simulation. Do you want to proceed?")
-                print(f"Difference: {difference}")
-                read_text = input("'1' or Enter: proceed, 'any key': abort\nYour choice: ")
-                if read_text == str(1) or read_text == "":
-                    logger.info("proceed...")
-                else:
-                    logger.info("abort...")
-                    return None
+                raise ValueError("Configuration file has changed from previous simulation.\n"
+                                 f"Program is terminated.\n"
+                                 f"Difference: {difference}")
 
         directions = ['maximize', 'minimize']
 
-        fixed_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+        # Calculate the fixed parameters
+        self._fixed_parameters = CircuitOptimization.calculate_fixed_parameters(self._dab_config)
 
         # Update statistical data
-        with CircuitOptimization._c_lock_stat:
-            CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
-            CircuitOptimization._progress_data.progress_status = ProgressStatus.InProgress
+        with self._c_lock_stat:
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
+            self._progress_run_time.reset_start_trigger()
+            self._progress_data.progress_status = ProgressStatus.InProgress
 
         # introduce study in storage, e.g. sqlite or mysql
         if database_type == 'sqlite':
@@ -421,30 +441,29 @@ class CircuitOptimization:
             storage = f"sqlite:///{circuit_study_sqlite_database}"
 
             # Create study object in drive
-            study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
-                                                   storage=storage,
-                                                   directions=directions,
-                                                   load_if_exists=True, sampler=sampler)
+            self._study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+                                                         storage=storage,
+                                                         directions=directions,
+                                                         load_if_exists=True, sampler=sampler)
 
             # Create study object in memory
-            CircuitOptimization.study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
+            self._study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
             # If trials exists, add them to study_in_memory
-            CircuitOptimization.study_in_memory.add_trials(study_in_storage.trials)
+            self._study_in_memory.add_trials(self._study_in_storage.trials)
             # Inform about sampler type
-            logger.info(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
+            logger.info(f"Sampler is {self._study_in_storage.sampler.__class__.__name__}")
             # actual number of trials
-            overtaken_no_trials = len(CircuitOptimization.study_in_memory.trials)
+            overtaken_no_trials = len(self._study_in_memory.trials)
             # Start optimization
-            CircuitOptimization.run_optimization_sqlite(CircuitOptimization.study_in_memory, dab_config.circuit_study_name,
-                                                        number_trials, dab_config, fixed_parameters)
+            self.run_optimization_sqlite(number_trials)
             # Store memory to storage
-            study_in_storage.add_trials(CircuitOptimization.study_in_memory.trials[-number_trials:])
+            self._study_in_storage.add_trials(self._study_in_memory.trials[-number_trials:])
             logger.info(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials ="
-                        f"{len(CircuitOptimization.study_in_memory.trials)} trials.")
+                        f"{len(self._study_in_memory.trials)} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
-            CircuitOptimization.save_config(dab_config)
+            self.save_config()
 
-            CircuitOptimization.save_study_results_pareto(dab_config, show_results=False)
+            self.save_study_results_pareto(show_results=False)
 
         elif database_type == 'mysql':
 
@@ -456,15 +475,21 @@ class CircuitOptimization:
             # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
 
             # Create study object in drive
-            study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
-                                                   storage=storage_mysql,
-                                                   directions=directions,
-                                                   load_if_exists=True, sampler=sampler)
+            self._study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+                                                         storage=storage_mysql,
+                                                         directions=directions,
+                                                         load_if_exists=True, sampler=sampler)
 
             # Inform about sampler type
-            logger.info(f"Sampler is {study_in_storage.sampler.__class__.__name__}")
+            logger.info(f"Sampler is {self._study_in_storage.sampler.__class__.__name__}")
             # Start optimization
-            CircuitOptimization.run_optimization_mysql(storage_url, dab_config.circuit_study_name, number_trials, dab_config, fixed_parameters)
+            self.run_optimization_mysql(storage_url, number_trials)
+
+            # Stop time measurement
+            self._progress_run_time.stop_trigger()
+
+        # Set flag _is_study_available to indicate, that the study is available for filtering
+        self._is_study_available = True
 
         # Parallelization Test with mysql
         # Number of processes
@@ -484,43 +509,31 @@ class CircuitOptimization:
 
         # Wait for joining
         #   for proc in processes:
-            # wait until each process is joined
+        # wait until each process is joined
         #       p.join()
         #       logger.info(f"Process {proc} joins")
 
-#        Old approach
-#        study_in_memory = optuna.create_study(directions=directions, study_name=dab_config.circuit_study_name, sampler=sampler)
-#        logger.info(f"Sampler is {study_in_memory.sampler.__class__.__name__}")
-#        study_in_memory.add_trials(study_in_storage.trials)
-#        try:
-#            study_in_memory.optimize(func, n_trials=number_trials, n_jobs=1, show_progress_bar=True)
-#        except KeyboardInterrupt:
-#            pass
-#        finally:
-#            study_in_storage.add_trials(study_in_memory.trials[-number_trials:])
-#            logger.info(f"Finished {number_trials} trials.")
-#            logger.info(f"current time: {datetime.datetime.now()}")
-#            Optimization.save_config(dab_config)
-
-    @staticmethod
-    def save_study_results_pareto(dab_config: circuit_dtos.CircuitParetoDabDesign, show_results: bool = False) -> None:
+    def save_study_results_pareto(self, show_results: bool = False) -> None:
         """Show the results of a study.
 
         A local .html file is generated under config.working_directory to store the interactive plotly plots on disk.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
         :param show_results: True to directly open the browser to show the study results.
         :type show_results: bool
         """
-        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
-        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
-        study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
+        if self._study_in_storage is None:
+            logger.warning("The study is not initialized!")
+            return
+        elif self._dab_config is None:
+            logger.warning("Circuit configuration is not initialized!")
+            return
 
-        fig = optuna.visualization.plot_pareto_front(study, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
-        fig.update_layout(title=f"{dab_config.circuit_study_name} <br><sup>{dab_config.project_directory}</sup>")
+        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+
+        fig = optuna.visualization.plot_pareto_front(self._study_in_storage, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
+        fig.update_layout(title=f"{self._dab_config.circuit_study_name} <br><sup>{self._dab_config.project_directory}</sup>")
         fig.write_html(
-            f"{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}"
+            f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}"
             f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
         if show_results:
             fig.show()
@@ -547,7 +560,7 @@ class CircuitOptimization:
         logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
-        fix_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+        fix_parameters = CircuitOptimization.calculate_fixed_parameters(dab_config)
 
         dab_dto = d_sets.HandleDabDto.init_config(
             name=str(trial_number),
@@ -568,22 +581,26 @@ class CircuitOptimization:
 
         return dab_dto
 
-    @staticmethod
-    def df_to_dab_dto_list(dab_config: circuit_dtos.CircuitParetoDabDesign, df: pd.DataFrame) -> list[d_dtos.CircuitDabDTO]:
+    def df_to_dab_dto_list(self, df: pd.DataFrame) -> list[d_dtos.CircuitDabDTO]:
         """
         Load a DAB-DTO from an optuna study.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
         :param df: Pandas DataFrame to convert to the DAB-DTO list
         :type df: pd.DataFrame
-        :return:
+        :return: List of DTO
+        :rtype:  list[d_dtos.CircuitDabDTO]
         """
-        logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(df)} trials.")
+        dab_dto_list: list[d_dtos.CircuitDabDTO] = []
 
-        dab_dto_list = []
+        # Check if configuration is not available or fixed parameters are not available
+        if self._dab_config is None:
+            logger.warning("Circuit configuration is not initialized!")
+            return dab_dto_list
+        elif self._fixed_parameters is None:
+            logger.warning("Missing initialized fixed parameters!")
+            return dab_dto_list
 
-        fix_parameters = CircuitOptimization.calculate_fix_parameters(dab_config)
+        logger.info(f"The study '{self._dab_config.circuit_study_name}' contains {len(df)} trials.")
 
         for index, _ in df.iterrows():
             transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_1_name_suggest"][index])
@@ -591,17 +608,17 @@ class CircuitOptimization:
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
-                mesh_v1=fix_parameters.mesh_v1,
-                mesh_v2=fix_parameters.mesh_v2,
-                mesh_p=fix_parameters.mesh_p,
-                sampling=dab_config.sampling,
+                mesh_v1=self._fixed_parameters.mesh_v1,
+                mesh_v2=self._fixed_parameters.mesh_v2,
+                mesh_p=self._fixed_parameters.mesh_p,
+                sampling=self._dab_config.sampling,
                 n=df["params_n_suggest"][index].item(),
                 ls=df["params_l_s_suggest"][index].item(),
                 fs=df["params_f_s_suggest"][index].item(),
                 lc1=df["params_l_1_suggest"][index].item(),
                 lc2=df["params_l_2__suggest"][index].item() / df["params_n_suggest"][index].item() ** 2,
-                c_par_1=dab_config.design_space.c_par_1,
-                c_par_2=dab_config.design_space.c_par_2,
+                c_par_1=self._dab_config.design_space.c_par_1,
+                c_par_2=self._dab_config.design_space.c_par_2,
                 transistor_dto_1=transistor_dto_1,
                 transistor_dto_2=transistor_dto_2
             )
@@ -799,24 +816,37 @@ class CircuitOptimization:
 
         return pareto_df_offset
 
-    @staticmethod
-    def filter_study_results(dab_config: circuit_dtos.CircuitParetoDabDesign) -> None:
-        """
-        Filter the study result and use GeckoCIRCUITS for detailed calculation.
+    def filter_study_results(self) -> None:
+        """Filter the study result and use GeckoCIRCUITS for detailed calculation."""
+        # Check if configuration is not available and if study is not available
+        if self._dab_config is None:
+            logger.warning("Circuit configuration is not loaded!")
+            return
+        elif not self._is_study_available:
+            logger.warning("Study is not calculated. First run 'start_proceed_study'!")
+            return
+        elif self._study_in_storage is None:
+            logger.warning("Study is not calculated. First run 'start_proceed_study'!")
+            return
 
-        :param dab_config: DAB configuration DTO
-        :type dab_config: p_dtos.CircuitParetoDabDesign
-        """
-        df = CircuitOptimization.study_to_df(dab_config)
+        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+
+        df = self._study_in_storage.trials_dataframe()
+        df.to_csv(f'{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.csv')
+
         df = df[df["values_0"] == 100]
 
         smallest_dto_list: list[d_dtos.CircuitDabDTO] = []
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
-        smallest_dto_list.append(CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest)[0])
+        smallest_dto_list.append(self.df_to_dab_dto_list(df_smallest)[0])
 
-        for count in np.arange(0, dab_config.filter.number_filtered_designs - 1):
+        # Continue time measurement
+        with self._c_lock_stat:
+            self._progress_run_time.continue_trigger()
+
+        for count in np.arange(0, self._dab_config.filter.number_filtered_designs - 1):
             logger.info("------------------")
             logger.info(f"{count=}")
             n_suggest = df_smallest['params_n_suggest'].item()
@@ -828,7 +858,7 @@ class CircuitOptimization:
             transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
 
             # make sure to use parameters with minimum x % difference.
-            difference = dab_config.filter.difference_percentage / 100
+            difference = self._dab_config.filter.difference_percentage / 100
 
             df = df.loc[
                 ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \
@@ -843,26 +873,19 @@ class CircuitOptimization:
             df_smallest = df.nsmallest(n=1, columns=["values_1"])
             df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
 
-        smallest_dto_list = CircuitOptimization.df_to_dab_dto_list(dab_config, df_smallest_all)
+        smallest_dto_list = self.df_to_dab_dto_list(df_smallest_all)
 
         # join if necessary
-        folders = dct.CircuitOptimization.load_filepaths(dab_config.project_directory)
+        folders = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
-        dto_directory = os.path.join(folders.circuit, dab_config.circuit_study_name, "filtered_results")
+        dto_directory = os.path.join(folders.circuit, self._dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
-        # Update statistical data
-        with CircuitOptimization._c_lock_stat:
-            if CircuitOptimization._progress_data.progress_status == ProgressStatus.InProgress:
-                CircuitOptimization._progress_data.run_time = time.perf_counter() - CircuitOptimization._progress_data.start_time
-                # Check for valid entry
-                if CircuitOptimization._progress_data.run_time < 0:
-                    CircuitOptimization._progress_data.run_time = 0.0
-                # Set Status to done
-                CircuitOptimization._progress_data.progress_status = ProgressStatus.Done
-            else:
-                # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
-                pass
+        # Stop runtime measurement and update statistical data
+        with self._c_lock_stat:
+            self._progress_run_time.stop_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
+            self._progress_data.progress_status = ProgressStatus.Done

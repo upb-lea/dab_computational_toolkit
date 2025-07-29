@@ -48,7 +48,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                         )
     fname = name + '_V1_{:.0f}V'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0])
     fcomment = 'View plane: V_1 = {:.1f}V'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0])
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot all modulation angles but separately with autoscale
     plt.new_fig(nrows=1, ncols=3, tab_title='OptZVS Modulation Angles (autoscale)')
@@ -69,7 +69,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                          xlabel='P / W', ylabel='U2 / V', title='tau2 in rad')
     fname = name + '_V1_{:.0f}V_autoscale'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0])
     fcomment = 'View plane: V_1 = {:.1f}V'.format(dab_config.input_config.mesh_v1[0, v1_middle, 0])
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot a cross-section through the V2 plane
     v2_middle = int(np.shape(dab_config.input_config.mesh_p)[0] / 2)
@@ -88,7 +88,7 @@ def plot_calculation_results(dab_config: CircuitDabDTO) -> None:
                         )
     fname = name + '_V2_{:.0f}V'.format(dab_config.input_config.mesh_v2[v2_middle, 0, 0])
     fcomment = 'View plane: V_2 = {:.1f}V'.format(dab_config.input_config.mesh_v2[v2_middle, 0, 0])
-    plt.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
+    PlotDAB.save_fig(plt.figs_axes[-1][0], directory, fname, fcomment)
 
     # Plot Coss and Qoss of transistor 1
     plt.new_fig(nrows=1, ncols=2, tab_title='Coss ' + str(dab_config.input_config.transistor_dto_1), sharex=False, sharey=False)

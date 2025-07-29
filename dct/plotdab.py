@@ -119,7 +119,8 @@ class PlotDAB:
         if self.show_pw:
             self.pw.add_plot(title=tab_title, figure=fig)
 
-    def save_fig(self, fig: plt.Figure, directory: str | None = None, name: str = '', comment: str = '', timestamp: bool = True) -> None:
+    @staticmethod
+    def save_fig(fig: plt.Figure, directory: str | None = None, name: str = '', comment: str = '', timestamp: bool = True) -> None:
         """
         Save the given fig as PNG and PDF.
 
@@ -181,7 +182,8 @@ class PlotDAB:
             fname = os.path.join(directory, filename + '.pdf')
             fig.savefig(fname=fname, metadata=metadata)
 
-    def plot_3by1(self, fig_axes: tuple, x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, xl: str = 'x', yl: str = 'y',
+    @staticmethod
+    def plot_3by1(fig_axes: tuple, x: np.ndarray, y: np.ndarray, z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, xl: str = 'x', yl: str = 'y',
                   t1: str = 'z1', t2: str = 'z2', t3: str = 'z3') -> None:
         """
         Plot three contourf plots with a shared colorbar.
@@ -483,6 +485,9 @@ class PlotDAB:
         :param mvvp_iLs: current i_Ls in A
         :type mvvp_iLs: np.ndarray
         """
+        # Due to 'timeit' the keyword 'static_method' cannot be applied. So dummy command is applied function to prevent ruff issue: P_L_R6301
+        is_show: bool = self.show_pw
+
         # plot
         fig, axs = plt.subplots(1, 3, sharey=True)
         fig.suptitle("DAB RMS Currents")
@@ -843,6 +848,8 @@ class PlotDAB:
         :param z_max: [optional] clip to maximum z-value
         :type z_max: float
         """
+        # Due to 'timeit' the keyword 'static_method' cannot be applied. So dummy command is applied function to prevent ruff issue: P_L_R6301
+        is_show: bool = self.show_pw
         # check if z input matrix is out of None's only. If True, raise exception.
         # Note: the 1-value is a random value, hopefully no one has sum(array) with array_size
         search_nones = z.copy()

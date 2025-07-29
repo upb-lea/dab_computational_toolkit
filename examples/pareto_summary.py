@@ -23,9 +23,11 @@ heat_sink_study_name = "3_dimensions"
 # task = "generate_pareto_summary"
 task = "plot_pareto_summary"
 
+# Allocate instance CircuitOptimization
+circuit_optimization: dct.CircuitOptimization = dct.CircuitOptimization()
 
 # load project file paths
-filepaths = dct.CircuitOptimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
+filepaths = circuit_optimization.load_filepaths(os.path.abspath(os.path.join(os.curdir, project_name)))
 
 if task == "generate_pareto_summary":
 
@@ -52,8 +54,8 @@ if task == "generate_pareto_summary":
 elif task == "plot_pareto_summary":
     df = pd.read_csv(f"{filepaths.heat_sink}/df_summary.csv")
 
-    df_filtered = dct.CircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
-                                                    factor_min_dc_losses=0.001, factor_max_dc_losses=10)
+    df_filtered = circuit_optimization.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                 factor_min_dc_losses=0.001, factor_max_dc_losses=10)
 
     dct.global_plot_settings_font_latex()
     fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)

@@ -22,6 +22,7 @@ import zipfile
 import dct
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -968,19 +969,22 @@ def test__get_page_main_data(caplog: LogCaptureFixture, test_index: int) -> None
 
     # Initialize the statistical data
     start_progress_data: dct.ProgressData = dct.ProgressData(
-        start_time=0.0, run_time=0, number_of_filtered_points=0,
+        run_time=0, number_of_filtered_points=0,
         progress_status=dct.ProgressStatus.Idle)
 
     progress_data_circuit: dct.ProgressData = dct.ProgressData(
-        start_time=float_test_values[test_index % float_test_len],
         run_time=float_test_values[test_index % float_test_len],
         number_of_filtered_points=pos_int_test_values[test_index % pos_int_test_len],
         progress_status=dct.ProgressStatus.Done)
 
     progress_data_heat_sink: dct.ProgressData = dct.ProgressData(
-        start_time=float_test_values[(test_index + 1) % float_test_len],
         run_time=float_test_values[(test_index + 1) % float_test_len],
         number_of_filtered_points=pos_int_test_values[(test_index + 1) % pos_int_test_len],
+        progress_status=dct.ProgressStatus.Done)
+
+    progress_data_summary: dct.ProgressData = dct.ProgressData(
+        run_time=float_test_values[(test_index + 2) % float_test_len],
+        number_of_filtered_points=pos_int_test_values[(test_index + 2) % pos_int_test_len],
         progress_status=dct.ProgressStatus.Done)
 
     filtered_point_list_data: list[tuple[str, int] | Any] = [["Hallo", pos_int_test_values[(test_index + 5) % pos_int_test_len]]]
@@ -1063,26 +1067,31 @@ def test__get_page_main_data(caplog: LogCaptureFixture, test_index: int) -> None
     # Update progress data of circuit and heat sink
     exp_result_queue_main_data.circuit_list[0].progress_data = copy.deepcopy(progress_data_circuit)
     exp_result_queue_main_data.heat_sink_list[0].progress_data = copy.deepcopy(progress_data_heat_sink)
+    exp_result_queue_main_data.summary_list[0].progress_data = copy.deepcopy(progress_data_summary)
     exp_result_queue_detail_data.heat_sink_list[0].progress_data = copy.deepcopy(progress_data_heat_sink)
+    exp_result_queue_detail_data.summary_data.progress_data = copy.deepcopy(progress_data_summary)
 
     # Create the instance
     test_dct: dct.DctMainCtl = dct.DctMainCtl()
     # Allocate dct timer members
-    test_dct._total_time = test_dct.RunTime()
+    test_dct._total_time = RunTime()
     test_dct._total_time.reset_start_trigger()
     # Breakpoint notification
     test_dct._break_point_message = string_test_values[(test_index + 4) % str_test_len]
     # Filtered point name list
     test_dct._filtered_list_files = string_test_arrays[test_index % str_list_len]
-    # Allocate dct heat sink optimization
-    test_dct.heat_sink_optimization = dct.HeatSinkOptimization()
+    # Allocate dct optimization objects
+    test_dct._heat_sink_optimization = dct.HeatSinkOptimization()
+    test_dct._circuit_optimization = dct.CircuitOptimization()
+    test_dct._summary_processing = dct.DctSummaryProcessing()
     # Perform the test of get_initialization_queue_data
     (test_dct._circuit_list, test_dct._inductor_main_list, test_dct._inductor_list, test_dct._transformer_main_list,
      test_dct._transformer_list, test_dct._heat_sink_list, test_dct._summary_list) = test_dct.get_initialization_queue_data(test_parameter_1)
 
-    # Set circuit and heat sink progress data
-    dct.CircuitOptimization._progress_data = progress_data_circuit
-    test_dct.heat_sink_optimization._progress_data = progress_data_heat_sink
+    # Set circuit- and heat sink optimization progress data and summary progress data
+    test_dct._circuit_optimization._progress_data = progress_data_circuit
+    test_dct._heat_sink_optimization._progress_data = progress_data_heat_sink
+    test_dct._summary_processing._progress_data = progress_data_summary
     # Stop timers
     test_dct._total_time.stop_trigger()
 
@@ -1137,7 +1146,7 @@ def test_runtime_class(timer_id_list: list[int]) -> None:
     """
     # Variable declaration
     # List of timer objects of type dct.DctMainCtl.RunTime
-    test_timer_list: list[dct.DctMainCtl.RunTime] = []
+    test_timer_list: list[RunTime] = []
 
     # Create the instance
     test_dct: dct.DctMainCtl = dct.DctMainCtl()
@@ -1145,7 +1154,7 @@ def test_runtime_class(timer_id_list: list[int]) -> None:
     # Allocate dct timer members
     for test_timer_id in range(len(timer_id_list)):
         # Create timer
-        test_timer = test_dct.RunTime()
+        test_timer: RunTime = RunTime()
         # Add to list
         test_timer_list.append(test_timer)
         assert not test_timer_list[test_timer_id].is_timer_active()

@@ -82,8 +82,9 @@ class ParetoPlots:
         :type toml_prog_flow: tc.FlowControl
         """
         # load circuit configuration file
-        dab_config = dct.CircuitOptimization.load_config(
-            toml_prog_flow.general.project_directory, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+        dab_config = dct.CircuitOptimization.load_stored_config(
+            toml_prog_flow.general.project_directory, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(
+                ".toml", ""))
         # generate circuit dataframe
         df_circuit = dct.CircuitOptimization.study_to_df(dab_config)
 

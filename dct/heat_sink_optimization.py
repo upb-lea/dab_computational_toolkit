@@ -1,7 +1,6 @@
 """Inductor optimization class."""
 # python libraries
 import os
-import time
 import copy
 import threading
 import logging
@@ -13,6 +12,7 @@ import hct
 import dct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)
@@ -23,12 +23,14 @@ class HeatSinkOptimization:
     # Simulation configuration list
     _hct_config: hct.OptimizationParameters
     _progress_data: ProgressData
+    _progress_run_time: RunTime
 
     def __init__(self) -> None:
         """Initialize the configuration list for the heat sink optimizations."""
-        self._hct_config: hct.OptimizationParameters
-        self._progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0.0, number_of_filtered_points=0,
+        self._hct_config: hct.OptimizationParameters | None = None
+        self._progress_data: ProgressData = ProgressData(run_time=0.0, number_of_filtered_points=0,
                                                          progress_status=ProgressStatus.Idle)
+        self._progress_run_time: RunTime = RunTime()
         self._h_lock_stat: threading.Lock = threading.Lock()
 
     def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
@@ -94,13 +96,10 @@ class HeatSinkOptimization:
         """
         # Lock statistical performance data access
         with self._h_lock_stat:
-            # Update statistical data if optimization is running
+            # Check if list is in progress
             if self._progress_data.progress_status == ProgressStatus.InProgress:
-                self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
-                # Check for valid entry
-                if self._progress_data.run_time < 0:
-                    self._progress_data.run_time = 0.0
-                    self._progress_data.start_time = time.perf_counter()
+                # Update statistical data if optimization is running
+                self._progress_data.run_time = self._progress_run_time.get_runtime()
 
         return copy.deepcopy(self._progress_data)
 
@@ -136,10 +135,10 @@ class HeatSinkOptimization:
         :param debug: Debug mode flag
         :type  debug: bool
         """
-        # Update statistical data
+        # Start the progress time measurement
         with self._h_lock_stat:
-            self._progress_data.start_time = time.perf_counter()
-            self._progress_data.run_time = 0.0
+            self._progress_run_time.reset_start_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.InProgress
 
         # Perform optimization
@@ -150,15 +149,16 @@ class HeatSinkOptimization:
                 if target_number_trials > 100:
                     target_number_trials = 100
 
-        HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
+        if self._hct_config is not None:
+            HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
+        else:
+            logger.warning("Method 'generate_optimization_list' is not called!\n"
+                           "    No list is generated so that no simulation can be performed!")
 
         # Update statistical data
         with self._h_lock_stat:
-            self._progress_data.run_time = time.perf_counter() - self._progress_data.start_time
-            # Check for valid entry
-            if self._progress_data.run_time < 0:
-                self._progress_data.run_time = 0.0
-                self._progress_data.start_time = time.perf_counter()
+            self._progress_run_time.stop_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.Done
 
 class ThermalCalcSupport:

@@ -72,6 +72,9 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
     # set logging level to warning
     caplog.set_level(logging.INFO)
 
+    # Create the instance
+    test_object: dct.CircuitOptimization = dct.CircuitOptimization()
+
     # set up sampling
     sampling = dct.CircuitSampling(
         sampling_method=sampling_method,
@@ -94,9 +97,9 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
 
     if expected_exception:
         with pytest.raises(expected_exception):
-            dct.CircuitOptimization.calculate_fix_parameters(dab_config)
+            dct.CircuitOptimization.calculate_fixed_parameters(dab_config)
     else:
-        output = dct.CircuitOptimization.calculate_fix_parameters(dab_config)
+        output = dct.CircuitOptimization.calculate_fixed_parameters(dab_config)
         assert_array_equal(result_weighting, output.mesh_weights)
 
         for info_message_id in expected_message_id_list:

@@ -4,7 +4,6 @@ import os
 import pickle
 import logging
 import copy
-import time
 import threading
 
 # 3rd party libraries
@@ -16,6 +15,7 @@ import femmt as fmt
 import dct.inductor_optimization_dtos
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 # configure root logger
 logger = logging.getLogger(__name__)
@@ -23,15 +23,17 @@ logger = logging.getLogger(__name__)
 class InductorOptimization:
     """Optimization of the inductor."""
 
-    # List with configurations to optimize
+    # Declaration of member types
     _optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto]
     _i_lock_stat: threading.Lock
+    _progress_run_time: RunTime
 
     def __init__(self) -> None:
         """Initialize the configuration list for the inductor optimizations."""
         self._i_lock_stat: threading.Lock = threading.Lock()
         self._optimization_config_list = []
         self._number_performed_calculations: int = 0
+        self._progress_run_time: RunTime = RunTime()
 
     def generate_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
@@ -82,7 +84,7 @@ class InductorOptimization:
             material_data_sources=act_material_data_sources)
 
         # Initialize the statistical data
-        stat_data_init: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+        stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
                                                     progress_status=ProgressStatus.Idle)
 
         # Create the io_config_list for all trials
@@ -125,24 +127,20 @@ class InductorOptimization:
         :rtype: ProgressData
         """
         # Variable declaration and default initialization
-        ret_progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
+        ret_progress_data: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
                                                        progress_status=ProgressStatus.Idle)
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
             # Lock statistical performance data access (ASA: Possible Bug)
-            # with self._i_lock_stat:  -> ASA: Later to repair
-            # Update statistical data if optimization is running
-            if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
-                self._optimization_config_list[filtered_list_id].progress_data.run_time = (
-                    time.perf_counter() - self._optimization_config_list[filtered_list_id].progress_data.start_time)
-                # Check for valid entry
-                if self._optimization_config_list[filtered_list_id].progress_data.run_time < 0:
-                    self._optimization_config_list[filtered_list_id].progress_data.run_time = 0.0
-                    self._optimization_config_list[filtered_list_id].progress_data.start_time = time.perf_counter()
+            with self._i_lock_stat:
+                # Check if list is in progress
+                if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
+                    # Update statistical data
+                    self._optimization_config_list[filtered_list_id].progress_data.run_time = self._progress_run_time.get_runtime()
 
-            # Create a copy of actual data
-            ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
+                # Create a copy of actual data
+                ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
 
         return ret_progress_data
 
@@ -158,7 +156,8 @@ class InductorOptimization:
         return act_number_performed_calculations
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def _optimize(self, circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
+    @staticmethod
+    def _optimize(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
                   target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
                   enable_operating_range_simulation: bool, debug: bool) -> int:
         """
@@ -311,6 +310,7 @@ class InductorOptimization:
         """
         # Later this is to parallelize with multiple processes
         for act_optimization_configuration in self._optimization_config_list:
+
             # Debug switch
             if target_number_trials != 0:
                 if debug:
@@ -320,20 +320,23 @@ class InductorOptimization:
 
             # Update statistical data
             with self._i_lock_stat:
-                act_optimization_configuration.progress_data.start_time = time.perf_counter()
+                # Start the progress time measurement
+                self._progress_run_time.reset_start_trigger()
+                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
                 act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
             # Perform optimization
-            number_of_filtered_points = self._optimize(
+            number_of_filtered_points = InductorOptimization._optimize(
                 act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
                 factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
 
             # Update statistical data
             with self._i_lock_stat:
-                act_optimization_configuration.progress_data.run_time = time.perf_counter() - act_optimization_configuration.progress_data.start_time
-                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_points
+                self._progress_run_time.stop_trigger()
+                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
                 act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
+                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_points
                 # Increment performed calculation counter
                 self._number_performed_calculations = self._number_performed_calculations + 1
 

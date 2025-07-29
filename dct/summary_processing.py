@@ -3,7 +3,6 @@
 import os
 import pickle
 import logging
-import time
 import threading
 import copy
 
@@ -14,9 +13,10 @@ import numpy as np
 # own libraries
 import dct
 from dct import ProgressStatus
-from dct.heat_sink_optimization import ThermalCalcSupport as thr_sup
+from dct.heat_sink_optimization import ThermalCalcSupport
 import hct
 from dct.server_ctl_dtos import ProgressData
+from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 
 logger = logging.getLogger(__name__)
@@ -24,14 +24,9 @@ logger = logging.getLogger(__name__)
 class DctSummaryProcessing:
     """Perform the summary calculation based on optimization results."""
 
-    # Variable declaration
-
-    """Initialize the configuration list for the circuit optimizations."""
-    _s_lock_stat: threading.Lock = threading.Lock()
-    # Initialize the statistical data (For more configuration it needs to become instance instead of static
-    _progress_data: ProgressData = ProgressData(start_time=0.0, run_time=0, number_of_filtered_points=0,
-                                                progress_status=ProgressStatus.Idle)
-
+    _s_lock_stat: threading.Lock
+    _progress_run_time: RunTime
+    _progress_data: ProgressData
     # Areas and transistor cooling parameter
     copper_coin_area_1: float
     transistor_b1_cooling: dct.TransistorCooling
@@ -44,9 +39,33 @@ class DctSummaryProcessing:
 
     # Heat sink boundary condition parameter
     heat_sink_boundary_conditions: dct.HeatSinkBoundaryConditions
+    # Thermal calculation support class
+    thr_sup: ThermalCalcSupport
 
-    @staticmethod
-    def init_thermal_configuration(act_thermal_data: dct.TomlHeatSinkSummaryData) -> bool:
+    def __init__(self):
+        """Initialize the configuration list for the circuit optimizations."""
+        self._s_lock_stat = threading.Lock()
+        # Initialize the statistical data (For more configuration it needs to become instance instead of static
+        self._progress_run_time = RunTime()
+        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0,
+                                           progress_status=ProgressStatus.Idle)
+
+        # Areas and transistor cooling parameter
+        self.copper_coin_area_1 = 0
+        self.transistor_b1_cooling = dct.TransistorCooling(0, 0)
+        self.copper_coin_area_2 = 0
+        self.transistor_b2_cooling = dct.TransistorCooling(0, 0)
+
+        # Thermal resistance
+        self.r_th_per_unit_area_ind_heat_sink = 0
+        self.r_th_per_unit_area_xfmr_heat_sink = 0
+
+        # Heat sink boundary condition parameter
+        self.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(0, 0)
+        # Thermal calculation support class
+        self.thr_sup = ThermalCalcSupport()
+
+    def init_thermal_configuration(self, act_thermal_data: dct.TomlHeatSinkSummaryData) -> bool:
         """Initialize the thermal parameter of the connection points for the transistors, inductor and transformer.
 
         :param act_thermal_data : toml file with configuration data
@@ -60,12 +79,12 @@ class DctSummaryProcessing:
         successful_init = True
         transformer_cooling: dct.InductiveElementCooling
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        DctSummaryProcessing.transistor_b1_cooling = dct.TransistorCooling(
+        self.transistor_b1_cooling = dct.TransistorCooling(
             tim_thickness=act_thermal_data.transistor_b1_cooling[0],
             tim_conductivity=act_thermal_data.transistor_b1_cooling[1])
 
         # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        DctSummaryProcessing.transistor_b2_cooling = dct.TransistorCooling(
+        self.transistor_b2_cooling = dct.TransistorCooling(
             tim_thickness=act_thermal_data.transistor_b2_cooling[0],
             tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
 
@@ -77,7 +96,7 @@ class DctSummaryProcessing:
         if inductor_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
-            DctSummaryProcessing.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
+            self.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
         else:
             logger.info(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
             successful_init = False
@@ -95,35 +114,31 @@ class DctSummaryProcessing:
         if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
-            DctSummaryProcessing.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
+            self.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
         else:
             logger.info(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        DctSummaryProcessing.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
-                                                                                            t_hs_max=act_thermal_data.heat_sink[1])
+        self.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
+                                                                            t_hs_max=act_thermal_data.heat_sink[1])
         # Return if initialization was successful performed (True)
         return successful_init
 
-    @staticmethod
-    def get_progress_data() -> ProgressData:
+    def get_progress_data(self) -> ProgressData:
         """Provide the progress data of the optimization.
 
         :return: Progress data: Processing start time, actual processing time, number of filtered operation points and status.
         :rtype: ProgressData
         """
         # Lock statistical performance data access
-        with DctSummaryProcessing._s_lock_stat:
-            # Update statistical data if optimization is running
-            if DctSummaryProcessing._progress_data.progress_status == ProgressStatus.InProgress:
-                DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
-                # Check for valid entry
-                if DctSummaryProcessing._progress_data.run_time < 0:
-                    DctSummaryProcessing._progress_data.run_time = 0.0
-                    DctSummaryProcessing._progress_data.start_time = time.perf_counter()
+        with self._s_lock_stat:
+            # Check if list is in progress
+            if self._progress_data.progress_status == ProgressStatus.InProgress:
+                # Update statistical data if optimization is running
+                self._progress_data.run_time = self._progress_run_time.get_runtime()
 
-        return copy.deepcopy(DctSummaryProcessing._progress_data)
+        return copy.deepcopy(self._progress_data)
 
     @staticmethod
     def _generate_magnetic_number_list(act_dir_name: str) -> tuple[bool, list[str]]:
@@ -166,20 +181,15 @@ class DctSummaryProcessing:
 
         return is_magnetic_list_generated, magnetic_result_numbers
 
-    @staticmethod
-    def generate_result_database(circuit_study_data: dct.StudyData, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
-                                 heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_inductor_study_names: list[str],
+    def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
+                                 summary_data: dct.StudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
-        :param circuit_study_data: circuit study data
-        :type circuit_study_data: dct.StudyData
         :param inductor_study_data: inductor study data
         :type inductor_study_data: dct.StudyData
         :param transformer_study_data: transformer study data
         :type transformer_study_data: dct.StudyData
-        :param heat_sink_study_data: heat sink study data
-        :type heat_sink_study_data: dct.StudyData
         :param summary_data: Information about the summary name and path
         :type summary_data: dct.StudyData
         :param act_inductor_study_names: List of names with inductor studies which are to process
@@ -192,13 +202,15 @@ class DctSummaryProcessing:
         :rtype:  pd.DataFrame
         """
         # Variable declaration
+
+        # Start the progress time measurement
+        with self._s_lock_stat:
+            self._progress_run_time.reset_start_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
+            self._progress_data.progress_status = ProgressStatus.InProgress
+
         # Result DataFrame
         df = pd.DataFrame()
-
-        # Update statistical data
-        with DctSummaryProcessing._s_lock_stat:
-            DctSummaryProcessing._progress_data.start_time = time.perf_counter()
-            DctSummaryProcessing._progress_data.progress_status = ProgressStatus.InProgress
 
         # iterate circuit numbers
         for circuit_trial_file in filter_data.filtered_list_files:
@@ -222,13 +234,13 @@ class DctSummaryProcessing:
             # End: ASA: No influence by inductor or transformer ################################
             # Begin: ASA: No influence by inductor or transformer ################################
             # get all the losses in a matrix
-            r_th_copper_coin_1, copper_coin_area_1 = thr_sup.calculate_r_th_copper_coin(
+            r_th_copper_coin_1, copper_coin_area_1 = self.thr_sup.calculate_r_th_copper_coin(
                 circuit_dto.input_config.transistor_dto_1.cooling_area)
-            r_th_copper_coin_2, copper_coin_area_2 = thr_sup.calculate_r_th_copper_coin(
+            r_th_copper_coin_2, copper_coin_area_2 = self.thr_sup.calculate_r_th_copper_coin(
                 circuit_dto.input_config.transistor_dto_2.cooling_area)
 
-            circuit_r_th_tim_1 = thr_sup.calculate_r_th_tim(copper_coin_area_1, DctSummaryProcessing.transistor_b1_cooling)
-            circuit_r_th_tim_2 = thr_sup.calculate_r_th_tim(copper_coin_area_2, DctSummaryProcessing.transistor_b2_cooling)
+            circuit_r_th_tim_1 = self.thr_sup.calculate_r_th_tim(copper_coin_area_1, self.transistor_b1_cooling)
+            circuit_r_th_tim_2 = self.thr_sup.calculate_r_th_tim(copper_coin_area_2, self.transistor_b2_cooling)
 
             circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
             circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
@@ -319,20 +331,20 @@ class DctSummaryProcessing:
                             max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
                             # Calculate the thermal resistance according r_th = 1/lambda * l / A
                             # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
-                            r_th_ind_heat_sink = DctSummaryProcessing.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
+                            r_th_ind_heat_sink = self.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
                             temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
                             # For transformer: r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l.
-                            r_th_xfmr_heat_sink = DctSummaryProcessing.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
+                            r_th_xfmr_heat_sink = self.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
                             temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
 
                             # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
                             t_min_matrix = np.minimum(circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_inductor_heat_sink_max_matrix)
                             t_min_matrix = np.minimum(t_min_matrix, temperature_xfmr_heat_sink_max_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, DctSummaryProcessing.heat_sink_boundary_conditions.t_hs_max)
+                            t_min_matrix = np.minimum(t_min_matrix, self.heat_sink_boundary_conditions.t_hs_max)
 
                             # maximum delta temperature over the heat sink
-                            delta_t_max_heat_sink_matrix = t_min_matrix - DctSummaryProcessing.heat_sink_boundary_conditions.t_ambient
+                            delta_t_max_heat_sink_matrix = t_min_matrix - self.heat_sink_boundary_conditions.t_ambient
 
                             r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
 
@@ -398,11 +410,15 @@ class DctSummaryProcessing:
         # Save results to file (ASA : later to store only on demand)
         df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
 
+        # Start the progress time measurement
+        with self._s_lock_stat:
+            self._progress_run_time.stop_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
+
         # return the database
         return df
 
-    @staticmethod
-    def select_heat_sink_configuration(heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(self, heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: Information about the heat sink study name and study path
@@ -413,6 +429,12 @@ class DctSummaryProcessing:
         :type  act_df_for_hs: pd.DataFrame
         """
         # Variable declaration
+
+        # Continue the progress time measurement
+        with self._s_lock_stat:
+            self._progress_run_time.continue_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
+            self._progress_data.progress_status = ProgressStatus.InProgress
 
         # load heat sink
         hs_config_filepath = os.path.join(heat_sink_study_data.optimization_directory,
@@ -435,14 +457,7 @@ class DctSummaryProcessing:
 
         # Update statistical data for summary processing finalized
         # Update statistical data
-        with DctSummaryProcessing._s_lock_stat:
-            if DctSummaryProcessing._progress_data.progress_status == ProgressStatus.InProgress:
-                DctSummaryProcessing._progress_data.run_time = time.perf_counter() - DctSummaryProcessing._progress_data.start_time
-                # Check for valid entry
-                if DctSummaryProcessing._progress_data.run_time < 0:
-                    DctSummaryProcessing._progress_data.run_time = 0.0
-                # Set Status to done
-                DctSummaryProcessing._progress_data.progress_status = ProgressStatus.Done
-            else:
-                # ASA: Add reaction if filter_study_results is called although status not 'InProgress' (1)
-                pass
+        with self._s_lock_stat:
+            self._progress_run_time.stop_trigger()
+            self._progress_data.run_time = self._progress_run_time.get_runtime()
+            self._progress_data.progress_status = ProgressStatus.Done
