@@ -64,7 +64,7 @@ class DctMainCtl:
         # Optimization class instances
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_files: list[str] = []
-        self._circuit_optimization: CircuitOptimization  | None = None
+        self._circuit_optimization: CircuitOptimization | None = None
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
