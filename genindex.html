@@ -487,16 +487,10 @@
       </ul></li>
       <li><a href="intro.html#dct.TomlHeatSinkSettings.factor_bottom_area_copper_coin">factor_bottom_area_copper_coin (dct.TomlHeatSinkSettings attribute)</a>
 </li>
-      <li><a href="intro.html#dct.TomlFilterDistance.factor_max_dc_losses">factor_max_dc_losses (dct.TomlFilterDistance attribute)</a>
+      <li><a href="intro.html#dct.TomlFilterDistance.factor_dc_losses_min_max_list">factor_dc_losses_min_max_list (dct.TomlFilterDistance attribute)</a>
 
       <ul>
-        <li><a href="intro.html#dct.TomlTransformerFilterDistance.factor_max_dc_losses">(dct.TomlTransformerFilterDistance attribute)</a>
-</li>
-      </ul></li>
-      <li><a href="intro.html#dct.TomlFilterDistance.factor_min_dc_losses">factor_min_dc_losses (dct.TomlFilterDistance attribute)</a>
-
-      <ul>
-        <li><a href="intro.html#dct.TomlTransformerFilterDistance.factor_min_dc_losses">(dct.TomlTransformerFilterDistance attribute)</a>
+        <li><a href="intro.html#dct.TomlTransformerFilterDistance.factor_dc_losses_min_max_list">(dct.TomlTransformerFilterDistance attribute)</a>
 </li>
       </ul></li>
       <li><a href="intro.html#dct.TomlHeatSinkSettings.factor_pcb_area_copper_coin">factor_pcb_area_copper_coin (dct.TomlHeatSinkSettings attribute)</a>
@@ -690,8 +684,6 @@
 </li>
         <li><a href="intro.html#dct.ParetoFilePaths.heat_sink">(dct.ParetoFilePaths attribute)</a>
 </li>
-        <li><a href="intro.html#dct.TomlHeatSinkSummaryData.heat_sink">(dct.TomlHeatSinkSummaryData attribute)</a>
-</li>
       </ul></li>
       <li><a href="intro.html#dct.DctSummaryProcessing.heat_sink_boundary_conditions">heat_sink_boundary_conditions (dct.DctSummaryProcessing attribute)</a>
 </li>
@@ -833,7 +825,7 @@
       </ul></li>
       <li><a href="intro.html#dct.ConfigurationDataFiles.inductor_configuration_file">inductor_configuration_file (dct.ConfigurationDataFiles attribute)</a>
 </li>
-      <li><a href="intro.html#dct.TomlHeatSinkSummaryData.inductor_cooling">inductor_cooling (dct.TomlHeatSinkSummaryData attribute)</a>
+      <li><a href="intro.html#dct.TomlHeatSinkThermalResistanceData.inductor_cooling">inductor_cooling (dct.TomlHeatSinkThermalResistanceData attribute)</a>
 </li>
       <li><a href="intro.html#dct.QueueDetailData.inductor_list">inductor_list (dct.QueueDetailData attribute)</a>
 </li>
@@ -1090,7 +1082,7 @@
 </li>
         <li><a href="intro.html#dct.TomlHeatSinkSettings.model_config">(dct.TomlHeatSinkSettings attribute)</a>
 </li>
-        <li><a href="intro.html#dct.TomlHeatSinkSummaryData.model_config">(dct.TomlHeatSinkSummaryData attribute)</a>
+        <li><a href="intro.html#dct.TomlHeatSinkThermalResistanceData.model_config">(dct.TomlHeatSinkThermalResistanceData attribute)</a>
 </li>
         <li><a href="intro.html#dct.TomlInductor.model_config">(dct.TomlInductor attribute)</a>
 </li>
@@ -1653,7 +1645,11 @@
       <li><a href="intro.html#dct.GeckoAdditionalParameters.t_dead2">t_dead2 (dct.GeckoAdditionalParameters attribute)</a>
 </li>
       <li><a href="intro.html#dct.HeatSinkBoundaryConditions.t_hs_max">t_hs_max (dct.HeatSinkBoundaryConditions attribute)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.TomlHeatSinkBoundaryConditions.t_hs_max">(dct.TomlHeatSinkBoundaryConditions attribute)</a>
 </li>
+      </ul></li>
       <li><a href="intro.html#dct.CalcFromCircuitConfig.t_j_1">t_j_1 (dct.CalcFromCircuitConfig attribute)</a>
 </li>
       <li><a href="intro.html#dct.CalcFromCircuitConfig.t_j_2">t_j_2 (dct.CalcFromCircuitConfig attribute)</a>
@@ -1732,12 +1728,12 @@
 </li>
       <li><a href="intro.html#dct.TomlHeatSinkSettings">TomlHeatSinkSettings (class in dct)</a>
 </li>
-      <li><a href="intro.html#dct.TomlHeatSinkSummaryData">TomlHeatSinkSummaryData (class in dct)</a>
-</li>
-      <li><a href="intro.html#dct.TomlInductor">TomlInductor (class in dct)</a>
+      <li><a href="intro.html#dct.TomlHeatSinkThermalResistanceData">TomlHeatSinkThermalResistanceData (class in dct)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="intro.html#dct.TomlInductor">TomlInductor (class in dct)</a>
+</li>
       <li><a href="intro.html#dct.TomlInductorBoundaryConditions">TomlInductorBoundaryConditions (class in dct)</a>
 </li>
       <li><a href="intro.html#dct.TomlInductorDesignSpace">TomlInductorDesignSpace (class in dct)</a>
@@ -1780,7 +1776,7 @@
       </ul></li>
       <li><a href="intro.html#dct.ConfigurationDataFiles.transformer_configuration_file">transformer_configuration_file (dct.ConfigurationDataFiles attribute)</a>
 </li>
-      <li><a href="intro.html#dct.TomlHeatSinkSummaryData.transformer_cooling">transformer_cooling (dct.TomlHeatSinkSummaryData attribute)</a>
+      <li><a href="intro.html#dct.TomlHeatSinkThermalResistanceData.transformer_cooling">transformer_cooling (dct.TomlHeatSinkThermalResistanceData attribute)</a>
 </li>
       <li><a href="intro.html#dct.QueueDetailData.transformer_list">transformer_list (dct.QueueDetailData attribute)</a>
 </li>
@@ -1815,13 +1811,13 @@
       <li><a href="intro.html#dct.DctSummaryProcessing.transistor_b1_cooling">transistor_b1_cooling (dct.DctSummaryProcessing attribute)</a>
 
       <ul>
-        <li><a href="intro.html#dct.TomlHeatSinkSummaryData.transistor_b1_cooling">(dct.TomlHeatSinkSummaryData attribute)</a>
+        <li><a href="intro.html#dct.TomlHeatSinkThermalResistanceData.transistor_b1_cooling">(dct.TomlHeatSinkThermalResistanceData attribute)</a>
 </li>
       </ul></li>
       <li><a href="intro.html#dct.DctSummaryProcessing.transistor_b2_cooling">transistor_b2_cooling (dct.DctSummaryProcessing attribute)</a>
 
       <ul>
-        <li><a href="intro.html#dct.TomlHeatSinkSummaryData.transistor_b2_cooling">(dct.TomlHeatSinkSummaryData attribute)</a>
+        <li><a href="intro.html#dct.TomlHeatSinkThermalResistanceData.transistor_b2_cooling">(dct.TomlHeatSinkThermalResistanceData attribute)</a>
 </li>
       </ul></li>
       <li><a href="intro.html#dct.transistor_conduction_loss">transistor_conduction_loss() (in module dct)</a>

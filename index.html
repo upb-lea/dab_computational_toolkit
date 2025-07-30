@@ -777,8 +777,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlFilterDistance"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.factor_max_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.factor_max_dc_losses</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.factor_min_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.factor_min_dc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.factor_dc_losses_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.factor_dc_losses_min_max_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlFilterDistance.model_config"><code class="docutils literal notranslate"><span class="pre">TomlFilterDistance.model_config</span></code></a></li>
 </ul>
 </li>
@@ -794,6 +793,7 @@
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.area_min"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.area_min</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.model_config</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.t_ambient"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.t_ambient</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkBoundaryConditions.t_hs_max"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkBoundaryConditions.t_hs_max</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkDesignSpace"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkDesignSpace</span></code></a><ul>
@@ -814,13 +814,12 @@
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSettings.thermal_conductivity_copper"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSettings.thermal_conductivity_copper</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.heat_sink"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.heat_sink</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.inductor_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.inductor_cooling</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.model_config</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.transformer_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.transformer_cooling</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.transistor_b1_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.transistor_b1_cooling</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkSummaryData.transistor_b2_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkSummaryData.transistor_b2_cooling</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlHeatSinkThermalResistanceData"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkThermalResistanceData</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkThermalResistanceData.inductor_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkThermalResistanceData.inductor_cooling</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkThermalResistanceData.model_config"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkThermalResistanceData.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkThermalResistanceData.transformer_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkThermalResistanceData.transformer_cooling</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkThermalResistanceData.transistor_b1_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkThermalResistanceData.transistor_b1_cooling</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlHeatSinkThermalResistanceData.transistor_b2_cooling"><code class="docutils literal notranslate"><span class="pre">TomlHeatSinkThermalResistanceData.transistor_b2_cooling</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlInductor"><code class="docutils literal notranslate"><span class="pre">TomlInductor</span></code></a><ul>
@@ -907,8 +906,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.factor_max_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.factor_max_dc_losses</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.factor_min_dc_losses"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.factor_min_dc_losses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.factor_dc_losses_min_max_list"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.factor_dc_losses_min_max_list</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TomlTransformerFilterDistance.model_config"><code class="docutils literal notranslate"><span class="pre">TomlTransformerFilterDistance.model_config</span></code></a></li>
 </ul>
 </li>
