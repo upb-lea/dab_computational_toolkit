@@ -265,6 +265,7 @@ class TomlHeatSinkBoundaryConditions(BaseModel):
     """Toml checker for HeatSinkBoundaryConditions."""
 
     t_ambient: float
+    t_hs_max: float
     area_min: float
 
 class TomlHeatSinkSettings(BaseModel):
@@ -285,16 +286,14 @@ class TomlHeatSinkDesignSpace(BaseModel):
     number_fins_n_min_max_list: list[int]
     thickness_fin_t_min_max_list: list[float]
 
-class TomlHeatSinkSummaryData(BaseModel):
-    """Toml checker for HeatSinkSummaryData."""
+class TomlHeatSinkThermalResistanceData(BaseModel):
+    """Toml checker for HeatSinkThermalResistanceData."""
 
     # [tim_thickness, tim_conductivity]
     transistor_b1_cooling: list[float]
     transistor_b2_cooling: list[float]
     inductor_cooling: list[float]
     transformer_cooling: list[float]
-    # [t_ambient, t_hs_max] in °C
-    heat_sink: list[float]
 
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
@@ -302,4 +301,4 @@ class TomlHeatSink(BaseModel):
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
-    thermal_resistance_data: TomlHeatSinkSummaryData
+    thermal_resistance_data: TomlHeatSinkThermalResistanceData

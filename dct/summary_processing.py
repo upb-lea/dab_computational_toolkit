@@ -65,11 +65,11 @@ class DctSummaryProcessing:
         # Thermal calculation support class
         self.thr_sup = ThermalCalcSupport()
 
-    def init_thermal_configuration(self, act_thermal_data: dct.TomlHeatSinkSummaryData) -> bool:
+    def init_thermal_configuration(self, act_heat_sink_data: dct.TomlHeatSink) -> bool:
         """Initialize the thermal parameter of the connection points for the transistors, inductor and transformer.
 
-        :param act_thermal_data : toml file with configuration data
-        :type  act_thermal_data : dct.TomlHeatSinkSummaryData
+        :param act_heat_sink_data: toml file with configuration data
+        :type act_heat_sink_data: dct.TomlHeatSink
 
         :return: True, if the thermal parameter of the connection points was successful initialized
         :rtype: bool
@@ -80,17 +80,17 @@ class DctSummaryProcessing:
         transformer_cooling: dct.InductiveElementCooling
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
         self.transistor_b1_cooling = dct.TransistorCooling(
-            tim_thickness=act_thermal_data.transistor_b1_cooling[0],
-            tim_conductivity=act_thermal_data.transistor_b1_cooling[1])
+            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
+            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[1])
 
         # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
         self.transistor_b2_cooling = dct.TransistorCooling(
-            tim_thickness=act_thermal_data.transistor_b2_cooling[0],
-            tim_conductivity=act_thermal_data.transistor_b2_cooling[1])
+            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[0],
+            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[1])
 
         # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        inductor_tim_thickness = act_thermal_data.inductor_cooling[0]
-        inductor_tim_conductivity = act_thermal_data.inductor_cooling[1]
+        inductor_tim_thickness = act_heat_sink_data.thermal_resistance_data.inductor_cooling[0]
+        inductor_tim_conductivity = act_heat_sink_data.thermal_resistance_data.inductor_cooling[1]
 
         # Check on zero
         if inductor_tim_conductivity > 0:
@@ -103,8 +103,8 @@ class DctSummaryProcessing:
 
         # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
         # ASA: Rename database class from InductiveElementCooling to MagneticElementCooling
-        transformer_tim_thickness = act_thermal_data.transformer_cooling[0]
-        transformer_tim_conductivity = act_thermal_data.transformer_cooling[1]
+        transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
+        transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
 
         transformer_cooling = dct.InductiveElementCooling(
             tim_thickness=transformer_tim_thickness,
@@ -120,8 +120,8 @@ class DctSummaryProcessing:
             successful_init = False
 
         # Heat sink parameter:  List [t_ambient, t_hs_max]
-        self.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_thermal_data.heat_sink[0],
-                                                                            t_hs_max=act_thermal_data.heat_sink[1])
+        self.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_heat_sink_data.boundary_conditions.t_ambient,
+                                                                            t_hs_max=act_heat_sink_data.boundary_conditions.t_hs_max)
         # Return if initialization was successful performed (True)
         return successful_init
 

@@ -1305,7 +1305,7 @@ class DctMainCtl:
         self._summary_processing = DctSummaryProcessing()
 
         # Initialization thermal data
-        if not self._summary_processing.init_thermal_configuration(toml_heat_sink.thermal_resistance_data):
+        if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
