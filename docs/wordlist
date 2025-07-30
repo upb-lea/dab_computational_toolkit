@@ -14,7 +14,7 @@ FlowControl
 TomlInductor
 LaTeX
 HeatSink
-HeatSinkSummaryData
+HeatSinkThermalResistanceData
 HeatSinkDesignSpace
 HeatSinkSettings
 HeatSinkBoundaryConditions

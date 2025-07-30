@@ -158,8 +158,7 @@ def generate_inductor_toml(working_directory: str) -> None:
         core_left=1e-3
     
     [filter_distance]
-        factor_min_dc_losses = 0.01
-        factor_max_dc_losses = 100
+        factor_dc_losses_min_max_list=[0.01, 100]
     '''
     with open(f"{working_directory}/DabInductorConf.toml", 'w') as output:
         output.write(toml_data)
@@ -211,8 +210,7 @@ def generate_transformer_toml(working_directory: str) -> None:
         mesh_accuracy=0.8
     
     [filter_distance]
-        factor_min_dc_losses=0.01
-        factor_max_dc_losses=100
+        factor_dc_losses_min_max_list=[0.01, 100]
     '''
     with open(f"{working_directory}/DabTransformerConf.toml", 'w') as output:
         output.write(toml_data)

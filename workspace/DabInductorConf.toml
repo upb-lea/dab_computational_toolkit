@@ -25,6 +25,5 @@
     core_left=1e-3
 
 [filter_distance]
-    factor_min_dc_losses = 0.1
-    factor_max_dc_losses = 100
+    factor_dc_losses_min_max_list = [0.01, 100]
 

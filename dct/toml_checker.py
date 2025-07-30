@@ -183,8 +183,7 @@ class TomlInductorBoundaryConditions(BaseModel):
 class TomlFilterDistance(BaseModel):
     """Toml checker class for FilterDistance."""
 
-    factor_min_dc_losses: float
-    factor_max_dc_losses: float
+    factor_dc_losses_min_max_list: list[float]
 
 class TomlInductor(BaseModel):
     """Toml checker class for Inductor."""
@@ -245,8 +244,7 @@ class TomlTransformerInsulation(BaseModel):
 class TomlTransformerFilterDistance(BaseModel):
     """Toml checker class for TransformerFilterDistance."""
 
-    factor_min_dc_losses: float
-    factor_max_dc_losses: float
+    factor_dc_losses_min_max_list: list[float]
 
 class TomlTransformer(BaseModel):
     """Toml checker class for Transformer."""

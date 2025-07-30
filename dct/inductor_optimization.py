@@ -158,7 +158,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _optimize(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
-                  target_number_trials: int, factor_min_dc_losses: float, factor_max_dc_losses: float,
+                  target_number_trials: int, factor_dc_losses_min_max_list: list[float],
                   enable_operating_range_simulation: bool, debug: bool) -> int:
         """
         Perform the optimization.
@@ -171,8 +171,8 @@ class InductorOptimization:
         :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param factor_min_dc_losses: Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-        :type  factor_min_dc_losses: float
+        :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values (ASA: Later to merge with toml-data filter factor)
+        :type  factor_dc_losses_min_max_list: list[float]
         :param enable_operating_range_simulation: Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
         :type  enable_operating_range_simulation: bool
         :param debug: Debug mode flag
@@ -194,10 +194,10 @@ class InductorOptimization:
             return 0
 
         # perform FEM simulations
-        if factor_min_dc_losses != 0 and factor_max_dc_losses > 0:
+        if factor_dc_losses_min_max_list[0] != 0 and factor_dc_losses_min_max_list[1] > 0:
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
             df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_min_dc_losses, factor_max_dc_losses=factor_max_dc_losses)
+                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
@@ -210,7 +210,7 @@ class InductorOptimization:
                                                    "02_fem_simulation_results")
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
             df_filtered = (fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df
-                           (df, factor_min_dc_losses=factor_min_dc_losses, factor_max_dc_losses=factor_max_dc_losses))
+                           (df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1]))
             df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
             # fmt.InductorOptimization.FemSimulation.fem_vs_reluctance_pareto(df_fem_reluctance)
 
@@ -290,7 +290,7 @@ class InductorOptimization:
         return number_of_filtered_points
 
     def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                             factor_min_dc_losses: float = 1.0, factor_dc_max_losses: float = 100,
+                             factor_dc_losses_min_max_list: list[float] | None,
                              enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
@@ -299,15 +299,16 @@ class InductorOptimization:
         :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param factor_min_dc_losses: Filter factor to use filter the results (ASA: Later to merge with toml-data filter factor)
-        :type  factor_min_dc_losses: float
-        :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
-        :type factor_dc_max_losses: float
+        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results (ASA: Later to merge with toml-data filter factor)
+        :type  factor_dc_losses_min_max_list: float
         :param enable_operating_range_simulation: True to perform the simulations for all operating points
         :type  enable_operating_range_simulation: bool
         :param debug: Debug mode flag
         :type  debug: bool
         """
+        if factor_dc_losses_min_max_list is None:
+            factor_dc_losses_min_max_list = [1.0, 100]
+
         # Later this is to parallelize with multiple processes
         for act_optimization_configuration in self._optimization_config_list:
 
@@ -329,7 +330,7 @@ class InductorOptimization:
             number_of_filtered_points = InductorOptimization._optimize(
                 act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
-                factor_min_dc_losses, factor_dc_max_losses, enable_operating_range_simulation, debug)
+                factor_dc_losses_min_max_list, enable_operating_range_simulation, debug)
 
             # Update statistical data
             with self._i_lock_stat:
