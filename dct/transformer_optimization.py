@@ -196,7 +196,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _optimize(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
-                  act_target_number_trials: int, factor_dc_min_losses: float, factor_dc_max_losses: float, act_re_simulate: bool, debug: bool) -> int:
+                  act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], act_re_simulate: bool, debug: bool) -> int:
         """
         Perform the optimization.
 
@@ -206,10 +206,8 @@ class TransformerOptimization:
         :type act_sto_config: int
         :param act_target_number_trials: Number of trials for the reluctance model optimization
         :type act_target_number_trials: int
-        :param factor_dc_min_losses: Pareto filter, tolerance band = Multiplication of minimum losses
-        :type factor_dc_min_losses: float
-        :param factor_dc_max_losses: Pareto filter, tolerance band = Multiplication of maximum losses
-        :type factor_dc_max_losses: float
+        :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
+        :type factor_dc_losses_min_max_list: float
         :param act_re_simulate: True to re-simulate all waveforms
         :type act_re_simulate: bool
         :param debug: True to debug, defaults to False
@@ -232,10 +230,10 @@ class TransformerOptimization:
             return 0
 
         # perform FEM simulations
-        if factor_dc_min_losses != 0:
+        if factor_dc_losses_min_max_list[0] != 0:
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
             df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_min_losses, factor_max_dc_losses=factor_dc_max_losses)
+                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
             if debug:
                 # reduce dataset to the fist 5 entries
                 df_filtered = df_filtered.iloc[:5]
@@ -252,7 +250,7 @@ class TransformerOptimization:
                                                    "02_fem_simulation_results")
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
             df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_min_losses, factor_max_dc_losses=100)
+                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
             df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(
                 df_filtered, fem_results_folder_path)
             # Assemble configuration path
@@ -332,7 +330,7 @@ class TransformerOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                             factor_dc_min_losses: float = 1.0, factor_dc_max_losses: float = 100,
+                             factor_dc_losses_min_max_list: list[float] | None,
                              enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
@@ -341,15 +339,16 @@ class TransformerOptimization:
         :type  filter_data : dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param factor_dc_min_losses: Filter factor for the offset, related to the minimum DC losses
-        :type  factor_dc_min_losses: float
-        :param factor_dc_max_losses: Filter factor for the maximum losses, related to the minimum DC losses
-        :type factor_dc_max_losses: float
+        :param factor_dc_losses_min_max_list: Filter factor for the offset, related to the minimum/maximum DC losses
+        :type  factor_dc_losses_min_max_list: float
         :param enable_operating_range_simulation: True to perform the simulations for all operating points
         :type  enable_operating_range_simulation: bool
         :param debug: Debug mode flag
         :type  debug: bool
         """
+        if factor_dc_losses_min_max_list is None:
+            factor_dc_losses_min_max_list = [0.01, 100]
+
         # Later this is to parallelize with multiple processes
         for act_optimization_configuration in self._optimization_config_list:
             # Debug switch
@@ -368,8 +367,8 @@ class TransformerOptimization:
             number_of_filtered_point = TransformerOptimization._optimize(
                 act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.transformer_optimization_dto,
-                filter_data, target_number_trials, factor_dc_min_losses,
-                factor_dc_max_losses, enable_operating_range_simulation, debug)
+                filter_data, target_number_trials, factor_dc_losses_min_max_list,
+                enable_operating_range_simulation, debug)
 
             # Update statistical data
             with self._t_lock_stat:

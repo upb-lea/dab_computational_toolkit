@@ -158,8 +158,7 @@ def generate_inductor_toml(working_directory: str) -> None:
         core_left=1e-3
     
     [filter_distance]
-        factor_min_dc_losses = 0.01
-        factor_max_dc_losses = 100
+        factor_dc_losses_min_max_list=[0.01, 100]
     '''
     with open(f"{working_directory}/DabInductorConf.toml", 'w') as output:
         output.write(toml_data)
@@ -211,8 +210,7 @@ def generate_transformer_toml(working_directory: str) -> None:
         mesh_accuracy=0.8
     
     [filter_distance]
-        factor_min_dc_losses=0.01
-        factor_max_dc_losses=100
+        factor_dc_losses_min_max_list=[0.01, 100]
     '''
     with open(f"{working_directory}/DabTransformerConf.toml", 'w') as output:
         output.write(toml_data)
@@ -235,6 +233,7 @@ def generate_heat_sink_toml(working_directory: str) -> None:
     
     [boundary_conditions]
         t_ambient=40
+        t_hs_max=95
         area_min=0.001
     
     [settings]
@@ -250,8 +249,6 @@ def generate_heat_sink_toml(working_directory: str) -> None:
         transistor_b2_cooling = [1e-3,12.0]
         inductor_cooling = [1e-3,12.0]
         transformer_cooling = [1e-3,12.0]
-        # [t_ambient, t_hs_max] in °C
-        heat_sink = [40.0, 90.0]
 
     '''
     with open(f"{working_directory}/DabHeatSinkConf.toml", 'w') as output:

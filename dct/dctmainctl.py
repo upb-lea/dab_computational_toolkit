@@ -1229,8 +1229,8 @@ class DctMainCtl:
 
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler(
-                filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_min_dc_losses,
-                toml_inductor.filter_distance.factor_max_dc_losses, enable_ind_re_simulation)
+                filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
+                enable_ind_re_simulation)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1263,8 +1263,8 @@ class DctMainCtl:
                                                                       filter_data)
             # Perform transformer optimization
             self._transformer_optimization.optimization_handler(
-                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_min_dc_losses,
-                toml_transformer.filter_distance.factor_max_dc_losses, enable_trans_re_simulation)
+                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
+                enable_trans_re_simulation)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1305,7 +1305,7 @@ class DctMainCtl:
         self._summary_processing = DctSummaryProcessing()
 
         # Initialization thermal data
-        if not self._summary_processing.init_thermal_configuration(toml_heat_sink.thermal_resistance_data):
+        if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
