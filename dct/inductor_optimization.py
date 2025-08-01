@@ -122,7 +122,7 @@ class InductorOptimization:
 
         return is_inconsistent, inconsistency_report
 
-    def generate_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
+    def initialize_inductor_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -226,7 +226,7 @@ class InductorOptimization:
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
-            # Lock statistical performance data access (ASA: Possible Bug)
+            # Lock statistical performance data access
             with self._i_lock_stat:
                 # Check if list is in progress
                 if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
@@ -265,9 +265,9 @@ class InductorOptimization:
         :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values (ASA: Later to merge with toml-data filter factor)
+        :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
-        :param enable_operating_range_simulation: Flag to control, if the point are to re-simulate (ASA: Correct the parameter description)
+        :param enable_operating_range_simulation: Flag to control, if the point are to re-simulate
         :type  enable_operating_range_simulation: bool
         :param debug: Debug mode flag
         :type debug: bool
@@ -393,7 +393,7 @@ class InductorOptimization:
         :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results (ASA: Later to merge with toml-data filter factor)
+        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
         :param enable_operating_range_simulation: True to perform the simulations for all operating points
         :type  enable_operating_range_simulation: bool
