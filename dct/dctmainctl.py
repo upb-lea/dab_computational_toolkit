@@ -23,7 +23,6 @@ import json
 # own libraries
 import dct
 from dct import toml_checker as tc, ProgressStatus
-from dct import circuit_optimization_dtos as p_dtos
 from dct import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
 from dct import CircuitOptimization
@@ -350,66 +349,6 @@ class DctMainCtl:
         else:
             # Remove breakpoint message
             self._break_point_message = ""
-
-    @staticmethod
-    def circuit_toml_2_dto(toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> p_dtos.CircuitParetoDabDesign:
-        """
-        Circuit toml file to circuit_dto file.
-
-        :param toml_circuit: toml file class for the circuit
-        :type toml_circuit: tc.TomlCircuitParetoDabDesign
-        :param toml_prog_flow: toml file class for the flow control
-        :type toml_prog_flow: tc.FlowControl
-        :return: circuit DTO
-        :rtype: p_dtos.CircuitParetoDabDesign
-        """
-        design_space = p_dtos.CircuitParetoDesignSpace(
-            f_s_min_max_list=toml_circuit.design_space.f_s_min_max_list,
-            l_s_min_max_list=toml_circuit.design_space.l_s_min_max_list,
-            l_1_min_max_list=toml_circuit.design_space.l_1_min_max_list,
-            l_2__min_max_list=toml_circuit.design_space.l_2__min_max_list,
-            n_min_max_list=toml_circuit.design_space.n_min_max_list,
-            transistor_1_name_list=toml_circuit.design_space.transistor_1_name_list,
-            transistor_2_name_list=toml_circuit.design_space.transistor_2_name_list,
-            c_par_1=toml_circuit.design_space.c_par_1,
-            c_par_2=toml_circuit.design_space.c_par_2
-        )
-
-        output_range = p_dtos.CircuitOutputRange(
-            v1_min_max_list=toml_circuit.output_range.v1_min_max_list,
-            v2_min_max_list=toml_circuit.output_range.v2_min_max_list,
-            p_min_max_list=toml_circuit.output_range.p_min_max_list)
-
-        filter = p_dtos.CircuitFilter(
-            number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
-            difference_percentage=toml_circuit.filter_distance.difference_percentage
-        )
-
-        # None can not be handled by toml correct, so this is a workaround. By default, "random" in toml equals "None"
-        local_sampling_random_seed: int | None = None
-        # In case of a concrete seed was given, overwrite None with the given one
-        if isinstance(toml_circuit.sampling.sampling_random_seed, int):
-            local_sampling_random_seed = int(toml_circuit.sampling.sampling_random_seed)
-
-        sampling = p_dtos.CircuitSampling(
-            sampling_method=toml_circuit.sampling.sampling_method,
-            sampling_points=toml_circuit.sampling.sampling_points,
-            sampling_random_seed=local_sampling_random_seed,
-            v1_additional_user_point_list=toml_circuit.sampling.v1_additional_user_point_list,
-            v2_additional_user_point_list=toml_circuit.sampling.v2_additional_user_point_list,
-            p_additional_user_point_list=toml_circuit.sampling.p_additional_user_point_list,
-            additional_user_weighting_point_list=toml_circuit.sampling.additional_user_weighting_point_list
-        )
-
-        circuit_dto = p_dtos.CircuitParetoDabDesign(
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
-            project_directory=toml_prog_flow.general.project_directory,
-            design_space=design_space,
-            output_range=output_range,
-            sampling=sampling,
-            filter=filter)
-
-        return circuit_dto
 
     @staticmethod
     def generate_zip_archive(toml_prog_flow: tc.FlowControl) -> None:
@@ -966,7 +905,7 @@ class DctMainCtl:
         if not flow_control_loaded:
             raise ValueError("Program flow toml file does not exist.")
 
-        # Add absolute path to project data path (ASA: Later to remove because do not manipulate)
+        # Add absolute path to project data path
         workspace_path = os.path.abspath(workspace_path)
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 
@@ -1021,7 +960,6 @@ class DctMainCtl:
         # Init circuit configuration
         is_circuit_loaded, dict_circuit = self.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
         toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
-        config_circuit = self.circuit_toml_2_dto(toml_circuit, toml_prog_flow)
 
         if not is_circuit_loaded:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
@@ -1183,13 +1121,13 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start circuit optimization.")
 
-        # Allocate and initialize inductor configuration
-        self._circuit_optimization = CircuitOptimization()
-
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
-            if not is_circuit_loaded:
-                raise ValueError("Electrical configuration not initialized!")
+
+            # Allocate and initialize circuit configuration
+            self._circuit_optimization = CircuitOptimization()
+            self._circuit_optimization.initialize_circuit_optimization(toml_circuit, toml_prog_flow)
+
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.calculation_mode == "new":
                 # delete old circuit study data
@@ -1201,14 +1139,19 @@ class DctMainCtl:
                 self.delete_study_content(self._inductor_study_data.optimization_directory)
                 self.delete_study_content(self._transformer_study_data.optimization_directory)
 
-            # Start calculation
-            self._circuit_optimization.start_proceed_study(config_circuit, number_trials=toml_prog_flow.circuit.number_of_trials)
+            # Perform circuit optimization
+            self._circuit_optimization.start_proceed_study(number_trials=toml_prog_flow.circuit.number_of_trials)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
 
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
+
+            # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
+            if self._circuit_optimization is None:
+                raise ValueError("Serious programming error. Please write an issue!")
+
             # Calculate the filtered results
             self._circuit_optimization.filter_study_results()
             # Get filtered result path
@@ -1248,8 +1191,8 @@ class DctMainCtl:
 
             # Allocate and initialize inductor configuration
             self._inductor_optimization = InductorOptimization()
-            self._inductor_optimization.generate_optimization_list(toml_inductor, self._inductor_study_data,
-                                                                   filter_data)
+            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
+                                                                              filter_data)
 
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler(
@@ -1283,8 +1226,8 @@ class DctMainCtl:
 
             # Allocate and initialize transformer configuration
             self._transformer_optimization = TransformerOptimization()
-            self._transformer_optimization.generate_optimization_list(toml_transformer, self._transformer_study_data,
-                                                                      filter_data)
+            self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
+                                                                                    filter_data)
             # Perform transformer optimization
             self._transformer_optimization.optimization_handler(
                 filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
@@ -1313,7 +1256,7 @@ class DctMainCtl:
 
             # Allocate and initialize heat sink configuration
             self._heat_sink_optimization = HeatSinkOptimization()
-            self._heat_sink_optimization.generate_optimization_list(toml_heat_sink, toml_prog_flow)
+            self._heat_sink_optimization.initialize_heat_sink_optimization(toml_heat_sink, toml_prog_flow)
 
             # Perform heat sink optimization
             self._heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)

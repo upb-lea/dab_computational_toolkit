@@ -194,7 +194,7 @@ class HeatSinkOptimization:
 
         return is_inconsistent, inconsistency_report
 
-    def generate_optimization_list(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
+    def initialize_heat_sink_optimization(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
         """
         Initialize the configuration.
 
@@ -290,12 +290,7 @@ class HeatSinkOptimization:
         else:
             logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
 
-        # Plot options ASA: Later to add to server
-        # df_heat_sink = hopt.Optimization.study_to_df(act_hct_config)
-        # hopt.Optimization.df_plot_pareto_front(df_heat_sink, (50, 60))
-
-    # Simulation handler. Later the simulation handler starts a process per list entry.
-
+    # Optimization handler
     def optimization_handler(self, target_number_trials: int, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
@@ -322,8 +317,8 @@ class HeatSinkOptimization:
         if self._hct_config is not None:
             HeatSinkOptimization._optimize(self._hct_config, target_number_trials, debug)
         else:
-            logger.warning("Method 'generate_optimization_list' is not called!\n"
-                           "    No list is generated so that no simulation can be performed!")
+            logger.warning("Method 'initialize_heat_sink_optimization' is not called!\n"
+                           "    No list is generated so that no optimization can be performed!")
 
         # Update statistical data
         with self._h_lock_stat:

@@ -77,7 +77,7 @@ class DctSummaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-        transformer_cooling: dct.InductiveElementCooling
+        transformer_cooling: dct.MagneticElementCooling
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
         self.transistor_b1_cooling = dct.TransistorCooling(
             tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
@@ -102,15 +102,14 @@ class DctSummaryProcessing:
             successful_init = False
 
         # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        # ASA: Rename database class from InductiveElementCooling to MagneticElementCooling
         transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
         transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
 
-        transformer_cooling = dct.InductiveElementCooling(
+        transformer_cooling = dct.MagneticElementCooling(
             tim_thickness=transformer_tim_thickness,
             tim_conductivity=transformer_tim_conductivity
         )
-        # Check on zero ( ASA: Maybe in general all configuration files are to check for validity in advanced. In this case the check can be removed.)
+        # Check on zero
         if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
@@ -440,7 +439,6 @@ class DctSummaryProcessing:
         hs_config_filepath = os.path.join(heat_sink_study_data.optimization_directory,
                                           f"{heat_sink_study_data.study_name}.pkl")
         hs_config = hct.Optimization.load_config(hs_config_filepath)
-        # Debug ASA Missing true simulations for remaining function
 
         df_hs = hct.Optimization.study_to_df(hs_config)
 

@@ -66,9 +66,8 @@ class CircuitOptimization:
         :param project_directory: project directory file path
         :type project_directory: str
         :return: File path in a DTO
-        :rtype: p_dtos.ParetoFilePaths
+        :rtype: circuit_dtos.ParetoFilePaths
         """
-        # ASA: TODO: Merge ginfo and set_up_folder_structure
         filepath_config = f"{project_directory}/filepath_config.json"
         if os.path.exists(filepath_config):
             with open(filepath_config, 'r', encoding='utf8') as json_file:
@@ -106,8 +105,8 @@ class CircuitOptimization:
         :type circuit_project_directory: str
         :param circuit_study_name: name of the circuit study
         :type circuit_study_name: str
-        :return: Configuration file as p_dtos.DabDesign
-        :rtype: p_dtos.CircuitParetoDabDesign
+        :return: Configuration file as circuit_dtos.DabDesign
+        :rtype: circuit_dtos.CircuitParetoDabDesign
         """
         filepaths = CircuitOptimization.load_filepaths(circuit_project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
@@ -309,12 +308,79 @@ class CircuitOptimization:
 
         return is_inconsistent, inconsistency_report
 
+    def initialize_circuit_optimization(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> bool:
+        """
+        Initialize the circuit_dto for circuit optimization.
+
+        :param toml_circuit: toml file class for the circuit
+        :type toml_circuit: tc.TomlCircuitParetoDabDesign
+        :param toml_prog_flow: toml file class for the flow control
+        :type toml_prog_flow: tc.FlowControl
+        :return: True, if the configuration was successful initialized
+        :rtype: bool
+        """
+        # Verify optimization parameter
+        is_check_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if is_check_failed:
+            raise ValueError(
+                "Circuit optimization parameter are inconsistent!\n",
+                issue_report)
+
+        # Initialize the circuit_dtos
+        design_space = circuit_dtos.CircuitParetoDesignSpace(
+            f_s_min_max_list=toml_circuit.design_space.f_s_min_max_list,
+            l_s_min_max_list=toml_circuit.design_space.l_s_min_max_list,
+            l_1_min_max_list=toml_circuit.design_space.l_1_min_max_list,
+            l_2__min_max_list=toml_circuit.design_space.l_2__min_max_list,
+            n_min_max_list=toml_circuit.design_space.n_min_max_list,
+            transistor_1_name_list=toml_circuit.design_space.transistor_1_name_list,
+            transistor_2_name_list=toml_circuit.design_space.transistor_2_name_list,
+            c_par_1=toml_circuit.design_space.c_par_1,
+            c_par_2=toml_circuit.design_space.c_par_2
+        )
+
+        output_range = circuit_dtos.CircuitOutputRange(
+            v1_min_max_list=toml_circuit.output_range.v1_min_max_list,
+            v2_min_max_list=toml_circuit.output_range.v2_min_max_list,
+            p_min_max_list=toml_circuit.output_range.p_min_max_list)
+
+        filter = circuit_dtos.CircuitFilter(
+            number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
+            difference_percentage=toml_circuit.filter_distance.difference_percentage
+        )
+
+        # None can not be handled by toml correct, so this is a workaround. By default, "random" in toml equals "None"
+        local_sampling_random_seed: int | None = None
+        # In case of a concrete seed was given, overwrite None with the given one
+        if isinstance(toml_circuit.sampling.sampling_random_seed, int):
+            local_sampling_random_seed = int(toml_circuit.sampling.sampling_random_seed)
+
+        sampling = circuit_dtos.CircuitSampling(
+            sampling_method=toml_circuit.sampling.sampling_method,
+            sampling_points=toml_circuit.sampling.sampling_points,
+            sampling_random_seed=local_sampling_random_seed,
+            v1_additional_user_point_list=toml_circuit.sampling.v1_additional_user_point_list,
+            v2_additional_user_point_list=toml_circuit.sampling.v2_additional_user_point_list,
+            p_additional_user_point_list=toml_circuit.sampling.p_additional_user_point_list,
+            additional_user_weighting_point_list=toml_circuit.sampling.additional_user_weighting_point_list
+        )
+
+        self._dab_config = circuit_dtos.CircuitParetoDabDesign(
+            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+            project_directory=toml_prog_flow.general.project_directory,
+            design_space=design_space,
+            output_range=output_range,
+            sampling=sampling,
+            filter=filter)
+
+        return True
+
     def get_config(self) -> circuit_dtos.CircuitParetoDabDesign | None:
         """
         Return the actual loaded configuration file.
 
-        :return: Configuration file as p_dtos.DabDesign
-        :rtype: p_dtos.CircuitParetoDabDesign
+        :return: Configuration file as circuit_dtos.DabDesign
+        :rtype: circuit_dtos.CircuitParetoDabDesign
         """
         if self._dab_config is None:
             logger.warning("Configuration is not loaded!")
@@ -384,7 +450,7 @@ class CircuitOptimization:
         Objective function to optimize.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :param trial: optuna trial
         :type trial: optuna.Trial
         :param fixed_parameters: fixed parameters (loaded transistor DTOs)
@@ -573,13 +639,10 @@ class CircuitOptimization:
             logger.info(f"current time: {datetime.datetime.now()}")
             # Save method from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
-    def start_proceed_study(self, dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
-                            database_type: str = 'sqlite',
+    def start_proceed_study(self, number_trials: int, database_type: str = 'sqlite',
                             sampler: optuna.samplers.BaseSampler = optuna.samplers.NSGAIIISampler()) -> None:
         """Proceed a study which is stored as sqlite database.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
         :param number_trials: Number of trials adding to the existing study
         :type number_trials: int
         :param database_type: storage database, e.g. 'sqlite' or 'mysql'
@@ -587,8 +650,10 @@ class CircuitOptimization:
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
-        # Overtake configuration (Later this is to do by 'generate_optimization_list' or correspondent method
-        self._dab_config = copy.deepcopy(dab_config)
+        if self._dab_config is None:
+            logger.warning("Method 'initialize_circuit_optimization' is not called!\n"
+                           "    No list is generated so that no optimization can be performed!")
+            return
 
         filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
@@ -634,13 +699,13 @@ class CircuitOptimization:
             storage = f"sqlite:///{circuit_study_sqlite_database}"
 
             # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+            self._study_in_storage = optuna.create_study(study_name=self._dab_config.circuit_study_name,
                                                          storage=storage,
                                                          directions=directions,
                                                          load_if_exists=True, sampler=sampler)
 
             # Create study object in memory
-            self._study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
+            self._study_in_memory = optuna.create_study(study_name=self._dab_config.circuit_study_name, directions=directions, sampler=sampler)
             # If trials exists, add them to study_in_memory
             self._study_in_memory.add_trials(self._study_in_storage.trials)
             # Inform about sampler type
@@ -668,7 +733,7 @@ class CircuitOptimization:
             # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
 
             # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+            self._study_in_storage = optuna.create_study(study_name=self._dab_config.circuit_study_name,
                                                          storage=storage_mysql,
                                                          directions=directions,
                                                          load_if_exists=True, sampler=sampler)
@@ -737,7 +802,7 @@ class CircuitOptimization:
         Load a DAB-DTO from an optuna study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :param trial_number: trial number to load to the DTO
         :type trial_number: int
         :return:
@@ -824,7 +889,7 @@ class CircuitOptimization:
         """Create a DataFrame from a study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         """
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
         database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
@@ -839,7 +904,7 @@ class CircuitOptimization:
         Create the DAB circuit optimization sqlite URL.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :return: SQLite URL
         :rtype: str
         """

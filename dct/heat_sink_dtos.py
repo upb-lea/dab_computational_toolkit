@@ -19,8 +19,8 @@ class TransistorCooling:
     tim_thickness: float
 
 @dataclasses.dataclass
-class InductiveElementCooling:
-    """Fix parameters for the inductive element cooling."""
+class MagneticElementCooling:
+    """Fix parameters for the magnetic element cooling."""
 
     tim_conductivity: float
     tim_thickness: float

@@ -42,12 +42,12 @@ transistor_b2_cooling = dct.TransistorCooling(
 )
 
 
-inductor_cooling = dct.InductiveElementCooling(
+inductor_cooling = dct.MagneticElementCooling(
     tim_conductivity=12,
     tim_thickness=1e-3
 )
 
-transformer_cooling = dct.InductiveElementCooling(
+transformer_cooling = dct.MagneticElementCooling(
     tim_conductivity=12,
     tim_thickness=1e-3
 )

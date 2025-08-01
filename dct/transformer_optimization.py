@@ -181,7 +181,7 @@ class TransformerOptimization:
 
         return is_inconsistent, inconsistency_report
 
-    def generate_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
+    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -240,7 +240,7 @@ class TransformerOptimization:
             # operating point: current waveforms and temperature initialized with default values
             time_current_1_vec=np.ndarray([]),
             time_current_2_vec=np.ndarray([]),
-            temperature=toml_transformer.boundary_conditions.temperature,  # ASA Later it becomes a dynamic value?
+            temperature=toml_transformer.boundary_conditions.temperature,
             # sweep parameters: geometry and materials
             n_p_top_min_max_list=toml_transformer.design_space.n_p_top_min_max_list,
             n_p_bot_min_max_list=toml_transformer.design_space.n_p_bot_min_max_list,
