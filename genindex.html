@@ -162,6 +162,8 @@
         <li><a href="intro.html#dct.TomlTransformer.boundary_conditions">(dct.TomlTransformer attribute)</a>
 </li>
       </ul></li>
+      <li><a href="intro.html#dct.BoundaryCheck">BoundaryCheck (class in dct)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.QueueDetailData.break_point_notification">break_point_notification (dct.QueueDetailData attribute)</a>
@@ -185,6 +187,8 @@
       <li><a href="intro.html#dct.ServerRequestData.c_configuration_index">c_configuration_index (dct.ServerRequestData attribute)</a>
 </li>
       <li><a href="intro.html#dct.ServerRequestData.c_filtered_point_index">c_filtered_point_index (dct.ServerRequestData attribute)</a>
+</li>
+      <li><a href="intro.html#dct.c_flag">c_flag (in module dct)</a>
 </li>
       <li><a href="intro.html#dct.TransistorDTO.c_oss">c_oss (dct.TransistorDTO attribute)</a>
 </li>
@@ -272,14 +276,34 @@
 </li>
       <li><a href="intro.html#dct.StaticFiles.check_config">check_config() (dct.StaticFiles method)</a>
 </li>
+      <li><a href="intro.html#dct.BoundaryCheck.check_dictionary">check_dictionary() (dct.BoundaryCheck static method)</a>
+</li>
+      <li><a href="intro.html#dct.CheckCondition.check_exclusive">check_exclusive (dct.CheckCondition attribute)</a>
+</li>
+      <li><a href="intro.html#dct.BoundaryCheck.check_float_min_max_values">check_float_min_max_values() (dct.BoundaryCheck static method)</a>
+</li>
+      <li><a href="intro.html#dct.BoundaryCheck.check_float_min_max_values_list">check_float_min_max_values_list() (dct.BoundaryCheck static method)</a>
+</li>
+      <li><a href="intro.html#dct.BoundaryCheck.check_float_value">check_float_value() (dct.BoundaryCheck static method)</a>
+</li>
+      <li><a href="intro.html#dct.BoundaryCheck.check_float_value_list">check_float_value_list() (dct.BoundaryCheck static method)</a>
+</li>
       <li><a href="intro.html#dct.check_for_missing_toml_files">check_for_missing_toml_files() (in module dct)</a>
+</li>
+      <li><a href="intro.html#dct.CheckCondition.check_ignore">check_ignore (dct.CheckCondition attribute)</a>
+</li>
+      <li><a href="intro.html#dct.CheckCondition.check_inclusive">check_inclusive (dct.CheckCondition attribute)</a>
 </li>
       <li><a href="intro.html#dct.DctMainCtl.check_study_data">check_study_data() (dct.DctMainCtl static method)</a>
 </li>
       <li><a href="intro.html#dct.check_user_points_in_min_max_region">check_user_points_in_min_max_region() (in module dct)</a>
 </li>
+      <li><a href="intro.html#dct.CheckCondition">CheckCondition (class in dct)</a>
+</li>
       <li><a href="intro.html#dct.Circuit">Circuit (class in dct)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.CondBreakpoints.circuit">circuit (dct.CondBreakpoints attribute)</a>
 
       <ul>
@@ -290,8 +314,6 @@
       </ul></li>
       <li><a href="intro.html#dct.ConfigurationDataFiles.circuit_configuration_file">circuit_configuration_file (dct.ConfigurationDataFiles attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.QueueDetailData.circuit_data">circuit_data (dct.QueueDetailData attribute)</a>
 </li>
       <li><a href="intro.html#dct.Breakpoints.circuit_filtered">circuit_filtered (dct.Breakpoints attribute)</a>
@@ -375,6 +397,8 @@
       <li><a href="intro.html#dct.RunTimeMeasurement.continue_trigger">continue_trigger() (dct.RunTimeMeasurement method)</a>
 </li>
       <li><a href="intro.html#dct.DctServer.control_page">control_page() (dct.DctServer static method)</a>
+</li>
+      <li><a href="intro.html#dct.BoundaryCheck.convert_min_max_values_to_float">convert_min_max_values_to_float() (dct.BoundaryCheck static method)</a>
 </li>
       <li><a href="intro.html#dct.TransistorDTO.cooling_area">cooling_area (dct.TransistorDTO attribute)</a>
 </li>
@@ -1870,14 +1894,14 @@
         <li><a href="intro.html#dct.TomlSampling.v2_additional_user_point_list">(dct.TomlSampling attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.CircuitOutputRange.v2_min_max_list">v2_min_max_list (dct.CircuitOutputRange attribute)</a>
 
       <ul>
         <li><a href="intro.html#dct.TomlCircuitOutputRange.v2_min_max_list">(dct.TomlCircuitOutputRange attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="intro.html#dct.GeckoResults.v_dc1">v_dc1 (dct.GeckoResults attribute)</a>
 </li>
       <li><a href="intro.html#dct.GeckoResults.v_dc2">v_dc2 (dct.GeckoResults attribute)</a>
@@ -1888,6 +1912,16 @@
 </li>
       <li><a href="intro.html#dct.QueueParetoFrontData.validity">validity (dct.QueueParetoFrontData attribute)</a>
 </li>
+      <li><a href="intro.html#dct.CircuitOptimization.verify_optimization_parameter">verify_optimization_parameter() (dct.CircuitOptimization static method)</a>
+
+      <ul>
+        <li><a href="intro.html#dct.HeatSinkOptimization.verify_optimization_parameter">(dct.HeatSinkOptimization static method)</a>
+</li>
+        <li><a href="intro.html#dct.InductorOptimization.verify_optimization_parameter">(dct.InductorOptimization static method)</a>
+</li>
+        <li><a href="intro.html#dct.TransformerOptimization.verify_optimization_parameter">(dct.TransformerOptimization static method)</a>
+</li>
+      </ul></li>
       <li><a href="intro.html#dct.InductorResults.volume">volume (dct.InductorResults attribute)</a>
 
       <ul>
