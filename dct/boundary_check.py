@@ -14,8 +14,8 @@ class CheckCondition(enum.Enum):
     """Enum for type of check."""
 
     check_ignore = 0
-    check_equal = 1
-    check_than = 2
+    check_inclusive = 1
+    check_exclusive = 2
 
 class BoundaryCheck:
     """Boundary check for parameter."""
@@ -71,8 +71,6 @@ class BoundaryCheck:
         if len(value_list) == 0:
             logger.info("List is empty. There is not performed any check!")
 
-        # Perform insulation value check
-        # Perform the boundary check
         for check_parameter in value_list:
             is_check_failed, issue_report = BoundaryCheck.check_float_value(
                 minimum, maximum, check_parameter[0], check_parameter[1], check_type_minimum, check_type_maximum)
@@ -109,7 +107,6 @@ class BoundaryCheck:
         if len(min_max_value_list) == 0:
             logger.info("List is empty. There is not performed any check!")
 
-        # Perform the boundary check
         for check_parameter in min_max_value_list:
             is_check_failed, issue_report = BoundaryCheck.check_float_min_max_values(
                 minimum, maximum, check_parameter[0], check_parameter[1], check_type_minimum, check_type_maximum)
@@ -151,23 +148,23 @@ class BoundaryCheck:
         else:
             # Perform the boundary check
             # Check minimum boundary
-            if check_type_minimum == CheckCondition.check_than:
+            if check_type_minimum == CheckCondition.check_exclusive:
                 if parameter_value <= minimum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is less equal minimum value {minimum}!\n"
                     is_check_failed = True
 
-            elif check_type_minimum == CheckCondition.check_equal:
+            elif check_type_minimum == CheckCondition.check_inclusive:
                 if parameter_value < minimum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is less than minimum value {minimum}!\n"
                     is_check_failed = True
 
             # Check maximum boundary
-            if check_type_maximum == CheckCondition.check_than:
+            if check_type_maximum == CheckCondition.check_exclusive:
                 if parameter_value >= maximum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is greater equal maximum value {maximum}!\n"
                     is_check_failed = True
 
-            elif check_type_maximum == CheckCondition.check_equal:
+            elif check_type_maximum == CheckCondition.check_inclusive:
                 if parameter_value > maximum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is greater than maximum value {maximum}!\n"
                     is_check_failed = True
@@ -216,26 +213,26 @@ class BoundaryCheck:
 
             # Perform the boundary check
             #  Check minimum boundary
-            if check_type_minimum == CheckCondition.check_than:
+            if check_type_minimum == CheckCondition.check_exclusive:
                 if min_max_value[0] <= minimum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the minimum entry value {min_max_value[0]} "
                     inconsistency_report = inconsistency_report + f"is less than boundary value {minimum}!\n"
                     is_check_failed = True
 
-            elif check_type_minimum == CheckCondition.check_equal:
+            elif check_type_minimum == CheckCondition.check_inclusive:
                 if min_max_value[0] <= minimum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the minimum entry value {min_max_value[0]} "
                     inconsistency_report = inconsistency_report + "is less equal boundary value {minimum}!\n"
                     is_check_failed = True
 
             # Check maximum boundary
-            if check_type_maximum == CheckCondition.check_than:
+            if check_type_maximum == CheckCondition.check_exclusive:
                 if min_max_value[1] >= maximum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the maximum entry value {min_max_value[1]} "
                     inconsistency_report = inconsistency_report + f"is greater than boundary value {maximum}!\n"
                     is_check_failed = True
 
-            elif check_type_maximum == CheckCondition.check_equal:
+            elif check_type_maximum == CheckCondition.check_inclusive:
                 if min_max_value[1] > maximum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the maximum entry value {min_max_value[1]} "
                     inconsistency_report = inconsistency_report + "is greater equal boundary value {maximum}!\n"

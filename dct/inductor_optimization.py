@@ -72,7 +72,7 @@ class InductorOptimization:
 
             # Perform the boundary check
             is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
-                0, 5, toml_check_min_max_values_list, c_flag.check_equal, c_flag.check_than)
+                0, 5, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
             if is_check_failed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_inconsistent = True
@@ -97,7 +97,7 @@ class InductorOptimization:
         # Perform insulation value check
         # Perform the boundary check
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
-            0, 0.1, toml_check_value_list, c_flag.check_than, c_flag.check_than)
+            0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
             is_inconsistent = True
@@ -105,7 +105,7 @@ class InductorOptimization:
         # Perform temperature value check
         # Perform the boundary check
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
-            -40, 175, toml_inductor.boundary_conditions.temperature, "temperature", c_flag.check_equal, c_flag.check_equal)
+            -40, 175, toml_inductor.boundary_conditions.temperature, "temperature", c_flag.check_inclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
             is_inconsistent = True
@@ -115,7 +115,7 @@ class InductorOptimization:
         # Perform the boundary check
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
             0, 100, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-            f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_than, c_flag.check_ignore)
+            f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_exclusive, c_flag.check_ignore)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
             is_inconsistent = True
