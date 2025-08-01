@@ -3,6 +3,7 @@ from dct.mod_zvs import *
 from dct.currents import *
 from dct.datasets import *
 from dct.datasets_dtos import *
+from dct.boundary_check import *
 from dct.circuit_optimization_dtos import *
 from dct.circuit_optimization import *
 from dct.geckosimulation import *
