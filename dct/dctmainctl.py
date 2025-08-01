@@ -1026,6 +1026,12 @@ class DctMainCtl:
         if not is_circuit_loaded:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
+        # Verify optimization parameter
+        is_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if is_failed:
+            raise ValueError("Circuit optimization parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
+
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
             # Check, if data are available (skip case)
@@ -1059,6 +1065,12 @@ class DctMainCtl:
         if not is_inductor_loaded:
             raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
 
+        # Verify optimization parameter
+        is_failed, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        if is_failed:
+            raise ValueError("Inductor optimization parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
+
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
             # Initialize _inductor_number_filtered_points_skip_list
@@ -1091,6 +1103,12 @@ class DctMainCtl:
         if not is_transformer_loaded:
             raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
+        # Verify optimization parameter
+        is_failed, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        if is_failed:
+            raise ValueError("Transformer optimization parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
+
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
             # Initialize _transformer_number_filtered_points_skip_list
@@ -1121,6 +1139,12 @@ class DctMainCtl:
         toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
         if not is_heat_sink_loaded:
             raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
+
+        # Verify optimization parameter
+        is_failed, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
+        if is_failed:
+            raise ValueError("Heat sink optimization parameter in file "
+                             f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
 
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.calculation_mode == "skip":
