@@ -218,6 +218,7 @@
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.get_config"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.get_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.get_pareto_html"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.get_pareto_html()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.get_progress_data"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.get_progress_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.initialize_circuit_optimization"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.initialize_circuit_optimization()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.is_pareto_efficient"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.is_pareto_efficient()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.load_csv_to_df"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.load_csv_to_df()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.CircuitOptimization.load_dab_dto_from_study"><code class="docutils literal notranslate"><span class="pre">CircuitOptimization.load_dab_dto_from_study()</span></code></a></li>
@@ -295,7 +296,6 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.DctMainCtl"><code class="docutils literal notranslate"><span class="pre">DctMainCtl</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.DctMainCtl.check_breakpoint"><code class="docutils literal notranslate"><span class="pre">DctMainCtl.check_breakpoint()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.DctMainCtl.check_study_data"><code class="docutils literal notranslate"><span class="pre">DctMainCtl.check_study_data()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.DctMainCtl.circuit_toml_2_dto"><code class="docutils literal notranslate"><span class="pre">DctMainCtl.circuit_toml_2_dto()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.DctMainCtl.delete_study_content"><code class="docutils literal notranslate"><span class="pre">DctMainCtl.delete_study_content()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.DctMainCtl.generate_conf_file"><code class="docutils literal notranslate"><span class="pre">DctMainCtl.generate_conf_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.DctMainCtl.generate_zip_archive"><code class="docutils literal notranslate"><span class="pre">DctMainCtl.generate_zip_archive()</span></code></a></li>
@@ -517,15 +517,10 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.generate_optimization_list"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.generate_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.get_progress_data"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.get_progress_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.initialize_heat_sink_optimization"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.initialize_heat_sink_optimization()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.optimization_handler()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.HeatSinkOptimization.verify_optimization_parameter"><code class="docutils literal notranslate"><span class="pre">HeatSinkOptimization.verify_optimization_parameter()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.InductiveElementCooling"><code class="docutils literal notranslate"><span class="pre">InductiveElementCooling</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductiveElementCooling.tim_conductivity"><code class="docutils literal notranslate"><span class="pre">InductiveElementCooling.tim_conductivity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductiveElementCooling.tim_thickness"><code class="docutils literal notranslate"><span class="pre">InductiveElementCooling.tim_thickness</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.Inductor"><code class="docutils literal notranslate"><span class="pre">Inductor</span></code></a><ul>
@@ -536,9 +531,9 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.InductorOptimization"><code class="docutils literal notranslate"><span class="pre">InductorOptimization</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.generate_optimization_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.generate_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.get_number_of_performed_calculations"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.get_number_of_performed_calculations()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.get_progress_data"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.get_progress_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.initialize_inductor_optimization_list"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.initialize_inductor_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.optimization_handler()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.InductorOptimization.verify_optimization_parameter"><code class="docutils literal notranslate"><span class="pre">InductorOptimization.verify_optimization_parameter()</span></code></a></li>
 </ul>
@@ -567,6 +562,11 @@
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.MagneticDataEntryDto.number_calculations"><code class="docutils literal notranslate"><span class="pre">MagneticDataEntryDto.number_calculations</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.MagneticDataEntryDto.number_performed_calculations"><code class="docutils literal notranslate"><span class="pre">MagneticDataEntryDto.number_performed_calculations</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.MagneticDataEntryDto.progress_data"><code class="docutils literal notranslate"><span class="pre">MagneticDataEntryDto.progress_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dct.MagneticElementCooling"><code class="docutils literal notranslate"><span class="pre">MagneticElementCooling</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.MagneticElementCooling.tim_conductivity"><code class="docutils literal notranslate"><span class="pre">MagneticElementCooling.tim_conductivity</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.MagneticElementCooling.tim_thickness"><code class="docutils literal notranslate"><span class="pre">MagneticElementCooling.tim_thickness</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.ParetoFilePaths"><code class="docutils literal notranslate"><span class="pre">ParetoFilePaths</span></code></a><ul>
@@ -957,9 +957,9 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#dct.TransformerOptimization"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.generate_optimization_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.generate_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.get_number_of_performed_calculations"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.get_number_of_performed_calculations()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.get_progress_data"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.get_progress_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.initialize_transformer_optimization_list"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.initialize_transformer_optimization_list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.optimization_handler"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.optimization_handler()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#dct.TransformerOptimization.verify_optimization_parameter"><code class="docutils literal notranslate"><span class="pre">TransformerOptimization.verify_optimization_parameter()</span></code></a></li>
 </ul>
