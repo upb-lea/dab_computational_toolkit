@@ -21,7 +21,7 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 logger = logging.getLogger(__name__)
 
-class DctSummaryProcessing:
+class DctSummaryPreProcessing:
     """Perform the summary calculation based on optimization results."""
 
     _s_lock_stat: threading.Lock
@@ -258,11 +258,11 @@ class DctSummaryProcessing:
                 # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losses
                 inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file,
                                                          inductor_study_name,
-                                                         "09_circuit_dtos_incl_inductor_losses")
+                                                         "08_circuit_dtos_incl_reluctance_inductor_losses")
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
+                    DctSummaryPreProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -290,11 +290,11 @@ class DctSummaryProcessing:
                         stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
                                                                             circuit_trial_file,
                                                                             stacked_transformer_study_name,
-                                                                            "09_circuit_dtos_incl_transformer_losses")
+                                                                            "08_circuit_dtos_incl_reluctance_transformer_losses")
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
+                            DctSummaryPreProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit

@@ -63,6 +63,12 @@ class HeatSink(BaseModel):
     calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
+class PreSummary(BaseModel):
+    """Flow control for the pre-summary."""
+
+    calculation_mode: Literal['new', 'skip']
+    subdirectory: str
+
 class Summary(BaseModel):
     """Flow control for the summary."""
 
@@ -87,6 +93,7 @@ class FlowControl(BaseModel):
     inductor: Inductor
     transformer: Transformer
     heat_sink: HeatSink
+    pre_summary: PreSummary
     summary: Summary
     configuration_data_files: ConfigurationDataFiles
 

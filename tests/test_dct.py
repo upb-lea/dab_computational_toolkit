@@ -53,6 +53,8 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
     heat_sink=tc.HeatSink(number_of_trials=1,
                           calculation_mode="continue",
                           subdirectory="dummy"),
+    pre_summary=tc.PreSummary(calculation_mode="new",
+                              subdirectory="dummy"),
     summary=tc.Summary(calculation_mode="new",
                        subdirectory="dummy"),
     configuration_data_files=tc.ConfigurationDataFiles(
