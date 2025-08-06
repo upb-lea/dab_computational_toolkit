@@ -1231,8 +1231,8 @@ class DctMainCtl:
             self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
                                                                                     filter_data)
             # Perform transformer optimization
-            self._transformer_optimization.optimization_handler(
-                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list)
+            self._transformer_optimization.optimization_handler_reluctance_model(
+                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list, debug=DEBUG)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1313,6 +1313,14 @@ class DctMainCtl:
         # Transformer FEM simulation
         # --------------------------
         logger.info("Start transformer FEM simulations.")
+
+        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.transformer.calculation_mode == "skip":
+            # Perform inductor optimization
+            if self._transformer_optimization is not None:
+                self._transformer_optimization.fem_simulation_handler(
+                    filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
+                    debug=DEBUG)
 
         # --------------------------
         # Final summary calculation
