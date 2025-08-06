@@ -43,6 +43,8 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 logger = logging.getLogger(__name__)
 
+DEBUG: bool = True
+
 class DctMainCtl:
     """Main class for control dab-optimization."""
 
@@ -1197,7 +1199,7 @@ class DctMainCtl:
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler_reluctance_model(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                debug=False)
+                debug=DEBUG)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1266,6 +1268,7 @@ class DctMainCtl:
         # --------------------------
         # Pre-summary calculation
         # --------------------------
+        logger.info("Start pre-summary.")
 
         # Allocate summary data object
         self._summary_pre_processing = DctSummaryPreProcessing()
@@ -1296,14 +1299,25 @@ class DctMainCtl:
         # --------------------------
         # Inductor FEM simulation
         # --------------------------
+        logger.info("Start inductor FEM simulations.")
+
+        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.inductor.calculation_mode == "skip":
+            # Perform inductor optimization
+            self._inductor_optimization.fem_simulation_handler(
+                filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
+                debug=DEBUG)
+
 
         # --------------------------
         # Transformer FEM simulation
         # --------------------------
+        logger.info("Start transformer FEM simulations.")
 
         # --------------------------
         # Final summary calculation
         # --------------------------
+        logger.info("Start final summary.")
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()
