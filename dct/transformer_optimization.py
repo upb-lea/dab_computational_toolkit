@@ -363,9 +363,6 @@ class TransformerOptimization:
         :param debug: True to debug, defaults to False
         :type debug: bool
         """
-        # Variable declaration
-        # Process_number used in femmt
-        process_number = 1
         # Number of filtered operating points
         number_of_filtered_points = 0
 
@@ -436,9 +433,8 @@ class TransformerOptimization:
                     logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                     logger.debug(f"   * Transformer re-simulation trial: {single_geometry_number}")
 
-                    volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
-                        df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
-                        process_number=process_number)
+                    volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.ReluctanceModel.full_simulation(
+                        df_geometry_re_simulation_number, current_waveform, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
                 results_dto = dct.StackedTransformerResults(

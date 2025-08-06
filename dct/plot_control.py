@@ -254,7 +254,10 @@ class ParetoPlots:
         :param is_pre_summary: True to store the results in the pre_summary directory
         :type is_pre_summary: bool
         """
-        df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.summary.subdirectory}/df_w_hs.csv")
+        if is_pre_summary:
+            df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.pre_summary.subdirectory}/df_w_hs.csv")
+        else:
+            df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.summary.subdirectory}/df_w_hs.csv")
 
         df_filtered = dct.CircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
                                                         factor_min_dc_losses=0.001, factor_max_dc_losses=10)

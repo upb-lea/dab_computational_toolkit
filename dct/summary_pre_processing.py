@@ -77,7 +77,7 @@ class DctSummaryPreProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-        transformer_cooling: dct.InductiveElementCooling
+        transformer_cooling: dct.MagneticElementCooling
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
         self.transistor_b1_cooling = dct.TransistorCooling(
             tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
@@ -102,11 +102,10 @@ class DctSummaryPreProcessing:
             successful_init = False
 
         # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        # ASA: Rename database class from InductiveElementCooling to MagneticElementCooling
         transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
         transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
 
-        transformer_cooling = dct.InductiveElementCooling(
+        transformer_cooling = dct.MagneticElementCooling(
             tim_thickness=transformer_tim_thickness,
             tim_conductivity=transformer_tim_conductivity
         )

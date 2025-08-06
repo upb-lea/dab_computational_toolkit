@@ -269,9 +269,6 @@ class InductorOptimization:
         :param debug: Debug mode flag
         :type debug: bool
         """
-        # Process_number are unclear (Usage in femmt)
-        process_number = 1
-
         number_of_filtered_points = 0
 
         # Load configuration
@@ -339,10 +336,9 @@ class InductorOptimization:
                     logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
                     logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
 
-                    volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
+                    volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
                         df_geometry_re_simulation_number, current_waveform=current_waveform,
-                        inductor_config_filepath=config_filepath,
-                        process_number=process_number)
+                        inductor_config_filepath=config_filepath)
                     combined_loss_array[vec_vvp] = combined_losses
 
                 inductor_losses = dct.InductorResults(
