@@ -1304,10 +1304,10 @@ class DctMainCtl:
         # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip":
             # Perform inductor optimization
-            self._inductor_optimization.fem_simulation_handler(
-                filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                debug=DEBUG)
-
+            if self._inductor_optimization is not None:
+                self._inductor_optimization.fem_simulation_handler(
+                    filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
+                    debug=DEBUG)
 
         # --------------------------
         # Transformer FEM simulation

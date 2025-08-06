@@ -410,9 +410,8 @@ class InductorOptimization:
                 # Increment performed calculation counter
                 self._number_performed_calculations = self._number_performed_calculations + 1
 
-
     def fem_simulation_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                                              factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
+                               factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 
@@ -450,12 +449,10 @@ class InductorOptimization:
                 logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
                 break
 
-
-
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _fem_simulation(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: dct.FilterData,
-                        factor_dc_losses_min_max_list: list[float], process_number: int, debug: bool) -> int:
+                        factor_dc_losses_min_max_list: list[float], process_number: int, debug: bool) -> None:
         """
         Perform the optimization.
 
