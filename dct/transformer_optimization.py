@@ -15,6 +15,7 @@ import tqdm
 # own libraries
 import dct.transformer_optimization_dtos
 import femmt as fmt
+from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
@@ -36,7 +37,151 @@ class TransformerOptimization:
         self._number_performed_calculations: int = 0
         self._progress_run_time: RunTime = RunTime()
 
-    def generate_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
+    @staticmethod
+    def verify_optimization_parameter(toml_transformer: dct.TomlTransformer) -> tuple[bool, str]:
+        """Verify the input parameter ranges.
+
+        :param toml_transformer: toml inductor configuration
+        :type toml_transformer: dct.TomlInductor
+        :return: True, if the configuration was consistent
+        :rtype: bool
+        """
+        # Variable declaration
+        inconsistency_report: str = ""
+        is_inconsistent: bool = False
+        toml_check_min_max_values_list: list[tuple[list[float], str]]
+        toml_check_value_list: list[tuple[float, str]]
+
+        # Design space parameter check
+        group_name = "design_space"
+        # Check core_name_list
+        if len(toml_transformer.design_space.core_name_list) != 0:
+            # Get available keywords
+            keyword_dictionary: dict = fmt.core_database()
+            # Perform dictionary check
+            for keyword_entry in toml_transformer.design_space.core_name_list:
+                is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(
+                    keyword_dictionary, keyword_entry, f"{group_name}: core_name_list")
+                # Check if boundary check fails
+                if is_check_failed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_inconsistent = True
+        else:
+            toml_check_min_max_values_list = (
+                [(toml_transformer.design_space.core_inner_diameter_min_max_list, f"{group_name}: core_inner_diameter_min_max_list"),
+                 (toml_transformer.design_space.window_h_bot_min_max_list, f"{group_name}: window_h_bot_min_max_list"),
+                 (toml_transformer.design_space.window_w_min_max_list, f"{group_name}: window_w_min_max_list")])
+
+            # Perform the boundary check
+            is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+                0, 5, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+
+        # Convert min_max-list from integer to float values
+        float_n_p_top_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_transformer.design_space.n_p_top_min_max_list)
+        float_n_p_bot_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_transformer.design_space.n_p_bot_min_max_list)
+        # Setup check value list
+        toml_check_min_max_values_list = (
+            [(float_n_p_top_min_max_list, f"{group_name}: n_p_top_min_max_list"),
+             (float_n_p_bot_min_max_list, f"{group_name}: n_p_bot_min_max_list")])
+
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+            0, 10000, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_inclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Check litz_wire_list
+        # Get available keywords
+        keyword_dictionary = fmt.litz_database()
+        # Perform dictionary check for primary litz
+        for keyword_entry in toml_transformer.design_space.primary_litz_wire_list:
+            is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, f"{group_name}: litz_wire_name_list")
+            # Check if boundary check fails
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+        # Perform dictionary check for primary litz
+        for keyword_entry in toml_transformer.design_space.secondary_litz_wire_list:
+            is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, f"{group_name}: litz_wire_name_list")
+            # Check if boundary check fails
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+
+        # Insulation parameter check
+        group_name = "insulation"
+        # Create a list of parameter to check
+        toml_check_value_list = (
+            [(toml_transformer.insulation.iso_primary_to_primary, f"{group_name}: primary_to_primary"),
+             (toml_transformer.insulation.iso_secondary_to_secondary, f"{group_name}: secondary_to_secondary"),
+             (toml_transformer.insulation.iso_primary_to_secondary, f"{group_name}: primary_to_secondary"),
+             (toml_transformer.insulation.iso_window_top_core_top, f"{group_name}: window_top_core_top"),
+             (toml_transformer.insulation.iso_window_top_core_bot, f"{group_name}: window_top_core_bot"),
+             (toml_transformer.insulation.iso_window_top_core_left, f"{group_name}: window_top_core_left"),
+             (toml_transformer.insulation.iso_window_top_core_right, f"{group_name}: window_top_core_right"),
+             (toml_transformer.insulation.iso_window_top_core_top, f"{group_name}: window_top_core_top"),
+             (toml_transformer.insulation.iso_window_top_core_bot, f"{group_name}: window_top_core_bot"),
+             (toml_transformer.insulation.iso_window_top_core_left, f"{group_name}: window_top_core_left"),
+             (toml_transformer.insulation.iso_window_top_core_right, f"{group_name}: window_top_core_right")])
+
+        # Perform insulation value check
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+            0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Perform boundary condition check
+        group_name = "boundary_condition"
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            -40, 175, toml_transformer.boundary_conditions.temperature, f"{group_name}: temperature", c_flag.check_inclusive, c_flag.check_inclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        toml_check_value_list = (
+            [(toml_transformer.boundary_conditions.max_transformer_total_height, f"{group_name}: max_transformer_total_height"),
+             (toml_transformer.boundary_conditions.max_core_volume, f"{group_name}: max_core_volume")])
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+            0, 5, toml_check_value_list, c_flag.check_exclusive, c_flag.check_inclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Perform setting check
+        group_name = "setting"
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, toml_transformer.settings.fft_filter_value_factor, f"{group_name}: fft_filter_value_factor", c_flag.check_inclusive, c_flag.check_inclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, toml_transformer.settings.mesh_accuracy, f"{group_name}: mesh_accuracy", c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Perform filter_distance value check
+        group_name = "filter_distance"
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            0, 100, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
+            f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_exclusive, c_flag.check_ignore)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        return is_inconsistent, inconsistency_report
+
+    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
         """
         Initialize the configuration.
 
@@ -50,6 +195,13 @@ class TransformerOptimization:
         :rtype: bool
         """
         is_list_generation_successful = False
+
+        # Verify optimization parameter
+        is_check_failed, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        if is_check_failed:
+            raise ValueError(
+                "Transformer optimization parameter are inconsistent!\n",
+                issue_report)
 
         act_insulation = fmt.StoInsulation(
             # insulation for top core window
@@ -88,7 +240,7 @@ class TransformerOptimization:
             # operating point: current waveforms and temperature initialized with default values
             time_current_1_vec=np.ndarray([]),
             time_current_2_vec=np.ndarray([]),
-            temperature=toml_transformer.boundary_conditions.temperature,  # ASA Later it becomes a dynamic value?
+            temperature=toml_transformer.boundary_conditions.temperature,
             # sweep parameters: geometry and materials
             n_p_top_min_max_list=toml_transformer.design_space.n_p_top_min_max_list,
             n_p_bot_min_max_list=toml_transformer.design_space.n_p_bot_min_max_list,

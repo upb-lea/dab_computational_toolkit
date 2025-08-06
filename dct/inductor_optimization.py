@@ -12,6 +12,7 @@ import tqdm
 
 # own libraries
 import femmt as fmt
+from dct.boundary_check import CheckCondition as c_flag
 import dct.inductor_optimization_dtos
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
@@ -35,8 +36,93 @@ class InductorOptimization:
         self._number_performed_calculations: int = 0
         self._progress_run_time: RunTime = RunTime()
 
-    def generate_fem_simulation_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData,
-                                     circuit_filter_data: dct.FilterData) -> bool:
+    @staticmethod
+    def verify_optimization_parameter(toml_inductor: dct.TomlInductor) -> tuple[bool, str]:
+        """Verify the input parameter ranges.
+
+        :param toml_inductor: toml inductor configuration
+        :type toml_inductor: dct.TomlInductor
+        :return: True, if the configuration was consistent
+        :rtype: bool
+        """
+        # Variable declaration
+        inconsistency_report: str = ""
+        is_inconsistent: bool = False
+        keyword_dictionary: dict
+        toml_check_min_max_values_list: list[tuple[list[float], str]]
+        toml_check_value_list: list[tuple[float, str]]
+
+        # Design space parameter check
+        # Check core_name_list
+        if len(toml_inductor.design_space.core_name_list) != 0:
+            # Get available keywords
+            keyword_dictionary = fmt.core_database()
+            # Perform dictionary check
+            for keyword_entry in toml_inductor.design_space.core_name_list:
+                is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, "core_name_list")
+                # Check if boundary check fails
+                if is_check_failed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_inconsistent = True
+        else:
+
+            toml_check_min_max_values_list = (
+                [(toml_inductor.design_space.window_h_min_max_list, "window_h_min_max_list"),
+                 (toml_inductor.design_space.window_w_min_max_list, "window_w_min_max_list")])
+
+            # Perform the boundary check
+            is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+                0, 5, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+
+        # Check litz_wire_list
+        # Get available keywords
+        keyword_dictionary = fmt.litz_database()
+        # Perform dictionary check
+        for keyword_entry in toml_inductor.design_space.litz_wire_name_list:
+            is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, "litz_wire_name_list")
+            # Check if boundary check fails
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+
+        # Insulation parameter check
+        toml_check_value_list = (
+            [(toml_inductor.insulations.primary_to_primary, "primary_to_primary"),
+             (toml_inductor.insulations.core_bot, "core_bot"), (toml_inductor.insulations.core_top, "core_top"),
+             (toml_inductor.insulations.core_right, "core_right"), (toml_inductor.insulations.core_left, "core_left")])
+
+        # Perform insulation value check
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+            0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Perform temperature value check
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            -40, 175, toml_inductor.boundary_conditions.temperature, "temperature", c_flag.check_inclusive, c_flag.check_inclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Perform filter_distance value check
+        group_name = "filter_distance"
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            0, 100, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
+            f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_exclusive, c_flag.check_ignore)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        return is_inconsistent, inconsistency_report
+
+    def initialize_inductor_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, circuit_filter_data: dct.FilterData) -> bool:
         """
         Generate the input geometry/settings list for the FEM simulation.
 
@@ -50,6 +136,13 @@ class InductorOptimization:
         :rtype: bool
         """
         is_list_generation_successful = False
+
+        # Verify optimization parameter
+        is_check_failed, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        if is_check_failed:
+            raise ValueError(
+                "Inductor optimization parameter are inconsistent!\n",
+                issue_report)
 
         # Insulation parameter
         act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
@@ -133,7 +226,7 @@ class InductorOptimization:
 
         # Check for valid filtered_list_id
         if len(self._optimization_config_list) > filtered_list_id:
-            # Lock statistical performance data access (ASA: Possible Bug)
+            # Lock statistical performance data access
             with self._i_lock_stat:
                 # Check if list is in progress
                 if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
@@ -176,7 +269,6 @@ class InductorOptimization:
         :param debug: Debug mode flag
         :type debug: bool
         """
-        # Variable declaration
         # Process_number are unclear (Usage in femmt)
         process_number = 1
 
@@ -282,7 +374,7 @@ class InductorOptimization:
         :type  filter_data: dct.FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
-        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results (ASA: Later to merge with toml-data filter factor)
+        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
         :param debug: True to use debug mode which stops earlier
         :type debug: bool

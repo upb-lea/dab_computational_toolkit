@@ -21,6 +21,9 @@ import dct.datasets_dtos
 import dct.datasets_dtos as d_dtos
 import dct.circuit_optimization_dtos as circuit_dtos
 import dct.datasets as d_sets
+import transistordatabase as tdb
+from dct.boundary_check import CheckCondition as c_flag
+from dct import toml_checker as tc
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
@@ -63,9 +66,8 @@ class CircuitOptimization:
         :param project_directory: project directory file path
         :type project_directory: str
         :return: File path in a DTO
-        :rtype: p_dtos.ParetoFilePaths
+        :rtype: circuit_dtos.ParetoFilePaths
         """
-        # ASA: TODO: Merge ginfo and set_up_folder_structure
         filepath_config = f"{project_directory}/filepath_config.json"
         if os.path.exists(filepath_config):
             with open(filepath_config, 'r', encoding='utf8') as json_file:
@@ -103,8 +105,8 @@ class CircuitOptimization:
         :type circuit_project_directory: str
         :param circuit_study_name: name of the circuit study
         :type circuit_study_name: str
-        :return: Configuration file as p_dtos.DabDesign
-        :rtype: p_dtos.CircuitParetoDabDesign
+        :return: Configuration file as circuit_dtos.DabDesign
+        :rtype: circuit_dtos.CircuitParetoDabDesign
         """
         filepaths = CircuitOptimization.load_filepaths(circuit_project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
@@ -116,12 +118,269 @@ class CircuitOptimization:
 
         return loaded_pareto_dto
 
+    @staticmethod
+    def verify_optimization_parameter(toml_circuit: tc.TomlCircuitParetoDabDesign) -> tuple[bool, str]:
+        """Verify the input parameter ranges.
+
+        :param toml_circuit: toml inductor configuration
+        :type toml_circuit: dct.TomlInductor
+        :return: True, if the configuration was consistent
+        :rtype: bool
+        """
+        # Variable declaration
+        inconsistency_report: str = ""
+        is_inconsistent: bool = False
+        toml_check_keyword_list: list[tuple[list[str], str]]
+        toml_check_min_max_values_list: list[tuple[list[float], str]]
+        toml_check_value_list: list[tuple[float, str]]
+        toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
+
+        # Design space parameter check
+        # Create dictionary from transistor database list
+        db = tdb.DatabaseManager()
+        db.set_operation_mode_json()
+        db.update_from_fileexchange(True)
+
+        # Get available keywords
+        keyword_list: list[str] = db.get_transistor_names_list()
+        keyword_dictionary: dict = {}
+        # Create dictionary
+        for keyword_entry in keyword_list:
+            keyword_dictionary[keyword_entry] = 0
+
+        # Check transistors
+        toml_check_keyword_list = (
+            [(toml_circuit.design_space.transistor_1_name_list, "transistor_1_name_list"),
+             (toml_circuit.design_space.transistor_2_name_list, "transistor_2_name_list")])
+
+        # Perform the boundary check
+        for check_keyword in toml_check_keyword_list:
+            if len(check_keyword[0]) == 0:
+                inconsistency_report = f"   Circuit parameter: List {check_keyword[1]} is empty!\n"
+                is_inconsistent = True
+            else:
+                # Perform dictionary check
+                for keyword_entry in check_keyword[0]:
+                    is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, check_keyword[1])
+                    # Check if boundary check fails
+                    if is_check_failed:
+                        inconsistency_report = inconsistency_report + issue_report
+                        is_inconsistent = True
+
+        # Check switching frequency range
+        float_f_s_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_circuit.design_space.f_s_min_max_list)
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            1000, 1e7, float_f_s_min_max_list, "f_s_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Check l_s_min_max_list, l_1_min_max_list and l_2__min_max_list
+        toml_check_min_max_values_list = (
+            [(toml_circuit.design_space.l_s_min_max_list, "l_s_min_max_list"),
+             (toml_circuit.design_space.l_1_min_max_list, "l_1_min_max_list"),
+             (toml_circuit.design_space.l_2__min_max_list, "l_2__min_max_list")])
+
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+            0, 1, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            0, 100, toml_circuit.design_space.n_min_max_list, "n_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Check l_s_min_max_list, l_1_min_max_list and l_2__min_max_list
+        toml_check_min_max_values_list = (
+            [(toml_circuit.design_space.l_s_min_max_list, "l_s_min_max_list"),
+             (toml_circuit.design_space.l_1_min_max_list, "l_1_min_max_list"),
+             (toml_circuit.design_space.l_2__min_max_list, "l_2__min_max_list")])
+
+        # Perform the boundary check
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+            0, 1, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Check c_par_1 and c_par_2
+        toml_check_value_list = (
+            [(toml_circuit.design_space.c_par_1, "c_par_1"),
+             (toml_circuit.design_space.c_par_2, "c_par_2")])
+
+        # Perform the boundary check
+        # Check c_par_1 and c_par_2
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+            0, 1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Output range parameter and sampling parameter check
+        # Init is_user_point_list_consistent-flag
+        is_user_point_list_consistent = False
+        # Evaluate list length
+        len_check1 = len(toml_circuit.sampling.v1_additional_user_point_list) == len(toml_circuit.sampling.v2_additional_user_point_list)
+        len_check2 = len(toml_circuit.sampling.p_additional_user_point_list) == len(toml_circuit.sampling.additional_user_weighting_point_list)
+        len_check3 = len(toml_circuit.sampling.v1_additional_user_point_list) == len(toml_circuit.sampling.p_additional_user_point_list)
+        # Check if the additional user point lists are consistent
+        if len_check1 == len_check2 and len_check2 == len_check3:
+            is_user_point_list_consistent = True
+
+        # Check v1_min_max_list and v2_min_max_list
+        toml_check_min_max_value_multi_list = (
+            [(toml_circuit.output_range.v1_min_max_list, "v1_min_max_list",
+              toml_circuit.sampling.v1_additional_user_point_list, "v1_additional_user_point_list"),
+             (toml_circuit.output_range.v2_min_max_list, "v2_min_max_list",
+              toml_circuit.sampling.v2_additional_user_point_list, "v2_additional_user_point_list")])
+
+        # Perform the boundary check
+        for check_parameter in toml_check_min_max_value_multi_list:
+            is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+                0, 1500, check_parameter[0], check_parameter[1], c_flag.check_exclusive, c_flag.check_exclusive)
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+            elif is_user_point_list_consistent:
+                for voltage_value in check_parameter[2]:
+                    is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+                        check_parameter[0][0], check_parameter[0][1], voltage_value, check_parameter[3], c_flag.check_inclusive, c_flag.check_inclusive)
+                    if is_check_failed:
+                        inconsistency_report = inconsistency_report + issue_report
+                        is_inconsistent = True
+
+        # Perform the boundary check  of p_min_max_list
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            -100000, 100000, toml_circuit.output_range.p_min_max_list, "p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+        elif is_user_point_list_consistent:
+            for power_value in toml_circuit.sampling.p_additional_user_point_list:
+                is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+                    toml_circuit.output_range.p_min_max_list[0], toml_circuit.output_range.p_min_max_list[1], power_value,
+                    "p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                if is_check_failed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_inconsistent = True
+
+        # Remaining Sampling parameter check
+        # Check v1_additional_user_point_list
+        # Initialize variable
+        weighting_sum: float = 0.0
+        # Perform the boundary check  of p_min_max_list
+        for weight_value in toml_circuit.sampling.additional_user_weighting_point_list:
+            is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+            if is_check_failed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_inconsistent = True
+
+            weighting_sum = weighting_sum + weight_value
+
+        # Check the sum
+        weighting_sum = 0.0
+        # Perform the boundary check  of p_min_max_list
+        if weighting_sum > 1 or weighting_sum < 0:
+            is_inconsistent = True
+            inconsistency_report = inconsistency_report + f"    The additional weighting point list sum of {weighting_sum} is out of range!"
+
+        # Perform filter_distance value check
+        group_name = "filter_distance"
+        # Perform the boundary check for number_filtered_designs
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 100, float(toml_circuit.filter_distance.number_filtered_designs),
+            f"{group_name}: number_filtered_designs", c_flag.check_exclusive, c_flag.check_ignore)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        # Perform the boundary check for number_filtered_designs
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            0.01, 100, toml_circuit.filter_distance.difference_percentage, f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_ignore)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_inconsistent = True
+
+        return is_inconsistent, inconsistency_report
+
+    def initialize_circuit_optimization(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> bool:
+        """
+        Initialize the circuit_dto for circuit optimization.
+
+        :param toml_circuit: toml file class for the circuit
+        :type toml_circuit: tc.TomlCircuitParetoDabDesign
+        :param toml_prog_flow: toml file class for the flow control
+        :type toml_prog_flow: tc.FlowControl
+        :return: True, if the configuration was successful initialized
+        :rtype: bool
+        """
+        # Verify optimization parameter
+        is_check_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if is_check_failed:
+            raise ValueError(
+                "Circuit optimization parameter are inconsistent!\n",
+                issue_report)
+
+        # Initialize the circuit_dtos
+        design_space = circuit_dtos.CircuitParetoDesignSpace(
+            f_s_min_max_list=toml_circuit.design_space.f_s_min_max_list,
+            l_s_min_max_list=toml_circuit.design_space.l_s_min_max_list,
+            l_1_min_max_list=toml_circuit.design_space.l_1_min_max_list,
+            l_2__min_max_list=toml_circuit.design_space.l_2__min_max_list,
+            n_min_max_list=toml_circuit.design_space.n_min_max_list,
+            transistor_1_name_list=toml_circuit.design_space.transistor_1_name_list,
+            transistor_2_name_list=toml_circuit.design_space.transistor_2_name_list,
+            c_par_1=toml_circuit.design_space.c_par_1,
+            c_par_2=toml_circuit.design_space.c_par_2
+        )
+
+        output_range = circuit_dtos.CircuitOutputRange(
+            v1_min_max_list=toml_circuit.output_range.v1_min_max_list,
+            v2_min_max_list=toml_circuit.output_range.v2_min_max_list,
+            p_min_max_list=toml_circuit.output_range.p_min_max_list)
+
+        filter = circuit_dtos.CircuitFilter(
+            number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
+            difference_percentage=toml_circuit.filter_distance.difference_percentage
+        )
+
+        # None can not be handled by toml correct, so this is a workaround. By default, "random" in toml equals "None"
+        local_sampling_random_seed: int | None = None
+        # In case of a concrete seed was given, overwrite None with the given one
+        if isinstance(toml_circuit.sampling.sampling_random_seed, int):
+            local_sampling_random_seed = int(toml_circuit.sampling.sampling_random_seed)
+
+        sampling = circuit_dtos.CircuitSampling(
+            sampling_method=toml_circuit.sampling.sampling_method,
+            sampling_points=toml_circuit.sampling.sampling_points,
+            sampling_random_seed=local_sampling_random_seed,
+            v1_additional_user_point_list=toml_circuit.sampling.v1_additional_user_point_list,
+            v2_additional_user_point_list=toml_circuit.sampling.v2_additional_user_point_list,
+            p_additional_user_point_list=toml_circuit.sampling.p_additional_user_point_list,
+            additional_user_weighting_point_list=toml_circuit.sampling.additional_user_weighting_point_list
+        )
+
+        self._dab_config = circuit_dtos.CircuitParetoDabDesign(
+            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+            project_directory=toml_prog_flow.general.project_directory,
+            design_space=design_space,
+            output_range=output_range,
+            sampling=sampling,
+            filter=filter)
+
+        return True
+
     def get_config(self) -> circuit_dtos.CircuitParetoDabDesign | None:
         """
         Return the actual loaded configuration file.
 
-        :return: Configuration file as p_dtos.DabDesign
-        :rtype: p_dtos.CircuitParetoDabDesign
+        :return: Configuration file as circuit_dtos.DabDesign
+        :rtype: circuit_dtos.CircuitParetoDabDesign
         """
         if self._dab_config is None:
             logger.warning("Configuration is not loaded!")
@@ -191,7 +450,7 @@ class CircuitOptimization:
         Objective function to optimize.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :param trial: optuna trial
         :type trial: optuna.Trial
         :param fixed_parameters: fixed parameters (loaded transistor DTOs)
@@ -380,13 +639,10 @@ class CircuitOptimization:
             logger.info(f"current time: {datetime.datetime.now()}")
             # Save method from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
 
-    def start_proceed_study(self, dab_config: circuit_dtos.CircuitParetoDabDesign, number_trials: int,
-                            database_type: str = 'sqlite',
+    def start_proceed_study(self, number_trials: int, database_type: str = 'sqlite',
                             sampler: optuna.samplers.BaseSampler = optuna.samplers.NSGAIIISampler()) -> None:
         """Proceed a study which is stored as sqlite database.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
         :param number_trials: Number of trials adding to the existing study
         :type number_trials: int
         :param database_type: storage database, e.g. 'sqlite' or 'mysql'
@@ -394,8 +650,10 @@ class CircuitOptimization:
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
-        # Overtake configuration (Later this is to do by 'generate_optimization_list' or correspondent method
-        self._dab_config = copy.deepcopy(dab_config)
+        if self._dab_config is None:
+            logger.warning("Method 'initialize_circuit_optimization' is not called!\n"
+                           "    No list is generated so that no optimization can be performed!")
+            return
 
         filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
@@ -441,13 +699,13 @@ class CircuitOptimization:
             storage = f"sqlite:///{circuit_study_sqlite_database}"
 
             # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+            self._study_in_storage = optuna.create_study(study_name=self._dab_config.circuit_study_name,
                                                          storage=storage,
                                                          directions=directions,
                                                          load_if_exists=True, sampler=sampler)
 
             # Create study object in memory
-            self._study_in_memory = optuna.create_study(study_name=dab_config.circuit_study_name, directions=directions, sampler=sampler)
+            self._study_in_memory = optuna.create_study(study_name=self._dab_config.circuit_study_name, directions=directions, sampler=sampler)
             # If trials exists, add them to study_in_memory
             self._study_in_memory.add_trials(self._study_in_storage.trials)
             # Inform about sampler type
@@ -475,7 +733,7 @@ class CircuitOptimization:
             # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
 
             # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=dab_config.circuit_study_name,
+            self._study_in_storage = optuna.create_study(study_name=self._dab_config.circuit_study_name,
                                                          storage=storage_mysql,
                                                          directions=directions,
                                                          load_if_exists=True, sampler=sampler)
@@ -544,7 +802,7 @@ class CircuitOptimization:
         Load a DAB-DTO from an optuna study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :param trial_number: trial number to load to the DTO
         :type trial_number: int
         :return:
@@ -631,7 +889,7 @@ class CircuitOptimization:
         """Create a DataFrame from a study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         """
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
         database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
@@ -646,7 +904,7 @@ class CircuitOptimization:
         Create the DAB circuit optimization sqlite URL.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: p_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :return: SQLite URL
         :rtype: str
         """
