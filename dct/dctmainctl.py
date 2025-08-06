@@ -33,6 +33,7 @@ from dct import ParetoPlots
 from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.summary_processing import DctSummaryProcessing
+from dct.summary_pre_processing import DctSummaryPreProcessing
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
@@ -41,6 +42,8 @@ from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 logger = logging.getLogger(__name__)
+
+DEBUG: bool = True
 
 class DctMainCtl:
     """Main class for control dab-optimization."""
@@ -67,6 +70,7 @@ class DctMainCtl:
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
+        self._summary_pre_processing: DctSummaryPreProcessing | None = None
         self._summary_processing: DctSummaryProcessing | None = None
 
         # Filtered point results in case of skip
@@ -94,12 +98,14 @@ class DctMainCtl:
         inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
         transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+        pre_summary_path = os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory)
         summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
 
         path_dict = {'circuit': circuit_path,
                      'inductor': inductor_path,
                      'transformer': transformer_path,
                      'heat_sink': heat_sink_path,
+                     'pre_summary': pre_summary_path,
                      'summary': summary_path}
 
         for _, value in path_dict.items():
@@ -550,7 +556,6 @@ class DctMainCtl:
 
         # Summary data
         # Check if summary processing is initialized,if not initialized progress data are valid
-
         if self._summary_processing is not None:
             self._summary_list[0].progress_data = self._summary_processing.get_progress_data()
 
@@ -849,11 +854,6 @@ class DctMainCtl:
         :param  workspace_path: Path to subfolder 'workspace' (if empty default path '../<path to this file>' is used)
         :type   workspace_path: str
         """
-        # Variable declaration
-        # Flag for re-simulation  (if False the summary will failed)
-        enable_ind_re_simulation = True
-        enable_trans_re_simulation = True
-
         # Server response thread handler
         _srv_response_handler = None
         # Queues for request and response
@@ -938,6 +938,8 @@ class DctMainCtl:
                                                 toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
         )
 
+        pre_summary_data = dct.StudyData(study_name="pre_summary",
+                                         optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory))
         summary_data = dct.StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
 
         filter_data = dct.FilterData(
@@ -1172,9 +1174,9 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
 
         # --------------------------
-        # Inductor optimization
+        # Inductor reluctance model optimization
         # --------------------------
-        logger.info("Start inductor optimization.")
+        logger.info("Start inductor reluctance model optimization.")
 
         # Start the inductor processing time measurement
         self._inductor_progress_time[0].reset_start_trigger()
@@ -1195,9 +1197,9 @@ class DctMainCtl:
                                                                               filter_data)
 
             # Perform inductor optimization
-            self._inductor_optimization.optimization_handler(
+            self._inductor_optimization.optimization_handler_reluctance_model(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                enable_ind_re_simulation)
+                debug=DEBUG)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1206,12 +1208,12 @@ class DctMainCtl:
         self._inductor_progress_time[0].stop_trigger()
 
         # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor Pareto front calculated")
+        self.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor reluctance model Pareto front calculated")
 
         # --------------------------
-        # Transformer optimization
+        # Transformer reluctance model optimization
         # --------------------------
-        logger.info("Start transformer optimization.")
+        logger.info("Start transformer reluctance model optimization.")
 
         # Start the transformer processing time measurement
         self._transformer_progress_time[0].reset_start_trigger()
@@ -1230,8 +1232,7 @@ class DctMainCtl:
                                                                                     filter_data)
             # Perform transformer optimization
             self._transformer_optimization.optimization_handler(
-                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
-                enable_trans_re_simulation)
+                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1240,7 +1241,7 @@ class DctMainCtl:
         self._transformer_progress_time[0].stop_trigger()
 
         # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer Pareto front calculated")
+        self.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer reluctance model Pareto front calculated")
 
         # --------------------------
         # Heat sink optimization
@@ -1265,34 +1266,58 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
 
         # --------------------------
-        # Summary calculation
+        # Pre-summary calculation
         # --------------------------
+        logger.info("Start pre-summary.")
 
         # Allocate summary data object
-        self._summary_processing = DctSummaryProcessing()
+        self._summary_pre_processing = DctSummaryPreProcessing()
 
         # Initialization thermal data
-        if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
+        if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
         stacked_transformer_study_names = [self._transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = self._summary_processing.generate_result_database(
-            self._inductor_study_data, self._transformer_study_data, summary_data,
+        s_df = self._summary_pre_processing.generate_result_database(
+            self._inductor_study_data, self._transformer_study_data, pre_summary_data,
             inductor_study_names, stacked_transformer_study_names, filter_data)
         #  Select the needed heat sink configuration
-        self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
+        self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         self.generate_zip_archive(toml_prog_flow)
 
-        ParetoPlots.plot_circuit_results(toml_prog_flow)
-        ParetoPlots.plot_inductor_results(toml_prog_flow)
-        ParetoPlots.plot_transformer_results(toml_prog_flow)
-        ParetoPlots.plot_heat_sink_results(toml_prog_flow)
-        ParetoPlots.plot_summary(toml_prog_flow)
+        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=True)
+
+        # --------------------------
+        # Inductor FEM simulation
+        # --------------------------
+        logger.info("Start inductor FEM simulations.")
+
+        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.inductor.calculation_mode == "skip":
+            # Perform inductor optimization
+            if self._inductor_optimization is not None:
+                self._inductor_optimization.fem_simulation_handler(
+                    filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
+                    debug=DEBUG)
+
+        # --------------------------
+        # Transformer FEM simulation
+        # --------------------------
+        logger.info("Start transformer FEM simulations.")
+
+        # --------------------------
+        # Final summary calculation
+        # --------------------------
+        logger.info("Start final summary.")
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

@@ -21,7 +21,7 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 logger = logging.getLogger(__name__)
 
-class DctSummaryProcessing:
+class DctSummaryPreProcessing:
     """Perform the summary calculation based on optimization results."""
 
     _s_lock_stat: threading.Lock
@@ -109,7 +109,7 @@ class DctSummaryProcessing:
             tim_thickness=transformer_tim_thickness,
             tim_conductivity=transformer_tim_conductivity
         )
-        # Check on zero
+        # Check on zero ( ASA: Maybe in general all configuration files are to check for validity in advanced. In this case the check can be removed.)
         if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
@@ -257,11 +257,11 @@ class DctSummaryProcessing:
                 # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losses
                 inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file,
                                                          inductor_study_name,
-                                                         "09_circuit_dtos_incl_inductor_losses")
+                                                         "08_circuit_dtos_incl_reluctance_inductor_losses")
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummaryProcessing._generate_magnetic_number_list(inductor_filepath_results))
+                    DctSummaryPreProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -289,11 +289,11 @@ class DctSummaryProcessing:
                         stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
                                                                             circuit_trial_file,
                                                                             stacked_transformer_study_name,
-                                                                            "09_circuit_dtos_incl_transformer_losses")
+                                                                            "08_circuit_dtos_incl_reluctance_transformer_losses")
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
+                            DctSummaryPreProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
@@ -438,6 +438,7 @@ class DctSummaryProcessing:
         hs_config_filepath = os.path.join(heat_sink_study_data.optimization_directory,
                                           f"{heat_sink_study_data.study_name}.pkl")
         hs_config = hct.Optimization.load_config(hs_config_filepath)
+        # Debug ASA Missing true simulations for remaining function
 
         df_hs = hct.Optimization.study_to_df(hs_config)
 

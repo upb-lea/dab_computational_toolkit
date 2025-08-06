@@ -71,9 +71,13 @@ def generate_flow_control_toml(working_directory: str) -> None:
         calculation_mode = "skip" # (new,continue,skip)
         subdirectory = "04_heat_sink"
     
+    [pre_summary]
+        calculation_mode = "skip" # (new,skip)
+        subdirectory = "05_pre_summary"
+    
     [summary]
         calculation_mode = "skip" # (new,skip)
-        subdirectory = "05_summary"
+        subdirectory = "06_summary"
     
     [configuration_data_files]
         circuit_configuration_file = "DabCircuitConf.toml"
