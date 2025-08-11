@@ -376,18 +376,14 @@ class TransformerOptimization:
             logger.info(f"Target number of trials = {act_target_number_trials} which are less equal 0!. No simulation is performed")
             return 0
 
-        # perform FEM simulations
-        if factor_dc_losses_min_max_list[0] != 0:
-            df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
-            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            if debug:
-                # reduce dataset to the fist 5 entries
-                df_filtered = df_filtered.iloc[:5]
-
+        # Filter reluctance model results
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
         df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
             df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        if debug:
+            # reduce dataset to the fist 5 entries
+            df_filtered = df_filtered.iloc[:5]
+
         # Assemble configuration path
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                        f"{act_sto_config.stacked_transformer_study_name}.pkl")
@@ -560,17 +556,13 @@ class TransformerOptimization:
         # Load configuration
         circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
 
-        # perform FEM simulations
-        if factor_dc_losses_min_max_list[0] != 0:
-            df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
-            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            if debug:
-                # reduce dataset to the fist 5 entries
-                df_filtered = df_filtered.iloc[:5]
-
+        # Filter study. Use same filter as in the reluctance model
+        df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
         df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
             df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        if debug:
+            # reduce dataset to the fist 5 entries
+            df_filtered = df_filtered.iloc[:5]
 
         # Assemble configuration path
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
