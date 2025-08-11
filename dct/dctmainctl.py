@@ -1319,8 +1319,7 @@ class DctMainCtl:
             # Perform inductor optimization
             if self._transformer_optimization is not None:
                 self._transformer_optimization.fem_simulation_handler(
-                    filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                    debug=DEBUG)
+                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=DEBUG)
 
         # --------------------------
         # Final summary calculation

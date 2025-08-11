@@ -509,15 +509,12 @@ class TransformerOptimization:
                 logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
                 break
 
-    def fem_simulation_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                               factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
+    def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 
         :param filter_data: Information about the filtered designs
         :type  filter_data: dct.FilterData
-        :param target_number_trials: Number of trials for the optimization
-        :type  target_number_trials: int
         :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
         :param debug: True to use debug mode which stops earlier
