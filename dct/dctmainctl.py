@@ -979,7 +979,7 @@ class DctMainCtl:
         is_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
         if is_failed:
             raise ValueError("Circuit optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
+                             f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
 
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
