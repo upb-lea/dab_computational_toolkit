@@ -40,6 +40,7 @@ class Breakpoints(BaseModel):
     inductor: Literal['no', 'pause', 'stop']
     transformer: Literal['no', 'pause', 'stop']
     heat_sink: Literal['no', 'pause', 'stop']
+    pre_summary: Literal['no', 'pause', 'stop']
     summary: Literal['no', 'pause', 'stop']
 
 class CondBreakpoints(BaseModel):
@@ -273,9 +274,9 @@ class TomlTransformer(BaseModel):
 
     design_space: TomlTransformerDesignSpace
     insulation: TomlTransformerInsulation
+    boundary_conditions: TomlTransformerBoundaryConditions
     filter_distance: TomlTransformerFilterDistance
     settings: TomlTransformerSettings
-    boundary_conditions: TomlTransformerBoundaryConditions
 
 # ######################################################
 # heat sink inclusive data of summary calculation

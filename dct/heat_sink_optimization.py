@@ -45,7 +45,7 @@ class HeatSinkOptimization:
         """
         # Variable declaration
         inconsistency_report: str = ""
-        is_inconsistent: bool = False
+        is_consistent: bool = True
         toml_check_value_list: list[tuple[float, str]]
         toml_check_min_max_values_list: list[tuple[list[float], str]]
 
@@ -61,10 +61,10 @@ class HeatSinkOptimization:
 
         # Perform the boundary check
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
-            0, 5, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_inclusive)
+            0, 5, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform the boundary check for thickness_fin_t_min_max_list
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
@@ -72,7 +72,7 @@ class HeatSinkOptimization:
             f"{group_name}: thickness_fin_t_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Convert min_max-list from integer to float values
         float_number_fins_n_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_heat_sink.design_space.number_fins_n_min_max_list)
@@ -81,7 +81,7 @@ class HeatSinkOptimization:
             3, 100, float_number_fins_n_min_max_list, f"{group_name}: number_fins_n_min_max_list", c_flag.check_inclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform boundary condition check
         group_name = "boundary_condition"
@@ -93,10 +93,10 @@ class HeatSinkOptimization:
 
         # Perform the boundary check for temperatures
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
-            -45, 125, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
+            -40, 125, toml_check_value_list, c_flag.check_inclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform the boundary check for area_min
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
@@ -104,17 +104,17 @@ class HeatSinkOptimization:
             c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform setting check
         group_name = "setting"
         # Perform the boundary check for number_directions
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
-            0, 25, float(toml_heat_sink.settings.number_directions), f"{group_name}: number_directions",
-            c_flag.check_exclusive, c_flag.check_exclusive)
+            2, 3, float(toml_heat_sink.settings.number_directions), f"{group_name}: number_directions",
+            c_flag.check_inclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Create a list of parameter to check
         toml_check_value_list = (
@@ -126,15 +126,15 @@ class HeatSinkOptimization:
             0, 10, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform the boundary check for number_directions
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
             80, 200, toml_heat_sink.settings.thermal_conductivity_copper, f"{group_name}: thermal_conductivity_copper",
-            c_flag.check_exclusive, c_flag.check_exclusive)
+            c_flag.check_inclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform thermal resistance data check
         group_name = "thermal_resistance_data"
@@ -146,16 +146,16 @@ class HeatSinkOptimization:
         # Perform list length check for transistor_b1_cooling
         if len(toml_heat_sink.thermal_resistance_data.transistor_b1_cooling) != 2:
             inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b1_cooling' is not equal 2!\n"
-            is_inconsistent = True
+            is_consistent = False
         else:
             toml_check_value_list1.append(
-                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[0], f"{group_name}: transistor_b2_cooling-tim_thickness"))
+                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[0], f"{group_name}: transistor_b1_cooling-tim_thickness"))
             toml_check_value_list2.append(
-                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[1], f"{group_name}: transistor_b2_cooling-tim_conductivity"))
+                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[1], f"{group_name}: transistor_b1_cooling-tim_conductivity"))
         # Perform list length check for transistor_b2_cooling
         if len(toml_heat_sink.thermal_resistance_data.transistor_b2_cooling) != 2:
             inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b2_cooling' is not equal 2!\n"
-            is_inconsistent = True
+            is_consistent = False
         else:
             toml_check_value_list1.append(
                 (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[0], f"{group_name}: transistor_b2_cooling-tim_thickness"))
@@ -164,14 +164,14 @@ class HeatSinkOptimization:
         # Perform list length check for inductor_cooling
         if len(toml_heat_sink.thermal_resistance_data.inductor_cooling) != 2:
             inconsistency_report = inconsistency_report + "    Number of values in parameter 'inductor_cooling' is not equal 2!\n"
-            is_inconsistent = True
+            is_consistent = False
         else:
             toml_check_value_list1.append((toml_heat_sink.thermal_resistance_data.inductor_cooling[0], f"{group_name}: inductor_cooling-tim_thickness"))
             toml_check_value_list2.append((toml_heat_sink.thermal_resistance_data.inductor_cooling[1], f"{group_name}: inductor_cooling-tim_conductivity"))
         # Perform list length check for transformer_cooling
         if len(toml_heat_sink.thermal_resistance_data.transformer_cooling) != 2:
             inconsistency_report = inconsistency_report + "    Number of values in parameter 'transformer_cooling' is not equal 2!\n"
-            is_inconsistent = True
+            is_consistent = False
         else:
             toml_check_value_list1.append(
                 (toml_heat_sink.thermal_resistance_data.transformer_cooling[0], f"{group_name}: transformer_cooling-tim_thickness"))
@@ -183,16 +183,16 @@ class HeatSinkOptimization:
             0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform the boundary check for tim-conductivity
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
             1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
-        return is_inconsistent, inconsistency_report
+        return is_consistent, inconsistency_report
 
     def initialize_heat_sink_optimization(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
         """

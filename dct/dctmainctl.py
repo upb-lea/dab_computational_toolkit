@@ -1297,7 +1297,7 @@ class DctMainCtl:
         self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
 
         # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
+        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)

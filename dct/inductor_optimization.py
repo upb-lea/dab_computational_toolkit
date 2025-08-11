@@ -47,7 +47,7 @@ class InductorOptimization:
         """
         # Variable declaration
         inconsistency_report: str = ""
-        is_inconsistent: bool = False
+        is_consistent: bool = True
         keyword_dictionary: dict
         toml_check_min_max_values_list: list[tuple[list[float], str]]
         toml_check_value_list: list[tuple[float, str]]
@@ -63,19 +63,20 @@ class InductorOptimization:
                 # Check if boundary check fails
                 if is_check_failed:
                     inconsistency_report = inconsistency_report + issue_report
-                    is_inconsistent = True
+                    is_consistent = False
         else:
 
             toml_check_min_max_values_list = (
-                [(toml_inductor.design_space.window_h_min_max_list, "window_h_min_max_list"),
+                [(toml_inductor.design_space.core_inner_diameter_min_max_list, "core_inner_diameter_min_max_list"),
+                 (toml_inductor.design_space.window_h_min_max_list, "window_h_min_max_list"),
                  (toml_inductor.design_space.window_w_min_max_list, "window_w_min_max_list")])
 
             # Perform the boundary check
             is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
-                0, 5, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
+                0, 5, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
             if is_check_failed:
                 inconsistency_report = inconsistency_report + issue_report
-                is_inconsistent = True
+                is_consistent = False
 
         # Check litz_wire_list
         # Get available keywords
@@ -86,7 +87,7 @@ class InductorOptimization:
             # Check if boundary check fails
             if is_check_failed:
                 inconsistency_report = inconsistency_report + issue_report
-                is_inconsistent = True
+                is_consistent = False
 
         # Insulation parameter check
         toml_check_value_list = (
@@ -100,7 +101,7 @@ class InductorOptimization:
             0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform temperature value check
         # Perform the boundary check
@@ -108,19 +109,19 @@ class InductorOptimization:
             -40, 175, toml_inductor.boundary_conditions.temperature, "temperature", c_flag.check_inclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform filter_distance value check
         group_name = "filter_distance"
         # Perform the boundary check
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
             0, 100, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-            f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_exclusive, c_flag.check_ignore)
+            f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_exclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
-        return is_inconsistent, inconsistency_report
+        return is_consistent, inconsistency_report
 
     def initialize_inductor_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: dct.StudyData, circuit_filter_data: dct.FilterData) -> bool:
         """

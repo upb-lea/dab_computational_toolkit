@@ -35,6 +35,7 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
                                inductor="no",
                                transformer="no",
                                heat_sink="no",
+                               pre_summary="no",
                                summary="no"),
     conditional_breakpoints=tc.CondBreakpoints(
         circuit=1,
