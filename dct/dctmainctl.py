@@ -895,15 +895,13 @@ class DctMainCtl:
         # --------------------------
         # Debug
         # --------------------------
-        debug_toml_filepath = os.path.join(workspace_path, "debug.toml")
+        debug_toml_filepath = os.path.join(workspace_path, "debug_config.toml")
         is_debug_loaded, debug_dict = self.load_toml_file(debug_toml_filepath)
         if is_debug_loaded:
             logger.info("debug.toml config found.")
             toml_debug = dct.Debug(**debug_dict)
         else:
-            logger.info("no debug.toml config found.")
             toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False))
-        logger.info(f"Debug mode: {toml_debug.general.is_debug}")
 
         # --------------------------
         # Flow control
