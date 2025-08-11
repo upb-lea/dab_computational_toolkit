@@ -37,41 +37,6 @@ class TestCase(Enum):
     SpecialTestNumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
 
 
-# FlowControl base parameter set
-test_FlowControl_base: tc.FlowControl = tc.FlowControl(
-    general=tc.General(project_directory="Hallo"),
-    breakpoints=tc.Breakpoints(circuit_pareto="no",
-                               circuit_filtered="no",
-                               inductor="no",
-                               transformer="no",
-                               heat_sink="no",
-                               summary="no"),
-    conditional_breakpoints=tc.CondBreakpoints(
-        circuit=1,
-        inductor=2,
-        transformer=3,
-        heat_sink=1),
-    circuit=tc.Circuit(number_of_trials=1,
-                       calculation_mode="continue",
-                       subdirectory="dummy"),
-    inductor=tc.Inductor(number_of_trials=1,
-                         calculation_mode="continue",
-                         subdirectory="dummy"),
-    transformer=tc.Transformer(number_of_trials=1,
-                               calculation_mode="continue",
-                               subdirectory="dummy"),
-    heat_sink=tc.HeatSink(number_of_trials=1,
-                          calculation_mode="continue",
-                          subdirectory="dummy"),
-    summary=tc.Summary(calculation_mode="new",
-                       subdirectory="dummy"),
-    configuration_data_files=tc.ConfigurationDataFiles(
-        circuit_configuration_file="dummy",
-        inductor_configuration_file="dummy",
-        transformer_configuration_file="dummy",
-        heat_sink_configuration_file="dummy")
-)
-
 #########################################################################################################
 # test of verify_optimization_parameter of circuit_optimization
 #########################################################################################################
