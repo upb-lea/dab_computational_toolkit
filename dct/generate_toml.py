@@ -43,7 +43,8 @@ def generate_flow_control_toml(working_directory: str) -> None:
         inductor = "no"          # After inductor Pareto front calculations of for all correspondent electrical points
         transformer = "no"       # After transformer Pareto front calculations of for all correspondent electrical points
         heat_sink = "no"         # After heat sink Pareto front calculation
-        summary = "no"           # After heat sink Pareto front calculation
+        pre_summary = "no"       # After pre-summary
+        summary = "no"           # After summary
     
     [conditional_breakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
         circuit = 1000           # Number of trials with ZVS less than 70%

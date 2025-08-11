@@ -8,6 +8,21 @@ from pydantic import BaseModel
 # own libraries
 from dct.circuit_enums import SamplingEnum
 
+
+# ######################################################
+# debug
+# ######################################################
+
+class DebugGeneral(BaseModel):
+    """Debug mode general information."""
+
+    is_debug: bool
+
+class Debug(BaseModel):
+    """General information in debug configuration."""
+
+    general: DebugGeneral
+
 # ######################################################
 # flow control
 # ######################################################

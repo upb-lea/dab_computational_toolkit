@@ -43,8 +43,6 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
 logger = logging.getLogger(__name__)
 
-DEBUG: bool = True
-
 class DctMainCtl:
     """Main class for control dab-optimization."""
 
@@ -895,6 +893,17 @@ class DctMainCtl:
         self.load_generate_logging_config(logging_filename)
 
         # --------------------------
+        # Debug
+        # --------------------------
+        debug_toml_filepath = os.path.join(workspace_path, "debug_config.toml")
+        is_debug_loaded, debug_dict = self.load_toml_file(debug_toml_filepath)
+        if is_debug_loaded:
+            logger.info("debug.toml config found.")
+            toml_debug = dct.Debug(**debug_dict)
+        else:
+            toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False))
+
+        # --------------------------
         # Flow control
         # --------------------------
         logger.debug("Read flow control file")
@@ -967,10 +976,10 @@ class DctMainCtl:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
-        if is_failed:
+        is_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if not is_consistent:
             raise ValueError("Circuit optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
+                             f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
 
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
@@ -1006,8 +1015,8 @@ class DctMainCtl:
             raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
-        if is_failed:
+        is_consistent, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        if not is_consistent:
             raise ValueError("Inductor optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
 
@@ -1044,8 +1053,8 @@ class DctMainCtl:
             raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if is_failed:
+        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        if not is_consistent:
             raise ValueError("Transformer optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
 
@@ -1081,8 +1090,8 @@ class DctMainCtl:
             raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
-        if is_failed:
+        is_consistent, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
+        if not is_consistent:
             raise ValueError("Heat sink optimization parameter in file "
                              f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
 
@@ -1199,7 +1208,7 @@ class DctMainCtl:
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler_reluctance_model(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                debug=DEBUG)
+                debug=toml_debug.general.is_debug)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1232,7 +1241,8 @@ class DctMainCtl:
                                                                                     filter_data)
             # Perform transformer optimization
             self._transformer_optimization.optimization_handler_reluctance_model(
-                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list, debug=DEBUG)
+                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
+                debug=toml_debug.general.is_debug)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1307,7 +1317,7 @@ class DctMainCtl:
             if self._inductor_optimization is not None:
                 self._inductor_optimization.fem_simulation_handler(
                     filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                    debug=DEBUG)
+                    debug=toml_debug.general.is_debug)
 
         # --------------------------
         # Transformer FEM simulation
@@ -1319,7 +1329,7 @@ class DctMainCtl:
             # Perform inductor optimization
             if self._transformer_optimization is not None:
                 self._transformer_optimization.fem_simulation_handler(
-                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=DEBUG)
+                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug.general.is_debug)
 
         # --------------------------
         # Final summary calculation
