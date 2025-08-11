@@ -976,8 +976,8 @@ class DctMainCtl:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
-        if is_failed:
+        is_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if not is_consistent:
             raise ValueError("Circuit optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
 
@@ -1015,8 +1015,8 @@ class DctMainCtl:
             raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
-        if is_failed:
+        is_consistent, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        if not is_consistent:
             raise ValueError("Inductor optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
 
@@ -1053,8 +1053,8 @@ class DctMainCtl:
             raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if is_failed:
+        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        if not is_consistent:
             raise ValueError("Transformer optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
 
@@ -1090,8 +1090,8 @@ class DctMainCtl:
             raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_failed, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
-        if is_failed:
+        is_consistent, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
+        if not is_consistent:
             raise ValueError("Heat sink optimization parameter in file "
                              f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
 
