@@ -129,7 +129,7 @@ class CircuitOptimization:
         """
         # Variable declaration
         inconsistency_report: str = ""
-        is_inconsistent: bool = False
+        is_consistent: bool = True
         toml_check_keyword_list: list[tuple[list[str], str]]
         toml_check_min_max_values_list: list[tuple[list[float], str]]
         toml_check_value_list: list[tuple[float, str]]
@@ -157,7 +157,7 @@ class CircuitOptimization:
         for check_keyword in toml_check_keyword_list:
             if len(check_keyword[0]) == 0:
                 inconsistency_report = f"   Circuit parameter: List {check_keyword[1]} is empty!\n"
-                is_inconsistent = True
+                is_consistent = False
             else:
                 # Perform dictionary check
                 for keyword_entry in check_keyword[0]:
@@ -165,7 +165,7 @@ class CircuitOptimization:
                     # Check if boundary check fails
                     if is_check_failed:
                         inconsistency_report = inconsistency_report + issue_report
-                        is_inconsistent = True
+                        is_consistent = False
 
         # Check switching frequency range
         float_f_s_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_circuit.design_space.f_s_min_max_list)
@@ -173,7 +173,7 @@ class CircuitOptimization:
             1000, 1e7, float_f_s_min_max_list, "f_s_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Check l_s_min_max_list, l_1_min_max_list and l_2__min_max_list
         toml_check_min_max_values_list = (
@@ -186,13 +186,13 @@ class CircuitOptimization:
             0, 1, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
             0, 100, toml_circuit.design_space.n_min_max_list, "n_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Check l_s_min_max_list, l_1_min_max_list and l_2__min_max_list
         toml_check_min_max_values_list = (
@@ -205,7 +205,7 @@ class CircuitOptimization:
             0, 1, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Check c_par_1 and c_par_2
         toml_check_value_list = (
@@ -215,20 +215,24 @@ class CircuitOptimization:
         # Perform the boundary check
         # Check c_par_1 and c_par_2
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
-            0, 1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
+            0, 1e-3, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Output range parameter and sampling parameter check
+        group_name = "output_range or sampling"
         # Init is_user_point_list_consistent-flag
         is_user_point_list_consistent = False
         # Evaluate list length
-        len_check1 = len(toml_circuit.sampling.v1_additional_user_point_list) == len(toml_circuit.sampling.v2_additional_user_point_list)
-        len_check2 = len(toml_circuit.sampling.p_additional_user_point_list) == len(toml_circuit.sampling.additional_user_weighting_point_list)
-        len_check3 = len(toml_circuit.sampling.v1_additional_user_point_list) == len(toml_circuit.sampling.p_additional_user_point_list)
+        len_additional_user_v1 = len(toml_circuit.sampling.v1_additional_user_point_list)
+        len_additional_user_v2 = len(toml_circuit.sampling.v2_additional_user_point_list)
+        len_additional_user_p = len(toml_circuit.sampling.p_additional_user_point_list)
+        len_additional_user_w = len(toml_circuit.sampling.additional_user_weighting_point_list)
+        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_p == len_additional_user_w
+        len_check2 = len_additional_user_p == len_additional_user_w
         # Check if the additional user point lists are consistent
-        if len_check1 == len_check2 and len_check2 == len_check3:
+        if len_check1 and len_check2:
             is_user_point_list_consistent = True
 
         # Check v1_min_max_list and v2_min_max_list
@@ -241,35 +245,45 @@ class CircuitOptimization:
         # Perform the boundary check
         for check_parameter in toml_check_min_max_value_multi_list:
             is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-                0, 1500, check_parameter[0], check_parameter[1], c_flag.check_exclusive, c_flag.check_exclusive)
+                0, 1500, check_parameter[0], f"output_range: {check_parameter[1]}", c_flag.check_exclusive, c_flag.check_exclusive)
             if is_check_failed:
                 inconsistency_report = inconsistency_report + issue_report
-                is_inconsistent = True
+                is_consistent = False
             elif is_user_point_list_consistent:
                 for voltage_value in check_parameter[2]:
                     is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
-                        check_parameter[0][0], check_parameter[0][1], voltage_value, check_parameter[3], c_flag.check_inclusive, c_flag.check_inclusive)
+                        check_parameter[0][0], check_parameter[0][1], voltage_value,
+                        f"sampling: {check_parameter[3]}", c_flag.check_inclusive, c_flag.check_inclusive)
                     if is_check_failed:
                         inconsistency_report = inconsistency_report + issue_report
-                        is_inconsistent = True
+                        is_consistent = False
+            else:
+                act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
+                act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
+                act_report = act_report + f"    p_additional_user_point_list ({len_additional_user_p}) and "
+                act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
+                act_report = act_report + "needs to be the same!\n)"
+                inconsistency_report = (inconsistency_report + act_report)
+                is_consistent = False
 
         # Perform the boundary check  of p_min_max_list
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-            -100000, 100000, toml_circuit.output_range.p_min_max_list, "p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+            -100000, 100000, toml_circuit.output_range.p_min_max_list, "output_range: p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
         elif is_user_point_list_consistent:
             for power_value in toml_circuit.sampling.p_additional_user_point_list:
                 is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
                     toml_circuit.output_range.p_min_max_list[0], toml_circuit.output_range.p_min_max_list[1], power_value,
-                    "p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                    "sampling: p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
                 if is_check_failed:
                     inconsistency_report = inconsistency_report + issue_report
-                    is_inconsistent = True
+                    is_consistent = False
 
         # Remaining Sampling parameter check
-        # Check v1_additional_user_point_list
+        group_name = "sampling"
+        # Check additional_user_weighting_point_list
         # Initialize variable
         weighting_sum: float = 0.0
         # Perform the boundary check  of p_min_max_list
@@ -278,16 +292,33 @@ class CircuitOptimization:
                 0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
             if is_check_failed:
                 inconsistency_report = inconsistency_report + issue_report
-                is_inconsistent = True
+                is_consistent = False
 
             weighting_sum = weighting_sum + weight_value
 
         # Check the sum
-        weighting_sum = 0.0
-        # Perform the boundary check  of p_min_max_list
-        if weighting_sum > 1 or weighting_sum < 0:
-            is_inconsistent = True
-            inconsistency_report = inconsistency_report + f"    The additional weighting point list sum of {weighting_sum} is out of range!"
+        if weighting_sum > 1:
+            is_consistent = False
+            act_report = "    The sum of parameter entries of parameter additional_user_weighting_point_list "
+            act_report = act_report + f"{weighting_sum} has to be less equal 1!\n"
+            inconsistency_report = inconsistency_report + act_report
+
+        # Perform the boundary check for sampling points
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, float(toml_circuit.sampling.sampling_points),
+            f"{group_name}: sampling_points", c_flag.check_exclusive, c_flag.check_ignore)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Check sampling random seed
+        # Perform the boundary check for number_filtered_designs
+        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, float(toml_circuit.sampling.sampling_random_seed),
+            f"{group_name}: sampling_random_seed", c_flag.check_inclusive, c_flag.check_ignore)
+        if is_check_failed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
 
         # Perform filter_distance value check
         group_name = "filter_distance"
@@ -297,16 +328,17 @@ class CircuitOptimization:
             f"{group_name}: number_filtered_designs", c_flag.check_exclusive, c_flag.check_ignore)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
         # Perform the boundary check for number_filtered_designs
         is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
-            0.01, 100, toml_circuit.filter_distance.difference_percentage, f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_ignore)
+            0.01, 100, toml_circuit.filter_distance.difference_percentage,
+            f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_inclusive)
         if is_check_failed:
             inconsistency_report = inconsistency_report + issue_report
-            is_inconsistent = True
+            is_consistent = False
 
-        return is_inconsistent, inconsistency_report
+        return is_consistent, inconsistency_report
 
     def initialize_circuit_optimization(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> bool:
         """

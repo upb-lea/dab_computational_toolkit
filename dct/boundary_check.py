@@ -220,9 +220,9 @@ class BoundaryCheck:
                     is_check_failed = True
 
             elif check_type_minimum == CheckCondition.check_inclusive:
-                if min_max_value[0] <= minimum:
+                if min_max_value[0] < minimum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the minimum entry value {min_max_value[0]} "
-                    inconsistency_report = inconsistency_report + "is less equal boundary value {minimum}!\n"
+                    inconsistency_report = inconsistency_report + f"is less equal boundary value {minimum}!\n"
                     is_check_failed = True
 
             # Check maximum boundary

@@ -251,9 +251,9 @@ class TomlTransformer(BaseModel):
 
     design_space: TomlTransformerDesignSpace
     insulation: TomlTransformerInsulation
+    boundary_conditions: TomlTransformerBoundaryConditions
     filter_distance: TomlTransformerFilterDistance
     settings: TomlTransformerSettings
-    boundary_conditions: TomlTransformerBoundaryConditions
 
 # ######################################################
 # heat sink inclusive data of summary calculation
