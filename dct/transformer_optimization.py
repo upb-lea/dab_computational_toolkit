@@ -347,8 +347,8 @@ class TransformerOptimization:
         return self._number_performed_calculations
 
     @staticmethod
-    def _optimize(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
-                  act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], act_re_simulate: bool, debug: bool) -> int:
+    def _optimize_reluctance_model(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+                                   act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: bool) -> int:
         """
         Perform the optimization.
 
@@ -360,14 +360,9 @@ class TransformerOptimization:
         :type act_target_number_trials: int
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
         :type factor_dc_losses_min_max_list: float
-        :param act_re_simulate: True to re-simulate all waveforms
-        :type act_re_simulate: bool
         :param debug: True to debug, defaults to False
         :type debug: bool
         """
-        # Variable declaration
-        # Process_number used in femmt
-        process_number = 1
         # Number of filtered operating points
         number_of_filtered_points = 0
 
@@ -381,109 +376,85 @@ class TransformerOptimization:
             logger.info(f"Target number of trials = {act_target_number_trials} which are less equal 0!. No simulation is performed")
             return 0
 
-        # perform FEM simulations
-        if factor_dc_losses_min_max_list[0] != 0:
-            df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
-            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            if debug:
-                # reduce dataset to the fist 5 entries
-                df_filtered = df_filtered.iloc[:5]
+        # Filter reluctance model results
+        df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
+        df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
+            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        if debug:
+            # reduce dataset to the fist 5 entries
+            df_filtered = df_filtered.iloc[:5]
 
-            fmt.optimization.StackedTransformerOptimization.FemSimulation.fem_simulations_from_reluctance_df(
-                df_filtered, act_sto_config, process_number=process_number)
+        # Assemble configuration path
+        config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
+                                       f"{act_sto_config.stacked_transformer_study_name}.pkl")
 
-        # plot options
-        # fmt.optimization.StackedTransformerOptimization.ReluctanceModel.show_study_results(sto_config)
-        # fmt.optimization.StackedTransformerOptimization.ReluctanceModel.df_plot_pareto_front(df, df_filtered, label_list=["all", "front"], interactive=False)
+        # sweep through all current waveforms
+        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-        if act_re_simulate:
-            fem_results_folder_path = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
-                                                   "02_fem_simulation_results")
-            df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
-            df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(
-                df_filtered, fem_results_folder_path)
-            # Assemble configuration path
-            config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
-                                           f"{act_sto_config.stacked_transformer_study_name}.pkl")
-            config_on_disk = fmt.StackedTransformerOptimization.ReluctanceModel.load_config(config_filepath)
+        all_operation_point_geometry_numbers_list = df_filtered["number"].to_numpy()
 
-            # workaround for comma problem. Read a random csv file and set back the delimiter.
-            # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+        # Overtake the filtered operation points
+        number_of_filtered_points = len(all_operation_point_geometry_numbers_list)
 
-            # sweep through all current waveforms
-            i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-            angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+        logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
 
-            re_simulate_numbers = df_fem_reluctance["number"].to_numpy()
+        for single_geometry_number in tqdm.tqdm(all_operation_point_geometry_numbers_list):
+            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == single_geometry_number]
 
-            # Overtake the filtered operation points
-            number_of_filtered_points = len(re_simulate_numbers)
+            result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-            for re_simulate_number in re_simulate_numbers:
-                logger.info(f"{re_simulate_number=}")
-                df_geometry_re_simulation_number = df_fem_reluctance[df_fem_reluctance["number"] == re_simulate_number]
+            new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
+                                                     "08_circuit_dtos_incl_reluctance_transformer_losses")
+            if not os.path.exists(new_circuit_dto_directory):
+                os.makedirs(new_circuit_dto_directory)
 
-                result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
+                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+            else:
+                for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
+                                         total=len(circuit_dto.calc_modulation.phi.flatten())):
 
-                new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
-                                                         "09_circuit_dtos_incl_transformer_losses")
-                if not os.path.exists(new_circuit_dto_directory):
-                    os.makedirs(new_circuit_dto_directory)
+                    time = dct.functions_waveforms.full_angle_waveform_from_angles(
+                        angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
+                    current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
 
-                if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
-                    logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
-                else:
-                    for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                             total=len(circuit_dto.calc_modulation.phi.flatten())):
+                    current_waveform = np.array([time, current])
 
-                        time = dct.functions_waveforms.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                    logger.debug(f"{current_waveform=}")
+                    logger.debug("----------------------")
+                    logger.debug("Re-simulation of:")
+                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                    logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
+                    logger.debug(f"   * Transformer re-simulation trial: {single_geometry_number}")
 
-                        current_waveform = np.array([time, current])
+                    volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.ReluctanceModel.full_simulation(
+                        df_geometry_re_simulation_number, current_waveform, config_filepath)
+                    result_array[vec_vvp] = combined_losses
 
-                        logger.debug(f"{current_waveform=}")
-                        logger.debug("----------------------")
-                        logger.debug("Re-simulation of:")
-                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
-                        logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
-                        logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                results_dto = dct.StackedTransformerResults(
+                    p_combined_losses=result_array,
+                    volume=volume,
+                    area_to_heat_sink=area_to_heat_sink,
+                    circuit_trial_file=circuit_filtered_point_file,
+                    stacked_transformer_trial_number=single_geometry_number
+                )
 
-                        # workaround for comma problem. Read a random csv file and set back the delimiter.
-                        # pd.read_csv('~/Downloads/Pandas_trial.csv', header=0, index_col=0, delimiter=';')
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+                with open(pickle_file, 'wb') as output:
+                    pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
 
-                        volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
-                            df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
-                            process_number=process_number)
-                        result_array[vec_vvp] = combined_losses
-
-                    results_dto = dct.StackedTransformerResults(
-                        p_combined_losses=result_array,
-                        volume=volume,
-                        area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        stacked_transformer_trial_number=re_simulate_number
-                    )
-
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
-                    with open(pickle_file, 'wb') as output:
-                        pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
-
-                    if debug:
-                        # stop after one successful re-simulation run
-                        break
+                if debug:
+                    # stop after one successful re-simulation run
+                    break
 
         # returns the number of filtered results
         return number_of_filtered_points
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def optimization_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                             factor_dc_losses_min_max_list: list[float] | None,
-                             enable_operating_range_simulation: bool = False, debug: bool = False) -> None:
+    def optimization_handler_reluctance_model(self, filter_data: dct.FilterData, target_number_trials: int,
+                                              factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 
@@ -493,8 +464,6 @@ class TransformerOptimization:
         :type  target_number_trials: int
         :param factor_dc_losses_min_max_list: Filter factor for the offset, related to the minimum/maximum DC losses
         :type  factor_dc_losses_min_max_list: float
-        :param enable_operating_range_simulation: True to perform the simulations for all operating points
-        :type  enable_operating_range_simulation: bool
         :param debug: Debug mode flag
         :type  debug: bool
         """
@@ -516,11 +485,11 @@ class TransformerOptimization:
                 act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
                 act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            number_of_filtered_point = TransformerOptimization._optimize(
+            number_of_filtered_point = TransformerOptimization._optimize_reluctance_model(
                 act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.transformer_optimization_dto,
                 filter_data, target_number_trials, factor_dc_losses_min_max_list,
-                enable_operating_range_simulation, debug)
+                debug)
 
             # Update statistical data
             with self._t_lock_stat:
@@ -533,4 +502,129 @@ class TransformerOptimization:
 
             if debug:
                 # stop after one circuit run
+                logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
                 break
+
+    def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
+        """
+        Control the multi simulation processes.
+
+        :param filter_data: Information about the filtered designs
+        :type  filter_data: dct.FilterData
+        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
+        :type  factor_dc_losses_min_max_list: float
+        :param debug: True to use debug mode which stops earlier
+        :type debug: bool
+        """
+        process_number = 1
+
+        if factor_dc_losses_min_max_list is None:
+            factor_dc_losses_min_max_list = [1.0, 100]
+
+        # Later this is to parallelize with multiple processes
+        for act_optimization_configuration in self._optimization_config_list:
+            # Perform optimization
+            number_of_filtered_points = TransformerOptimization._fem_simulation(
+                act_optimization_configuration.circuit_filtered_point_filename, act_optimization_configuration.transformer_optimization_dto, filter_data,
+                factor_dc_losses_min_max_list=factor_dc_losses_min_max_list, process_number=process_number, debug=debug)
+
+            if debug:
+                # stop after one successful re-simulation run
+                logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
+                break
+
+    @staticmethod
+    def _fem_simulation(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+                        factor_dc_losses_min_max_list: list[float], process_number: int, debug: bool) -> None:
+        """
+        Perform the optimization.
+
+        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
+        :type  circuit_filtered_point_file: str
+        :param act_sto_config: stacked transformer configuration for the optimization
+        :type  act_st_config: fmt.StackedTransformerOptimizationDTO
+        :param filter_data: Contains information about filtered circuit designs
+        :type  filter_data: dct.FilterData
+        :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
+        :type  factor_dc_losses_min_max_list: list[float]
+        :param debug: Debug mode flag
+        :type debug: bool
+        """
+        # Number of filtered operating points
+        number_of_filtered_points = 0
+
+        # Load configuration
+        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+
+        # Filter study. Use same filter as in the reluctance model
+        df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
+        df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
+            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        if debug:
+            # reduce dataset to the fist 5 entries
+            df_filtered = df_filtered.iloc[:5]
+
+        # Assemble configuration path
+        config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
+                                       f"{act_sto_config.stacked_transformer_study_name}.pkl")
+
+        # sweep through all current waveforms
+        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        re_simulate_numbers = df_filtered["number"].to_numpy()
+
+        # Overtake the filtered operation points
+        number_of_filtered_points = len(re_simulate_numbers)
+
+        for re_simulate_number in re_simulate_numbers:
+            logger.info(f"{re_simulate_number=}")
+            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == re_simulate_number]
+
+            result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+
+            new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
+                                                     "09_circuit_dtos_incl_transformer_losses")
+            if not os.path.exists(new_circuit_dto_directory):
+                os.makedirs(new_circuit_dto_directory)
+
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
+                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+            else:
+                for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
+                                         total=len(circuit_dto.calc_modulation.phi.flatten())):
+
+                    time = dct.functions_waveforms.full_angle_waveform_from_angles(
+                        angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
+                    current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+
+                    current_waveform = np.array([time, current])
+
+                    logger.debug(f"{current_waveform=}")
+                    logger.debug("----------------------")
+                    logger.debug("Re-simulation of:")
+                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                    logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
+                    logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
+
+                    volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
+                        df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
+                        process_number=process_number)
+                    result_array[vec_vvp] = combined_losses
+
+                results_dto = dct.StackedTransformerResults(
+                    p_combined_losses=result_array,
+                    volume=volume,
+                    area_to_heat_sink=area_to_heat_sink,
+                    circuit_trial_file=circuit_filtered_point_file,
+                    stacked_transformer_trial_number=re_simulate_number
+                )
+
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
+                with open(pickle_file, 'wb') as output:
+                    pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+
+                if debug:
+                    # stop after one successful re-simulation run
+                    break
