@@ -5,6 +5,7 @@ import pickle
 import logging
 import copy
 import threading
+from multiprocessing import Pool
 
 # 3rd party libraries
 import numpy as np
@@ -281,18 +282,13 @@ class InductorOptimization:
             logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
             return 0
 
-        # perform FEM simulations
-        if factor_dc_losses_min_max_list[0] != 0 and factor_dc_losses_min_max_list[1] > 0:
-            df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            if debug:
-                # reduce dataset to the fist 5 entries
-                df_filtered = df_filtered.iloc[:5]
-
+        # filter the reluctance model data Pareto front
         df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-        df_filtered = (fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df
-                       (df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1]))
+        df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
+            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        if debug:
+            # reduce dataset to the fist 5 entries
+            df_filtered = df_filtered.iloc[:5]
 
         config_filepath = os.path.join(act_io_config.inductor_optimization_directory, f"{act_io_config.inductor_study_name}.pkl")
 
@@ -379,7 +375,6 @@ class InductorOptimization:
         if factor_dc_losses_min_max_list is None:
             factor_dc_losses_min_max_list = [1.0, 100]
 
-        # Later this is to parallelize with multiple processes
         for act_optimization_configuration in self._optimization_config_list:
             # Update statistical data
             with self._i_lock_stat:
@@ -393,14 +388,6 @@ class InductorOptimization:
                 act_optimization_configuration.circuit_filtered_point_filename,
                 act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
                 factor_dc_losses_min_max_list, debug)
-
-            # filter the reluctance data
-            df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_optimization_configuration.inductor_optimization_dto)
-            logger.info(f"Points in Pareto plane: {len(df.index)}")
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            number_of_filtered_points = len(df_filtered.index)
-            logger.info(f"Points after applying the reluctance model filter: {number_of_filtered_points}")
 
             # Update statistical data
             with self._i_lock_stat:
