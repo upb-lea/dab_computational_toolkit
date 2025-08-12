@@ -378,7 +378,12 @@ class InductorOptimization:
 
         with Pool(processes=number_cpus) as pool:
             parameters = []
-            for act_optimization_configuration in self._optimization_config_list:
+            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
+                if debug:
+                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
+                    if count == number_cpus:
+                        break
+
                 # Update statistical data
                 # with self._i_lock_stat:
                 #     # Start the progress time measurement
@@ -499,8 +504,8 @@ class InductorOptimization:
             # generate a new df with only a single entry (with the geometry data)
             df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(single_geometry_number)]
 
-            logger.info(f"single_geometry_number: \n"
-                        f"    {df_geometry_re_simulation_number.head()}")
+            logger.debug(f"single_geometry_number: \n"
+                         f"    {df_geometry_re_simulation_number.head()}")
 
             combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 

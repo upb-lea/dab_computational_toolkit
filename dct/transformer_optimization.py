@@ -7,6 +7,7 @@ import logging
 import os.path
 import pickle
 import threading
+from multiprocessing import Pool, cpu_count
 
 # 3rd party libraries
 import numpy as np
@@ -469,40 +470,38 @@ class TransformerOptimization:
         if factor_dc_losses_min_max_list is None:
             factor_dc_losses_min_max_list = [0.01, 100]
 
-        # Later this is to parallelize with multiple processes
-        for act_optimization_configuration in self._optimization_config_list:
-            # Debug switch
-            if target_number_trials != 0:
+        number_cpus = cpu_count()
+
+        with Pool(processes=number_cpus) as pool:
+            parameters = []
+
+            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
                 if debug:
-                    # overwrite input number of trials with 100 for short simulation times
-                    if target_number_trials > 100:
-                        target_number_trials = 100
+                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
+                    if count == number_cpus:
+                        break
+                # Update statistical data
+                # with self._t_lock_stat:
+                #     self._progress_run_time.reset_start_trigger()
+                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            # Update statistical data
-            with self._t_lock_stat:
-                self._progress_run_time.reset_start_trigger()
-                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
+                parameters.append((
+                    act_optimization_configuration.circuit_filtered_point_filename,
+                    act_optimization_configuration.transformer_optimization_dto,
+                    filter_data, target_number_trials, factor_dc_losses_min_max_list,
+                    debug))
 
-            number_of_filtered_point = TransformerOptimization._optimize_reluctance_model(
-                act_optimization_configuration.circuit_filtered_point_filename,
-                act_optimization_configuration.transformer_optimization_dto,
-                filter_data, target_number_trials, factor_dc_losses_min_max_list,
-                debug)
+                # # Update statistical data
+                # with self._t_lock_stat:
+                #     self._progress_run_time.stop_trigger()
+                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                #     act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_point
+                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
+                #     # Increment performed calculation counter
+                #     self._number_performed_calculations = self._number_performed_calculations + 1
 
-            # Update statistical data
-            with self._t_lock_stat:
-                self._progress_run_time.stop_trigger()
-                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_point
-                act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
-                # Increment performed calculation counter
-                self._number_performed_calculations = self._number_performed_calculations + 1
-
-            if debug:
-                # stop after one circuit run
-                logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
-                break
+            pool.starmap(func=TransformerOptimization._optimize_reluctance_model, iterable=parameters)
 
     def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
         """
