@@ -208,8 +208,8 @@ class HeatSinkOptimization:
         is_list_generation_successful = False
 
         # Verify optimization parameter
-        is_check_failed, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
-        if is_check_failed:
+        is_consistent, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
+        if not is_consistent:
             raise ValueError(
                 "Heat sink optimization parameter are inconsistent!\n",
                 issue_report)
