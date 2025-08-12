@@ -197,8 +197,8 @@ class TransformerOptimization:
         is_list_generation_successful = False
 
         # Verify optimization parameter
-        is_check_failed, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if is_check_failed:
+        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        if not is_consistent:
             raise ValueError(
                 "Transformer optimization parameter are inconsistent!\n",
                 issue_report)
@@ -412,8 +412,7 @@ class TransformerOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
-                for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                         total=len(circuit_dto.calc_modulation.phi.flatten())):
+                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
 
                     time = dct.functions_waveforms.full_angle_waveform_from_angles(
                         angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
