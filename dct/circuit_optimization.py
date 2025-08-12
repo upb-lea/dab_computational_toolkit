@@ -119,11 +119,13 @@ class CircuitOptimization:
         return loaded_pareto_dto
 
     @staticmethod
-    def verify_optimization_parameter(toml_circuit: tc.TomlCircuitParetoDabDesign) -> tuple[bool, str]:
+    def verify_optimization_parameter(toml_circuit: tc.TomlCircuitParetoDabDesign, debug: bool = False) -> tuple[bool, str]:
         """Verify the input parameter ranges.
 
         :param toml_circuit: toml inductor configuration
         :type toml_circuit: dct.TomlInductor
+        :param debug: True to enable debug mode
+        :type debug: bool
         :return: True, if the configuration was consistent
         :rtype: bool
         """
@@ -139,7 +141,8 @@ class CircuitOptimization:
         # Create dictionary from transistor database list
         db = tdb.DatabaseManager()
         db.set_operation_mode_json()
-        db.update_from_fileexchange(True)
+        if not debug:
+            db.update_from_fileexchange(True)
 
         # Get available keywords
         keyword_list: list[str] = db.get_transistor_names_list()
@@ -352,8 +355,8 @@ class CircuitOptimization:
         :rtype: bool
         """
         # Verify optimization parameter
-        is_check_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
-        if is_check_failed:
+        is_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if not is_consistent:
             raise ValueError(
                 "Circuit optimization parameter are inconsistent!\n",
                 issue_report)
