@@ -350,7 +350,6 @@ class InductorOptimization:
                 except:
                     logger.info(f"Re-simulation of inductor geometry {single_geometry_number} not possible due to non-possible geometry.")
 
-
         # returns the number of filtered results
         return number_of_filtered_points
 
