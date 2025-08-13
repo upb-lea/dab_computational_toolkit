@@ -613,7 +613,6 @@ class TransformerOptimization:
                             df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
                             process_number=process_number)
 
-
                         result_array[vec_vvp] = combined_losses
 
                     results_dto = dct.StackedTransformerResults(
