@@ -119,13 +119,13 @@ class CircuitOptimization:
         return loaded_pareto_dto
 
     @staticmethod
-    def verify_optimization_parameter(toml_circuit: tc.TomlCircuitParetoDabDesign, debug: bool = False) -> tuple[bool, str]:
+    def verify_optimization_parameter(toml_circuit: tc.TomlCircuitParetoDabDesign, is_tdb_to_update: bool = False) -> tuple[bool, str]:
         """Verify the input parameter ranges.
 
         :param toml_circuit: toml inductor configuration
         :type toml_circuit: dct.TomlInductor
-        :param debug: True to enable debug mode
-        :type debug: bool
+        :param is_tdb_to_update: True to update the transistor database
+        :type is_tdb_to_update: bool
         :return: True, if the configuration was consistent
         :rtype: bool
         """
@@ -141,7 +141,7 @@ class CircuitOptimization:
         # Create dictionary from transistor database list
         db = tdb.DatabaseManager()
         db.set_operation_mode_json()
-        if not debug:
+        if not is_tdb_to_update:
             db.update_from_fileexchange(True)
 
         # Get available keywords
