@@ -901,7 +901,13 @@ class DctMainCtl:
             logger.info("debug.toml config found.")
             toml_debug = dct.Debug(**debug_dict)
         else:
-            toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False))
+            toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False),
+                                   inductor=dct.DebugInductor(
+                                       number_reluctance_working_point_max=1,
+                                       number_fem_working_point_max=1),
+                                   transformer=dct.DebugTransformer(
+                                       number_reluctance_working_point_max=1,
+                                       number_fem_working_point_max=1))
 
         # --------------------------
         # Flow control
@@ -1202,13 +1208,12 @@ class DctMainCtl:
 
             # Allocate and initialize inductor configuration
             self._inductor_optimization = InductorOptimization()
-            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
-                                                                              filter_data)
+            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data, filter_data)
 
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler_reluctance_model(
                 filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                debug=toml_debug.general.is_debug)
+                debug=toml_debug)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1242,7 +1247,7 @@ class DctMainCtl:
             # Perform transformer optimization
             self._transformer_optimization.optimization_handler_reluctance_model(
                 filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
-                debug=toml_debug.general.is_debug)
+                debug=toml_debug)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1311,24 +1316,20 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start inductor FEM simulations.")
 
-        # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not toml_prog_flow.inductor.calculation_mode == "skip":
-            # Perform inductor FEM simulation
-            if self._inductor_optimization is not None:
-                self._inductor_optimization.fem_simulation_handler(
-                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug.general.is_debug)
+        # Perform inductor FEM simulation
+        if self._inductor_optimization is not None:
+            self._inductor_optimization.fem_simulation_handler(
+                filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Transformer FEM simulation
         # --------------------------
         logger.info("Start transformer FEM simulations.")
 
-        # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not toml_prog_flow.transformer.calculation_mode == "skip":
-            # Perform transformer FEM simulation
-            if self._transformer_optimization is not None:
-                self._transformer_optimization.fem_simulation_handler(
-                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug.general.is_debug)
+        # Perform transformer FEM simulation
+        if self._transformer_optimization is not None:
+            self._transformer_optimization.fem_simulation_handler(
+                filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Final summary calculation
