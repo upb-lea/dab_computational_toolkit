@@ -1280,34 +1280,31 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start pre-summary.")
 
-        # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.pre_summary.calculation_mode == "skip":
+        # Allocate summary data object
+        self._summary_pre_processing = DctSummaryPreProcessing()
 
-            # Allocate summary data object
-            self._summary_pre_processing = DctSummaryPreProcessing()
+        # Initialization thermal data
+        if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
+            raise ValueError("Thermal data configuration not initialized!")
+        # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
+        inductor_study_names = [self._inductor_study_data.study_name]
+        stacked_transformer_study_names = [self._transformer_study_data.study_name]
+        # Start summary processing by generating the DataFrame from calculated simulation results
+        s_df = self._summary_pre_processing.generate_result_database(
+            self._inductor_study_data, self._transformer_study_data, pre_summary_data,
+            inductor_study_names, stacked_transformer_study_names, filter_data)
+        #  Select the needed heat sink configuration
+        self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
 
-            # Initialization thermal data
-            if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
-                raise ValueError("Thermal data configuration not initialized!")
-            # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
-            inductor_study_names = [self._inductor_study_data.study_name]
-            stacked_transformer_study_names = [self._transformer_study_data.study_name]
-            # Start summary processing by generating the DataFrame from calculated simulation results
-            s_df = self._summary_pre_processing.generate_result_database(
-                self._inductor_study_data, self._transformer_study_data, pre_summary_data,
-                inductor_study_names, stacked_transformer_study_names, filter_data)
-            #  Select the needed heat sink configuration
-            self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
+        # Check breakpoint
+        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Pre-summary is calculated")
+        self.generate_zip_archive(toml_prog_flow)
 
-            # Check breakpoint
-            self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Pre-summary is calculated")
-            self.generate_zip_archive(toml_prog_flow)
-
-            ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)
-            ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=True)
-            ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=True)
-            ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=True)
-            ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=True)
 
         # --------------------------
         # Inductor FEM simulation
@@ -1338,34 +1335,31 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start final summary.")
 
-        # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.summary.calculation_mode == "skip":
+        # Allocate summary data object
+        self._summary_processing = DctSummaryProcessing()
 
-            # Allocate summary data object
-            self._summary_processing = DctSummaryProcessing()
+        # Initialization thermal data
+        if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
+            raise ValueError("Thermal data configuration not initialized!")
+        # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
+        inductor_study_names = [self._inductor_study_data.study_name]
+        stacked_transformer_study_names = [self._transformer_study_data.study_name]
+        # Start summary processing by generating the DataFrame from calculated simulation results
+        s_df = self._summary_processing.generate_result_database(
+            self._inductor_study_data, self._transformer_study_data, summary_data,
+            inductor_study_names, stacked_transformer_study_names, filter_data)
+        #  Select the needed heat sink configuration
+        self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 
-            # Initialization thermal data
-            if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
-                raise ValueError("Thermal data configuration not initialized!")
-            # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
-            inductor_study_names = [self._inductor_study_data.study_name]
-            stacked_transformer_study_names = [self._transformer_study_data.study_name]
-            # Start summary processing by generating the DataFrame from calculated simulation results
-            s_df = self._summary_processing.generate_result_database(
-                self._inductor_study_data, self._transformer_study_data, summary_data,
-                inductor_study_names, stacked_transformer_study_names, filter_data)
-            #  Select the needed heat sink configuration
-            self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
+        # Check breakpoint
+        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
+        self.generate_zip_archive(toml_prog_flow)
 
-            # Check breakpoint
-            self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
-            self.generate_zip_archive(toml_prog_flow)
-
-            ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=False)
-            ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=False)
-            ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=False)
-            ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=False)
-            ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=False)
+        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=False)
+        ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=False)
+        ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=False)
+        ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=False)
+        ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=False)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()
