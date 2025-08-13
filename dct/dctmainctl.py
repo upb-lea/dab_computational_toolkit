@@ -976,7 +976,7 @@ class DctMainCtl:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
         # Verify optimization parameter
-        is_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        is_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit, toml_debug.general.is_debug)
         if not is_consistent:
             raise ValueError("Circuit optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
@@ -1311,22 +1311,21 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start inductor FEM simulations.")
 
-        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.inductor.calculation_mode == "skip":
-            # Perform inductor optimization
+            # Perform inductor FEM simulation
             if self._inductor_optimization is not None:
                 self._inductor_optimization.fem_simulation_handler(
-                    filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                    debug=toml_debug.general.is_debug)
+                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug.general.is_debug)
 
         # --------------------------
         # Transformer FEM simulation
         # --------------------------
         logger.info("Start transformer FEM simulations.")
 
-        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+        # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
         if not toml_prog_flow.transformer.calculation_mode == "skip":
-            # Perform inductor optimization
+            # Perform transformer FEM simulation
             if self._transformer_optimization is not None:
                 self._transformer_optimization.fem_simulation_handler(
                     filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug.general.is_debug)

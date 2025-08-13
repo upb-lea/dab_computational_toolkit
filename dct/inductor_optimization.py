@@ -5,6 +5,7 @@ import pickle
 import logging
 import copy
 import threading
+from multiprocessing import Pool, cpu_count
 
 # 3rd party libraries
 import numpy as np
@@ -139,8 +140,8 @@ class InductorOptimization:
         is_list_generation_successful = False
 
         # Verify optimization parameter
-        is_check_failed, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
-        if is_check_failed:
+        is_consistent, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        if not is_consistent:
             raise ValueError(
                 "Inductor optimization parameter are inconsistent!\n",
                 issue_report)
@@ -281,18 +282,13 @@ class InductorOptimization:
             logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
             return 0
 
-        # perform FEM simulations
-        if factor_dc_losses_min_max_list[0] != 0 and factor_dc_losses_min_max_list[1] > 0:
-            df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            if debug:
-                # reduce dataset to the fist 5 entries
-                df_filtered = df_filtered.iloc[:5]
-
+        # filter the reluctance model data Pareto front
         df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-        df_filtered = (fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df
-                       (df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1]))
+        df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
+            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        if debug:
+            # reduce dataset to the fist 5 entries
+            df_filtered = df_filtered.iloc[:5]
 
         config_filepath = os.path.join(act_io_config.inductor_optimization_directory, f"{act_io_config.inductor_study_name}.pkl")
 
@@ -323,8 +319,7 @@ class InductorOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
-                for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                         total=len(circuit_dto.calc_modulation.phi.flatten())):
+                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
                     time, unique_indices = np.unique(dct.functions_waveforms.full_angle_waveform_from_angles(
                         angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
                     current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
@@ -379,47 +374,55 @@ class InductorOptimization:
         if factor_dc_losses_min_max_list is None:
             factor_dc_losses_min_max_list = [1.0, 100]
 
-        # Later this is to parallelize with multiple processes
-        for act_optimization_configuration in self._optimization_config_list:
-            # Update statistical data
-            with self._i_lock_stat:
-                # Start the progress time measurement
-                self._progress_run_time.reset_start_trigger()
-                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
+        number_cpus = cpu_count()
 
-            # Perform optimization
-            number_of_filtered_points = InductorOptimization._optimize_reluctance_model(
-                act_optimization_configuration.circuit_filtered_point_filename,
-                act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
-                factor_dc_losses_min_max_list, debug)
+        with Pool(processes=number_cpus) as pool:
+            parameters = []
+            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
+                if debug:
+                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
+                    if count == number_cpus:
+                        break
 
-            # filter the reluctance data
-            df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_optimization_configuration.inductor_optimization_dto)
-            logger.info(f"Points in Pareto plane: {len(df.index)}")
-            df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-                df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-            number_of_filtered_points = len(df_filtered.index)
-            logger.info(f"Points after applying the reluctance model filter: {number_of_filtered_points}")
+                # Update statistical data
+                # with self._i_lock_stat:
+                #     # Start the progress time measurement
+                #     self._progress_run_time.reset_start_trigger()
+                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            # Update statistical data
-            with self._i_lock_stat:
-                self._progress_run_time.stop_trigger()
-                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
-                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_points
-                # Increment performed calculation counter
-                self._number_performed_calculations = self._number_performed_calculations + 1
+                parameters.append((
+                    act_optimization_configuration.circuit_filtered_point_filename,
+                    act_optimization_configuration.inductor_optimization_dto,
+                    filter_data,
+                    target_number_trials,
+                    factor_dc_losses_min_max_list,
+                    debug
+                ))
 
-    def fem_simulation_handler(self, filter_data: dct.FilterData, target_number_trials: int,
-                               factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
+                # Perform optimization
+                # number_of_filtered_points = InductorOptimization._optimize_reluctance_model(
+                #     act_optimization_configuration.circuit_filtered_point_filename,
+                #     act_optimization_configuration.inductor_optimization_dto, filter_data, target_number_trials,
+                #     factor_dc_losses_min_max_list, debug)
+
+                # Update statistical data
+                # with self._i_lock_stat:
+                #     self._progress_run_time.stop_trigger()
+                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
+                #     act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_points
+                #     # Increment performed calculation counter
+                #     self._number_performed_calculations = self._number_performed_calculations + 1
+
+            pool.starmap(func=InductorOptimization._optimize_reluctance_model, iterable=parameters)
+
+    def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
         """
         Control the multi simulation processes.
 
         :param filter_data: Information about the filtered designs
         :type  filter_data: dct.FilterData
-        :param target_number_trials: Number of trials for the optimization
-        :type  target_number_trials: int
         :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
         :param debug: True to use debug mode which stops earlier
@@ -501,8 +504,8 @@ class InductorOptimization:
             # generate a new df with only a single entry (with the geometry data)
             df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(single_geometry_number)]
 
-            logger.info(f"single_geometry_number: \n"
-                        f"    {df_geometry_re_simulation_number.head()}")
+            logger.debug(f"single_geometry_number: \n"
+                         f"    {df_geometry_re_simulation_number.head()}")
 
             combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 

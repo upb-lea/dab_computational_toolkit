@@ -17,7 +17,8 @@ class ParetoPlots:
 
     @staticmethod
     def generate_pdf_pareto(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
-                            x_label: str, y_label: str, label_list: list[str | None], fig_name: str) -> None:
+                            x_label: str, y_label: str, label_list: list[str | None], fig_name: str,
+                            xlim: list | None = None, ylim: list | None = None) -> None:
         """
         Generate multiple Pareto plot in one PDF file.
 
@@ -36,6 +37,10 @@ class ParetoPlots:
         :type label_list: list[str | None]
         :param fig_name: filename, will be saved as pdf
         :type fig_name: str
+        :param xlim: x-axis limitation [x_min, x_max]
+        :type xlim: list[float]
+        :param ylim: y-axis limitation [y_min, y_max]
+        :type ylim: list[float]
         """
         # set font to LaTeX font
         dct.global_plot_settings_font_latex()
@@ -52,6 +57,8 @@ class ParetoPlots:
         plt.legend()
         plt.xlabel(x_label)
         plt.ylabel(y_label)
+        plt.xlim(xlim)
+        plt.ylim(ylim)
         plt.grid()
         plt.tight_layout()
         # make sure to not generate a filename.pdf.pdf (twice ".pdf").
@@ -137,6 +144,12 @@ class ParetoPlots:
             y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
             label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
+            x_scale_min = 0.9 * df_filtered["values_0"].min()
+            x_scale_max = 1.1 * df_filtered["values_0"].max()
+
+            y_scale_min = 0.9 * df_filtered["values_1"].min()
+            y_scale_max = 1.1 * df_filtered["values_1"].max()
+
             if is_pre_summary:
                 fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, f"inductor_c{circuit_number}")
             else:
@@ -144,7 +157,7 @@ class ParetoPlots:
 
             ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                            fig_name=fig_name)
+                                            fig_name=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_transformer_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -173,7 +186,7 @@ class ParetoPlots:
             df["values_0"] = df["values_0"] * factor_m3_cm3
 
             fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
-            df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
+            df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=10)
             df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
             # all fem simulation points
@@ -183,6 +196,12 @@ class ParetoPlots:
             y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
             label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
+            x_scale_min = 0.9 * df_filtered["values_0"].min()
+            x_scale_max = 1.1 * df_filtered["values_0"].max()
+
+            y_scale_min = 0.9 * df_filtered["values_1"].min()
+            y_scale_max = 1.1 * df_filtered["values_1"].max()
+
             if is_pre_summary:
                 fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, f"transformer_c{circuit_number}")
             else:
@@ -190,7 +209,7 @@ class ParetoPlots:
 
             ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                            fig_name=fig_name)
+                                            fig_name=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_heat_sink_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -273,6 +292,12 @@ class ParetoPlots:
         else:
             fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "summary")
 
+        x_scale_min = 0.9 * df_filtered["total_volume"].min() * 1e6
+        x_scale_max = 1.1 * df_filtered["total_volume"].max() * 1e6
+
+        y_scale_min = 0.9 * df_filtered["total_mean_loss"].min()
+        y_scale_max = 1.1 * df_filtered["total_mean_loss"].max()
+
         ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
                                         x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
-                                        fig_name=fig_name)
+                                        fig_name=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
