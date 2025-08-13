@@ -317,35 +317,39 @@ class InductorOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
-                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-                    time, unique_indices = np.unique(dct.functions_waveforms.full_angle_waveform_from_angles(
-                        angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-                    current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                try:
+                    for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                        time, unique_indices = np.unique(dct.functions_waveforms.full_angle_waveform_from_angles(
+                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
+                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
 
-                    current_waveform = np.array([time, current])
-                    logger.debug(f"{current_waveform=}")
-                    logger.debug("All operating point simulation of:")
-                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
-                    logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                    logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
+                        current_waveform = np.array([time, current])
+                        logger.debug(f"{current_waveform=}")
+                        logger.debug("All operating point simulation of:")
+                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
+                        logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
 
-                    volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
-                        df_geometry_re_simulation_number, current_waveform=current_waveform,
-                        inductor_config_filepath=config_filepath)
-                    combined_loss_array[vec_vvp] = combined_losses
+                        volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
+                            df_geometry_re_simulation_number, current_waveform=current_waveform,
+                            inductor_config_filepath=config_filepath)
+                        combined_loss_array[vec_vvp] = combined_losses
 
-                inductor_losses = dct.InductorResults(
-                    p_combined_losses=combined_loss_array,
-                    volume=volume,
-                    area_to_heat_sink=area_to_heat_sink,
-                    circuit_trial_file=circuit_filtered_point_file,
-                    inductor_trial_number=single_geometry_number,
-                )
+                    inductor_losses = dct.InductorResults(
+                        p_combined_losses=combined_loss_array,
+                        volume=volume,
+                        area_to_heat_sink=area_to_heat_sink,
+                        circuit_trial_file=circuit_filtered_point_file,
+                        inductor_trial_number=single_geometry_number,
+                    )
 
-                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
-                with open(pickle_file, 'wb') as output:
-                    pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+                    with open(pickle_file, 'wb') as output:
+                        pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
+                except:
+                    logger.info(f"Re-simulation of inductor geometry {single_geometry_number} not possible due to non-possible geometry.")
+
 
         # returns the number of filtered results
         return number_of_filtered_points
@@ -528,8 +532,3 @@ class InductorOptimization:
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
                 with open(pickle_file, 'wb') as output:
                     pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
-
-            if debug:
-                # stop after one successful re-simulation run
-                logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
-                break
