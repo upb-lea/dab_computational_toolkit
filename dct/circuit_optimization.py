@@ -352,8 +352,8 @@ class CircuitOptimization:
         :rtype: bool
         """
         # Verify optimization parameter
-        is_check_failed, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
-        if is_check_failed:
+        is_check_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        if not is_check_consistent:
             raise ValueError(
                 "Circuit optimization parameter are inconsistent!\n",
                 issue_report)
