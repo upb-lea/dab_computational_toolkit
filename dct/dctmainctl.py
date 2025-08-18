@@ -1316,20 +1316,24 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start inductor FEM simulations.")
 
-        # Perform inductor FEM simulation
-        if self._inductor_optimization is not None:
-            self._inductor_optimization.fem_simulation_handler(
-                filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+        # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.inductor.calculation_mode == "skip":
+            # Perform inductor FEM simulation
+            if self._inductor_optimization is not None:
+                self._inductor_optimization.fem_simulation_handler(
+                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Transformer FEM simulation
         # --------------------------
         logger.info("Start transformer FEM simulations.")
 
-        # Perform transformer FEM simulation
-        if self._transformer_optimization is not None:
-            self._transformer_optimization.fem_simulation_handler(
-                filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+        # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
+        if not toml_prog_flow.transformer.calculation_mode == "skip":
+            # Perform transformer FEM simulation
+            if self._transformer_optimization is not None:
+                self._transformer_optimization.fem_simulation_handler(
+                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Final summary calculation

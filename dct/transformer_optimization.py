@@ -472,7 +472,7 @@ class TransformerOptimization:
             parameters = []
 
             for count, act_optimization_configuration in enumerate(self._optimization_config_list):
-                if debug:
+                if debug.general.is_debug:
                     # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
                     if count == number_cpus:
                         break
@@ -591,6 +591,8 @@ class TransformerOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
+                # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
+                # e.g. winding is not fitting in the winding window
                 try:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):

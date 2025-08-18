@@ -317,6 +317,8 @@ class InductorOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
+                # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
+                # e.g. winding is not fitting in the winding window
                 try:
                     for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
                         time, unique_indices = np.unique(dct.functions_waveforms.full_angle_waveform_from_angles(
@@ -375,7 +377,7 @@ class InductorOptimization:
         with Pool(processes=number_cpus) as pool:
             parameters = []
             for count, act_optimization_configuration in enumerate(self._optimization_config_list):
-                if debug:
+                if debug.general.is_debug:
                     # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
                     if count == number_cpus:
                         break
@@ -415,8 +417,8 @@ class InductorOptimization:
         :type  filter_data: dct.FilterData
         :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
-        :param debug: True to use debug mode which stops earlier
-        :type debug: bool
+        :param debug: Debug DTO
+        :type debug: dct.Debug
         """
         if factor_dc_losses_min_max_list is None:
             factor_dc_losses_min_max_list = [1.0, 100]
@@ -467,7 +469,7 @@ class InductorOptimization:
         df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
         df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
             df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-        if debug:
+        if debug.general.is_debug:
             # reduce dataset to the fist given number from the debug configuration file
             df_filtered = df_filtered.iloc[:debug.inductor.number_fem_working_point_max]
 
