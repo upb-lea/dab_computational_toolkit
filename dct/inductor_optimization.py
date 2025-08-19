@@ -59,9 +59,9 @@ class InductorOptimization:
             keyword_dictionary = fmt.core_database()
             # Perform dictionary check
             for keyword_entry in toml_inductor.design_space.core_name_list:
-                is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, "core_name_list")
+                is_check_passed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, "core_name_list")
                 # Check if boundary check fails
-                if is_check_failed:
+                if not is_check_passed:
                     inconsistency_report = inconsistency_report + issue_report
                     is_consistent = False
         else:
@@ -72,9 +72,9 @@ class InductorOptimization:
                  (toml_inductor.design_space.window_w_min_max_list, "window_w_min_max_list")])
 
             # Perform the boundary check
-            is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
                 0, 5, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
@@ -83,9 +83,9 @@ class InductorOptimization:
         keyword_dictionary = fmt.litz_database()
         # Perform dictionary check
         for keyword_entry in toml_inductor.design_space.litz_wire_name_list:
-            is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, "litz_wire_name_list")
+            is_check_passed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, "litz_wire_name_list")
             # Check if boundary check fails
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
@@ -97,27 +97,27 @@ class InductorOptimization:
 
         # Perform insulation value check
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
             0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform temperature value check
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
             -40, 175, toml_inductor.boundary_conditions.temperature, "temperature", c_flag.check_inclusive, c_flag.check_inclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform filter_distance value check
         group_name = "filter_distance"
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
             0, 100, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
             f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_exclusive, c_flag.check_inclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
