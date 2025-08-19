@@ -83,12 +83,12 @@ class DctMainCtl:
         self._break_point_message: str = ""
 
     @staticmethod
-    def log_software_versions(filepath: str):
+    def log_software_versions(filepath: str) -> None:
         """
         Log the software versions of selected packages used to generate the results.
 
-        :param filepath:
-        :return:
+        :param filepath: file path and file name of the logging file
+        :type filepath: str
         """
         with open(filepath, "w") as file:
             file.write(
@@ -946,7 +946,7 @@ class DctMainCtl:
 
         self.set_up_folder_structure(toml_prog_flow)
 
-        DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "requirements.txt"))
+        DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "software_versions.txt"))
 
         # -----------------------------------------
         # Introduce study data and filter data DTOs
