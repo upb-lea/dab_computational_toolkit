@@ -1,8 +1,7 @@
 """Main control program to optimize the DAB converter."""
-import logging.config
 
-import datetime
 # python libraries
+import datetime
 import copy
 import os
 import shutil
@@ -15,10 +14,11 @@ import time
 from multiprocessing import Queue
 from typing import Any
 import logging
+import logging.config
+from importlib.metadata import version
 
 # 3rd party libraries
 import json
-
 
 # own libraries
 import dct
@@ -81,6 +81,26 @@ class DctMainCtl:
         self._key_input_string: str = ""
         self._break_point_flag = False
         self._break_point_message: str = ""
+
+    @staticmethod
+    def log_software_versions(filepath: str):
+        """
+        Log the software versions of selected packages used to generate the results.
+
+        :param filepath:
+        :return:
+        """
+        with open(filepath, "w") as file:
+            file.write(
+                f'dct=={version("dct")}\n'
+                f'optuna=={version("optuna")}\n' 
+                f'femmt=={version("femmt")}\n'
+                f'materialdatabase=={version("materialdatabase")}\n'
+                f'transistordatabase=={version("transistordatabase")}\n'
+                f'hct=={version("hct")}\n'
+                f'mag-net-hub=={version("mag-net-hub")}\n'
+                f'numpy=={version("numpy")}\n'
+                f'pandas=={version("pandas")}\n')
 
     @staticmethod
     def set_up_folder_structure(toml_prog_flow: tc.FlowControl) -> None:
@@ -925,6 +945,8 @@ class DctMainCtl:
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 
         self.set_up_folder_structure(toml_prog_flow)
+
+        DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "requirements.txt"))
 
         # -----------------------------------------
         # Introduce study data and filter data DTOs
