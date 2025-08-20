@@ -1,31 +1,26 @@
-[HeatsinkConfigName]
-    heatsink_config_name = "heatsink_01"
+[design_space]
+    height_c_min_max_list=[0.02, 0.08]
+    width_b_min_max_list=[0.02, 0.08]
+    length_l_min_max_list=[0.08, 0.20]
+    height_d_min_max_list=[0.001, 0.003]
+    number_fins_n_min_max_list=[5, 20]
+    thickness_fin_t_min_max_list=[1e-3, 5e-3]
 
-[Designspace]
-    heatsink_designspace_path = "/home/andreas/Workspace/Projekt/HCT_heat_sink_computation_toolbox/hct/data"
-
-[DimensionData]
-    height_c_list = [0.02, 0.08]
-    width_b_list = [0.02, 0.08]
-    length_l_list = [0.08, 0.20]
-    height_d_list = [0.001, 0.003]
-    number_fins_n_list = [5, 20]
-    thickness_fin_t_list = [1e-3, 5e-3]
+[boundary_conditions]
     t_ambient=40
+    t_hs_max=95
     area_min=0.001
+
+[settings]
     number_directions=3
     factor_pcb_area_copper_coin = 1.42
     factor_bottom_area_copper_coin = 0.39
     # W/(m*K)
     thermal_conductivity_copper = 136
 
-[ThermalResistanceData]
+[thermal_resistance_data]
     # [tim_thickness, tim_conductivity]
-    transistor_b1_cooling = [1e-3,12]
-    transistor_b2_cooling = [1e-3,12]
-    inductor_cooling = [1e-3,12]
-    transformer_cooling = [1e-3,12]
-
-    # [t_ambient, t_hs_max] in °C
-    heat_sink = [40, 90]
-
+    transistor_b1_cooling = [1e-3,12.0]
+    transistor_b2_cooling = [1e-3,12.0]
+    inductor_cooling = [1e-3,12.0]
+    transformer_cooling = [1e-3,12.0]
