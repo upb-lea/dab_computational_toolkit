@@ -7,6 +7,7 @@ import logging
 import os.path
 import pickle
 import threading
+from multiprocessing import Pool, cpu_count, current_process
 
 # 3rd party libraries
 import numpy as np
@@ -197,8 +198,8 @@ class TransformerOptimization:
         is_list_generation_successful = False
 
         # Verify optimization parameter
-        is_check_failed, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if is_check_failed:
+        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        if not is_consistent:
             raise ValueError(
                 "Transformer optimization parameter are inconsistent!\n",
                 issue_report)
@@ -348,7 +349,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _optimize_reluctance_model(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
-                                   act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: bool) -> int:
+                                   act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
 
@@ -360,8 +361,8 @@ class TransformerOptimization:
         :type act_target_number_trials: int
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
         :type factor_dc_losses_min_max_list: float
-        :param debug: True to debug, defaults to False
-        :type debug: bool
+        :param debug: Debug DTO
+        :type debug: dct.Debug
         """
         # Number of filtered operating points
         number_of_filtered_points = 0
@@ -380,9 +381,9 @@ class TransformerOptimization:
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
         df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
             df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-        if debug:
-            # reduce dataset to the fist 5 entries
-            df_filtered = df_filtered.iloc[:5]
+        if debug.general.is_debug:
+            # reduce dataset to the given number from the debug configuration
+            df_filtered = df_filtered.iloc[:debug.transformer.number_reluctance_working_point_max]
 
         # Assemble configuration path
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
@@ -412,8 +413,7 @@ class TransformerOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
-                for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                         total=len(circuit_dto.calc_modulation.phi.flatten())):
+                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
 
                     time = dct.functions_waveforms.full_angle_waveform_from_angles(
                         angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
@@ -445,16 +445,12 @@ class TransformerOptimization:
                 with open(pickle_file, 'wb') as output:
                     pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
 
-                if debug:
-                    # stop after one successful re-simulation run
-                    break
-
         # returns the number of filtered results
         return number_of_filtered_points
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def optimization_handler_reluctance_model(self, filter_data: dct.FilterData, target_number_trials: int,
-                                              factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
+                                              factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
@@ -464,48 +460,46 @@ class TransformerOptimization:
         :type  target_number_trials: int
         :param factor_dc_losses_min_max_list: Filter factor for the offset, related to the minimum/maximum DC losses
         :type  factor_dc_losses_min_max_list: float
-        :param debug: Debug mode flag
-        :type  debug: bool
+        :param debug: Debug DTO
+        :type  debug: dct.Debug
         """
         if factor_dc_losses_min_max_list is None:
             factor_dc_losses_min_max_list = [0.01, 100]
 
-        # Later this is to parallelize with multiple processes
-        for act_optimization_configuration in self._optimization_config_list:
-            # Debug switch
-            if target_number_trials != 0:
-                if debug:
-                    # overwrite input number of trials with 100 for short simulation times
-                    if target_number_trials > 100:
-                        target_number_trials = 100
+        number_cpus = cpu_count()
 
-            # Update statistical data
-            with self._t_lock_stat:
-                self._progress_run_time.reset_start_trigger()
-                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
+        with Pool(processes=number_cpus) as pool:
+            parameters = []
 
-            number_of_filtered_point = TransformerOptimization._optimize_reluctance_model(
-                act_optimization_configuration.circuit_filtered_point_filename,
-                act_optimization_configuration.transformer_optimization_dto,
-                filter_data, target_number_trials, factor_dc_losses_min_max_list,
-                debug)
+            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
+                if debug.general.is_debug:
+                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
+                    if count == number_cpus:
+                        break
+                # Update statistical data
+                # with self._t_lock_stat:
+                #     self._progress_run_time.reset_start_trigger()
+                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
-            # Update statistical data
-            with self._t_lock_stat:
-                self._progress_run_time.stop_trigger()
-                act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_point
-                act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
-                # Increment performed calculation counter
-                self._number_performed_calculations = self._number_performed_calculations + 1
+                parameters.append((
+                    act_optimization_configuration.circuit_filtered_point_filename,
+                    act_optimization_configuration.transformer_optimization_dto,
+                    filter_data, target_number_trials, factor_dc_losses_min_max_list,
+                    debug))
 
-            if debug:
-                # stop after one circuit run
-                logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
-                break
+                # # Update statistical data
+                # with self._t_lock_stat:
+                #     self._progress_run_time.stop_trigger()
+                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
+                #     act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_point
+                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
+                #     # Increment performed calculation counter
+                #     self._number_performed_calculations = self._number_performed_calculations + 1
 
-    def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: bool = False) -> None:
+            pool.starmap(func=TransformerOptimization._optimize_reluctance_model, iterable=parameters)
+
+    def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
@@ -513,45 +507,51 @@ class TransformerOptimization:
         :type  filter_data: dct.FilterData
         :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
-        :param debug: True to use debug mode which stops earlier
-        :type debug: bool
+        :param debug: Debug DTO
+        :type debug: dct.Debug
         """
-        process_number = 1
-
         if factor_dc_losses_min_max_list is None:
             factor_dc_losses_min_max_list = [1.0, 100]
 
-        # Later this is to parallelize with multiple processes
-        for act_optimization_configuration in self._optimization_config_list:
-            # Perform optimization
-            number_of_filtered_points = TransformerOptimization._fem_simulation(
-                act_optimization_configuration.circuit_filtered_point_filename, act_optimization_configuration.transformer_optimization_dto, filter_data,
-                factor_dc_losses_min_max_list=factor_dc_losses_min_max_list, process_number=process_number, debug=debug)
+        number_cpus = cpu_count()
 
-            if debug:
-                # stop after one successful re-simulation run
-                logger.warning("Debug mode: stop all operating points simulation after one inductor geometry.")
-                break
+        with Pool(processes=number_cpus) as pool:
+            parameters = []
+            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
+                if debug.general.is_debug:
+                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
+                    if count == number_cpus:
+                        break
+
+                parameters.append((act_optimization_configuration.circuit_filtered_point_filename,
+                                   act_optimization_configuration.transformer_optimization_dto,
+                                   filter_data,
+                                   factor_dc_losses_min_max_list,
+                                   debug))
+
+            pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameters)
 
     @staticmethod
     def _fem_simulation(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
-                        factor_dc_losses_min_max_list: list[float], process_number: int, debug: bool) -> None:
+                        factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
         :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
         :type  circuit_filtered_point_file: str
         :param act_sto_config: stacked transformer configuration for the optimization
-        :type  act_st_config: fmt.StackedTransformerOptimizationDTO
+        :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
         :type  filter_data: dct.FilterData
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
-        :param debug: Debug mode flag
-        :type debug: bool
+        :param debug: Debug DTO
+        :type debug: dct.Debug
         """
         # Number of filtered operating points
         number_of_filtered_points = 0
+
+        process_number = current_process().name
 
         # Load configuration
         circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
@@ -560,9 +560,9 @@ class TransformerOptimization:
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
         df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
             df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
-        if debug:
-            # reduce dataset to the fist 5 entries
-            df_filtered = df_filtered.iloc[:5]
+        if debug.general.is_debug:
+            # reduce dataset to the given number from the debug configuration
+            df_filtered = df_filtered.iloc[:debug.transformer.number_fem_working_point_max]
 
         # Assemble configuration path
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
@@ -591,40 +591,42 @@ class TransformerOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
             else:
-                for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                         total=len(circuit_dto.calc_modulation.phi.flatten())):
+                # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
+                # e.g. winding is not fitting in the winding window
+                try:
+                    for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
+                                             total=len(circuit_dto.calc_modulation.phi.flatten())):
 
-                    time = dct.functions_waveforms.full_angle_waveform_from_angles(
-                        angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                    current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                        time = dct.functions_waveforms.full_angle_waveform_from_angles(
+                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
+                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
 
-                    current_waveform = np.array([time, current])
+                        current_waveform = np.array([time, current])
 
-                    logger.debug(f"{current_waveform=}")
-                    logger.debug("----------------------")
-                    logger.debug("Re-simulation of:")
-                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
-                    logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
-                    logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                        logger.debug(f"{current_waveform=}")
+                        logger.debug("----------------------")
+                        logger.debug("Re-simulation of:")
+                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
+                        logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
 
-                    volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
-                        df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
-                        process_number=process_number)
-                    result_array[vec_vvp] = combined_losses
+                        volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
+                            df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
+                            process_number=process_number)
 
-                results_dto = dct.StackedTransformerResults(
-                    p_combined_losses=result_array,
-                    volume=volume,
-                    area_to_heat_sink=area_to_heat_sink,
-                    circuit_trial_file=circuit_filtered_point_file,
-                    stacked_transformer_trial_number=re_simulate_number
-                )
+                        result_array[vec_vvp] = combined_losses
 
-                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
-                with open(pickle_file, 'wb') as output:
-                    pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+                    results_dto = dct.StackedTransformerResults(
+                        p_combined_losses=result_array,
+                        volume=volume,
+                        area_to_heat_sink=area_to_heat_sink,
+                        circuit_trial_file=circuit_filtered_point_file,
+                        stacked_transformer_trial_number=re_simulate_number
+                    )
 
-                if debug:
-                    # stop after one successful re-simulation run
-                    break
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
+                    with open(pickle_file, 'wb') as output:
+                        pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+                except:
+                    logger.info(f"Re-simulation of transformer geometry {re_simulate_number} not possible due to non-possible geometry.")

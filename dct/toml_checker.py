@@ -8,6 +8,35 @@ from pydantic import BaseModel
 # own libraries
 from dct.circuit_enums import SamplingEnum
 
+
+# ######################################################
+# debug
+# ######################################################
+
+class DebugGeneral(BaseModel):
+    """Debug mode general information."""
+
+    is_debug: bool
+
+class DebugInductor(BaseModel):
+    """Debug information for the inductor."""
+
+    number_reluctance_working_point_max: int
+    number_fem_working_point_max: int
+
+class DebugTransformer(BaseModel):
+    """Debug information for the transformer."""
+
+    number_reluctance_working_point_max: int
+    number_fem_working_point_max: int
+
+class Debug(BaseModel):
+    """General information in debug configuration."""
+
+    general: DebugGeneral
+    inductor: DebugInductor
+    transformer: DebugTransformer
+
 # ######################################################
 # flow control
 # ######################################################
