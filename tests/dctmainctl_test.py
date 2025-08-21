@@ -809,11 +809,9 @@ def test_generate_zip_archive(caplog: LogCaptureFixture, is_path_existing: bool,
 # test parameter list (counter)
 @pytest.mark.parametrize("test_index", list(range(10)))
 # Unit test function
-def test__get_page_main_data(caplog: LogCaptureFixture, test_index: int) -> None:
+def test__get_page_main_data(test_index: int) -> None:
     """Test the method load_toml_file.
 
-    :param caplog: class instance for logger data
-    :type  caplog: LogCaptureFixture
     :param test_index: Test index of performed test is used as start index for test lists
     :type  test_index: int
     """
