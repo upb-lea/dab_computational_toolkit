@@ -1,6 +1,6 @@
 # Path configuration
 [general]
-    project_directory = "2025-07-28_example_5"
+    project_directory = "2025-08-04_example_1"
 
 [breakpoints]
     # possible values: no/pause/stop
@@ -19,23 +19,23 @@
     heat_sink = 1000         # Number of trials which exceed a limit value?
 
 [circuit]
-    number_of_trials = 100
-    calculation_mode = "new" # (new,continue,skip)
+    number_of_trials = 500
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "01_circuit"
 
 [inductor]
-    number_of_trials = 100
-    calculation_mode = "new" # (new,continue,skip)
+    number_of_trials = 2000
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "02_inductor"
 
 [transformer]
-    number_of_trials = 100
-    calculation_mode = "new" # (new,continue,skip)
+    number_of_trials = 5000
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "03_transformer"
 
 [heat_sink]
-    number_of_trials = 2000
-    calculation_mode = "new" # (new,continue,skip)
+    number_of_trials = 500
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "04_heat_sink"
 
 [pre_summary]
@@ -43,11 +43,12 @@
     subdirectory = "05_pre_summary"
 
 [summary]
-    calculation_mode = "new" # (new,continue,skip)
-    subdirectory = "05_summary"
+    calculation_mode = "skip" # (new,skip)
+    subdirectory = "06_summary"
 
 [configuration_data_files]
     circuit_configuration_file = "DabCircuitConf.toml"
     inductor_configuration_file = "DabInductorConf.toml"
     transformer_configuration_file = "DabTransformerConf.toml"
     heat_sink_configuration_file = "DabHeatSinkConf.toml"
+
