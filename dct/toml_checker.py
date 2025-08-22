@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 # own libraries
 from dct.circuit_enums import SamplingEnum
+from materialdatabase.meta.data_enums import Material
 
 
 # ######################################################
@@ -186,7 +187,7 @@ class TomlInductorDesignSpace(BaseModel):
     """Toml checker class for InductorDesignSpace."""
 
     core_name_list: list[str]
-    material_name_list: list[str]
+    material_name_list: list[Material]
     litz_wire_name_list: list[str]
     core_inner_diameter_min_max_list: list[float]
     window_h_min_max_list: list[float]
@@ -237,7 +238,7 @@ class TomlInductor(BaseModel):
 class TomlTransformerDesignSpace(BaseModel):
     """Toml checker class for TransformerDesignSpace."""
 
-    material_name_list: list[str]
+    material_name_list: list[Material]
     core_name_list: list[str]
     core_inner_diameter_min_max_list: list[float]
     window_w_min_max_list: list[float]

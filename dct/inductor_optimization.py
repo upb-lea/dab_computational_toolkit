@@ -153,12 +153,10 @@ class InductorOptimization:
 
         # Initialize the material data source
         act_material_data_sources = fmt.InductorMaterialDataSources(
-            permeability_datasource=fmt.MaterialDataSource.Measurement,
-            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
-            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
-            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
-            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
-            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_MTB_small_signal
+            permeability_datasource=fmt.DataSource.TDK_MDT,
+        permeability_datatype=None,
+        permittivity_datasource=fmt.DataSource.LEA_MTB,
+        permittivity_datatype=None,
         )
 
         # Create fix part of io_config
