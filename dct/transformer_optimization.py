@@ -223,12 +223,10 @@ class TransformerOptimization:
 
         # Initialize the material data source
         material_data_sources = fmt.StackedTransformerMaterialDataSources(
-            permeability_datasource=fmt.MaterialDataSource.Measurement,
-            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
-            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
-            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
-            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
-            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
+            permeability_datasource=fmt.DataSource.TDK_MDT,
+            permeability_datatype=None,
+            permittivity_datasource=fmt.DataSource.LEA_MTB,
+            permittivity_datatype=None
         )
 
         # Create fix part of io_config
