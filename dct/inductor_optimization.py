@@ -153,9 +153,9 @@ class InductorOptimization:
 
         # Initialize the material data source
         act_material_data_sources = fmt.InductorMaterialDataSources(
-            permeability_datasource=fmt.DataSource.TDK_MDT,
+            permeability_datasource=toml_inductor.material_data_sources.permeability_datasource,
             permeability_datatype=None,
-            permittivity_datasource=fmt.DataSource.LEA_MTB,
+            permittivity_datasource=toml_inductor.material_data_sources.permittivity_datasource,
             permittivity_datatype=None,
         )
 

@@ -148,12 +148,8 @@ def generate_inductor_toml(working_directory: str) -> None:
         temperature=100
     
     [material_data_sources]
-        permeability_datasource=""
-        permeability_datatype=""
-        permeability_measurement_setup=""
-        permittivity_datasource=""
-        permittivity_datatype=""
-        permittivity_measurement_setup=""
+        permeability_datasource="LEA_MTB"
+        permittivity_datasource="LEA_MTB"
     
     [insulations]
         primary_to_primary=0.2e-3
@@ -209,6 +205,10 @@ def generate_transformer_toml(working_directory: str) -> None:
         iso_primary_to_primary=0.2e-3
         iso_secondary_to_secondary=0.2e-3
         iso_primary_to_secondary=0.2e-3
+    
+    [material_data_sources]
+        permeability_datasource="LEA_MTB"
+        permittivity_datasource="LEA_MTB"
     
     [settings]
         fft_filter_value_factor=0.01

@@ -32,6 +32,10 @@
     iso_secondary_to_secondary=0.2e-3
     iso_primary_to_secondary=0.2e-3
 
+[material_data_sources]
+    permeability_datasource="LEA_MTB"
+    permittivity_datasource="LEA_MTB"
+
 [settings]
     fft_filter_value_factor=0.01
     mesh_accuracy=0.8

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 # own libraries
 from dct.circuit_enums import SamplingEnum
-from materialdatabase.meta.data_enums import Material
+from materialdatabase.meta.data_enums import Material, DataSource
 
 
 # ######################################################
@@ -205,12 +205,8 @@ class TomlInductorInsulation(BaseModel):
 class TomlMaterialDataSources(BaseModel):
     """Toml checker class for MaterialDataSources."""
 
-    permeability_datasource: str
-    permeability_datatype: str
-    permeability_measurement_setup: str
-    permittivity_datasource: str
-    permittivity_datatype: str
-    permittivity_measurement_setup: str
+    permeability_datasource: DataSource
+    permittivity_datasource: DataSource
 
 class TomlInductorBoundaryConditions(BaseModel):
     """Toml checker class for InductorBoundaryConditions."""
@@ -292,6 +288,7 @@ class TomlTransformer(BaseModel):
     boundary_conditions: TomlTransformerBoundaryConditions
     filter_distance: TomlTransformerFilterDistance
     settings: TomlTransformerSettings
+    material_data_sources: TomlMaterialDataSources
 
 # ######################################################
 # heat sink inclusive data of summary calculation
