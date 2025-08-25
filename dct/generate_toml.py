@@ -138,7 +138,7 @@ def generate_inductor_toml(working_directory: str) -> None:
     toml_data = '''
     [design_space]
         core_name_list=["PQ 50/50", "PQ 50/40", "PQ 40/40", "PQ 40/30", "PQ 35/35", "PQ 32/30", "PQ 32/20", "PQ 26/25", "PQ 26/20", "PQ 20/20", "PQ 20/16"]
-        material_name_list=["3C95"]
+        material_name_list=["N49"]
         litz_wire_name_list=["1.5x105x0.1", "1.4x200x0.071", "1.1x60x0.1"]
         core_inner_diameter_min_max_list=[]
         window_h_min_max_list=[]
@@ -148,12 +148,8 @@ def generate_inductor_toml(working_directory: str) -> None:
         temperature=100
     
     [material_data_sources]
-        permeability_datasource=""
-        permeability_datatype=""
-        permeability_measurement_setup=""
-        permittivity_datasource=""
-        permittivity_datatype=""
-        permittivity_measurement_setup=""
+        permeability_datasource="LEA_MTB"
+        permittivity_datasource="LEA_MTB"
     
     [insulations]
         primary_to_primary=0.2e-3
@@ -177,7 +173,7 @@ def generate_transformer_toml(working_directory: str) -> None:
     """
     toml_data = '''
     [design_space]
-        material_name_list=['3C95']
+        material_name_list=['N49']
         core_name_list=["PQ 40/40", "PQ 40/30", "PQ 35/35", "PQ 32/30", "PQ 32/20", "PQ 26/25", "PQ 26/20", "PQ 20/20", "PQ 20/16"]
         core_inner_diameter_min_max_list=[15e-3, 30e-3]
         window_w_min_max_list=[10e-3, 40e-3]
@@ -209,6 +205,10 @@ def generate_transformer_toml(working_directory: str) -> None:
         iso_primary_to_primary=0.2e-3
         iso_secondary_to_secondary=0.2e-3
         iso_primary_to_secondary=0.2e-3
+    
+    [material_data_sources]
+        permeability_datasource="LEA_MTB"
+        permittivity_datasource="LEA_MTB"
     
     [settings]
         fft_filter_value_factor=0.01

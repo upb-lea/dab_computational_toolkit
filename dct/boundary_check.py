@@ -21,7 +21,7 @@ class BoundaryCheck:
     """Boundary check for parameter."""
 
     @staticmethod
-    def convert_min_max_values_to_float(int_value_list: list[int]) -> list[float]:
+    def convert_int_list_to_float_list(int_value_list: list[int]) -> list[float]:
         """
         Convert a list of integer values in a list of float values.
 
@@ -64,7 +64,7 @@ class BoundaryCheck:
         :rtype: tuple[bool, str]
         """
         # Variable declaration
-        is_check_list_failed: bool = False
+        is_check_list_passed: bool = True
         inconsistency_list_report: str = ""
 
         # Check if list is empty
@@ -72,13 +72,13 @@ class BoundaryCheck:
             logger.info("List is empty. There is not performed any check!")
 
         for check_parameter in value_list:
-            is_check_failed, issue_report = BoundaryCheck.check_float_value(
+            is_check_passed, issue_report = BoundaryCheck.check_float_value(
                 minimum, maximum, check_parameter[0], check_parameter[1], check_type_minimum, check_type_maximum)
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_list_report = inconsistency_list_report + issue_report
-                is_check_list_failed = True
+                is_check_list_passed = False
 
-        return is_check_list_failed, inconsistency_list_report
+        return is_check_list_passed, inconsistency_list_report
 
     @staticmethod
     def check_float_min_max_values_list(minimum: float, maximum: float, min_max_value_list: list[tuple[list[float], str]],
@@ -100,7 +100,7 @@ class BoundaryCheck:
         :rtype: tuple[bool, str]
         """
         # Variable declaration
-        is_check_list_failed: bool = False
+        is_check_list_passed: bool = True
         inconsistency_list_report: str = ""
 
         # Check if list is empty
@@ -108,13 +108,13 @@ class BoundaryCheck:
             logger.info("List is empty. There is not performed any check!")
 
         for check_parameter in min_max_value_list:
-            is_check_failed, issue_report = BoundaryCheck.check_float_min_max_values(
+            is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
                 minimum, maximum, check_parameter[0], check_parameter[1], check_type_minimum, check_type_maximum)
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_list_report = inconsistency_list_report + issue_report
-                is_check_list_failed = True
+                is_check_list_passed = False
 
-        return is_check_list_failed, inconsistency_list_report
+        return is_check_list_passed, inconsistency_list_report
 
     @staticmethod
     def check_float_value(minimum: float, maximum: float, parameter_value: float,
@@ -138,38 +138,38 @@ class BoundaryCheck:
         :rtype: tuple[bool, str]
         """
         # Variable declaration
-        is_check_failed: bool = False
+        is_check_passed: bool = True
         inconsistency_report: str = ""
 
         # Check the consistency of the input parameter itself
         if minimum > maximum:
             inconsistency_report = f"    Minimum boundary value {minimum} is greater than maximum value {maximum}!\n"
-            is_check_failed = True
+            is_check_passed = False
         else:
             # Perform the boundary check
             # Check minimum boundary
             if check_type_minimum == CheckCondition.check_exclusive:
                 if parameter_value <= minimum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is less equal minimum value {minimum}!\n"
-                    is_check_failed = True
+                    is_check_passed = False
 
             elif check_type_minimum == CheckCondition.check_inclusive:
                 if parameter_value < minimum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is less than minimum value {minimum}!\n"
-                    is_check_failed = True
+                    is_check_passed = False
 
             # Check maximum boundary
             if check_type_maximum == CheckCondition.check_exclusive:
                 if parameter_value >= maximum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is greater equal maximum value {maximum}!\n"
-                    is_check_failed = True
+                    is_check_passed = False
 
             elif check_type_maximum == CheckCondition.check_inclusive:
                 if parameter_value > maximum:
                     inconsistency_report = f"    Parameter {parameter_name}= {parameter_value} is greater than maximum value {maximum}!\n"
-                    is_check_failed = True
+                    is_check_passed = False
 
-        return is_check_failed, inconsistency_report
+        return is_check_passed, inconsistency_report
 
     @staticmethod
     def check_float_min_max_values(minimum: float, maximum: float, min_max_value: list[float], parameter_name: str,
@@ -193,52 +193,53 @@ class BoundaryCheck:
         :rtype: tuple[bool, str]
         """
         # Variable declaration
-        is_check_failed: bool = False
+        is_check_passed: bool = True
         inconsistency_report: str = ""
 
         # Check the consistency of the input parameter itself
         if minimum >= maximum:
             inconsistency_report = f"    Minimum boundary value {minimum} is greater equal maximum value {maximum}!\n"
-            is_check_failed = True
+            is_check_passed = False
         # Check length of list
-        if len(min_max_value) != 2:
+        elif len(min_max_value) != 2:
             inconsistency_report = inconsistency_report + f"    Length of minimum maximum list {parameter_name} is not 2!\n"
-            is_check_failed = True
+            is_check_passed = False
         else:
             # Perform consistency check
             if min_max_value[0] > min_max_value[1]:
                 inconsistency_report = (
                     inconsistency_report + f"    In list {parameter_name}: Minimum value {min_max_value[0]} " + f"is greater than {min_max_value[1]}!\n")
-                is_check_failed = True
+                is_check_passed = False
 
             # Perform the boundary check
+
             #  Check minimum boundary
             if check_type_minimum == CheckCondition.check_exclusive:
                 if min_max_value[0] <= minimum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the minimum entry value {min_max_value[0]} "
-                    inconsistency_report = inconsistency_report + f"is less than boundary value {minimum}!\n"
-                    is_check_failed = True
+                    inconsistency_report = inconsistency_report + f"is less equal boundary value {minimum}!\n"
+                    is_check_passed = False
 
             elif check_type_minimum == CheckCondition.check_inclusive:
                 if min_max_value[0] < minimum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the minimum entry value {min_max_value[0]} "
-                    inconsistency_report = inconsistency_report + f"is less equal boundary value {minimum}!\n"
-                    is_check_failed = True
+                    inconsistency_report = inconsistency_report + f"is less than boundary value {minimum}!\n"
+                    is_check_passed = False
 
             # Check maximum boundary
             if check_type_maximum == CheckCondition.check_exclusive:
                 if min_max_value[1] >= maximum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the maximum entry value {min_max_value[1]} "
-                    inconsistency_report = inconsistency_report + f"is greater than boundary value {maximum}!\n"
-                    is_check_failed = True
+                    inconsistency_report = inconsistency_report + f"is greater equal boundary value {maximum}!\n"
+                    is_check_passed = False
 
             elif check_type_maximum == CheckCondition.check_inclusive:
                 if min_max_value[1] > maximum:
                     inconsistency_report = inconsistency_report + f"    In list {parameter_name} the maximum entry value {min_max_value[1]} "
-                    inconsistency_report = inconsistency_report + "is greater equal boundary value {maximum}!\n"
-                    is_check_failed = True
+                    inconsistency_report = inconsistency_report + f"is greater than boundary value {maximum}!\n"
+                    is_check_passed = False
 
-        return is_check_failed, inconsistency_report
+        return is_check_passed, inconsistency_report
 
     @staticmethod
     def check_dictionary(keyword_dictionary: dict, keyword: str, keyword_list_name: str) -> tuple[bool, str]:
@@ -255,24 +256,24 @@ class BoundaryCheck:
         :rtype: tuple[bool, str]
         """
         # Variable declaration
-        is_check_failed: bool = False
+        is_check_passed: bool = True
         inconsistency_report: str = ""
 
         # Check the consistency of the input parameter itself
         if len(keyword_dictionary) == 0:
-            inconsistency_report = "    Dictionary is empty!!\n"
-            is_check_failed = True
+            inconsistency_report = "    Dictionary is empty!\n"
+            is_check_passed = False
 
         if keyword == "":
-            inconsistency_report = "    Keyword is empty!!\n"
-            is_check_failed = True
+            inconsistency_report = "    Keyword is empty!\n"
+            is_check_passed = False
 
-        if not is_check_failed:
+        if is_check_passed:
             # Check if keyword matches keyword list
             is_matched = keyword in keyword_dictionary
             if not is_matched:
                 inconsistency_report = f"    Keyword '{keyword}' in {keyword_list_name} does not match any keyword within dictionary:\n"
-                inconsistency_report = inconsistency_report + f"{keyword_dictionary.keys()}!\n"
-                is_check_failed = True
+                inconsistency_report = inconsistency_report + f"    {keyword_dictionary.keys()}!\n"
+                is_check_passed = False
 
-        return is_check_failed, inconsistency_report
+        return is_check_passed, inconsistency_report

@@ -222,12 +222,8 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
         filter_distance=dct.TomlFilterDistance(
             factor_dc_losses_min_max_list=float_min_max_list_configuration_gt0_le100[test_index]),
         material_data_sources=tc.TomlMaterialDataSources(
-            permeability_datasource="",
-            permeability_datatype="",
-            permeability_measurement_setup="",
-            permittivity_datasource="",
-            permittivity_datatype="",
-            permittivity_measurement_setup="")
+            permeability_datasource="LEA_MTB",
+            permittivity_datasource="LEA_MTB")
     )
 
     # Create boundary list from minimum-maximum list with assigned parameters
