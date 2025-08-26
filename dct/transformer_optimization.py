@@ -222,7 +222,7 @@ class TransformerOptimization:
         )
 
         # Initialize the material data source
-        material_data_sources = fmt.StackedTransformerMaterialDataSources(
+        material_data_sources = fmt.MaterialDataSources(
             permeability_datasource=toml_transformer.material_data_sources.permeability_datasource,
             permeability_datatype=None,
             permittivity_datasource=toml_transformer.material_data_sources.permittivity_datasource,
