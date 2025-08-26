@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 # own libraries
 from dct.circuit_enums import SamplingEnum
+from materialdatabase.meta.data_enums import Material, DataSource
 
 
 # ######################################################
@@ -186,7 +187,7 @@ class TomlInductorDesignSpace(BaseModel):
     """Toml checker class for InductorDesignSpace."""
 
     core_name_list: list[str]
-    material_name_list: list[str]
+    material_name_list: list[Material]
     litz_wire_name_list: list[str]
     core_inner_diameter_min_max_list: list[float]
     window_h_min_max_list: list[float]
@@ -204,12 +205,8 @@ class TomlInductorInsulation(BaseModel):
 class TomlMaterialDataSources(BaseModel):
     """Toml checker class for MaterialDataSources."""
 
-    permeability_datasource: str
-    permeability_datatype: str
-    permeability_measurement_setup: str
-    permittivity_datasource: str
-    permittivity_datatype: str
-    permittivity_measurement_setup: str
+    permeability_datasource: DataSource
+    permittivity_datasource: DataSource
 
 class TomlInductorBoundaryConditions(BaseModel):
     """Toml checker class for InductorBoundaryConditions."""
@@ -237,7 +234,7 @@ class TomlInductor(BaseModel):
 class TomlTransformerDesignSpace(BaseModel):
     """Toml checker class for TransformerDesignSpace."""
 
-    material_name_list: list[str]
+    material_name_list: list[Material]
     core_name_list: list[str]
     core_inner_diameter_min_max_list: list[float]
     window_w_min_max_list: list[float]
@@ -291,6 +288,7 @@ class TomlTransformer(BaseModel):
     boundary_conditions: TomlTransformerBoundaryConditions
     filter_distance: TomlTransformerFilterDistance
     settings: TomlTransformerSettings
+    material_data_sources: TomlMaterialDataSources
 
 # ######################################################
 # heat sink inclusive data of summary calculation

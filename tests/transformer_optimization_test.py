@@ -243,7 +243,10 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
             factor_dc_losses_min_max_list=float_min_max_list_configuration_ge0_le100[test_index]),
         settings=dct.TomlTransformerSettings(
             fft_filter_value_factor=float_value_list_configuration_ge0_le1[test_index],
-            mesh_accuracy=float_value_list_configuration_gt0_lt1[test_index])
+            mesh_accuracy=float_value_list_configuration_gt0_lt1[test_index]),
+        material_data_sources=tc.TomlMaterialDataSources(
+            permeability_datasource="LEA_MTB",
+            permittivity_datasource="LEA_MTB")
     )
 
     # Create boundary list from minimum-maximum list with assigned parameters

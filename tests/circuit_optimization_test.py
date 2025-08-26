@@ -552,3 +552,199 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
             assert parameter_name not in error_report
         # Error is indicated
         assert not is_consistent
+
+#########################################################################################################
+# test of initialize_circuit_optimization
+#########################################################################################################
+
+# initialize_circuit_optimization(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> bool:
+# test parameter list (counter)
+@pytest.mark.parametrize("test_index, test_type, is_error", [
+    # Valid test case
+    # Test value at lower boundary
+    (0, TestCase.LowerBoundary, False),
+    # Test value at lower boundary
+    (1, TestCase.UpperBoundary, False),
+    # Test value in between
+    (2, TestCase.InBetween, False),
+    # Failure test case
+    # Test when the lower limit is exceeded
+    (3, TestCase.ExceedLowerLimit, True),
+])
+# Unit test function
+def test_initialize_circuit_optimization(get_transistor_name_list: list[str], test_index: int, test_type: TestCase,
+                                         is_error: bool) -> None:
+    """Test the method initialize_circuit_optimization.
+
+    :param get_transistor_name_list: List of transistor names
+    :type  get_transistor_name_list: list[str]
+    :param test_index: Test index of the used list element
+    :type  test_index: int
+    :param test_type: Type of performed test
+    :type  test_type: TestCase
+    :param is_error: Indicates, if the function exits with error
+    :type  is_error: bool
+    """
+    # Variable declaration
+    # Called only on time while parametric test
+    transistor_name_list = get_transistor_name_list
+    t_list_len = len(transistor_name_list)
+    assert t_list_len > 0
+    one_t_name = transistor_name_list[t_list_len//2]
+    t_sub_list = copy.deepcopy(transistor_name_list)
+    t_sub_list = t_sub_list[:len(t_sub_list)//2]
+    t_first_name_wrong_list = copy.deepcopy(transistor_name_list)
+    t_first_name_wrong_list[0] = one_t_name+"first_name_wrong"
+    t_last_name_wrong_list = copy.deepcopy(transistor_name_list)
+    t_last_name_wrong_list[t_list_len-1] = one_t_name+"last_name_wrong"
+    # List entries for the list:
+    # All names | one name | half of the list | empty list
+    # one wrong name | first name wrong | last name wrong
+    transistor_name_list_configuration: list[list[str]] = [transistor_name_list, [one_t_name], t_sub_list,
+                                                           [one_t_name+"wrong"]]
+
+    # List entries for values and list (exception *in between for values):
+    # at lower boundary | at upper boundary | in between | exceed the lower or upper limit
+    int_min_max_list_configuration_gt1000_lt1e7: list[list[int]] = (
+        [[1001, 2001], [399999, 999999], [2000, 500000], [10, 3222]])
+    float_min_max_list_configuration_gt0_lt1: list[list[float]] = (
+        [[1e-17, 8.1e-17], [0.1991, 0.9991], [0.34, 0.77], [-0.1, 0.88]])
+    float_min_max_list_configuration_gt0_lt100: list[list[float]] = (
+        [[1e-18, 7e-18], [69.8, 99.8], [34, 77], [0, 88]])
+    float_min_max_list_configuration_gt0_lt1500: list[list[float]] = (
+        [[1e-18, 2.2e-18], [10, 1499.9], [1000, 1300], [-10, 1200]])
+    float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
+        [[-9.9999, 0], [22, 9.9999e4], [2000, 5e4], [-1.01e5, 3222]])
+    float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, -1e-3]
+    float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 9.9e-3]
+    int_value_gt0 = [1, 181877627, 1111, 10000]
+    int_value_ge0 = [0, 181877627, 1111, 10000]
+
+    # Initialize the circuit parameters
+    test_circuit_parameter: tc.TomlCircuitParetoDabDesign = tc.TomlCircuitParetoDabDesign(
+        design_space=tc.TomlCircuitParetoDesignSpace(
+            f_s_min_max_list=int_min_max_list_configuration_gt1000_lt1e7[test_index],
+            l_s_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
+            l_1_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
+            l_2__min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
+            n_min_max_list=float_min_max_list_configuration_gt0_lt100[test_index],
+            transistor_1_name_list=transistor_name_list_configuration[test_index],
+            transistor_2_name_list=transistor_name_list_configuration[test_index],
+            c_par_1=float_value_gt0_lt1em3[test_index],
+            c_par_2=float_value_gt0_lt1em3[test_index]),
+        output_range=tc.TomlCircuitOutputRange(
+            v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
+            v2_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
+            p_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
+        sampling=dct.TomlSampling(
+            sampling_method=SamplingEnum.meshgrid,
+            sampling_points=int_value_gt0[test_index],
+            sampling_random_seed=int_value_ge0[test_index],
+            v1_additional_user_point_list=[],
+            v2_additional_user_point_list=[],
+            p_additional_user_point_list=[],
+            additional_user_weighting_point_list=[]),
+        filter_distance=dct.TomlCircuitFilterDistance(
+            number_filtered_designs=int_value_gt0[test_index],
+            difference_percentage=float_value_gt1em2_le100[test_index])
+    )
+
+    # FlowControl base parameter set
+    test_FlowControl_base: tc.FlowControl = tc.FlowControl(
+        general=tc.General(project_directory="Hallo"),
+        breakpoints=tc.Breakpoints(circuit_pareto="no",
+                                   circuit_filtered="no",
+                                   inductor="no",
+                                   transformer="no",
+                                   heat_sink="no",
+                                   pre_summary="no",
+                                   summary="no"),
+        conditional_breakpoints=tc.CondBreakpoints(
+            circuit=1,
+            inductor=2,
+            transformer=3,
+            heat_sink=1),
+        circuit=tc.Circuit(number_of_trials=1,
+                           calculation_mode="continue",
+                           subdirectory="dummy"),
+        inductor=tc.Inductor(number_of_trials=1,
+                             calculation_mode="continue",
+                             subdirectory="dummy"),
+        transformer=tc.Transformer(number_of_trials=1,
+                                   calculation_mode="continue",
+                                   subdirectory="dummy"),
+        heat_sink=tc.HeatSink(number_of_trials=1,
+                              calculation_mode="continue",
+                              subdirectory="dummy"),
+        pre_summary=tc.PreSummary(calculation_mode="new",
+                                  subdirectory="dummy"),
+        summary=tc.Summary(calculation_mode="new",
+                           subdirectory="dummy"),
+        configuration_data_files=tc.ConfigurationDataFiles(
+            circuit_configuration_file="dummy",
+            inductor_configuration_file="dummy",
+            transformer_configuration_file="dummy",
+            heat_sink_configuration_file="dummy")
+    )
+
+    # at lower boundary | at upper boundary | in between | exceed the upper limit
+    v1_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_circuit_parameter.output_range.v1_min_max_list)
+    v2_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_circuit_parameter.output_range.v2_min_max_list)
+    p_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_circuit_parameter.output_range.p_min_max_list)
+    w_point_list: list[list[float]] = generate_weighting_point_list(5)
+    # Set additional user point parameters
+    test_circuit_parameter.sampling.v1_additional_user_point_list = v1_additional_point_list[test_index]
+    test_circuit_parameter.sampling.v2_additional_user_point_list = v2_additional_point_list[test_index]
+    test_circuit_parameter.sampling.p_additional_user_point_list = p_additional_point_list[test_index]
+    test_circuit_parameter.sampling.additional_user_weighting_point_list = w_point_list[test_index]
+
+    string_test_values: list[str] = ["A", "b9", "Test123", "x_Y_z890"]
+    str_test_len = len(string_test_values)
+
+    # Constant values of FlowControl
+    test_flow_control_parameter: tc.FlowControl = copy.deepcopy(test_FlowControl_base)
+
+    # Create the instance
+    test_dct: dct.CircuitOptimization = dct.CircuitOptimization()
+
+    # Initialize the second test parameter
+    test_flow_control_parameter.general.project_directory = string_test_values[test_index % str_test_len]
+    test_string_circuit = string_test_values[(test_index + 1) % str_test_len]
+    test_flow_control_parameter.configuration_data_files.circuit_configuration_file = test_string_circuit+".toml"
+
+    # Check if no error is expected
+    if not is_error:
+        # Perform the test
+        is_initialized = test_dct.initialize_circuit_optimization(test_circuit_parameter, test_flow_control_parameter)
+
+        assert test_dct._dab_config is not None
+
+        # Check valid result
+        assert test_dct._dab_config.design_space.f_s_min_max_list == test_circuit_parameter.design_space.f_s_min_max_list
+        assert test_dct._dab_config.design_space.l_1_min_max_list == test_circuit_parameter.design_space.l_1_min_max_list
+        assert test_dct._dab_config.design_space.l_2__min_max_list == test_circuit_parameter.design_space.l_2__min_max_list
+        assert test_dct._dab_config.design_space.l_s_min_max_list == test_circuit_parameter.design_space.l_s_min_max_list
+        assert test_dct._dab_config.design_space.n_min_max_list == test_circuit_parameter.design_space.n_min_max_list
+        assert test_dct._dab_config.design_space.transistor_1_name_list == test_circuit_parameter.design_space.transistor_1_name_list
+        assert test_dct._dab_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
+        assert test_dct._dab_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
+        assert test_dct._dab_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
+        assert test_dct._dab_config.output_range.v1_min_max_list == test_circuit_parameter.output_range.v1_min_max_list
+        assert test_dct._dab_config.output_range.v2_min_max_list == test_circuit_parameter.output_range.v2_min_max_list
+        assert test_dct._dab_config.output_range.p_min_max_list == test_circuit_parameter.output_range.p_min_max_list
+        assert test_dct._dab_config.sampling.sampling_method == test_circuit_parameter.sampling.sampling_method
+        assert test_dct._dab_config.sampling.sampling_points == test_circuit_parameter.sampling.sampling_points
+        assert test_dct._dab_config.sampling.v1_additional_user_point_list == test_circuit_parameter.sampling.v1_additional_user_point_list
+        assert test_dct._dab_config.sampling.v2_additional_user_point_list == test_circuit_parameter.sampling.v2_additional_user_point_list
+        assert test_dct._dab_config.sampling.p_additional_user_point_list == test_circuit_parameter.sampling.p_additional_user_point_list
+        assert test_dct._dab_config.filter.number_filtered_designs == test_circuit_parameter.filter_distance.number_filtered_designs
+        assert test_dct._dab_config.filter.difference_percentage == test_circuit_parameter.filter_distance.difference_percentage
+        assert test_dct._dab_config.project_directory == test_flow_control_parameter.general.project_directory
+        assert test_dct._dab_config.circuit_study_name == test_string_circuit
+        assert is_initialized
+    else:
+        with pytest.raises(ValueError) as error_message:
+            # Perform the test
+            is_initialized = test_dct.initialize_circuit_optimization(test_circuit_parameter, test_flow_control_parameter)
+            assert "Circuit optimization parameter are inconsistent!" in str(error_message.value)
+            assert not is_initialized

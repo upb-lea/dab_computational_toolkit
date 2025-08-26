@@ -61,10 +61,10 @@ class TransformerOptimization:
             keyword_dictionary: dict = fmt.core_database()
             # Perform dictionary check
             for keyword_entry in toml_transformer.design_space.core_name_list:
-                is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(
+                is_check_passed, issue_report = dct.BoundaryCheck.check_dictionary(
                     keyword_dictionary, keyword_entry, f"{group_name}: core_name_list")
                 # Check if boundary check fails
-                if is_check_failed:
+                if not is_check_passed:
                     inconsistency_report = inconsistency_report + issue_report
                     is_consistent = False
         else:
@@ -74,24 +74,24 @@ class TransformerOptimization:
                  (toml_transformer.design_space.window_w_min_max_list, f"{group_name}: window_w_min_max_list")])
 
             # Perform the boundary check
-            is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
                 0, 5, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
         # Convert min_max-list from integer to float values
-        float_n_p_top_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_transformer.design_space.n_p_top_min_max_list)
-        float_n_p_bot_min_max_list = dct.BoundaryCheck.convert_min_max_values_to_float(toml_transformer.design_space.n_p_bot_min_max_list)
+        float_n_p_top_min_max_list = dct.BoundaryCheck.convert_int_list_to_float_list(toml_transformer.design_space.n_p_top_min_max_list)
+        float_n_p_bot_min_max_list = dct.BoundaryCheck.convert_int_list_to_float_list(toml_transformer.design_space.n_p_bot_min_max_list)
         # Setup check value list
         toml_check_min_max_values_list = (
             [(float_n_p_top_min_max_list, f"{group_name}: n_p_top_min_max_list"),
              (float_n_p_bot_min_max_list, f"{group_name}: n_p_bot_min_max_list")])
 
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
             0, 10000, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_inclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
@@ -100,16 +100,16 @@ class TransformerOptimization:
         keyword_dictionary = fmt.litz_database()
         # Perform dictionary check for primary litz
         for keyword_entry in toml_transformer.design_space.primary_litz_wire_list:
-            is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, f"{group_name}: litz_wire_name_list")
+            is_check_passed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, f"{group_name}: litz_wire_name_list")
             # Check if boundary check fails
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
         # Perform dictionary check for primary litz
         for keyword_entry in toml_transformer.design_space.secondary_litz_wire_list:
-            is_check_failed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, f"{group_name}: litz_wire_name_list")
+            is_check_passed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, f"{group_name}: litz_wire_name_list")
             # Check if boundary check fails
-            if is_check_failed:
+            if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
@@ -131,18 +131,18 @@ class TransformerOptimization:
 
         # Perform insulation value check
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
             0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform boundary condition check
         group_name = "boundary_condition"
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
             -40, 175, toml_transformer.boundary_conditions.temperature, f"{group_name}: temperature", c_flag.check_inclusive, c_flag.check_inclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
@@ -150,33 +150,33 @@ class TransformerOptimization:
             [(toml_transformer.boundary_conditions.max_transformer_total_height, f"{group_name}: max_transformer_total_height"),
              (toml_transformer.boundary_conditions.max_core_volume, f"{group_name}: max_core_volume")])
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value_list(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
             0, 5, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform setting check
         group_name = "setting"
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
             0, 1, toml_transformer.settings.fft_filter_value_factor, f"{group_name}: fft_filter_value_factor", c_flag.check_inclusive, c_flag.check_inclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_value(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
             0, 1, toml_transformer.settings.mesh_accuracy, f"{group_name}: mesh_accuracy", c_flag.check_exclusive, c_flag.check_exclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform filter_distance value check
         group_name = "filter_distance"
         # Perform the boundary check
-        is_check_failed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
             0, 100, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
             f"{group_name}: factor_dc_losses_min_max_list", c_flag.check_inclusive, c_flag.check_inclusive)
-        if is_check_failed:
+        if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
@@ -222,13 +222,11 @@ class TransformerOptimization:
         )
 
         # Initialize the material data source
-        material_data_sources = fmt.StackedTransformerMaterialDataSources(
-            permeability_datasource=fmt.MaterialDataSource.Measurement,
-            permeability_datatype=fmt.MeasurementDataType.ComplexPermeability,
-            permeability_measurement_setup=fmt.MeasurementSetup.MagNet,
-            permittivity_datasource=fmt.MaterialDataSource.ManufacturerDatasheet,
-            permittivity_datatype=fmt.MeasurementDataType.ComplexPermittivity,
-            permittivity_measurement_setup=fmt.MeasurementSetup.LEA_LK
+        material_data_sources = fmt.MaterialDataSources(
+            permeability_datasource=toml_transformer.material_data_sources.permeability_datasource,
+            permeability_datatype=None,
+            permittivity_datasource=toml_transformer.material_data_sources.permittivity_datasource,
+            permittivity_datatype=None
         )
 
         # Create fix part of io_config
