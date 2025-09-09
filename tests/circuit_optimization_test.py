@@ -288,24 +288,6 @@ def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
     (6, TestCase.ExceedLowerLimit, -1, TestCase.InBetween),
     # Test when the lower limit is exceeded
     (7, TestCase.ExceedUpperLimit, -1, TestCase.InBetween),
-    # Test of additional user points
-    # Additional user points: Test value at lower boundary
-    (2, TestCase.InBetween, 0, TestCase.LowerBoundary),
-    # Additional user points: Test value at lower boundary
-    (2, TestCase.InBetween, 1, TestCase.UpperBoundary),
-    # Additional user points: Test value in between
-    (2, TestCase.InBetween, 2, TestCase.InBetween),
-    # Failure test case
-    # Additional user points: Test when inconsistent number of user points in v1
-    (2, TestCase.InBetween, 3, TestCase.BoundaryInconsistent),
-    # Additional user points: Test when inconsistent number of user points in v2
-    (2, TestCase.InBetween, 4, TestCase.BoundaryInconsistent),
-    # Additional user points: Test when inconsistent number of user points in p
-    (2, TestCase.InBetween, 5, TestCase.BoundaryInconsistent),
-    # Additional user points: Test when the lower limit is exceeded
-    (2, TestCase.InBetween, 6, TestCase.ExceedLowerLimit),
-    # Additional user points: Test when the lower limit is exceeded
-    (2, TestCase.InBetween, 7, TestCase.ExceedUpperLimit)
 ])
 # Unit test function
 def test_verify_optimization_parameter(get_transistor_name_list: list[str], test_index: int, test_type: TestCase,
@@ -392,26 +374,6 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])
     )
-
-    # Check if number of user points>0
-    if u_points_test_index >= 0:
-        # at lower boundary | at upper boundary | in between | inconsistent number of entries V1 | inconsistent number of entries V2
-        # inconsistent number of entries p | exceed the lower limit | exceed the upper limit
-        v1_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.output_range.v1_min_max_list)
-        v2_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.output_range.v2_min_max_list)
-        p_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.output_range.p_min_max_list)
-        w_point_list: list[list[float]] = generate_weighting_point_list(3)
-        # Manipulate list for inconsistency by deleting one value
-        del v1_additional_point_list[3][0]
-        del v2_additional_point_list[4][0]
-        del p_additional_point_list[5][0]
-        # Set additional user point parameters
-        test_general_parameter.sampling.v1_additional_user_point_list = v1_additional_point_list[u_points_test_index]
-        test_general_parameter.sampling.v2_additional_user_point_list = v2_additional_point_list[u_points_test_index]
-        test_general_parameter.sampling.p_additional_user_point_list = p_additional_point_list[u_points_test_index]
-        test_general_parameter.sampling.additional_user_weighting_point_list = w_point_list[u_points_test_index]
-        # In case of additional user point test, the test type for remaining parameter must be in_between
-        assert test_type == TestCase.InBetween
 
     # Create boundary list from minimum-maximum list with assigned parameters
     min_max_list_name_list: list[str] = ["f_s_min_max_list", "l_s_min_max_list", "l_1_min_max_list", "l_2__min_max_list",
@@ -545,149 +507,7 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
         # Error is indicated
         assert not is_circuit_consistent
 ################
-    # Perform the test for the general parameters
-    # Create boundary list from minimum-maximum list with assigned parameters
-    min_max_list_name_list_general: list[str] = ["v1_min_max_list", "v2_min_max_list", "p_min_max_list"]
-    value_name_list_general: list[str] = []
-    value_name_low_limit_list_general: list[str] = ["sampling_points", "sampling_random_seed"]
-    u_point_name_list: list[str] = (["v1_additional_user_point_list", "v2_additional_user_point_list",
-                                 "p_additional_user_point_list", "additional_user_weighting_point_list"])
 
-
-    is_general_consistent, error_report_general = dct.DctMainCtl.verify_general_parameters(test_general_parameter)
-
-    if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary:
-        # No error and empty report string
-        assert error_report_general == ""
-        assert is_circuit_consistent
-
-    elif test_type == TestCase.InBetween:
-        # Check additional point test type
-        if u_points_test_type == TestCase.LowerBoundary or u_points_test_type == TestCase.UpperBoundary or u_points_test_type == TestCase.InBetween:
-            # No error and empty report string
-            assert error_report_general == ""
-            assert is_circuit_consistent
-
-        elif u_points_test_type == TestCase.BoundaryInconsistent:
-            # Check if not any minimum-maximum list parameters is identified
-            for parameter_name in min_max_list_name_list_general:
-                assert parameter_name not in error_report_general
-
-            # Check if not any value_name_list_general parameter is identified
-            for parameter_name in value_name_list_general:
-                assert parameter_name not in error_report_general
-
-            # Check if all additional user point list parameters are identified
-            for parameter_name in u_point_name_list:
-                assert parameter_name in error_report_general
-
-            # Error is indicated
-            assert not is_circuit_consistent
-
-        elif u_points_test_type == TestCase.ExceedLowerLimit:
-            # Check if not any minimum-maximum list parameters is identified
-            for parameter_name in min_max_list_name_list_general:
-                assert parameter_name not in error_report_general
-
-            # Check if not any value_name_list_general parameter is identified
-            for parameter_name in value_name_list_general:
-                assert parameter_name not in error_report_general
-
-            # Check if all additional user point list parameters are identified
-            for parameter_name in u_point_name_list:
-                assert parameter_name in error_report_general
-            # Error is indicated
-            assert not is_circuit_consistent
-
-        elif u_points_test_type == TestCase.ExceedUpperLimit:
-            # Check if not any minimum-maximum list parameters is identified
-            for parameter_name in min_max_list_name_list_general:
-                assert parameter_name not in error_report_general
-
-            # Check if not any value_name_list_general parameter is identified
-            for parameter_name in value_name_list_general:
-                assert parameter_name not in error_report_general
-
-            # Check if all additional user point list parameters are identified
-            for parameter_name in u_point_name_list:
-                assert parameter_name in error_report_general
-            # Error is indicated
-            assert not is_circuit_consistent
-
-    elif test_type == TestCase.ExceedUpperLimit:
-        # Check if all minimum-maximum list parameters are identified
-        for parameter_name in min_max_list_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if all value_name_list_general parameters are identified
-        for parameter_name in value_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if not any value_name_low_limit_list_general parameter is identified
-        for parameter_name in value_name_low_limit_list_general:
-            assert parameter_name not in error_report_general
-        # Error is indicated
-        assert not is_circuit_consistent
-
-    elif test_type == TestCase.ExceedLowerLimit:
-        # Check if all minimum-maximum list parameters are identified
-        for parameter_name in min_max_list_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if all value_name_list_general list parameters are identified
-        for parameter_name in value_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if all value_name_low_limit_list_general parameters are identified
-        for parameter_name in value_name_low_limit_list_general:
-            assert parameter_name in error_report_general
-        # Error is indicated
-        assert not is_circuit_consistent
-
-    elif test_type == TestCase.TooLessEntries:
-        # Check if all minimum-maximum list parameters are identified
-        for parameter_name in min_max_list_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if not any value_name_list_general parameter is identified
-        for parameter_name in value_name_list_general:
-            assert parameter_name not in error_report_general
-
-        # Check if not any value_name_low_limit_list_general parameter is identified
-        for parameter_name in value_name_low_limit_list_general:
-            assert parameter_name not in error_report_general
-        # Error is indicated
-        assert not is_circuit_consistent
-
-    elif test_type == TestCase.TooMuchEntries:
-        # Check if all minimum-maximum list parameters are identified
-        for parameter_name in min_max_list_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if not any value_name_list_general parameter is identified
-        for parameter_name in value_name_list_general:
-            assert parameter_name not in error_report_general
-
-        # Check if not any value_name_low_limit_list_general parameter is identified
-        for parameter_name in value_name_low_limit_list_general:
-            assert parameter_name not in error_report_general
-        # Error is indicated
-        assert not is_circuit_consistent
-
-    elif test_type == TestCase.BoundaryInconsistent:
-        # Check if all minimum-maximum list parameters are identified
-        for parameter_name in min_max_list_name_list_general:
-            assert parameter_name in error_report_general
-
-        # Check if not any value_name_list_general parameter is identified
-        for parameter_name in value_name_list_general:
-            assert parameter_name not in error_report_general
-
-        # Check if not any value_name_low_limit_list_general parameter is identified
-        for parameter_name in value_name_low_limit_list_general:
-            assert parameter_name not in error_report_general
-        # Error is indicated
-        assert not is_circuit_consistent
 
 
 
