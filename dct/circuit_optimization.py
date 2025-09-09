@@ -119,11 +119,11 @@ class CircuitOptimization:
         return loaded_pareto_dto
 
     @staticmethod
-    def verify_optimization_parameter(toml_circuit: tc.TomlCircuitParetoDabDesign, is_tdb_to_update: bool = False) -> tuple[bool, str]:
+    def verify_circuit_parameters(toml_circuit: tc.TomlCircuitParetoDabDesign, is_tdb_to_update: bool = False) -> tuple[bool, str]:
         """Verify the input parameter ranges.
 
-        :param toml_circuit: toml inductor configuration
-        :type toml_circuit: dct.TomlInductor
+        :param toml_circuit: toml circuit configuration
+        :type toml_circuit: dct.TomlCircuitParetoDabDesign
         :param is_tdb_to_update: True to update the transistor database
         :type is_tdb_to_update: bool
         :return: True, if the configuration was consistent
@@ -135,7 +135,6 @@ class CircuitOptimization:
         toml_check_keyword_list: list[tuple[list[str], str]]
         toml_check_min_max_values_list: list[tuple[list[float], str]]
         toml_check_value_list: list[tuple[float, str]]
-        toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
 
         # Design space parameter check
         # Create dictionary from transistor database list
@@ -223,106 +222,6 @@ class CircuitOptimization:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
-        # Output range parameter and sampling parameter check
-        group_name = "output_range or sampling"
-        # Init is_user_point_list_consistent-flag
-        is_user_point_list_consistent = False
-        # Evaluate list length
-        len_additional_user_v1 = len(toml_circuit.sampling.v1_additional_user_point_list)
-        len_additional_user_v2 = len(toml_circuit.sampling.v2_additional_user_point_list)
-        len_additional_user_p = len(toml_circuit.sampling.p_additional_user_point_list)
-        len_additional_user_w = len(toml_circuit.sampling.additional_user_weighting_point_list)
-        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_p == len_additional_user_w
-        len_check2 = len_additional_user_p == len_additional_user_w
-        # Check if the additional user point lists are consistent
-        if len_check1 and len_check2:
-            is_user_point_list_consistent = True
-
-        # Check v1_min_max_list and v2_min_max_list
-        toml_check_min_max_value_multi_list = (
-            [(toml_circuit.output_range.v1_min_max_list, "v1_min_max_list",
-              toml_circuit.sampling.v1_additional_user_point_list, "v1_additional_user_point_list"),
-             (toml_circuit.output_range.v2_min_max_list, "v2_min_max_list",
-              toml_circuit.sampling.v2_additional_user_point_list, "v2_additional_user_point_list")])
-
-        # Perform the boundary check
-        for check_parameter in toml_check_min_max_value_multi_list:
-            is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-                0, 1500, check_parameter[0], f"output_range: {check_parameter[1]}", c_flag.check_exclusive, c_flag.check_exclusive)
-            if not is_check_passed:
-                inconsistency_report = inconsistency_report + issue_report
-                is_consistent = False
-            elif is_user_point_list_consistent:
-                for voltage_value in check_parameter[2]:
-                    is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                        check_parameter[0][0], check_parameter[0][1], voltage_value,
-                        f"sampling: {check_parameter[3]}", c_flag.check_inclusive, c_flag.check_inclusive)
-                    if not is_check_passed:
-                        inconsistency_report = inconsistency_report + issue_report
-                        is_consistent = False
-            else:
-                act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
-                act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
-                act_report = act_report + f"    p_additional_user_point_list ({len_additional_user_p}) and "
-                act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
-                act_report = act_report + "needs to be the same!\n)"
-                inconsistency_report = (inconsistency_report + act_report)
-                is_consistent = False
-
-        # Perform the boundary check  of p_min_max_list
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-            -100000, 100000, toml_circuit.output_range.p_min_max_list, "output_range: p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-        elif is_user_point_list_consistent:
-            for power_value in toml_circuit.sampling.p_additional_user_point_list:
-                is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                    toml_circuit.output_range.p_min_max_list[0], toml_circuit.output_range.p_min_max_list[1], power_value,
-                    "sampling: p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
-                if not is_check_passed:
-                    inconsistency_report = inconsistency_report + issue_report
-                    is_consistent = False
-
-        # Remaining Sampling parameter check
-        group_name = "sampling"
-        # Check additional_user_weighting_point_list
-        # Initialize variable
-        weighting_sum: float = 0.0
-        # Perform the boundary check  of p_min_max_list
-        for weight_value in toml_circuit.sampling.additional_user_weighting_point_list:
-            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
-            if not is_check_passed:
-                inconsistency_report = inconsistency_report + issue_report
-                is_consistent = False
-
-            weighting_sum = weighting_sum + weight_value
-
-        # Check the sum
-        if weighting_sum > 1:
-            is_consistent = False
-            act_report = "    The sum of parameter entries of parameter additional_user_weighting_point_list "
-            act_report = act_report + f"{weighting_sum} has to be less equal 1!\n"
-            inconsistency_report = inconsistency_report + act_report
-
-        # Perform the boundary check for sampling points
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-            0, 1, float(toml_circuit.sampling.sampling_points),
-            f"{group_name}: sampling_points", c_flag.check_exclusive, c_flag.check_ignore)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-
-        # Check sampling random seed
-        # Perform the boundary check for number_filtered_designs
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-            0, 1, float(toml_circuit.sampling.sampling_random_seed),
-            f"{group_name}: sampling_random_seed", c_flag.check_inclusive, c_flag.check_ignore)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-
         # Perform filter_distance value check
         group_name = "filter_distance"
         # Perform the boundary check for number_filtered_designs
@@ -343,10 +242,13 @@ class CircuitOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_circuit_optimization(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> bool:
+    def initialize_circuit_optimization(self, toml_general: tc.TomlGeneral, toml_circuit: tc.TomlCircuitParetoDabDesign,
+                                        toml_prog_flow: tc.FlowControl) -> bool:
         """
         Initialize the circuit_dto for circuit optimization.
 
+        :param toml_general: toml file class for the general parameters
+        :type toml_general: tc.TomlGeneral
         :param toml_circuit: toml file class for the circuit
         :type toml_circuit: tc.TomlCircuitParetoDabDesign
         :param toml_prog_flow: toml file class for the flow control
@@ -355,7 +257,7 @@ class CircuitOptimization:
         :rtype: bool
         """
         # Verify optimization parameter
-        is_check_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit)
+        is_check_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit)
         if not is_check_consistent:
             raise ValueError(
                 "Circuit optimization parameter are inconsistent!\n",
@@ -375,9 +277,9 @@ class CircuitOptimization:
         )
 
         output_range = circuit_dtos.CircuitOutputRange(
-            v1_min_max_list=toml_circuit.output_range.v1_min_max_list,
-            v2_min_max_list=toml_circuit.output_range.v2_min_max_list,
-            p_min_max_list=toml_circuit.output_range.p_min_max_list)
+            v1_min_max_list=toml_general.output_range.v1_min_max_list,
+            v2_min_max_list=toml_general.output_range.v2_min_max_list,
+            p_min_max_list=toml_general.output_range.p_min_max_list)
 
         filter = circuit_dtos.CircuitFilter(
             number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
@@ -387,17 +289,17 @@ class CircuitOptimization:
         # None can not be handled by toml correct, so this is a workaround. By default, "random" in toml equals "None"
         local_sampling_random_seed: int | None = None
         # In case of a concrete seed was given, overwrite None with the given one
-        if isinstance(toml_circuit.sampling.sampling_random_seed, int):
-            local_sampling_random_seed = int(toml_circuit.sampling.sampling_random_seed)
+        if isinstance(toml_general.sampling.sampling_random_seed, int):
+            local_sampling_random_seed = int(toml_general.sampling.sampling_random_seed)
 
         sampling = circuit_dtos.CircuitSampling(
-            sampling_method=toml_circuit.sampling.sampling_method,
-            sampling_points=toml_circuit.sampling.sampling_points,
+            sampling_method=toml_general.sampling.sampling_method,
+            sampling_points=toml_general.sampling.sampling_points,
             sampling_random_seed=local_sampling_random_seed,
-            v1_additional_user_point_list=toml_circuit.sampling.v1_additional_user_point_list,
-            v2_additional_user_point_list=toml_circuit.sampling.v2_additional_user_point_list,
-            p_additional_user_point_list=toml_circuit.sampling.p_additional_user_point_list,
-            additional_user_weighting_point_list=toml_circuit.sampling.additional_user_weighting_point_list
+            v1_additional_user_point_list=toml_general.sampling.v1_additional_user_point_list,
+            v2_additional_user_point_list=toml_general.sampling.v2_additional_user_point_list,
+            p_additional_user_point_list=toml_general.sampling.p_additional_user_point_list,
+            additional_user_weighting_point_list=toml_general.sampling.additional_user_weighting_point_list
         )
 
         self._dab_config = circuit_dtos.CircuitParetoDabDesign(

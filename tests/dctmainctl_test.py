@@ -59,6 +59,7 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
     summary=tc.Summary(calculation_mode="new",
                        subdirectory="dummy"),
     configuration_data_files=tc.ConfigurationDataFiles(
+        general_configuration_file="dummy",
         circuit_configuration_file="dummy",
         inductor_configuration_file="dummy",
         transformer_configuration_file="dummy",
