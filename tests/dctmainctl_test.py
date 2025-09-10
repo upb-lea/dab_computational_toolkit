@@ -1315,18 +1315,10 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase,
     # List entries for values and list (exception *in between for values):
     # at lower boundary | at upper boundary | in between | minimum > maximum* | too few entries*
     # too many entries* | exceed the lower limit | exceed the upper limit
-    int_min_max_list_configuration_gt1000_lt1e7: list[list[int]] = (
-        [[1001, 1001], [999999, 999999], [2000, 500000], [5000, 2500], [2000], [2000, 2500, 3000], [10, 3222], [2000, 13400000]])
-    float_min_max_list_configuration_gt0_lt1: list[list[float]] = (
-        [[1e-17, 1e-17], [0.9991, 0.9991], [0.34, 0.77], [0.74, 0.73], [0.33], [0.33, 0.66, 0.99], [-0.1, 0.88], [0.55, 1.0]])
-    float_min_max_list_configuration_gt0_lt100: list[list[float]] = (
-        [[1e-18, 1e-18], [99.8, 99.8], [34, 77], [90, 67], [33], [33, 66, 99], [0, 88], [55, 100]])
     float_min_max_list_configuration_gt0_lt1500: list[list[float]] = (
         [[1e-18, 1e-18], [1499.9, 1499.9], [1000, 1300], [1000, 300], [500], [600, 1000, 1300], [-10, 1200], [40.5, 1500]])
     float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
         [[-9.9999, -9.9999], [9.999e4, 9.9999e4], [2000, 5e4], [2e2, 50], [2000], [2000, 2.5e4, 3e4], [-1.01e5, 3222], [2000, -1.01e5]])
-    float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, 4.55e-4, 8.98e-14, 6.6e-12, -1e-3, 1.2e-3]
-    float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 99, 45, 67, 9.9e-3, 100.15]
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
     int_value_ge0 = [0, 181877627, 1111, 4332, 4889393, 334544, -1, 10000]
 

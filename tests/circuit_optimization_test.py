@@ -269,29 +269,28 @@ def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
     return result_list
 
 # test parameter list (counter)
-@pytest.mark.parametrize("test_index, test_type, u_points_test_index, u_points_test_type", [
+@pytest.mark.parametrize("test_index, test_type", [
     # Valid test case
     # Test value at lower boundary
-    (0, TestCase.LowerBoundary, -1, TestCase.InBetween),
+    (0, TestCase.LowerBoundary),
     # Test value at lower boundary
-    (1, TestCase.UpperBoundary, -1, TestCase.InBetween),
+    (1, TestCase.UpperBoundary),
     # Test value in between
-    (2, TestCase.InBetween, -1, TestCase.InBetween),
+    (2, TestCase.InBetween),
     # Failure test case
     # Test when minimum > maximum ( Only for minimum maximum list)
-    (3, TestCase.BoundaryInconsistent, -1, TestCase.InBetween),
+    (3, TestCase.BoundaryInconsistent),
     # Test when the list has got too few entries ( Only for minimum maximum list)
-    (4, TestCase.TooLessEntries, -1, TestCase.InBetween),
+    (4, TestCase.TooLessEntries),
     # Test when the list has got too many entries ( Only for minimum maximum list)
-    (5, TestCase.TooMuchEntries, -1, TestCase.InBetween),
+    (5, TestCase.TooMuchEntries),
     # Test when the lower limit is exceeded
-    (6, TestCase.ExceedLowerLimit, -1, TestCase.InBetween),
+    (6, TestCase.ExceedLowerLimit),
     # Test when the lower limit is exceeded
-    (7, TestCase.ExceedUpperLimit, -1, TestCase.InBetween),
+    (7, TestCase.ExceedUpperLimit),
 ])
 # Unit test function
-def test_verify_optimization_parameter(get_transistor_name_list: list[str], test_index: int, test_type: TestCase,
-                                       u_points_test_index: int, u_points_test_type: TestCase) -> None:
+def test_verify_optimization_parameter(get_transistor_name_list: list[str], test_index: int, test_type: TestCase) -> None:
     """Test the method load_toml_file.
 
     :param get_transistor_name_list: List of transistor names
@@ -300,10 +299,6 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     :type  test_index: int
     :param test_type: Type of performed test (not valid for additional point list test)
     :type  test_type: TestCase
-    :param u_points_test_index: Test index of the used list element of the additional point list
-    :type  u_points_test_index: int
-    :param u_points_test_type: Type of performed test for additional point list
-    :type  u_points_test_type: TestCase
     """
     # Variable declaration
     # Called only on time while parametric test
@@ -333,30 +328,9 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
         [[1e-17, 1e-17], [0.9991, 0.9991], [0.34, 0.77], [0.74, 0.73], [0.33], [0.33, 0.66, 0.99], [-0.1, 0.88], [0.55, 1.0]])
     float_min_max_list_configuration_gt0_lt100: list[list[float]] = (
         [[1e-18, 1e-18], [99.8, 99.8], [34, 77], [90, 67], [33], [33, 66, 99], [0, 88], [55, 100]])
-    float_min_max_list_configuration_gt0_lt1500: list[list[float]] = (
-        [[1e-18, 1e-18], [1499.9, 1499.9], [1000, 1300], [1000, 300], [500], [600, 1000, 1300], [-10, 1200], [40.5, 1500]])
-    float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
-        [[-9.9999, -9.9999], [9.999e4, 9.9999e4], [2000, 5e4], [2e2, 50], [2000], [2000, 2.5e4, 3e4], [-1.01e5, 3222], [2000, -1.01e5]])
     float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, 4.55e-4, 8.98e-14, 6.6e-12, -1e-3, 1.2e-3]
     float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 99, 45, 67, 9.9e-3, 100.15]
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
-    int_value_ge0 = [0, 181877627, 1111, 4332, 4889393, 334544, -1, 10000]
-
-    # Initialize the general parameters
-    test_general_parameter: tc.TomlGeneral = tc.TomlGeneral(
-        output_range=tc.TomlOutputRange(
-            v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
-            v2_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
-            p_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
-        sampling=dct.TomlSampling(
-            sampling_method=SamplingEnum.meshgrid,
-            sampling_points=int_value_gt0[test_index],
-            sampling_random_seed=int_value_ge0[test_index],
-            v1_additional_user_point_list=[],
-            v2_additional_user_point_list=[],
-            p_additional_user_point_list=[],
-            additional_user_weighting_point_list=[]),
-    )
 
     # Initialize the circuit parameters
     test_circuit_parameter: tc.TomlCircuitParetoDabDesign = tc.TomlCircuitParetoDabDesign(
@@ -388,49 +362,6 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
         # No error and empty report string
         assert error_report_circuit == ""
         assert is_circuit_consistent
-
-    elif test_type == TestCase.InBetween:
-        # Check additional point test type
-        if u_points_test_type == TestCase.LowerBoundary or u_points_test_type == TestCase.UpperBoundary or u_points_test_type == TestCase.InBetween:
-            # No error and empty report string
-            assert error_report_circuit == ""
-            assert is_circuit_consistent
-
-        elif u_points_test_type == TestCase.BoundaryInconsistent:
-            # Check if not any minimum-maximum list parameters is identified
-            for parameter_name in min_max_list_name_list:
-                assert parameter_name not in error_report_circuit
-
-            # Check if not any value_name_list parameter is identified
-            for parameter_name in value_name_list:
-                assert parameter_name not in error_report_circuit
-
-            # Error is indicated
-            assert not is_circuit_consistent
-
-        elif u_points_test_type == TestCase.ExceedLowerLimit:
-            # Check if not any minimum-maximum list parameters is identified
-            for parameter_name in min_max_list_name_list:
-                assert parameter_name not in error_report_circuit
-
-            # Check if not any value_name_list parameter is identified
-            for parameter_name in value_name_list:
-                assert parameter_name not in error_report_circuit
-
-            # Error is indicated
-            assert not is_circuit_consistent
-
-        elif u_points_test_type == TestCase.ExceedUpperLimit:
-            # Check if not any minimum-maximum list parameters is identified
-            for parameter_name in min_max_list_name_list:
-                assert parameter_name not in error_report_circuit
-
-            # Check if not any value_name_list parameter is identified
-            for parameter_name in value_name_list:
-                assert parameter_name not in error_report_circuit
-
-            # Error is indicated
-            assert not is_circuit_consistent
 
     elif test_type == TestCase.ExceedUpperLimit:
         # Check if all minimum-maximum list parameters are identified
@@ -527,8 +458,7 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     (3, TestCase.ExceedLowerLimit, True),
 ])
 # Unit test function
-def test_initialize_circuit_optimization(get_transistor_name_list: list[str], test_index: int, test_type: TestCase,
-                                         is_error: bool) -> None:
+def test_initialize_circuit_optimization(get_transistor_name_list: list[str], test_index: int, test_type: TestCase, is_error: bool) -> None:
     """Test the method initialize_circuit_optimization.
 
     :param get_transistor_name_list: List of transistor names
