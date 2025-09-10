@@ -1366,6 +1366,149 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase,
         # In case of additional user point test, the test type for remaining parameter must be in_between
         assert test_type == TestCase.InBetween
 
+    # Perform the test for the general parameters
+    # Create boundary list from minimum-maximum list with assigned parameters
+    min_max_list_name_list_general: list[str] = ["v1_min_max_list", "v2_min_max_list", "p_min_max_list"]
+    value_name_list_general: list[str] = []
+    value_name_low_limit_list_general: list[str] = ["sampling_points", "sampling_random_seed"]
+    u_point_name_list: list[str] = (["v1_additional_user_point_list", "v2_additional_user_point_list",
+                                     "p_additional_user_point_list", "additional_user_weighting_point_list"])
+
+    is_consistent, error_report = dct.DctMainCtl.verify_general_parameters(test_general_parameter)
+
+    if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary:
+        # No error and empty report string
+        assert error_report == ""
+        assert is_consistent
+
+    elif test_type == TestCase.InBetween:
+        # Check additional point test type
+        if u_points_test_type == TestCase.LowerBoundary or u_points_test_type == TestCase.UpperBoundary or u_points_test_type == TestCase.InBetween:
+            # No error and empty report string
+            assert error_report == ""
+            assert is_consistent
+
+        elif u_points_test_type == TestCase.BoundaryInconsistent:
+            # Check if not any minimum-maximum list parameters is identified
+            for parameter_name in min_max_list_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if not any value_name_list_general parameter is identified
+            for parameter_name in value_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if all additional user point list parameters are identified
+            for parameter_name in u_point_name_list:
+                assert parameter_name in error_report
+
+            # Error is indicated
+            assert not is_consistent
+
+        elif u_points_test_type == TestCase.ExceedLowerLimit:
+            # Check if not any minimum-maximum list parameters is identified
+            for parameter_name in min_max_list_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if not any value_name_list_general parameter is identified
+            for parameter_name in value_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if all additional user point list parameters are identified
+            for parameter_name in u_point_name_list:
+                assert parameter_name in error_report
+            # Error is indicated
+            assert not is_consistent
+
+        elif u_points_test_type == TestCase.ExceedUpperLimit:
+            # Check if not any minimum-maximum list parameters is identified
+            for parameter_name in min_max_list_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if not any value_name_list_general parameter is identified
+            for parameter_name in value_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if all additional user point list parameters are identified
+            for parameter_name in u_point_name_list:
+                assert parameter_name in error_report
+            # Error is indicated
+            assert not is_consistent
+
+    elif test_type == TestCase.ExceedUpperLimit:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if all value_name_list_general parameters are identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.ExceedLowerLimit:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if all value_name_list_general list parameters are identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if all value_name_low_limit_list_general parameters are identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.TooLessEntries:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_list_general parameter is identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name not in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.TooMuchEntries:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_list_general parameter is identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name not in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.BoundaryInconsistent:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_list_general parameter is identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name not in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
 
 #########################################################################################################
 # test of _request_pareto_front
