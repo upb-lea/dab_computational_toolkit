@@ -14,8 +14,8 @@ from numpy.testing import assert_array_equal
 import dct.circuit_optimization as test_circuit
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
-from dct import SamplingEnum
 import transistordatabase as tdb
+from dct import SamplingEnum
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -344,11 +344,11 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
 
     # Initialize the general parameters
     test_general_parameter: tc.TomlGeneral = tc.TomlGeneral(
-        output_range = tc.TomlOutputRange(
+        output_range=tc.TomlOutputRange(
             v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
             v2_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
             p_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
-        sampling = dct.TomlSampling(
+        sampling=dct.TomlSampling(
             sampling_method=SamplingEnum.meshgrid,
             sampling_points=int_value_gt0[test_index],
             sampling_random_seed=int_value_ge0[test_index],
@@ -356,7 +356,7 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
             v2_additional_user_point_list=[],
             p_additional_user_point_list=[],
             additional_user_weighting_point_list=[]),
-        )
+    )
 
     # Initialize the circuit parameters
     test_circuit_parameter: tc.TomlCircuitParetoDabDesign = tc.TomlCircuitParetoDabDesign(
@@ -507,9 +507,6 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
         # Error is indicated
         assert not is_circuit_consistent
 ################
-
-
-
 
 #########################################################################################################
 # test of initialize_circuit_optimization
