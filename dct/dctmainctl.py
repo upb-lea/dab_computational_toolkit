@@ -40,6 +40,7 @@ from dct.server_ctl import RequestCmd
 from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
+from dct.boundary_check import CheckCondition as c_flag
 
 logger = logging.getLogger(__name__)
 
@@ -864,6 +865,121 @@ class DctMainCtl:
             with self._key_input_lock:
                 self._key_input_string = key_input_string
 
+    @staticmethod
+    def verify_general_parameters(toml_general: tc.TomlGeneral) -> tuple[bool, str]:
+        """Verify the input parameter ranges.
+
+        :param toml_general: toml general configuration
+        :type toml_general: dct.TomlGeneral
+        :return: True, if the configuration was consistent
+        :rtype: bool
+        """
+        inconsistency_report: str = ""
+        is_consistent: bool = True
+        toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
+
+        # Check v1_min_max_list and v2_min_max_list
+        toml_check_min_max_value_multi_list = (
+            [(toml_general.output_range.v1_min_max_list, "v1_min_max_list",
+              toml_general.sampling.v1_additional_user_point_list, "v1_additional_user_point_list"),
+             (toml_general.output_range.v2_min_max_list, "v2_min_max_list",
+              toml_general.sampling.v2_additional_user_point_list, "v2_additional_user_point_list")])
+
+        # Output range parameter and sampling parameter check
+        group_name = "output_range or sampling"
+        # Init is_user_point_list_consistent-flag
+        is_user_point_list_consistent = False
+        # Evaluate list length
+        len_additional_user_v1 = len(toml_general.sampling.v1_additional_user_point_list)
+        len_additional_user_v2 = len(toml_general.sampling.v2_additional_user_point_list)
+        len_additional_user_p = len(toml_general.sampling.p_additional_user_point_list)
+        len_additional_user_w = len(toml_general.sampling.additional_user_weighting_point_list)
+        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_p == len_additional_user_w
+        len_check2 = len_additional_user_p == len_additional_user_w
+        # Check if the additional user point lists are consistent
+        if len_check1 and len_check2:
+            is_user_point_list_consistent = True
+
+        # Perform the boundary check
+        for check_parameter in toml_check_min_max_value_multi_list:
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+                0, 1500, check_parameter[0], f"output_range: {check_parameter[1]}", c_flag.check_exclusive, c_flag.check_exclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+            elif is_user_point_list_consistent:
+                for voltage_value in check_parameter[2]:
+                    is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                        check_parameter[0][0], check_parameter[0][1], voltage_value,
+                        f"sampling: {check_parameter[3]}", c_flag.check_inclusive, c_flag.check_inclusive)
+                    if not is_check_passed:
+                        inconsistency_report = inconsistency_report + issue_report
+                        is_consistent = False
+            else:
+                act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
+                act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
+                act_report = act_report + f"    p_additional_user_point_list ({len_additional_user_p}) and "
+                act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
+                act_report = act_report + "needs to be the same!\n)"
+                inconsistency_report = (inconsistency_report + act_report)
+                is_consistent = False
+
+        # Perform the boundary check  of p_min_max_list
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            -100000, 100000, toml_general.output_range.p_min_max_list, "output_range: p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+        elif is_user_point_list_consistent:
+            for power_value in toml_general.sampling.p_additional_user_point_list:
+                is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                    toml_general.output_range.p_min_max_list[0], toml_general.output_range.p_min_max_list[1], power_value,
+                    "sampling: p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                if not is_check_passed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_consistent = False
+
+        # Remaining Sampling parameter check
+        group_name = "sampling"
+        # Check additional_user_weighting_point_list
+        # Initialize variable
+        weighting_sum: float = 0.0
+        # Perform the boundary check  of p_min_max_list
+        for weight_value in toml_general.sampling.additional_user_weighting_point_list:
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
+            weighting_sum = weighting_sum + weight_value
+
+        # Check the sum
+        if weighting_sum > 1:
+            is_consistent = False
+            act_report = "    The sum of parameter entries of parameter additional_user_weighting_point_list "
+            act_report = act_report + f"{weighting_sum} has to be less equal 1!\n"
+            inconsistency_report = inconsistency_report + act_report
+
+        # Perform the boundary check for sampling points
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, float(toml_general.sampling.sampling_points),
+            f"{group_name}: sampling_points", c_flag.check_exclusive, c_flag.check_ignore)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Check sampling random seed
+        # Perform the boundary check for number_filtered_designs
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, float(toml_general.sampling.sampling_random_seed),
+            f"{group_name}: sampling_random_seed", c_flag.check_inclusive, c_flag.check_ignore)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        return is_consistent, inconsistency_report
+
     def run_optimization_from_toml_configurations(self, workspace_path: str) -> None:
         """Perform the main program.
 
@@ -928,7 +1044,6 @@ class DctMainCtl:
                                    transformer=dct.DebugTransformer(
                                        number_reluctance_working_point_max=1,
                                        number_fem_working_point_max=1))
-
         # --------------------------
         # Flow control
         # --------------------------
@@ -992,6 +1107,24 @@ class DctMainCtl:
          self._transformer_list, self._heat_sink_list, self._summary_list) = self.get_initialization_queue_data(toml_prog_flow)
 
         # --------------------------
+        # General toml control
+        # --------------------------
+        logger.debug("Read general toml control")
+
+        # Init circuit configuration
+        is_general_toml_loaded, dict_general_toml = self.load_toml_file(toml_prog_flow.configuration_data_files.general_configuration_file)
+        toml_general = tc.TomlGeneral(**dict_general_toml)
+
+        if not is_general_toml_loaded:
+            raise ValueError(f"General toml configuration file: {toml_prog_flow.configuration_data_files.general_configuration_file} does not exist.")
+
+        # Verify general parameters
+        is_general_toml_consistent, general_issue_report = DctMainCtl.verify_general_parameters(toml_general)
+        if not is_general_toml_consistent:
+            raise ValueError("General parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.general_configuration_file} are inconsistent!\n", general_issue_report)
+
+        # --------------------------
         # Circuit flow control
         # --------------------------
         logger.debug("Read circuit flow control")
@@ -1003,8 +1136,8 @@ class DctMainCtl:
         if not is_circuit_loaded:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
-        # Verify optimization parameter
-        is_consistent, issue_report = dct.CircuitOptimization.verify_optimization_parameter(toml_circuit, toml_debug.general.is_debug)
+        # Verify circuit parameters
+        is_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
         if not is_consistent:
             raise ValueError("Circuit optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
@@ -1165,7 +1298,7 @@ class DctMainCtl:
 
             # Allocate and initialize circuit configuration
             self._circuit_optimization = CircuitOptimization()
-            self._circuit_optimization.initialize_circuit_optimization(toml_circuit, toml_prog_flow)
+            self._circuit_optimization.initialize_circuit_optimization(toml_general, toml_circuit, toml_prog_flow)
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.calculation_mode == "new":

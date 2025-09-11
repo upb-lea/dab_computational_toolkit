@@ -109,6 +109,7 @@ class Summary(BaseModel):
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
 
+    general_configuration_file: str
     circuit_configuration_file: str
     inductor_configuration_file: str
     transformer_configuration_file: str
@@ -128,6 +129,32 @@ class FlowControl(BaseModel):
     summary: Summary
     configuration_data_files: ConfigurationDataFiles
 
+# ######################################################
+# general
+# ######################################################
+class TomlOutputRange(BaseModel):
+    """Definition of the DAB operating area."""
+
+    v1_min_max_list: list[float]
+    v2_min_max_list: list[float]
+    p_min_max_list: list[float]
+
+class TomlSampling(BaseModel):
+    """Definition of the sampling method."""
+
+    sampling_method: SamplingEnum
+    sampling_points: int
+    sampling_random_seed: int | Literal["random"]
+    v1_additional_user_point_list: list[float]
+    v2_additional_user_point_list: list[float]
+    p_additional_user_point_list: list[float]
+    additional_user_weighting_point_list: list[float]
+
+class TomlGeneral(BaseModel):
+    """Definition of the general parameters affecting mostly all kind of calculations."""
+
+    output_range: TomlOutputRange
+    sampling: TomlSampling
 
 # ######################################################
 # circuit
@@ -147,24 +174,6 @@ class TomlCircuitParetoDesignSpace(BaseModel):
     c_par_1: float
     c_par_2: float
 
-class TomlCircuitOutputRange(BaseModel):
-    """Definition of the DAB operating area."""
-
-    v1_min_max_list: list[float]
-    v2_min_max_list: list[float]
-    p_min_max_list: list[float]
-
-class TomlSampling(BaseModel):
-    """Definition of the sampling method."""
-
-    sampling_method: SamplingEnum
-    sampling_points: int
-    sampling_random_seed: int | Literal["random"]
-    v1_additional_user_point_list: list[float]
-    v2_additional_user_point_list: list[float]
-    p_additional_user_point_list: list[float]
-    additional_user_weighting_point_list: list[float]
-
 class TomlCircuitFilterDistance(BaseModel):
     """Toml checker class for CircuitFilterDistance."""
 
@@ -175,8 +184,6 @@ class TomlCircuitParetoDabDesign(BaseModel):
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
 
     design_space: TomlCircuitParetoDesignSpace
-    output_range: TomlCircuitOutputRange
-    sampling: TomlSampling
     filter_distance: TomlCircuitFilterDistance
 
 # ######################################################

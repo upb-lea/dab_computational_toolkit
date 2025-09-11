@@ -1,0 +1,18 @@
+[output_range]
+    v1_min_max_list=[690, 710]
+    v2_min_max_list=[175, 295]
+    p_min_max_list=[-2000, 2200]
+
+
+[sampling]
+    sampling_method="latin_hypercube"
+    sampling_points=2
+    sampling_random_seed=10
+    v1_additional_user_point_list=[]
+    v2_additional_user_point_list=[]
+    p_additional_user_point_list=[]
+    additional_user_weighting_point_list=[]
+
+[misc]
+    min_efficiency_percent=80
+    control_board_volume=10e-6

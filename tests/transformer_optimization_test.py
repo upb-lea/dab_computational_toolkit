@@ -28,8 +28,8 @@ class TestCase(Enum):
     InBetween = 2               # Test value in between
     # Failure test case
     BoundaryInconsistent = 3    # Test when minimum > maximum ( Only for minimum maximum list)
-    TooLessEntries = 4          # Test when the list has got too less entries ( Only for minimum maximum list)
-    TooMuchEntries = 5          # Test when the list has got too much entries ( Only for minimum maximum list)
+    TooLessEntries = 4          # Test when the list has got too few entries ( Only for minimum maximum list)
+    TooMuchEntries = 5          # Test when the list has got too many entries ( Only for minimum maximum list)
     ExceedLowerLimit = 6        # Test when the lower limit is exceeded
     ExceedUpperLimit = 7        # Test when the lower limit is exceeded
     # Special test of additional point list: Valid test case
