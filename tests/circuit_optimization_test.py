@@ -286,7 +286,7 @@ def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
     (5, TestCase.TooMuchEntries),
     # Test when the lower limit is exceeded
     (6, TestCase.ExceedLowerLimit),
-    # Test when the lower limit is exceeded
+    # Test when the upper limit is exceeded
     (7, TestCase.ExceedUpperLimit),
 ])
 # Unit test function
