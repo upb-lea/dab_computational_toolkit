@@ -64,6 +64,7 @@ class ParetoPlots:
         # make sure to not generate a filename.pdf.pdf (twice ".pdf").
         fig_name = fig_name.replace(".pdf", "")
         plt.savefig(f"{fig_name}.pdf")
+        plt.savefig(f"{fig_name}.png")
 
     @staticmethod
     def read_circuit_numbers_from_filestructure(toml_prog_flow: dct.FlowControl) -> list[str]:
