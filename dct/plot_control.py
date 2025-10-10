@@ -66,7 +66,7 @@ class ParetoPlots:
         fig_name = fig_name.replace(".pdf", "")
         plt.savefig(f"{fig_name}.pdf")
         plt.savefig(f"{fig_name}.png")
-        # Save the figure as pickle filetype, for later view
+        # Save the figure as pickle file type, for later view
         with open(f"{fig_name}.pkl", "wb") as f:
             pickle.dump(fig, f)
 
