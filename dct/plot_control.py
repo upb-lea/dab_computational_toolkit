@@ -2,6 +2,7 @@
 
 # python libraries
 import os
+import pickle
 
 # 3rd party libraries
 from matplotlib import pyplot as plt
@@ -65,6 +66,9 @@ class ParetoPlots:
         fig_name = fig_name.replace(".pdf", "")
         plt.savefig(f"{fig_name}.pdf")
         plt.savefig(f"{fig_name}.png")
+        # Save the figure as pickle filetype, for later view
+        with open(f"{fig_name}.pkl", "wb") as f:
+            pickle.dump(fig, f)
 
     @staticmethod
     def read_circuit_numbers_from_filestructure(toml_prog_flow: dct.FlowControl) -> list[str]:

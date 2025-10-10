@@ -101,7 +101,8 @@ class DctMainCtl:
                 f'hct=={version("hct")}\n'
                 f'mag-net-hub=={version("mag-net-hub")}\n'
                 f'numpy=={version("numpy")}\n'
-                f'pandas=={version("pandas")}\n')
+                f'pandas=={version("pandas")}\n'
+                f'matplotlib=={version("matplotlib")}\n')
 
     @staticmethod
     def set_up_folder_structure(toml_prog_flow: tc.FlowControl) -> None:
