@@ -18,7 +18,7 @@ class ParetoPlots:
 
     @staticmethod
     def generate_pdf_pareto(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
-                            x_label: str, y_label: str, label_list: list[str | None], fig_name: str,
+                            x_label: str, y_label: str, label_list: list[str | None], fig_name_path: str,
                             xlim: list | None = None, ylim: list | None = None) -> None:
         """
         Generate multiple Pareto plot in one PDF file.
@@ -36,8 +36,8 @@ class ParetoPlots:
         :type y_label: str
         :param label_list: list of different Pareto plot labels in a legend
         :type label_list: list[str | None]
-        :param fig_name: filename, will be saved as pdf
-        :type fig_name: str
+        :param fig_name_path: filename, will be saved as pdf
+        :type fig_name_path: str
         :param xlim: x-axis limitation [x_min, x_max]
         :type xlim: list[float]
         :param ylim: y-axis limitation [y_min, y_max]
@@ -63,11 +63,19 @@ class ParetoPlots:
         plt.grid()
         plt.tight_layout()
         # make sure to not generate a filename.pdf.pdf (twice ".pdf").
-        fig_name = fig_name.replace(".pdf", "")
-        plt.savefig(f"{fig_name}.pdf")
-        plt.savefig(f"{fig_name}.png")
+        fig_name_path = fig_name_path.replace(".pdf", "")
+        path, fig_name = os.path.split(fig_name_path)
+
+        if not os.path.exists(f"{path}/pdf"):
+            os.mkdir(f"{path}/pdf")
+        if not os.path.exists(f"{path}/png"):
+            os.mkdir(f"{path}/png")
+        if not os.path.exists(f"{path}/pkl"):
+            os.mkdir(f"{path}/pkl")
+        plt.savefig(f"{path}/pdf/{fig_name}.pdf")
+        plt.savefig(f"{path}/png/{fig_name}.png")
         # Save the figure as pickle file type, for later view
-        with open(f"{fig_name}.pkl", "wb") as f:
+        with open(f"{path}/pkl/{fig_name}.pkl", "wb") as f:
             pickle.dump(fig, f)
 
     @staticmethod
@@ -109,7 +117,7 @@ class ParetoPlots:
 
         ParetoPlots.generate_pdf_pareto([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
                                         x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
-                                        label_list=[None], fig_name=fig_name)
+                                        label_list=[None], fig_name_path=fig_name)
 
     @staticmethod
     def plot_inductor_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -162,7 +170,7 @@ class ParetoPlots:
 
             ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                            fig_name=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+                                            fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_transformer_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -214,7 +222,7 @@ class ParetoPlots:
 
             ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                            fig_name=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+                                            fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_heat_sink_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -266,7 +274,7 @@ class ParetoPlots:
         ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list, alpha=0.5,
                                         x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
                                         label_list=legend_list,
-                                        fig_name=fig_name)
+                                        fig_name_path=fig_name)
 
     @staticmethod
     def plot_summary(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -305,4 +313,4 @@ class ParetoPlots:
 
         ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
                                         x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
-                                        fig_name=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+                                        fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
