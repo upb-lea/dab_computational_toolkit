@@ -17,9 +17,9 @@ class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
 
     @staticmethod
-    def generate_pdf_pareto(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
-                            x_label: str, y_label: str, label_list: list[str | None], fig_name_path: str,
-                            xlim: list | None = None, ylim: list | None = None) -> None:
+    def generate_pareto_plot(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
+                             x_label: str, y_label: str, label_list: list[str | None], fig_name_path: str,
+                             xlim: list | None = None, ylim: list | None = None) -> None:
         """
         Generate multiple Pareto plot in one PDF file.
 
@@ -115,9 +115,9 @@ class ParetoPlots:
         else:
             fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "circuit")
 
-        ParetoPlots.generate_pdf_pareto([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
-                                        x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
-                                        label_list=[None], fig_name_path=fig_name)
+        ParetoPlots.generate_pareto_plot([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
+                                         x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
+                                         label_list=[None], fig_name_path=fig_name)
 
     @staticmethod
     def plot_inductor_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -168,9 +168,9 @@ class ParetoPlots:
             else:
                 fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, f"inductor_c{circuit_number}")
 
-            ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
-                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                            fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
+                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
+                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_transformer_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -220,9 +220,9 @@ class ParetoPlots:
             else:
                 fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, f"transformer_c{circuit_number}")
 
-            ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
-                                            y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                            fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
+                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
+                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_heat_sink_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -271,10 +271,10 @@ class ParetoPlots:
             fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "heat_sink")
 
         # plot all the different heat sink areas
-        ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, color_list, alpha=0.5,
-                                        x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
-                                        label_list=legend_list,
-                                        fig_name_path=fig_name)
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha=0.5,
+                                         x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
+                                         label_list=legend_list,
+                                         fig_name_path=fig_name)
 
     @staticmethod
     def plot_summary(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
@@ -311,6 +311,6 @@ class ParetoPlots:
         y_scale_min = 0.9 * df_filtered["total_mean_loss"].min()
         y_scale_max = 1.1 * df_filtered["total_mean_loss"].max()
 
-        ParetoPlots.generate_pdf_pareto(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
-                                        x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
-                                        fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
+                                         x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
+                                         fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
