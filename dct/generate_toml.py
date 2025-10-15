@@ -81,6 +81,7 @@ def generate_flow_control_toml(working_directory: str) -> None:
         subdirectory = "06_summary"
     
     [configuration_data_files]
+        general_configuration_file = "DabGeneralConf.toml"
         circuit_configuration_file = "DabCircuitConf.toml"
         inductor_configuration_file = "DabInductorConf.toml"
         transformer_configuration_file = "DabTransformerConf.toml"
