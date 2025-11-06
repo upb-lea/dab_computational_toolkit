@@ -63,7 +63,9 @@ class ParetoPlots:
         plt.tight_layout()
         # make sure to not generate a filename.pdf.pdf (twice ".pdf").
         fig_name = fig_name.replace(".pdf", "")
-        plt.savefig(f"{fig_name}.pdf")
+        # Debug: Comment out
+        # plt.savefig(f"{fig_name}.pdf")
+        plt.show()
 
     @staticmethod
     def read_circuit_numbers_from_filestructure(toml_prog_flow: dct.FlowControl) -> list[str]:
@@ -103,7 +105,9 @@ class ParetoPlots:
             fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "circuit")
 
         ParetoPlots.generate_pdf_pareto([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
-                                        x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
+                                        # x_label=r"$Cost value_\mathrm{Volume proxy or I_ripple}$", y_label=r"$P_\mathrm{T_loss}$ / W",
+                                        x_label=r"$VolumeProxy / \mathrm{cm^3}$",
+                                        y_label=r"$P_\mathrm{T_{loss}}$ / W",
                                         label_list=[None], fig_name=fig_name)
 
     @staticmethod

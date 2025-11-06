@@ -17,6 +17,31 @@ def full_angle_waveform_from_angles(sorted_angles: np.ndarray) -> np.ndarray:
 
     return sorted_angles
 
+def full_current_waveform_from_ripple_current(ripple_current: np.float64, fs: np.float64) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Generate the current waveform of the AC-signal based on the ripple current.
+
+    :param ripple_current: ripple current value
+    :type  ripple_current: np.ndarray
+    :param fs: switching frequency
+    :type  fs: np.ndarray
+    :return: tuple of time and current waveform
+    :rtype: tuple[np.ndarray,np.ndarray]
+    """
+    # Variable declaration
+    i_current_waveform: np.ndarray
+    time_vector: np.ndarray
+
+    # Later modulation are load/generator
+    i_current_waveform = np.array([-0.5, +0.5, -0.5])
+    i_current_waveform = i_current_waveform * ripple_current
+    # FEMMT issue: DC current leads to problems-> Next line is commented out
+    # i_rms_max_current = i_rms_max_current + np.squeeze(sbc_dto.calc_currents.i_rms)
+    # ASA: Duty cycle worst case=0.5. This is to replace by suitable result out of mesh duty cycle
+    time_vector = np.array([0, 0.5, 1]) * 1 / fs
+
+    return time_vector, i_current_waveform
+
 def full_current_waveform_from_currents(sorted_currents: np.ndarray) -> np.ndarray:
     """
     Generate the full 2pi-periodic current waveform from the four current values [i_alpha, i_beta, i_gamma, i_delta].

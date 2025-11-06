@@ -20,6 +20,8 @@ from importlib.metadata import version
 # 3rd party libraries
 import json
 
+from femmt import TransformerOptimization
+
 # own libraries
 import dct
 from dct import toml_checker as tc, ProgressStatus
@@ -27,7 +29,6 @@ from dct import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
 from dct import CircuitOptimization
 from dct import InductorOptimization
-from dct import TransformerOptimization
 from dct import HeatSinkOptimization
 from dct import ParetoPlots
 from dct import generate_logging_config
@@ -41,6 +42,8 @@ from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.boundary_check import CheckCondition as c_flag
+
+# Debug
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +85,7 @@ class DctMainCtl:
         self._key_input_string: str = ""
         self._break_point_flag = False
         self._break_point_message: str = ""
+        self._key_input_handler = threading.Thread
 
     @staticmethod
     def log_software_versions(filepath: str) -> None:
@@ -876,14 +880,7 @@ class DctMainCtl:
         """
         inconsistency_report: str = ""
         is_consistent: bool = True
-        toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
-
-        # Check v1_min_max_list and v2_min_max_list
-        toml_check_min_max_value_multi_list = (
-            [(toml_general.output_range.v1_min_max_list, "v1_min_max_list",
-              toml_general.sampling.v1_additional_user_point_list, "v1_additional_user_point_list"),
-             (toml_general.output_range.v2_min_max_list, "v2_min_max_list",
-              toml_general.sampling.v2_additional_user_point_list, "v2_additional_user_point_list")])
+        # toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
 
         # Output range parameter and sampling parameter check
         group_name = "output_range or sampling"
@@ -891,50 +888,64 @@ class DctMainCtl:
         is_user_point_list_consistent = False
         # Evaluate list length
         len_additional_user_v1 = len(toml_general.sampling.v1_additional_user_point_list)
-        len_additional_user_v2 = len(toml_general.sampling.v2_additional_user_point_list)
-        len_additional_user_p = len(toml_general.sampling.p_additional_user_point_list)
+        len_additional_user_duty_cycle = len(toml_general.sampling.duty_cycle_additional_user_point_list)
+        len_additional_user_i = len(toml_general.sampling.i_additional_user_point_list)
         len_additional_user_w = len(toml_general.sampling.additional_user_weighting_point_list)
-        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_p == len_additional_user_w
-        len_check2 = len_additional_user_p == len_additional_user_w
+        len_check1 = len_additional_user_v1 == len_additional_user_duty_cycle and len_additional_user_i == len_additional_user_w
+        len_check2 = len_additional_user_i == len_additional_user_w
         # Check if the additional user point lists are consistent
         if len_check1 and len_check2:
             is_user_point_list_consistent = True
+        else:
+            act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
+            act_report = act_report + f"duty_cycle_additional_user_point_list ({len_additional_user_duty_cycle}),\n"
+            act_report = act_report + f"    i_additional_user_point_list ({len_additional_user_i}) and "
+            act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
+            act_report = act_report + "needs to be the same!\n)"
+            inconsistency_report = (inconsistency_report + act_report)
+            is_consistent = False
 
-        # Perform the boundary check
-        for check_parameter in toml_check_min_max_value_multi_list:
-            is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-                0, 1500, check_parameter[0], f"output_range: {check_parameter[1]}", c_flag.check_exclusive, c_flag.check_exclusive)
-            if not is_check_passed:
-                inconsistency_report = inconsistency_report + issue_report
-                is_consistent = False
-            elif is_user_point_list_consistent:
-                for voltage_value in check_parameter[2]:
-                    is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                        check_parameter[0][0], check_parameter[0][1], voltage_value,
-                        f"sampling: {check_parameter[3]}", c_flag.check_inclusive, c_flag.check_inclusive)
-                    if not is_check_passed:
-                        inconsistency_report = inconsistency_report + issue_report
-                        is_consistent = False
-            else:
-                act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
-                act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
-                act_report = act_report + f"    p_additional_user_point_list ({len_additional_user_p}) and "
-                act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
-                act_report = act_report + "needs to be the same!\n)"
-                inconsistency_report = (inconsistency_report + act_report)
-                is_consistent = False
-
-        # Perform the boundary check  of p_min_max_list
+        # Perform the boundary check of v1_min_max_list
         is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-            -100000, 100000, toml_general.output_range.p_min_max_list, "output_range: p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+            0, 1000, toml_general.output_range.v1_min_max_list, "output_range: v1_min_max_list", c_flag.check_inclusive, c_flag.check_inclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         elif is_user_point_list_consistent:
-            for power_value in toml_general.sampling.p_additional_user_point_list:
+            for power_value in toml_general.sampling.v1_additional_user_point_list:
                 is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                    toml_general.output_range.p_min_max_list[0], toml_general.output_range.p_min_max_list[1], power_value,
-                    "sampling: p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                    toml_general.output_range.v1_min_max_list[0], toml_general.output_range.v1_min_max_list[1], power_value,
+                    "sampling: v1_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                if not is_check_passed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_consistent = False
+
+        # Perform the boundary check  of duty_cycle_min_max_list
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            0, 1, toml_general.output_range.duty_cycle_min_max_list, "output_range: duty_cycle_min_max_list", c_flag.check_inclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+        elif is_user_point_list_consistent:
+            for power_value in toml_general.sampling.duty_cycle_additional_user_point_list:
+                is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                    toml_general.output_range.duty_cycle_min_max_list[0], toml_general.output_range.duty_cycle_min_max_list[1], power_value,
+                    "sampling: duty_cycle_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                if not is_check_passed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_consistent = False
+
+        # Perform the boundary check  of i_min_max_list
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+            -300, 300, toml_general.output_range.i_min_max_list, "output_range: i_min_max_list", c_flag.check_inclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+        elif is_user_point_list_consistent:
+            for power_value in toml_general.sampling.i_additional_user_point_list:
+                is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                    toml_general.output_range.i_min_max_list[0], toml_general.output_range.i_min_max_list[1], power_value,
+                    "sampling: i_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
                 if not is_check_passed:
                     inconsistency_report = inconsistency_report + issue_report
                     is_consistent = False
@@ -944,7 +955,7 @@ class DctMainCtl:
         # Check additional_user_weighting_point_list
         # Initialize variable
         weighting_sum: float = 0.0
-        # Perform the boundary check  of p_min_max_list
+        # Perform the boundary check  of additional_user_weighting_point_list
         for weight_value in toml_general.sampling.additional_user_weighting_point_list:
             is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
                 0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
@@ -1213,32 +1224,33 @@ class DctMainCtl:
         if not is_transformer_loaded:
             raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
-        # Verify optimization parameter
-        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if not is_consistent:
-            raise ValueError("Transformer optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
+        # Verify optimization parameter (Code for transformer optimization is deactivated)
+        if False:
+            is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+            if not is_consistent:
+                raise ValueError("Transformer optimization parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
 
-        # Check, if transformer optimization is to skip
-        if toml_prog_flow.transformer.calculation_mode == "skip":
-            # Initialize _transformer_number_filtered_points_skip_list
-            self._transformer_number_filtered_points_skip_list = []
-            # For loop to check, if all filtered values are available
-            for id_entry in filter_data.filtered_list_files:
-                # Assemble pathname
-                transformer_results_datapath = os.path.join(self._transformer_study_data.optimization_directory,
-                                                            str(id_entry),
-                                                            self._transformer_study_data.study_name)
-                # Check, if data are available (skip case)
-                if self.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
-                    self._transformer_number_filtered_points_skip_list.append(
-                        self.get_number_of_pkl_files(os.path.join(transformer_results_datapath,
-                                                                  "09_circuit_dtos_incl_transformer_losses")))
-                else:
-                    raise ValueError(
-                        f"Study {self._transformer_study_data.study_name} in path {transformer_results_datapath}"
-                        "does not exist. No sqlite3-database found!"
-                    )
+            # Check, if transformer optimization is to skip
+            if toml_prog_flow.transformer.calculation_mode == "skip":
+                # Initialize _transformer_number_filtered_points_skip_list
+                self._transformer_number_filtered_points_skip_list = []
+                # For loop to check, if all filtered values are available
+                for id_entry in filter_data.filtered_list_files:
+                    # Assemble pathname
+                    transformer_results_datapath = os.path.join(self._transformer_study_data.optimization_directory,
+                                                                str(id_entry),
+                                                                self._transformer_study_data.study_name)
+                    # Check, if data are available (skip case)
+                    if self.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
+                        self._transformer_number_filtered_points_skip_list.append(
+                            self.get_number_of_pkl_files(os.path.join(transformer_results_datapath,
+                                                                      "09_circuit_dtos_incl_transformer_losses")))
+                    else:
+                        raise ValueError(
+                            f"Study {self._transformer_study_data.study_name} in path {transformer_results_datapath}"
+                            "does not exist. No sqlite3-database found!"
+                        )
 
         # --------------------------
         # Heat sink flow control
@@ -1275,17 +1287,19 @@ class DctMainCtl:
 
         # Start the data exchange queue thread
         srv_response_stop_flag = False
-        _srv_response_handler = threading.Thread(target=self._srv_response_queue,
-                                                 args=(srv_request_queue, srv_response_queue), daemon=True)
+        # Debug Server  (Code for server is deactivated)
+        if False:
+            _srv_response_handler = threading.Thread(target=self._srv_response_queue,
+                                                     args=(srv_request_queue, srv_response_queue), daemon=True)
 
-        _srv_response_handler.start()
+            _srv_response_handler.start()
 
-        # Start the server
-        srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
+            # Start the server
+            srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
 
-        # Initialize key input handler
-        self._key_input_handler = threading.Thread(target=self._key_input,
-                                                   args=(srv_request_queue, srv_response_queue), daemon=True)
+            # Initialize key input handler
+            self._key_input_handler = threading.Thread(target=self._key_input,
+                                                       args=(srv_request_queue, srv_response_queue), daemon=True)
 
         # -- Start optimization  ----------------------------------------------------------------------------------------
         # --------------------------
@@ -1340,6 +1354,9 @@ class DctMainCtl:
         self._inductor_main_list[0].number_calculations = len(self._filtered_list_files)
         self._transformer_main_list[0].number_calculations = len(self._filtered_list_files)
 
+        # ASA: Add pareto plot
+        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)
+
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
 
@@ -1382,36 +1399,38 @@ class DctMainCtl:
         # --------------------------
         # Transformer reluctance model optimization
         # --------------------------
-        logger.info("Start transformer reluctance model optimization.")
+        # Code for transformer optimization is deactivated
+        if False:
+            logger.info("Start transformer reluctance model optimization.")
 
-        # Start the transformer processing time measurement
-        self._transformer_progress_time[0].reset_start_trigger()
-        # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not toml_prog_flow.transformer.calculation_mode == "skip":
-            # Set the status to InProgress
-            self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
-            # Check, if old study is to delete, if available
-            if toml_prog_flow.transformer.calculation_mode == "new":
-                # Delete old transformer study
-                self.delete_study_content(self._transformer_study_data.optimization_directory)
+            # Start the transformer processing time measurement
+            self._transformer_progress_time[0].reset_start_trigger()
+            # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
+            if not toml_prog_flow.transformer.calculation_mode == "skip":
+                # Set the status to InProgress
+                self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
+                # Check, if old study is to delete, if available
+                if toml_prog_flow.transformer.calculation_mode == "new":
+                    # Delete old transformer study
+                    self.delete_study_content(self._transformer_study_data.optimization_directory)
 
-            # Allocate and initialize transformer configuration
-            self._transformer_optimization = TransformerOptimization()
-            self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
-                                                                                    filter_data)
-            # Perform transformer optimization
-            self._transformer_optimization.optimization_handler_reluctance_model(
-                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
-                debug=toml_debug)
+                # Allocate and initialize transformer configuration
+                self._transformer_optimization = TransformerOptimization()
+                self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
+                                                                                        filter_data)
+                # Perform transformer optimization
+                self._transformer_optimization.optimization_handler_reluctance_model(
+                    filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
+                    debug=toml_debug)
 
-            # Set the status to Done
-            self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
+                # Set the status to Done
+                self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
 
-        # Stop the transformer processing time measurement
-        self._transformer_progress_time[0].stop_trigger()
+            # Stop the transformer processing time measurement
+            self._transformer_progress_time[0].stop_trigger()
 
-        # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer reluctance model Pareto front calculated")
+            # Check breakpoint
+            self.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer reluctance model Pareto front calculated")
 
         # --------------------------
         # Heat sink optimization
@@ -1448,21 +1467,22 @@ class DctMainCtl:
             raise ValueError("Thermal data configuration not initialized!")
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
-        stacked_transformer_study_names = [self._transformer_study_data.study_name]
+        # stacked_transformer_study_names = [self._transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_pre_processing.generate_result_database(
-            self._inductor_study_data, self._transformer_study_data, pre_summary_data,
-            inductor_study_names, stacked_transformer_study_names, filter_data)
+            self._inductor_study_data, pre_summary_data,
+            inductor_study_names, filter_data)
         #  Select the needed heat sink configuration
         self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
 
         # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Pre-summary is calculated")
+        self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
+        # Plot results
         ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)
         ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=True)
-        ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=True)
+        # Plot results for transformer deleted.
         ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=True)
         ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=True)
 
@@ -1472,7 +1492,9 @@ class DctMainCtl:
         logger.info("Start inductor FEM simulations.")
 
         # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not toml_prog_flow.inductor.calculation_mode == "skip":
+        # ASA Bug: Distinguish between calculation mode FEM simulation and previous reluctance model calculation (also for transformers)
+        # if not toml_prog_flow.inductor.calculation_mode == "skip":
+        if True:
             # Perform inductor FEM simulation
             if self._inductor_optimization is not None:
                 self._inductor_optimization.fem_simulation_handler(
@@ -1481,14 +1503,14 @@ class DctMainCtl:
         # --------------------------
         # Transformer FEM simulation
         # --------------------------
-        logger.info("Start transformer FEM simulations.")
+        # logger.info("Start transformer FEM simulations.")
 
-        # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not toml_prog_flow.transformer.calculation_mode == "skip":
-            # Perform transformer FEM simulation
-            if self._transformer_optimization is not None:
-                self._transformer_optimization.fem_simulation_handler(
-                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+        # # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
+        # if not toml_prog_flow.transformer.calculation_mode == "skip":
+        #     # Perform transformer FEM simulation
+        #     if self._transformer_optimization is not None:
+        #         self._transformer_optimization.fem_simulation_handler(
+        #             filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Final summary calculation
@@ -1506,8 +1528,9 @@ class DctMainCtl:
         stacked_transformer_study_names = [self._transformer_study_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_processing.generate_result_database(
-            self._inductor_study_data, self._transformer_study_data, summary_data,
-            inductor_study_names, stacked_transformer_study_names, filter_data)
+            self._inductor_study_data, summary_data,
+            inductor_study_names, filter_data)
+
         #  Select the needed heat sink configuration
         self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 
@@ -1517,7 +1540,7 @@ class DctMainCtl:
 
         ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=False)
-        ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=False)
+        # Remove pareto plot for transformer results
         ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_summary(toml_prog_flow, is_pre_summary=False)
 

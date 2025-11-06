@@ -136,8 +136,8 @@ class TomlOutputRange(BaseModel):
     """Definition of the DAB operating area."""
 
     v1_min_max_list: list[float]
-    v2_min_max_list: list[float]
-    p_min_max_list: list[float]
+    duty_cycle_min_max_list: list[float]
+    i_min_max_list: list[float]
 
 class TomlSampling(BaseModel):
     """Definition of the sampling method."""
@@ -146,8 +146,8 @@ class TomlSampling(BaseModel):
     sampling_points: int
     sampling_random_seed: int | Literal["random"]
     v1_additional_user_point_list: list[float]
-    v2_additional_user_point_list: list[float]
-    p_additional_user_point_list: list[float]
+    duty_cycle_additional_user_point_list: list[float]
+    i_additional_user_point_list: list[float]
     additional_user_weighting_point_list: list[float]
 
 class TomlGeneral(BaseModel):

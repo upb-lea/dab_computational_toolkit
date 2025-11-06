@@ -360,4 +360,18 @@ materialdatabase
 txt
 MTB
 TomlGeneral
+CircuitParetoSbcDesign
+SBC
+sbc
+CircuitSbcDTO
+Golay
+Savitzky
+OpenStax
+libretexts
+syncbuck
+mathrm
+SbcDTO
+HandleSbcDto
+SamplingEnum
+
 

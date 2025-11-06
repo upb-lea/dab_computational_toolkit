@@ -15,6 +15,9 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
 import dct.sampling as sampling
+from sklearn.cluster import KMeans
+from scipy.signal import savgol_filter
+from typing import cast, SupportsFloat
 
 import dct.datasets_dtos
 # own libraries
@@ -38,7 +41,7 @@ class CircuitOptimization:
     _c_lock_stat: threading.Lock
     _progress_data: ProgressData
     _progress_run_time: RunTime
-    _dab_config: circuit_dtos.CircuitParetoDabDesign | None
+    _sbc_config: circuit_dtos.CircuitParetoSbcDesign | None
     _study_in_memory: optuna.Study | None
     _study_in_storage: optuna.Study | None
     _fixed_parameters: d_dtos.FixedParameters | None
@@ -51,7 +54,7 @@ class CircuitOptimization:
         self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0,
                                            progress_status=ProgressStatus.Idle)
         self._progress_run_time = RunTime()
-        self._dab_config = None
+        self._sbc_config = None
         self._is_study_available = False
 
         self._study_in_memory = None
@@ -86,18 +89,18 @@ class CircuitOptimization:
     def save_config(self) -> None:
         """Save the actual configuration file as pickle file on the disk."""
         # Check if a configuration is loaded
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Circuit configuration is empty!\n    Configuration is not saved!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = CircuitOptimization.load_filepaths(self._sbc_config.project_directory)
 
-        os.makedirs(self._dab_config.project_directory, exist_ok=True)
-        with open(f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.pkl", 'wb') as output:
-            pickle.dump(self._dab_config, output, pickle.HIGHEST_PROTOCOL)
+        os.makedirs(self._sbc_config.project_directory, exist_ok=True)
+        with open(f"{filepaths.circuit}/{self._sbc_config.circuit_study_name}/{self._sbc_config.circuit_study_name}.pkl", 'wb') as output:
+            pickle.dump(self._sbc_config, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_stored_config(circuit_project_directory: str, circuit_study_name: str) -> circuit_dtos.CircuitParetoDabDesign:
+    def load_stored_config(circuit_project_directory: str, circuit_study_name: str) -> circuit_dtos.CircuitParetoSbcDesign:
         """
         Load pickle configuration file from disk.
 
@@ -106,14 +109,14 @@ class CircuitOptimization:
         :param circuit_study_name: name of the circuit study
         :type circuit_study_name: str
         :return: Configuration file as circuit_dtos.DabDesign
-        :rtype: circuit_dtos.CircuitParetoDabDesign
+        :rtype: circuit_dtos.CircuitParetoSbcDesign
         """
         filepaths = CircuitOptimization.load_filepaths(circuit_project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
 
         with open(config_pickle_filepath, 'rb') as pickle_file_data:
             loaded_pareto_dto = pickle.load(pickle_file_data)
-            if not isinstance(loaded_pareto_dto, circuit_dtos.CircuitParetoDabDesign):
+            if not isinstance(loaded_pareto_dto, circuit_dtos.CircuitParetoSbcDesign):
                 raise TypeError(f"Loaded pickle file {loaded_pareto_dto} not of type CircuitParetoDabDesign.")
 
         return loaded_pareto_dto
@@ -141,7 +144,9 @@ class CircuitOptimization:
         db = tdb.DatabaseManager()
         db.set_operation_mode_json()
         if not is_tdb_to_update:
-            db.update_from_fileexchange(True)
+            # Debug ASA comment out
+            # db.update_from_file_exchange(True)
+            pass
 
         # Get available keywords
         keyword_list: list[str] = db.get_transistor_names_list()
@@ -267,19 +272,14 @@ class CircuitOptimization:
         design_space = circuit_dtos.CircuitParetoDesignSpace(
             f_s_min_max_list=toml_circuit.design_space.f_s_min_max_list,
             l_s_min_max_list=toml_circuit.design_space.l_s_min_max_list,
-            l_1_min_max_list=toml_circuit.design_space.l_1_min_max_list,
-            l_2__min_max_list=toml_circuit.design_space.l_2__min_max_list,
-            n_min_max_list=toml_circuit.design_space.n_min_max_list,
             transistor_1_name_list=toml_circuit.design_space.transistor_1_name_list,
             transistor_2_name_list=toml_circuit.design_space.transistor_2_name_list,
-            c_par_1=toml_circuit.design_space.c_par_1,
-            c_par_2=toml_circuit.design_space.c_par_2
         )
 
         output_range = circuit_dtos.CircuitOutputRange(
             v1_min_max_list=toml_general.output_range.v1_min_max_list,
-            v2_min_max_list=toml_general.output_range.v2_min_max_list,
-            p_min_max_list=toml_general.output_range.p_min_max_list)
+            duty_cycle_min_max_list=toml_general.output_range.duty_cycle_min_max_list,
+            i_min_max_list=toml_general.output_range.i_min_max_list)
 
         filter = circuit_dtos.CircuitFilter(
             number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
@@ -297,12 +297,12 @@ class CircuitOptimization:
             sampling_points=toml_general.sampling.sampling_points,
             sampling_random_seed=local_sampling_random_seed,
             v1_additional_user_point_list=toml_general.sampling.v1_additional_user_point_list,
-            v2_additional_user_point_list=toml_general.sampling.v2_additional_user_point_list,
-            p_additional_user_point_list=toml_general.sampling.p_additional_user_point_list,
+            duty_cycle_additional_user_point_list=toml_general.sampling.duty_cycle_additional_user_point_list,
+            i_additional_user_point_list=toml_general.sampling.i_additional_user_point_list,
             additional_user_weighting_point_list=toml_general.sampling.additional_user_weighting_point_list
         )
 
-        self._dab_config = circuit_dtos.CircuitParetoDabDesign(
+        self._sbc_config = circuit_dtos.CircuitParetoSbcDesign(
             circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             project_directory=toml_prog_flow.general.project_directory,
             design_space=design_space,
@@ -312,17 +312,17 @@ class CircuitOptimization:
 
         return True
 
-    def get_config(self) -> circuit_dtos.CircuitParetoDabDesign | None:
+    def get_config(self) -> circuit_dtos.CircuitParetoSbcDesign | None:
         """
         Return the actual loaded configuration file.
 
         :return: Configuration file as circuit_dtos.DabDesign
-        :rtype: circuit_dtos.CircuitParetoDabDesign
+        :rtype: circuit_dtos.CircuitParetoSbcDesign
         """
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Configuration is not loaded!")
 
-        return copy.deepcopy(self._dab_config)
+        return copy.deepcopy(self._sbc_config)
 
     def get_progress_data(self) -> ProgressData:
         """Provide the progress data of the optimization.
@@ -382,12 +382,12 @@ class CircuitOptimization:
         return pareto_html
 
     @staticmethod
-    def _objective(trial: optuna.Trial, dab_config: circuit_dtos.CircuitParetoDabDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
+    def _objective(trial: optuna.Trial, sbc_config: circuit_dtos.CircuitParetoSbcDesign, fixed_parameters: d_dtos.FixedParameters) -> tuple:
         """
         Objective function to optimize.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: circuit_dtos.CircuitParetoDabDesign
+        :param sbc_config: Synchronous buck converter optimization configuration file
+        :type sbc_config: circuit_dtos.CircuitParetoSbcDesign
         :param trial: optuna trial
         :type trial: optuna.Trial
         :param fixed_parameters: fixed parameters (loaded transistor DTOs)
@@ -395,60 +395,76 @@ class CircuitOptimization:
 
         :return:
         """
-        f_s_suggest = trial.suggest_int('f_s_suggest', dab_config.design_space.f_s_min_max_list[0], dab_config.design_space.f_s_min_max_list[1])
-        l_s_suggest = trial.suggest_float('l_s_suggest', dab_config.design_space.l_s_min_max_list[0], dab_config.design_space.l_s_min_max_list[1])
-        l_1_suggest = trial.suggest_float('l_1_suggest', dab_config.design_space.l_1_min_max_list[0], dab_config.design_space.l_1_min_max_list[1])
-        l_2__suggest = trial.suggest_float('l_2__suggest', dab_config.design_space.l_2__min_max_list[0], dab_config.design_space.l_2__min_max_list[1])
-        n_suggest = trial.suggest_float('n_suggest', dab_config.design_space.n_min_max_list[0], dab_config.design_space.n_min_max_list[1])
-        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', dab_config.design_space.transistor_1_name_list)
-        transistor_2_name_suggest = trial.suggest_categorical('transistor_2_name_suggest', dab_config.design_space.transistor_2_name_list)
+        # Variable declaration
+        transistor_1_dto: d_dtos.TransistorDTO | None = None
 
-        for _, transistor_dto in enumerate(fixed_parameters.transistor_1_dto_list):
+        # Get new suggestion from optimizer
+        f_s_suggest = trial.suggest_int('f_s_suggest', sbc_config.design_space.f_s_min_max_list[0], sbc_config.design_space.f_s_min_max_list[1])
+        l_s_suggest = trial.suggest_float('l_s_suggest', sbc_config.design_space.l_s_min_max_list[0], sbc_config.design_space.l_s_min_max_list[1])
+        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', sbc_config.design_space.transistor_1_name_list)
+
+        # Copy transistor data based on suggested transistor name
+        for transistor_dto in fixed_parameters.transistor_1_dto_list:
             if transistor_dto.name == transistor_1_name_suggest:
-                transistor_1_dto: d_dtos.TransistorDTO = transistor_dto
+                transistor_1_dto = transistor_dto
 
-        for _, transistor_dto in enumerate(fixed_parameters.transistor_2_dto_list):
-            if transistor_dto.name == transistor_2_name_suggest:
-                transistor_2_dto: d_dtos.TransistorDTO = transistor_dto
-
-        dab_calc = d_sets.HandleDabDto.init_config(
-            name=dab_config.circuit_study_name,
-            mesh_v1=fixed_parameters.mesh_v1,
-            mesh_v2=fixed_parameters.mesh_v2,
-            mesh_p=fixed_parameters.mesh_p,
-            sampling=dab_config.sampling,
-            n=n_suggest,
-            ls=l_s_suggest,
-            fs=f_s_suggest,
-            lc1=l_1_suggest,
-            lc2=l_2__suggest / n_suggest ** 2,
-            c_par_1=dab_config.design_space.c_par_1,
-            c_par_2=dab_config.design_space.c_par_2,
-            transistor_dto_1=transistor_1_dto,
-            transistor_dto_2=transistor_2_dto
-        )
-
-        if (np.any(np.isnan(dab_calc.calc_modulation.phi)) or np.any(np.isnan(dab_calc.calc_modulation.tau1)) \
-                or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
+        if transistor_1_dto is None:
             return float('nan'), float('nan')
 
-        # Calculate the cost function.
-        i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
-        # consider weighting
-        i_cost_matrix_weighted = i_cost_matrix * fixed_parameters.mesh_weights
+        # Overtake suggested values
+        sbc_calc = d_sets.HandleSbcDto.init_config(
+            name=sbc_config.circuit_study_name,
+            mesh_v1=fixed_parameters.mesh_v1,
+            mesh_duty_cycle=fixed_parameters.mesh_duty_cycle,
+            mesh_i=fixed_parameters.mesh_i,
+            sampling=sbc_config.sampling,
+            ls=l_s_suggest,
+            fs=f_s_suggest,
+            transistor_dto_1=transistor_1_dto,
+            transistor_dto_2=transistor_1_dto
+        )
 
-        # Mean for not-NaN values, as there will be too many NaN results.
-        i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
+        # 0 = ripple, 1=volume , 2= one function
+        debug_selection = 1
+        # False = switching and conduction loss, True = only switching loss
+        debug_consider_only_switch_loss = False
+        # Debug selection
+        i_ripple_or_volume_cost_value: np.ndarray = np.array(0)
+        # Debug i_ripple
+        if debug_selection == 0:
+            # Set the ripple current square value (ripple power) as sum of the weights
+            i_ripple_or_volume_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_currents.i_ripple.ravel()
 
-        return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
+        # Debug volume proxy L
+        if debug_selection == 1:
+            # Set the inductor volume as sum of the weights
+            i_ripple_or_volume_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_volume_inductor_proxy.ravel()
+
+        # Calculate transistor losses
+        # Debug Only switching losses ASA: Later to correct
+        if debug_consider_only_switch_loss:
+            i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ (sbc_calc.calc_losses.p_hs_switch + sbc_calc.calc_losses.p_ls_switch)
+        else:
+            i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_losses.p_sbc_total
+
+        # Debug basic pareto behavior according fixed functions
+        if debug_selection == 2:
+            i_ripple_or_volume_cost_value = np.array(20+5e-5/l_s_suggest)
+            # i_ripple_or_volume_cost_value = (l_s_suggest * fixed_parameters.mesh_weights.ravel())
+            # i_loss_cost_value = 30+f_s_suggest/100000
+            i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_losses.p_sbc_total
+
+        # return volume_inductor_cost_value, i_loss_cost_value
+        # debug
+        return i_ripple_or_volume_cost_value, i_loss_cost_value
 
     @staticmethod
-    def calculate_fixed_parameters(act_dab_config: circuit_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
+    def calculate_fixed_parameters(act_dab_config: circuit_dtos.CircuitParetoSbcDesign) -> d_dtos.FixedParameters:
         """
         Calculate time-consuming parameters which are same for every single simulation.
 
         :param act_dab_config: DAB circuit configuration
-        :type act_dab_config: circuit_dtos.CircuitParetoDabDesign
+        :type act_dab_config: circuit_dtos.CircuitParetoSbcDesign
         :return: Fix parameters (transistor DTOs)
         :rtype: d_dtos.FixedParameters
         """
@@ -466,20 +482,23 @@ class CircuitOptimization:
             steps_per_dimension = int(np.ceil(np.power(act_dab_config.sampling.sampling_points, 1 / 3)))
             logger.info(f"Number of sampling points has been updated from {act_dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
-            v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
-                np.linspace(act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
-                np.linspace(act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
-                np.linspace(act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1], steps_per_dimension),
+            v1_operating_points, duty_cylce_operating_points, i_operating_points = np.meshgrid(
+                np.linspace(act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1],
+                            steps_per_dimension),
+                np.linspace(act_dab_config.output_range.duty_cycle_min_max_list[0],
+                            act_dab_config.output_range.duty_cycle_min_max_list[1], steps_per_dimension),
+                np.linspace(act_dab_config.output_range.i_min_max_list[0], act_dab_config.output_range.i_min_max_list[1],
+                            steps_per_dimension),
                 sparse=False)
         elif act_dab_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
-            v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
+            v1_operating_points, duty_cylce_operating_points, i_operating_points = sampling.latin_hypercube(
                 act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1],
-                act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1],
-                act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1],
+                act_dab_config.output_range.duty_cycle_min_max_list[0], act_dab_config.output_range.duty_cycle_min_max_list[1],
+                act_dab_config.output_range.i_min_max_list[0], act_dab_config.output_range.i_min_max_list[1],
                 total_number_points=act_dab_config.sampling.sampling_points,
                 dim_1_user_given_points_list=act_dab_config.sampling.v1_additional_user_point_list,
-                dim_2_user_given_points_list=act_dab_config.sampling.v2_additional_user_point_list,
-                dim_3_user_given_points_list=act_dab_config.sampling.p_additional_user_point_list,
+                dim_2_user_given_points_list=act_dab_config.sampling.duty_cycle_additional_user_point_list,
+                dim_3_user_given_points_list=act_dab_config.sampling.i_additional_user_point_list,
                 sampling_random_seed=act_dab_config.sampling.sampling_random_seed)
         else:
             raise ValueError(f"sampling_method '{act_dab_config.sampling.sampling_method}' not available.")
@@ -516,8 +535,8 @@ class CircuitOptimization:
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
             mesh_v1=np.atleast_3d(v1_operating_points),
-            mesh_v2=np.atleast_3d(v2_operating_points),
-            mesh_p=np.atleast_3d(p_operating_points),
+            mesh_duty_cycle=np.atleast_3d(duty_cylce_operating_points),
+            mesh_i=np.atleast_3d(i_operating_points),
             mesh_weights=np.atleast_3d(weights)
         )
 
@@ -527,7 +546,7 @@ class CircuitOptimization:
         :type act_number_trials: int
         :param act_number_trials: Number of optimization trials
         """
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Circuit configuration is not initialized!")
             return
         elif self._fixed_parameters is None:
@@ -538,7 +557,7 @@ class CircuitOptimization:
             return
 
         # Function to execute
-        func = lambda trial: CircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
+        func = lambda trial: CircuitOptimization._objective(trial, self._sbc_config, self._fixed_parameters)
 
         try:
             self._study_in_memory.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
@@ -553,7 +572,7 @@ class CircuitOptimization:
         :param act_number_trials: Number of trials adding to the existing study
         :type  act_number_trials: int
         """
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Circuit configuration is not initialized!")
             return
         elif self._fixed_parameters is None:
@@ -561,10 +580,10 @@ class CircuitOptimization:
             return
 
         # Function to execute
-        func = lambda trial: CircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
+        func = lambda trial: CircuitOptimization._objective(trial, self._sbc_config, self._fixed_parameters)
 
         # Each process create his own study instance with the same database and study name
-        act_study = optuna.load_study(storage=act_storage_url, study_name=self._dab_config.circuit_study_name)
+        act_study = optuna.load_study(storage=act_storage_url, study_name=self._sbc_config.circuit_study_name)
         # Run optimization
         try:
             act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
@@ -587,20 +606,20 @@ class CircuitOptimization:
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Method 'initialize_circuit_optimization' is not called!\n"
                            "    No list is generated so that no optimization can be performed!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = CircuitOptimization.load_filepaths(self._sbc_config.project_directory)
 
-        circuit_study_working_directory = os.path.join(filepaths.circuit, self._dab_config.circuit_study_name)
-        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{self._dab_config.circuit_study_name}.sqlite3")
+        circuit_study_working_directory = os.path.join(filepaths.circuit, self._sbc_config.circuit_study_name)
+        circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{self._sbc_config.circuit_study_name}.sqlite3")
 
         if os.path.exists(circuit_study_sqlite_database):
             logger.info("Existing circuit study found. Proceeding.")
         else:
-            os.makedirs(f"{filepaths.circuit}/{self._dab_config.circuit_study_name}", exist_ok=True)
+            os.makedirs(f"{filepaths.circuit}/{self._sbc_config.circuit_study_name}", exist_ok=True)
 
         # set logging verbosity: https://optuna.readthedocs.io/en/stable/reference/generated/optuna.logger.set_verbosity.html#optuna.logging.set_verbosity
         # .INFO: all messages (default)
@@ -609,19 +628,26 @@ class CircuitOptimization:
         optuna.logging.set_verbosity(optuna.logging.ERROR)
 
         # check for differences with the old configuration file
-        config_on_disk_filepath = f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.pkl"
+        config_on_disk_filepath = f"{filepaths.circuit}/{self._sbc_config.circuit_study_name}/{self._sbc_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
-            config_on_disk = CircuitOptimization.load_stored_config(self._dab_config.project_directory, self._dab_config.circuit_study_name)
-            difference = deepdiff.DeepDiff(config_on_disk, self._dab_config, ignore_order=True, significant_digits=10)
+            config_on_disk = CircuitOptimization.load_stored_config(self._sbc_config.project_directory, self._sbc_config.circuit_study_name)
+            difference = deepdiff.DeepDiff(config_on_disk, self._sbc_config, ignore_order=True, significant_digits=10)
             if difference:
                 raise ValueError("Configuration file has changed from previous simulation.\n"
                                  f"Program is terminated.\n"
                                  f"Difference: {difference}")
 
-        directions = ['maximize', 'minimize']
+        # directions = ['maximize', 'minimize']
+        directions = ["minimize", "minimize"]
 
         # Calculate the fixed parameters
-        self._fixed_parameters = CircuitOptimization.calculate_fixed_parameters(self._dab_config)
+        self._fixed_parameters = CircuitOptimization.calculate_fixed_parameters(self._sbc_config)
+
+        # Debug
+        print(f"i=f{self._fixed_parameters.mesh_i}")
+        print(f"V_in=f{self._fixed_parameters.mesh_v1}")
+        print(f"duty=f{self._fixed_parameters.mesh_duty_cycle}")
+        print(f"w=f{self._fixed_parameters.mesh_weights}")
 
         # Update statistical data
         with self._c_lock_stat:
@@ -636,13 +662,13 @@ class CircuitOptimization:
             storage = f"sqlite:///{circuit_study_sqlite_database}"
 
             # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=self._dab_config.circuit_study_name,
+            self._study_in_storage = optuna.create_study(study_name=self._sbc_config.circuit_study_name,
                                                          storage=storage,
                                                          directions=directions,
                                                          load_if_exists=True, sampler=sampler)
 
             # Create study object in memory
-            self._study_in_memory = optuna.create_study(study_name=self._dab_config.circuit_study_name, directions=directions, sampler=sampler)
+            self._study_in_memory = optuna.create_study(study_name=self._sbc_config.circuit_study_name, directions=directions, sampler=sampler)
             # If trials exists, add them to study_in_memory
             self._study_in_memory.add_trials(self._study_in_storage.trials)
             # Inform about sampler type
@@ -670,7 +696,7 @@ class CircuitOptimization:
             # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
 
             # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=self._dab_config.circuit_study_name,
+            self._study_in_storage = optuna.create_study(study_name=self._sbc_config.circuit_study_name,
                                                          storage=storage_mysql,
                                                          directions=directions,
                                                          load_if_exists=True, sampler=sampler)
@@ -719,101 +745,96 @@ class CircuitOptimization:
         if self._study_in_storage is None:
             logger.warning("The study is not initialized!")
             return
-        elif self._dab_config is None:
+        elif self._sbc_config is None:
             logger.warning("Circuit configuration is not initialized!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = CircuitOptimization.load_filepaths(self._sbc_config.project_directory)
 
         fig = optuna.visualization.plot_pareto_front(self._study_in_storage, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
-        fig.update_layout(title=f"{self._dab_config.circuit_study_name} <br><sup>{self._dab_config.project_directory}</sup>")
+        fig.update_layout(title=f"{self._sbc_config.circuit_study_name} <br><sup>{self._sbc_config.project_directory}</sup>")
         fig.write_html(
-            f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}"
+            f"{filepaths.circuit}/{self._sbc_config.circuit_study_name}/{self._sbc_config.circuit_study_name}"
             f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
         if show_results:
             fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None) -> dct.CircuitDabDTO:
+    def load_sbc_dto_from_study(sbc_config: circuit_dtos.CircuitParetoSbcDesign, trial_number: int | None = None) -> dct.CircuitSbcDTO:
         """
-        Load a DAB-DTO from an optuna study.
+        Load a SBC-DTO from an optuna study.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: circuit_dtos.CircuitParetoDabDesign
+        :param sbc_config: SBC optimization configuration file
+        :type  sbc_config: circuit_dtos.CircuitParetoSbcDesign
         :param trial_number: trial number to load to the DTO
-        :type trial_number: int
-        :return:
+        :type  trial_number: int
+        :return: Configuration data of circuit
+        :rtype:  dct.CircuitSbcDTO
         """
         if trial_number is None:
             raise NotImplementedError("needs to be implemented")
 
-        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
-        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
+        filepaths = CircuitOptimization.load_filepaths(sbc_config.project_directory)
+        database_url = CircuitOptimization.create_sqlite_database_url(sbc_config)
 
-        loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name,
+        loaded_study = optuna.create_study(study_name=sbc_config.circuit_study_name,
                                            storage=database_url, load_if_exists=True)
-        logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
+        logger.info(f"The study '{sbc_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
-        fix_parameters = CircuitOptimization.calculate_fixed_parameters(dab_config)
+        fix_parameters = CircuitOptimization.calculate_fixed_parameters(sbc_config)
 
-        dab_dto = d_sets.HandleDabDto.init_config(
+        sbc_dto = d_sets.HandleSbcDto.init_config(
             name=str(trial_number),
             mesh_v1=fix_parameters.mesh_v1,
-            mesh_v2=fix_parameters.mesh_v2,
-            mesh_p=fix_parameters.mesh_p,
-            sampling=dab_config.sampling,
-            n=trials_dict["n_suggest"],
+            mesh_duty_cycle=fix_parameters.mesh_duty_cycle,
+            mesh_i=fix_parameters.mesh_i,
+            sampling=sbc_config.sampling,
             ls=trials_dict["l_s_suggest"],
             fs=trials_dict["f_s_suggest"],
-            lc1=trials_dict["l_1_suggest"],
-            lc2=trials_dict["l_2__suggest"] / trials_dict["n_suggest"] ** 2,
-            c_par_1=dab_config.design_space.c_par_1,
-            c_par_2=dab_config.design_space.c_par_2,
             transistor_dto_1=trials_dict["transistor_1_name_suggest"],
             transistor_dto_2=trials_dict["transistor_2_name_suggest"]
         )
 
-        return dab_dto
+        return sbc_dto
 
-    def df_to_dab_dto_list(self, df: pd.DataFrame) -> list[d_dtos.CircuitDabDTO]:
+    def df_to_sbc_dto_list(self, df: pd.DataFrame) -> list[d_dtos.CircuitSbcDTO]:
         """
         Load a DAB-DTO from an optuna study.
 
         :param df: Pandas DataFrame to convert to the DAB-DTO list
         :type df: pd.DataFrame
         :return: List of DTO
-        :rtype:  list[d_dtos.CircuitDabDTO]
+        :rtype:  list[d_dtos.CircuitSbcDTO]
         """
-        dab_dto_list: list[d_dtos.CircuitDabDTO] = []
+        dab_dto_list: list[d_dtos.CircuitSbcDTO] = []
 
         # Check if configuration is not available or fixed parameters are not available
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Circuit configuration is not initialized!")
             return dab_dto_list
         elif self._fixed_parameters is None:
             logger.warning("Missing initialized fixed parameters!")
             return dab_dto_list
 
-        logger.info(f"The study '{self._dab_config.circuit_study_name}' contains {len(df)} trials.")
+        logger.info(f"The study '{self._sbc_config.circuit_study_name}' contains {len(df)} trials.")
 
-        for index, _ in df.iterrows():
-            transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_1_name_suggest"][index])
-            transistor_dto_2 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_2_name_suggest"][index])
+        index: int
+        for idx, _ in df.iterrows():
 
-            dab_dto = d_sets.HandleDabDto.init_config(
-                name=str(df["number"][index].item()),
+            index = cast(int, idx)
+
+            transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
+            transistor_dto_2 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
+
+            dab_dto = d_sets.HandleSbcDto.init_config(
+                name=str(df.at[index, "number"]),
                 mesh_v1=self._fixed_parameters.mesh_v1,
-                mesh_v2=self._fixed_parameters.mesh_v2,
-                mesh_p=self._fixed_parameters.mesh_p,
-                sampling=self._dab_config.sampling,
-                n=df["params_n_suggest"][index].item(),
-                ls=df["params_l_s_suggest"][index].item(),
-                fs=df["params_f_s_suggest"][index].item(),
-                lc1=df["params_l_1_suggest"][index].item(),
-                lc2=df["params_l_2__suggest"][index].item() / df["params_n_suggest"][index].item() ** 2,
-                c_par_1=self._dab_config.design_space.c_par_1,
-                c_par_2=self._dab_config.design_space.c_par_2,
+                mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
+                mesh_i=self._fixed_parameters.mesh_i,
+                sampling=self._sbc_config.sampling,
+                ls=float(cast(SupportsFloat, df.at[index, "params_l_s_suggest"])),
+                fs=float(cast(SupportsFloat, df.at[index, "params_f_s_suggest"])),
                 transistor_dto_1=transistor_dto_1,
                 transistor_dto_2=transistor_dto_2
             )
@@ -822,11 +843,11 @@ class CircuitOptimization:
         return dab_dto_list
 
     @staticmethod
-    def study_to_df(dab_config: circuit_dtos.CircuitParetoDabDesign) -> pd.DataFrame:
+    def study_to_df(dab_config: circuit_dtos.CircuitParetoSbcDesign) -> pd.DataFrame:
         """Create a DataFrame from a study.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: circuit_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoSbcDesign
         """
         filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
         database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
@@ -836,12 +857,12 @@ class CircuitOptimization:
         return df
 
     @staticmethod
-    def create_sqlite_database_url(dab_config: circuit_dtos.CircuitParetoDabDesign) -> str:
+    def create_sqlite_database_url(dab_config: circuit_dtos.CircuitParetoSbcDesign) -> str:
         """
         Create the DAB circuit optimization sqlite URL.
 
         :param dab_config: DAB optimization configuration file
-        :type dab_config: circuit_dtos.CircuitParetoDabDesign
+        :type dab_config: circuit_dtos.CircuitParetoSbcDesign
         :return: SQLite URL
         :rtype: str
         """
@@ -931,19 +952,22 @@ class CircuitOptimization:
         """
         is_efficient = np.arange(costs.shape[0])
         n_points = costs.shape[0]
-        next_point_index = 0  # Next index in the is_efficient array to search for
+        next_point_index = 0
+
         while next_point_index < len(costs):
-            non_dominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
-            non_dominated_point_mask[next_point_index] = True  # type: ignore
-            is_efficient = is_efficient[non_dominated_point_mask]  # Remove dominated points
-            costs = costs[non_dominated_point_mask]
-            next_point_index = int(np.sum(non_dominated_point_mask[:next_point_index])) + 1  # type: ignore
-        if return_mask:
-            is_efficient_mask = np.zeros(n_points, dtype=bool)
-            is_efficient_mask[is_efficient] = True
-            return is_efficient_mask
-        else:
-            return is_efficient
+            # points, which are dominated
+            dominated = np.all(costs[next_point_index] <= costs, axis=1)
+
+            # Remove dominating points
+            dominated[next_point_index] = False
+            is_efficient = is_efficient[~dominated]
+            costs = costs[~dominated]
+
+            next_point_index += 1
+
+        is_efficient_mask = np.zeros(n_points, dtype=bool)
+        is_efficient_mask[is_efficient] = True
+        return is_efficient_mask
 
     @staticmethod
     def pareto_front_from_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
@@ -963,7 +987,9 @@ class CircuitOptimization:
         y_vec = df[y][~np.isnan(df[x])]
         numpy_zip = np.column_stack((x_vec, y_vec))
         pareto_tuple_mask_vec = CircuitOptimization.is_pareto_efficient(numpy_zip)
-        pareto_df = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
+        pareto_tuple_mask_vec = pareto_tuple_mask_vec.astype(bool)
+        pareto_df = df[pareto_tuple_mask_vec]
+
         return pareto_df
 
     @staticmethod
@@ -1007,14 +1033,123 @@ class CircuitOptimization:
         # clip losses to a maximum of the minimum losses
         ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
 
-        pareto_df_offset = df[df[y] < ref_loss_max]
+        pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
 
         return pareto_df_offset
+
+    @staticmethod
+    def hybrid_pareto_sampling(pareto_matrix: np.ndarray, n_points: int = 8) -> np.ndarray:
+        """
+        Filter points from pareto front by hybrid-strategy: Extremes + Knees + Density.
+
+        :param pareto_matrix: pareto front points with shape (n,2)
+        :type pareto_matrix: np.ndarray
+        :param n_points: Number of filtered points
+        :type n_points: int
+        :returns: filtered points
+        :rtype: np.ndarray
+        """
+        # Constant values
+        # Filter window and filter order
+        smooth_window: int = 11
+        filter_order: int = 3
+        # Prevent division by 0
+        prev_diff_zero = 1e-12
+
+        # Number of selected points with point density method(round up)
+        n_points_cdf: int = (n_points+1) // 2
+
+        # Copy, sort and normalize
+        pareto_matrix_copy = pareto_matrix.copy().astype(float)
+        # Sort to target 1
+        pareto_matrix_copy = pareto_matrix_copy[np.argsort(pareto_matrix_copy[:, 0])]
+        # Reduce similar x values (Strong monotone falling) (function returns [value, index]
+        _, unique_x_indices = np.unique(pareto_matrix_copy[:, 0], return_index=True)
+        pareto_matrix_copy = pareto_matrix_copy[unique_x_indices]
+        # Normalize the curve to [0,1]
+        pareto_norm = (pareto_matrix_copy - pareto_matrix_copy.min(axis=0)) / (pareto_matrix_copy.max(axis=0) - pareto_matrix_copy.min(axis=0))
+
+        # #### Debug  ###############################################################
+        df_filtered_par = pd.DataFrame({"x": pareto_norm[:, 0], "y": pareto_norm[:, 1]})
+        # Store the data
+        # df_filtered_par.to_csv("path to define + /Pareto_data.csv")
+        # ###########################################################################
+
+        # Curvature analysis due to the knee
+        # Smooth the curve with Savitzky–Golay-Filter
+        smooth_target_2 = savgol_filter(pareto_norm[:, 1], smooth_window, filter_order)
+        # #### Debug  ###############################################################
+        df_filtered_file = pd.DataFrame({"x": pareto_norm[:, 0], "y": smooth_target_2})
+        # Store the data
+        # df_filtered_file.to_csv("path to define + Pareto_filter_data.csv")
+        # ###########################################################################
+
+        # First and second derivative
+        d_target_2 = np.gradient(smooth_target_2, pareto_norm[:, 0])
+        d2_target_2 = np.gradient(d_target_2, pareto_norm[:, 0])
+        # curvature calculation (Formula at 13.3.8 see url)
+        # https://math.libretexts.org/Bookshelves/Calculus/Calculus_(OpenStax)/13%3A_Vector-Valued_Functions/13.03%3A_Arc_Length_and_Curvature
+        curvature = np.abs(d2_target_2) / (1 + d_target_2 ** 2) ** 1.5
+
+        # Length of the curve
+        d_target_1 = np.diff(pareto_norm[:, 0])
+        d_target_2 = np.diff(pareto_norm[:, 1])
+        d_curve = np.sqrt(d_target_1 ** 2 + d_target_2 ** 2)
+        curve = np.concatenate(([0], np.cumsum(d_curve)))
+        curve = curve / curve[-1]  # Standardize to [0,1]
+
+        # Weighting: Curvature * local density
+        density = np.ones_like(curve)
+        for i in range(1, len(curve) - 1):
+            density[i] = 0.5 * (curve[i + 1] - curve[i - 1])
+        inv_density = 1 / (density + prev_diff_zero)
+        weight = curvature * inv_density
+
+        # Selection of points according point density (inclusive extreme values)
+        result_point_vector = np.linspace(0, 1, n_points_cdf)
+        cdf = np.cumsum(weight)
+        cdf = cdf / cdf[-1]
+        # Create point density index vector
+        cdf_filtered_id: list[int] = []
+        # For loop over result_point_vector
+        for t in result_point_vector:
+            idx = int(np.argmin(np.abs(cdf - t)))
+            cdf_filtered_id.append(idx)
+
+        # Remove same points
+        cdf_filtered_id = np.unique(cdf_filtered_id).tolist()
+        n_points_cdf = len(cdf_filtered_id)
+
+        # Set number of cluster points
+        n_points_cluster = n_points - n_points_cdf
+
+        # Find clusters in regions of high point density
+        km = KMeans(n_clusters=n_points_cluster, n_init=15)
+        km.fit(pareto_norm)
+        cluster_centers = km.cluster_centers_
+
+        cluster_filtered_id: list = []
+        # For loop over result_point_vector
+        for cluster_center in cluster_centers:
+            # Square of  distance of assigned points to the cluster
+            dists = np.sum((pareto_norm - cluster_center) ** 2, axis=1)
+            # Point index with minimal distance
+            idx = int(np.argmin(dists))
+            cluster_filtered_id.append(idx)
+
+        # Hybrid strategy: Combine points density selection and cluster points
+        chosen_idx = np.concatenate([cdf_filtered_id, cluster_filtered_id])
+        # Remove duplicates
+        chosen_idx = np.unique(chosen_idx)
+        # Return the result in original units
+        pareto_matrix_result: np.ndarray = pareto_matrix_copy[chosen_idx]
+
+        return pareto_matrix_result
 
     def filter_study_results(self) -> None:
         """Filter the study result and use GeckoCIRCUITS for detailed calculation."""
         # Check if configuration is not available and if study is not available
-        if self._dab_config is None:
+        if self._sbc_config is None:
             logger.warning("Circuit configuration is not loaded!")
             return
         elif not self._is_study_available:
@@ -1024,60 +1159,44 @@ class CircuitOptimization:
             logger.warning("Study is not calculated. First run 'start_proceed_study'!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = CircuitOptimization.load_filepaths(self._sbc_config.project_directory)
 
         df = self._study_in_storage.trials_dataframe()
-        df.to_csv(f'{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.csv')
+        df.to_csv(f'{filepaths.circuit}/{self._sbc_config.circuit_study_name}/{self._sbc_config.circuit_study_name}.csv')
 
-        df = df[df["values_0"] == 100]
+        df_pareto_front = CircuitOptimization.pareto_front_from_df(df)
 
-        smallest_dto_list: list[d_dtos.CircuitDabDTO] = []
-        df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
-        df_smallest = df.nsmallest(n=1, columns=["values_1"])
+        # Filter points from pareto front with hybrid algorithm
+        filtered_points: np.ndarray = CircuitOptimization.hybrid_pareto_sampling(
+            df_pareto_front[["values_0", "values_1"]].to_numpy(), self._sbc_config.filter.number_filtered_designs)
 
-        smallest_dto_list.append(self.df_to_dab_dto_list(df_smallest)[0])
+        # Assign the identified points to the dataframe index
+        filtered_indices: list[int] = []
+        for point in filtered_points:
+            # boolean mask for rows of identical content
+            mask = (df["values_0"].values == point[0]) & (df["values_1"].values == point[1])
+            # Find index in data frame
+            idx = int(np.where(mask)[0][0])
+            filtered_indices.append(idx)
+
+        # Create selection data frame
+        df_selected = df.loc[filtered_indices]
 
         # Continue time measurement
         with self._c_lock_stat:
             self._progress_run_time.continue_trigger()
 
-        for count in np.arange(0, self._dab_config.filter.number_filtered_designs - 1):
-            logger.info("------------------")
-            logger.info(f"{count=}")
-            n_suggest = df_smallest['params_n_suggest'].item()
-            f_s_suggest = df_smallest['params_f_s_suggest'].item()
-            l_s_suggest = df_smallest['params_l_s_suggest'].item()
-            l_1_suggest = df_smallest['params_l_1_suggest'].item()
-            l_2__suggest = df_smallest['params_l_2__suggest'].item()
-            transistor_1_name_suggest = df_smallest['params_transistor_1_name_suggest'].item()
-            transistor_2_name_suggest = df_smallest['params_transistor_2_name_suggest'].item()
-
-            # make sure to use parameters with minimum x % difference.
-            difference = self._dab_config.filter.difference_percentage / 100
-
-            df = df.loc[
-                ~((df["params_n_suggest"].ge(n_suggest * (1 - difference)) & df["params_n_suggest"].le(n_suggest * (1 + difference))) & \
-                  (df["params_f_s_suggest"].ge(f_s_suggest * (1 - difference)) & df["params_f_s_suggest"].le(f_s_suggest * (1 + difference))) & \
-                  (df["params_l_s_suggest"].ge(l_s_suggest * (1 - difference)) & df["params_l_s_suggest"].le(l_s_suggest * (1 + difference))) & \
-                  (df["params_l_1_suggest"].ge(l_1_suggest * (1 - difference)) & df["params_l_1_suggest"].le(l_1_suggest * (1 + difference))) & \
-                  (df["params_l_2__suggest"].ge(l_2__suggest * (1 - difference)) & df["params_l_2__suggest"].le(l_2__suggest * (1 + difference))) & \
-                  df["params_transistor_1_name_suggest"].isin([transistor_1_name_suggest]) & \
-                  df["params_transistor_2_name_suggest"].isin([transistor_2_name_suggest])
-                  )]
-
-            df_smallest = df.nsmallest(n=1, columns=["values_1"])
-            df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
-
-        smallest_dto_list = self.df_to_dab_dto_list(df_smallest_all)
+        # Store the result to filtered point folder
+        selected_dto_list = self.df_to_sbc_dto_list(df_selected)
 
         # join if necessary
-        folders = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        folders = CircuitOptimization.load_filepaths(self._sbc_config.project_directory)
 
-        dto_directory = os.path.join(folders.circuit, self._dab_config.circuit_study_name, "filtered_results")
+        dto_directory = os.path.join(folders.circuit, self._sbc_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
-        for dto in smallest_dto_list:
+        for dto in selected_dto_list:
             # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
-            dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+            dct.HandleSbcDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
         # Stop runtime measurement and update statistical data
         with self._c_lock_stat:

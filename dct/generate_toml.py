@@ -109,9 +109,9 @@ def generate_circuit_toml(working_directory: str) -> None:
         c_par_2=16e-12
     
     [output_range]
-        v1_min_max_list=[690, 710]
-        v2_min_max_list=[175, 295]
-        p_min_max_list=[-2000, 2200]
+        v1_min_max_list=[24, 48]
+        duty_cycle_min_max_list=[0.1, 0.9]
+        i_min_max_list=[1, 30]
         
     [sampling]
         sampling_method="latin_hypercube"

@@ -23,21 +23,16 @@ class CircuitParetoDesignSpace:
     # DAB optimization parameters
     f_s_min_max_list: list[int]
     l_s_min_max_list: list[float]
-    l_1_min_max_list: list[float]
-    l_2__min_max_list: list[float]
-    n_min_max_list: list[float]
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
-    c_par_1: float
-    c_par_2: float
 
 @dataclasses.dataclass
 class CircuitOutputRange:
     """Definition of the DAB operating area."""
 
     v1_min_max_list: list
-    v2_min_max_list: list
-    p_min_max_list: list
+    duty_cycle_min_max_list: list
+    i_min_max_list: list
 
 @dataclasses.dataclass
 class CircuitSampling:
@@ -47,8 +42,8 @@ class CircuitSampling:
     sampling_points: int
     sampling_random_seed: int | None
     v1_additional_user_point_list: list[float]
-    v2_additional_user_point_list: list[float]
-    p_additional_user_point_list: list[float]
+    duty_cycle_additional_user_point_list: list[float]
+    i_additional_user_point_list: list[float]
     additional_user_weighting_point_list: list[float]
 
 @dataclasses.dataclass
@@ -59,7 +54,7 @@ class CircuitFilter:
     difference_percentage: float
 
 @dataclasses.dataclass
-class CircuitParetoDabDesign:
+class CircuitParetoSbcDesign:
     """Config to optimize the Dual-Active Bridge (DAB) converter."""
 
     circuit_study_name: str

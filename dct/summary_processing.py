@@ -179,21 +179,17 @@ class DctSummaryProcessing:
 
         return is_magnetic_list_generated, magnetic_result_numbers
 
-    def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
+    def generate_result_database(self, inductor_study_data: dct.StudyData,
                                  summary_data: dct.StudyData, act_inductor_study_names: list[str],
-                                 act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
+                                 filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
         :type inductor_study_data: dct.StudyData
-        :param transformer_study_data: transformer study data
-        :type transformer_study_data: dct.StudyData
         :param summary_data: Information about the summary name and path
         :type summary_data: dct.StudyData
         :param act_inductor_study_names: List of names with inductor studies which are to process
         :type  act_inductor_study_names: list[str]
-        :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
-        :type  act_stacked_transformer_study_names: list[str]
         :param filter_data: filtered result lists
         :type filter_data: dct.FilterData
         :return: DataFrame with result information of the pareto front
@@ -216,7 +212,7 @@ class DctSummaryProcessing:
             circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
 
             # Get circuit results
-            circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
+            circuit_dto = dct.HandleSbcDto.load_from_file(circuit_filepath_number)
 
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
@@ -225,10 +221,10 @@ class DctSummaryProcessing:
             # Begin: ASA: No influence by inductor or transformer ################################
             # get transistor results
             total_transistor_cond_loss_matrix \
-                = 4 * (circuit_dto.calc_losses.p_m1_conduction + circuit_dto.calc_losses.p_m2_conduction)
+                = 4 * (circuit_dto.calc_losses.p_hs_conduction + circuit_dto.calc_losses.p_ls_conduction)
 
-            b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
-            b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
+            b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_hs_conduction
+            b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_ls_conduction
             # End: ASA: No influence by inductor or transformer ################################
             # Begin: ASA: No influence by inductor or transformer ################################
             # get all the losses in a matrix
@@ -281,130 +277,102 @@ class DctSummaryProcessing:
                         raise ValueError(f"{inductor_dto.inductor_trial_number=} != {inductor_number}")
 
                     inductance_loss_matrix = inductor_dto.p_combined_losses
+                    # Remove transformer calculation
+                    total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix)
 
-                    # iterate transformer study
-                    for stacked_transformer_study_name in act_stacked_transformer_study_names:
+                    # maximum loss indices
+                    max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
 
-                        # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losses
-                        stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
-                                                                            circuit_trial_file,
-                                                                            stacked_transformer_study_name,
-                                                                            "09_circuit_dtos_incl_transformer_losses")
+                    # maximum loss indices
+                    max_loss_circuit_index = np.unravel_index(total_transistor_cond_loss_matrix.argmax(), np.shape(total_transistor_cond_loss_matrix))
+                    # Calculate losses of circuit1 and 2
+                    max_loss_circuit_1_index = np.unravel_index(b1_transistor_cond_loss_matrix.argmax(),
+                                                                np.shape(b1_transistor_cond_loss_matrix))
+                    max_loss_circuit_2_index = np.unravel_index(b2_transistor_cond_loss_matrix.argmax(),
+                                                                np.shape(b2_transistor_cond_loss_matrix))
 
-                        # Check, if stacked transformer number list cannot be generated
-                        is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummaryProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
-                        if not is_transformer_list_generated:
-                            logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
-                            # Next circuit
-                            continue
+                    max_loss_inductor_index = np.unravel_index(inductance_loss_matrix.argmax(), np.shape(inductance_loss_matrix))
+                    # Remove max_loss_transformer_index calculation
+                    # Calculate the thermal resistance according r_th = 1/lambda * l / A
+                    # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
+                    r_th_ind_heat_sink = self.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
+                    temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
+                    # For transformer: r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l.
+                    # r_th_xfmr_heat_sink = self.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
+                    # temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
 
-                        # iterate transformer numbers
-                        for stacked_transformer_number in stacked_transformer_full_operating_range_list:
-                            stacked_transformer_filepath_number = os.path.join(stacked_transformer_filepath_results, f"{stacked_transformer_number}.pkl")
+                    # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
+                    t_min_matrix = np.minimum(circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix)
+                    t_min_matrix = np.minimum(t_min_matrix, temperature_inductor_heat_sink_max_matrix)
+                    # t_min_matrix = np.minimum(t_min_matrix, temperature_xfmr_heat_sink_max_matrix)
+                    t_min_matrix = np.minimum(t_min_matrix, self.heat_sink_boundary_conditions.t_hs_max)
 
-                            # get transformer results
-                            with open(stacked_transformer_filepath_number, 'rb') as pickle_file_data:
-                                transformer_dto = pickle.load(pickle_file_data)
+                    # maximum delta temperature over the heat sink
+                    delta_t_max_heat_sink_matrix = t_min_matrix - self.heat_sink_boundary_conditions.t_ambient
 
-                            if transformer_dto.circuit_trial_file != circuit_trial_file:
-                                raise ValueError(f"{transformer_dto.circuit_trial_file=} != {circuit_trial_file}")
-                            if int(transformer_dto.stacked_transformer_trial_number) != int(stacked_transformer_number):
-                                raise ValueError(f"{transformer_dto.stacked_transformer_trial_number=} != {stacked_transformer_number}")
+                    r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
 
-                            transformer_loss_matrix = transformer_dto.p_combined_losses
+                    r_th_target = r_th_heat_sink_target_matrix.min()
 
-                            total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix + \
-                                                 transformer_dto.p_combined_losses)
+                    data = {
+                        # circuit
+                        "circuit_trial_file": circuit_trial_file,
+                        "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
+                        "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_circuit_index],
+                        "circuit_max_circuit_ib_loss": b1_transistor_cond_loss_matrix[max_loss_circuit_1_index],
+                        "circuit_max_circuit_ob_loss": b2_transistor_cond_loss_matrix[max_loss_circuit_2_index],
+                        # "circuit_max_inductor_loss": total_transistor_cond_loss_matrix[max_loss_inductor_index],
+                        # "circuit_max_transformer_loss": total_transistor_cond_loss_matrix[max_loss_transformer_index],
+                        "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
+                        "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
+                        "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
+                        "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
+                        "circuit_heat_sink_temperature_max_1": circuit_heat_sink_max_1_matrix[max_loss_circuit_1_index],
+                        "circuit_heat_sink_temperature_max_2": circuit_heat_sink_max_2_matrix[max_loss_circuit_2_index],
+                        "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
+                        # inductor
+                        "inductor_study_name": inductor_study_name,
+                        "inductor_number": inductor_number,
+                        "inductor_volume": inductor_dto.volume,
+                        "inductor_mean_loss": np.mean(inductance_loss_matrix),
+                        # "inductor_max_all_loss": inductance_loss_matrix[max_loss_all_index],
+                        # "inductor_max_circuit_ib_loss": inductance_loss_matrix[max_loss_circuit_1_index],
+                        # "inductor_max_circuit_ob_loss": inductance_loss_matrix[max_loss_circuit_2_index],
+                        "inductor_max_inductor_loss": inductance_loss_matrix[max_loss_inductor_index],
+                        # "inductor_max_transformer_loss": inductance_loss_matrix[max_loss_transformer_index],
+                        "inductor_t_max": 0,
+                        "inductor_heat_sink_temperature_max": temperature_inductor_heat_sink_max_matrix[max_loss_inductor_index],
+                        "inductor_area": inductor_dto.area_to_heat_sink,
+                        # transformer
+                        """
+                        "transformer_study_name": stacked_transformer_study_name,
+                        "transformer_number": stacked_transformer_number,
+                        "transformer_volume": transformer_dto.volume,
+                        "transformer_mean_loss": np.mean(transformer_dto.p_combined_losses),
+                        "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
+                        "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
+                        "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],
+                        "transformer_max_inductor_loss": transformer_loss_matrix[max_loss_inductor_index],
+                        "transformer_max_transformer_loss": transformer_loss_matrix[max_loss_transformer_index],
+                        "transformer_t_max": 0,
+                        "transformer_heat_sink_temperature_max": temperature_xfmr_heat_sink_max_matrix[max_loss_transformer_index],
+                        "transformer_area": transformer_dto.area_to_heat_sink,
+                        """
+                        
+                        # summary
+                        "total_losses": total_loss_matrix[max_loss_all_index],
 
-                            # maximum loss indices
-                            max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
-                            # Calculate losses of circuit1 and 2
-                            max_loss_circuit_1_index = np.unravel_index(b1_transistor_cond_loss_matrix.argmax(),
-                                                                        np.shape(b1_transistor_cond_loss_matrix))
-                            max_loss_circuit_2_index = np.unravel_index(b2_transistor_cond_loss_matrix.argmax(),
-                                                                        np.shape(b2_transistor_cond_loss_matrix))
+                        # heat sink
+                        "r_th_heat_sink": r_th_target
+                    }
+                    local_df = pd.DataFrame([data])
 
-                            max_loss_inductor_index = np.unravel_index(inductance_loss_matrix.argmax(), np.shape(inductance_loss_matrix))
-                            max_loss_transformer_index = np.unravel_index(transformer_loss_matrix.argmax(), np.shape(transformer_loss_matrix))
-                            # Calculate the thermal resistance according r_th = 1/lambda * l / A
-                            # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
-                            r_th_ind_heat_sink = self.r_th_per_unit_area_ind_heat_sink / inductor_dto.area_to_heat_sink
-                            temperature_inductor_heat_sink_max_matrix = 125 - r_th_ind_heat_sink * inductance_loss_matrix
-                            # For transformer: r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l.
-                            r_th_xfmr_heat_sink = self.r_th_per_unit_area_xfmr_heat_sink / transformer_dto.area_to_heat_sink
-                            temperature_xfmr_heat_sink_max_matrix = 125 - r_th_xfmr_heat_sink * transformer_loss_matrix
+                    df = pd.concat([df, local_df], axis=0)
 
-                            # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
-                            t_min_matrix = np.minimum(circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, temperature_inductor_heat_sink_max_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, temperature_xfmr_heat_sink_max_matrix)
-                            t_min_matrix = np.minimum(t_min_matrix, self.heat_sink_boundary_conditions.t_hs_max)
-
-                            # maximum delta temperature over the heat sink
-                            delta_t_max_heat_sink_matrix = t_min_matrix - self.heat_sink_boundary_conditions.t_ambient
-
-                            r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
-
-                            r_th_target = r_th_heat_sink_target_matrix.min()
-
-                            data = {
-                                # circuit
-                                "circuit_trial_file": circuit_trial_file,
-                                "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
-                                "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
-                                "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],
-                                "circuit_max_circuit_ob_loss": total_transistor_cond_loss_matrix[max_loss_circuit_2_index],
-                                "circuit_max_inductor_loss": total_transistor_cond_loss_matrix[max_loss_inductor_index],
-                                "circuit_max_transformer_loss": total_transistor_cond_loss_matrix[max_loss_transformer_index],
-                                "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
-                                "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
-                                "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
-                                "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
-                                "circuit_heat_sink_temperature_max_1": circuit_heat_sink_max_1_matrix[max_loss_circuit_1_index],
-                                "circuit_heat_sink_temperature_max_2": circuit_heat_sink_max_2_matrix[max_loss_circuit_2_index],
-                                "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
-                                # inductor
-                                "inductor_study_name": inductor_study_name,
-                                "inductor_number": inductor_number,
-                                "inductor_volume": inductor_dto.volume,
-                                "inductor_mean_loss": np.mean(inductance_loss_matrix),
-                                "inductor_max_all_loss": inductance_loss_matrix[max_loss_all_index],
-                                "inductor_max_circuit_ib_loss": inductance_loss_matrix[max_loss_circuit_1_index],
-                                "inductor_max_circuit_ob_loss": inductance_loss_matrix[max_loss_circuit_2_index],
-                                "inductor_max_inductor_loss": inductance_loss_matrix[max_loss_inductor_index],
-                                "inductor_max_transformer_loss": inductance_loss_matrix[max_loss_transformer_index],
-                                "inductor_t_max": 0,
-                                "inductor_heat_sink_temperature_max": temperature_inductor_heat_sink_max_matrix[max_loss_inductor_index],
-                                "inductor_area": inductor_dto.area_to_heat_sink,
-                                # transformer
-                                "transformer_study_name": stacked_transformer_study_name,
-                                "transformer_number": stacked_transformer_number,
-                                "transformer_volume": transformer_dto.volume,
-                                "transformer_mean_loss": np.mean(transformer_dto.p_combined_losses),
-                                "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
-                                "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
-                                "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],
-                                "transformer_max_inductor_loss": transformer_loss_matrix[max_loss_inductor_index],
-                                "transformer_max_transformer_loss": transformer_loss_matrix[max_loss_transformer_index],
-                                "transformer_t_max": 0,
-                                "transformer_heat_sink_temperature_max": temperature_xfmr_heat_sink_max_matrix[max_loss_transformer_index],
-                                "transformer_area": transformer_dto.area_to_heat_sink,
-
-                                # summary
-                                "total_losses": total_loss_matrix[max_loss_all_index],
-
-                                # heat sink
-                                "r_th_heat_sink": r_th_target
-                            }
-                            local_df = pd.DataFrame([data])
-
-                            df = pd.concat([df, local_df], axis=0)
-
-        # Calculate the total area as sum of circuit,  inductor and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
-        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
-        df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
-        df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
+        # Calculate the total area as sum of circuit and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
+        df["total_area"] = df["circuit_area"] + df["inductor_area"]
+        df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"]
+        df["volume_wo_heat_sink"] = df["inductor_volume"]
         # Save results to file (ASA : later to store only on demand)
         df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
 
@@ -447,7 +415,7 @@ class DctSummaryProcessing:
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
-        act_df_for_hs["total_volume"] = act_df_for_hs["transformer_volume"] + act_df_for_hs["inductor_volume"] + act_df_for_hs["heat_sink_volume"]
+        act_df_for_hs["total_volume"] = act_df_for_hs["inductor_volume"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
         act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/df_w_hs.csv")

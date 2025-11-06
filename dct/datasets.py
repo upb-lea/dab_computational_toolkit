@@ -13,191 +13,100 @@ from matplotlib import pyplot as plt
 
 # own libraries
 import dct.datasets_dtos as d_dtos
-import dct.functions_waveforms as d_waveforms
-import dct.mod_zvs as mod
 import dct.currents as dct_currents
-import dct.geckosimulation as dct_gecko
 import dct.losses as dct_loss
 from dct.circuit_optimization_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
-class HandleDabDto:
-    """Class to handle the DabDTO, e.g. save and load the files."""
+class HandleSbcDto:
+    """Class to handle the SbcDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
-                    sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
-                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
+    def init_config(name: str, mesh_v1: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i: np.ndarray,
+                    sampling: CircuitSampling, ls: float, fs: float,
+                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO) -> d_dtos.CircuitSbcDTO:
         """
-        Initialize the DAB structure.
+        Initialize the SBC structure.
 
         :param name: name of the simulation
-        :type name: str
+        :type  name: str
         :param mesh_v1: mesh or hypercube sampling for v1
-        :type mesh_v1: np.ndarray
-        :param mesh_v2: mesh or hypercube sampling for v2
-        :type mesh_v2: np.ndarray
-        :param mesh_p: mesh or hypercube sampling for p
-        :type mesh_p: np.ndarray
+        :type  mesh_v1: np.ndarray
+        :param mesh_duty_cycle: mesh or hypercube sampling for duty cycle
+        :type  mesh_duty_cycle: np.ndarray
+        :param mesh_i: mesh or hypercube sampling for current
+        :type  mesh_i: np.ndarray
         :param sampling: Sampling parameters
-        :type sampling: d_dtos.Sampling
-        :param n: transformer transfer ratio
-        :type n: float
+        :type  sampling: d_dtos.Sampling
         :param ls: series inductance
-        :type ls: float
-        :param lc1: Commutation inductance Lc1
-        :type lc1: float
-        :param lc2: Commutation inductance Lc2
-        :type lc2: float
+        :type  ls: float
         :param fs: Switching frequency
-        :type fs: float
+        :type  fs: float
         :param transistor_dto_1: Transistor DTO for transistor bridge 1. Must match with transistordatabase available transistors.
-        :type transistor_dto_1: TransistorDTO
-        :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatabase available transistors.
-        :type transistor_dto_2: TransistorDTO
-        :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
-        :type c_par_1: float
-        :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
-        :type c_par_2: float
+        :type  transistor_dto_1: TransistorDTO
+        :param transistor_dto_2: Transistor DTO for transistor bridge 1. Must match with transistordatabase available transistors.
+        :type  transistor_dto_2: TransistorDTO
         :return:
         """
         input_configuration = d_dtos.CircuitConfig(mesh_v1=mesh_v1,
-                                                   mesh_v2=mesh_v2,
-                                                   mesh_p=mesh_p,
+                                                   mesh_duty_cycle=mesh_duty_cycle,
+                                                   mesh_i=mesh_i,
                                                    sampling=sampling,
-                                                   n=np.array(n),
                                                    Ls=np.array(ls),
-                                                   Lc1=np.array(lc1),
-                                                   Lc2=np.array(lc2),
                                                    fs=np.array(fs),
                                                    transistor_dto_1=transistor_dto_1,
-                                                   transistor_dto_2=transistor_dto_2,
-                                                   c_par_1=c_par_1,
-                                                   c_par_2=c_par_2,
-                                                   )
-        calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
-        modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
+                                                   transistor_dto_2=transistor_dto_2)
 
-        i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct_currents.calc_rms_currents(
-            input_configuration, calc_config, modulation_parameters)
+        # ASA Remove calc_config calculation
 
-        i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted = dct_currents.calc_hf_currents(
-            angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
+        # Design space:
+        # fs, L M (HS and LS same type, later to replace by variable)
+        #
+        # Chose: fs, L M -> p_loss_transistor, ripple current, volume proxy L
+        # Next iteration: Change...
+        #
+        # P_Loss=P_cond+P_switch=I_rms²*R_D_S_on=(I_out²+I_Ripple¹/12)*R_D_S_on
+        # I_Ripple=(V_in-V_out)*D/(L*fs)  = V_in*D(1-D)/(L*fs)
+        # P_switch= 0.5⋅V_in⋅I_pk⋅(t_raise+t_fall)⋅f (First assumption for the simulation, later calculation over switch energy)
 
-        i_m1_rms = dct_currents.calc_transistor_rms_currents(i_hf_1_rms)
-        i_m2_rms = dct_currents.calc_transistor_rms_currents(i_hf_2_rms)
+        # Calculate the ripple current and rms current
+        i_ripple, i_ms, i_rms = dct_currents.calc_rms_currents(input_configuration)
 
-        calc_currents = d_dtos.CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
-                                               'angles_rad_unsorted': angles_rad_unsorted, 'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted,
-                                               'i_l_2_sorted': i_l_2_sorted, 'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms,
-                                               'i_m1_rms': i_m1_rms, 'i_m2_rms': i_m2_rms, 'i_hf_1_sorted': i_hf_1_sorted, 'i_hf_2_sorted': i_hf_2_sorted})
-        p_m1_cond = dct_loss.transistor_conduction_loss(i_m1_rms, transistor_dto_1)
-        p_m2_cond = dct_loss.transistor_conduction_loss(i_m2_rms, transistor_dto_2)
+        # Calculate the Volume proxy
+        calc_volume_inductor_proxy = dct_currents.calc_volume_inductor_proxy(input_configuration, i_ripple, i_rms)
 
-        calc_losses = d_dtos.CalcLosses(**{'p_m1_conduction': p_m1_cond,
-                                           'p_m2_conduction': p_m2_cond,
-                                           'p_dab_conduction': 4 * (p_m1_cond + p_m2_cond)})
+        calc_currents = d_dtos.CalcCurrents(i_rms=i_rms, i_ms=i_ms, i_ripple=i_ripple)
 
-        gecko_additional_params = d_dtos.GeckoAdditionalParameters(
-            t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
-            number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
-            simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
-            lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
+        # Calculate the transistor conduction losses p_hs_cond = (I_out²+I_Ripple²/12)*R_D_S_on
+        p_hs_cond = dct_loss.transistor_conduction_loss(i_ms * input_configuration.mesh_duty_cycle, transistor_dto_1)
+        p_ls_cond = dct_loss.transistor_conduction_loss(i_ms * (1 - input_configuration.mesh_duty_cycle), transistor_dto_1)
+        p_hs_switch = dct_loss.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
+                                                      input_configuration.transistor_dto_1, input_configuration.fs)
+        p_ls_switch = dct_loss.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
+                                                      input_configuration.transistor_dto_2, input_configuration.fs)
 
-        dab_dto = d_dtos.CircuitDabDTO(
+        p_loss = d_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond,
+                                      'p_ls_conduction': p_ls_cond,
+                                      'p_hs_switch': p_hs_switch,
+                                      'p_ls_switch': p_ls_switch,
+                                      'p_sbc_total': p_hs_cond + p_ls_cond + p_hs_switch + p_ls_switch})
+
+        sbc_dto = d_dtos.CircuitSbcDTO(
             name=name,
             timestamp=None,
             metadata=None,
             input_config=input_configuration,
-            calc_config=calc_config,
-            calc_modulation=modulation_parameters,
+            # Later to remove
+            calc_config=None,
+            # End Later to remove
             calc_currents=calc_currents,
-            calc_losses=calc_losses,
-            gecko_additional_params=gecko_additional_params,
-            gecko_results=None,
-            gecko_waveforms=None,
-            inductor_results=None,
-            stacked_transformer_results=None
-        )
-        return dab_dto
-
-    @staticmethod
-    def add_gecko_simulation_results(dab_dto: d_dtos.CircuitDabDTO, get_waveforms: bool = False) -> d_dtos.CircuitDabDTO:
-        """
-        Add GeckoCIRCUITS simulation results to the given DTO.
-
-        :param dab_dto: DabDTO
-        :param get_waveforms: Read back GeckoCIRCUITS simulation waveforms (high memory consumption). Default to False.
-        :type get_waveforms: bool
-        :return: DabDTO
-        """
-        gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
-            mesh_v1=dab_dto.input_config.mesh_v1, mesh_v2=dab_dto.input_config.mesh_v2,
-            mesh_p=dab_dto.input_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
-            mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
-            t_dead1=dab_dto.gecko_additional_params.t_dead1, t_dead2=dab_dto.gecko_additional_params.t_dead2,
-            fs=dab_dto.input_config.fs, ls=dab_dto.input_config.Ls, lc1=dab_dto.input_config.Lc1,
-            lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
-            t_j_1=dab_dto.calc_config.t_j_1, t_j_2=dab_dto.calc_config.t_j_2,
-            simfilepath=dab_dto.gecko_additional_params.simfilepath,
-            lossfilepath=dab_dto.gecko_additional_params.lossfilepath,
-            timestep=dab_dto.gecko_additional_params.timestep,
-            number_sim_periods=dab_dto.gecko_additional_params.number_sim_periods,
-            timestep_pre=dab_dto.gecko_additional_params.timestep_pre,
-            number_pre_sim_periods=dab_dto.gecko_additional_params.number_pre_sim_periods, geckoport=43036,
-            c_par_1=dab_dto.input_config.c_par_1, c_par_2=dab_dto.input_config.c_par_2,
-            transistor_1_name=dab_dto.input_config.transistor_dto_1.name,
-            transistor_2_name=dab_dto.input_config.transistor_dto_2.name, get_waveforms=get_waveforms,
-            i_ls_start=dab_dto.calc_currents.i_l_s_sorted[0],
-            i_lc1_start=dab_dto.calc_currents.i_l_1_sorted[0],
-            i_lc2_start=dab_dto.calc_currents.i_l_2_sorted[0])
-
-        # add GeckoCIRCUITS simulation results to the result DTO.
-        dab_dto.gecko_results = d_dtos.GeckoResults(**gecko_results)
-
-        dab_dto.gecko_waveforms = d_dtos.GeckoWaveforms(**gecko_waveforms)
-        return dab_dto
-
-    @staticmethod
-    def calculate_from_configuration(config: d_dtos.CircuitConfig) -> d_dtos.CalcFromCircuitConfig:
-        """
-        Calculate logical parameters which can be calculated from the input parameters.
-
-        :param config: DAB configuration
-        :type config: CircuitConfig
-        :return: CalcFromConfig
-        :rtype: CalcFromCircuitConfig
-        """
-        Lc2_ = config.Lc2 * config.n ** 2
-
-        calc_from_config = d_dtos.CalcFromCircuitConfig(
-            Lc2_=Lc2_,
-            t_j_1=config.transistor_dto_1.t_j_max_op,
-            t_j_2=config.transistor_dto_2.t_j_max_op,
-            c_oss_par_1=config.transistor_dto_1.c_oss + config.c_par_1,
-            c_oss_par_2=config.transistor_dto_2.c_oss + config.c_par_2,
-            c_oss_1=config.transistor_dto_1.c_oss,
-            c_oss_2=config.transistor_dto_2.c_oss,
-            q_oss_1=config.transistor_dto_1.q_oss,
-            q_oss_2=config.transistor_dto_2.q_oss
+            calc_losses=p_loss,
+            calc_volume_inductor_proxy=calc_volume_inductor_proxy,
+            inductor_results=None
         )
 
-        return calc_from_config
-
-    @staticmethod
-    def calculate_modulation(config: d_dtos.CircuitConfig, calc_config: d_dtos.CalcFromCircuitConfig) -> d_dtos.CalcModulation:
-        """
-        Calculate the modulation parameters like phi, tau1, tau, ...
-
-        :param config: DAB input configuration
-        :param calc_config: calculated parameters from the input configuration
-        :return: Modulation parameters.
-        """
-        result_dict = mod.calc_modulation_params(config.n, config.Ls, config.Lc1, config.Lc2, config.fs, c_oss_1=calc_config.c_oss_par_1,
-                                                 c_oss_2=calc_config.c_oss_par_2, v1=config.mesh_v1, v2=config.mesh_v2, power=config.mesh_p)
-
-        return d_dtos.CalcModulation(**result_dict)
+        return sbc_dto
 
     @staticmethod
     def get_c_oss_from_tdb(transistor: tdb.Transistor, margin_factor: float = 1.2) -> tuple:
@@ -236,7 +145,7 @@ class HandleDabDto:
 
         # return coss_interp
         c_oss = coss_interp
-        q_oss = HandleDabDto._integrate_c_oss(coss_interp)
+        q_oss = HandleSbcDto._integrate_c_oss(coss_interp)
         return c_oss, q_oss
 
     @staticmethod
@@ -262,12 +171,12 @@ class HandleDabDto:
         return qoss
 
     @staticmethod
-    def save(dab_dto: d_dtos.CircuitDabDTO, name: str, directory: str, timestamp: bool = True) -> None:
+    def save(sbc_dto: d_dtos.CircuitSbcDTO, name: str, directory: str, timestamp: bool = True) -> None:
         """
-        Save the DabDTO-class to a npz file.
+        Save the SbcDTO-class to a npz file.
 
-        :param dab_dto: Class to store
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :param sbc_dto: Class to store
+        :type sbc_dto: d_dtos.CircuitSbcDTO
         :param name: Filename
         :type name: str
         :param directory: Directory to store the results
@@ -277,7 +186,7 @@ class HandleDabDto:
         """
         # Add some descriptive data to the file
         # Adding a timestamp, it may be useful
-        dab_dto.timestamp = np.asarray(datetime.datetime.now().isoformat())
+        sbc_dto.timestamp = np.asarray(datetime.datetime.now().isoformat())
 
         # Adding a timestamp to the filename if requested
         if timestamp:
@@ -290,7 +199,7 @@ class HandleDabDto:
                 filename = name
             else:
                 # set some default non-empty filename
-                filename = "dab_dataset"
+                filename = "sbc_dataset"
 
         if directory:
             directory = os.path.expanduser(directory)
@@ -305,15 +214,15 @@ class HandleDabDto:
             file = os.path.join(filename)
 
         with open(f"{file}.pkl", 'wb') as output:
-            pickle.dump(dab_dto, output, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(sbc_dto, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_from_file(file: str) -> d_dtos.CircuitDabDTO:
+    def load_from_file(file: str) -> d_dtos.CircuitSbcDTO:
         """
         Load everything from the given .npz file.
 
         :param file: a .nps filename or file-like object, string, or pathlib.Path
-        :return: two objects with type DAB_Specification and DAB_Results
+        :return: two objects with type SBC_Specification and SBC_Results
         """
         # Check for filename extension
         file_name, file_extension = os.path.splitext(file)
@@ -325,139 +234,60 @@ class HandleDabDto:
 
         with open(file, 'rb') as pickle_file_data:
             loaded_circuit_dto = pickle.load(pickle_file_data)
-            if not isinstance(loaded_circuit_dto, d_dtos.CircuitDabDTO):
-                raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type CircuitDabDTO.")
+            if not isinstance(loaded_circuit_dto, d_dtos.CircuitSbcDTO):
+                raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type CircuitSbcDTO.")
             return loaded_circuit_dto
 
     @staticmethod
-    def get_max_peak_waveform_transformer(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Get the transformer waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
-
-        :param dab_dto: DAB data transfer object (DTO)
-        :type dab_dto: d_dtos.CircuitDabDTO
-        :param plot: True to plot the results, mostly for understanding and debugging
-        :type plot: bool
-        :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform. All as a numpy array.
-        :rtype: List[np.ndarray]
-        """
-        i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted * dab_dto.input_config.n - dab_dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
-
-        max_index = (0, 0, 0)
-        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
-            max_index = vec_vvp if np.max(i_hf_2_sorted[vec_vvp]) > np.max(i_hf_2_sorted[max_index]) else max_index  # type: ignore
-            if plot:
-                plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
-                         d_waveforms.full_current_waveform_from_currents(i_hf_2_sorted[vec_vvp]), color='gray')
-
-        i_hf_2_max_current_waveform = i_hf_2_sorted[max_index]
-        i_l_s_max_current_waveform = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))[max_index]
-
-        sorted_max_angles, unique_indices = np.unique(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index]), return_index=True)
-        i_l_s_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_l_s_max_current_waveform)[unique_indices]
-        i_hf_2_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_hf_2_max_current_waveform)[unique_indices]
-
-        if plot:
-            plt.plot(sorted_max_angles, i_hf_2_max_current_waveform, color='red', label='peak current full waveform')
-            plt.grid()
-            plt.xlabel('Angle in rad')
-            plt.ylabel('Current in A')
-            plt.legend()
-            plt.show()
-
-        return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
-
-    @staticmethod
-    def get_max_peak_waveform_inductor(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def get_max_peak_waveform_inductor(sbc_dto: d_dtos.CircuitSbcDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
-        :param dab_dto: DAB data transfer object (DTO)
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :param sbc_dto: SBC data transfer object (DTO)
+        :type sbc_dto: d_dtos.CircuitSbcDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_l1_max_current_waveform. All as a numpy array.
         :rtype: List[np.ndarray]
         """
-        i_l1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+        # Variable declaration
+        i_rms_current: np.ndarray
+        i_rms_max_current: np.ndarray
+        time_array: np.ndarray
 
-        max_index = (0, 0, 0)
-        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
-            max_index = vec_vvp if np.max(i_l1_sorted[vec_vvp]) > np.max(i_l1_sorted[max_index]) else max_index  # type: ignore
-            if plot:
-                plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
-                         d_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp]), color='gray')
-
-        i_l1_max_current_waveform = i_l1_sorted[max_index]
-
-        sorted_max_angles, unique_indices = np.unique(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index]), return_index=True)
-        i_l1_max_current_waveform = d_waveforms.full_current_waveform_from_currents(i_l1_max_current_waveform)[unique_indices]
+        # Later modulation are load/generator
+        i_rms_current = np.squeeze(sbc_dto.calc_currents.i_ripple)
+        i_rms_max_current = np.array([-0.5, +0.5, -0.5])
+        i_rms_max_current = i_rms_max_current * i_rms_current.max()
+        # FEMMT issue: DC current leads to problems-> Next line is commented out
+        # i_rms_max_current = i_rms_max_current + np.squeeze(sbc_dto.calc_currents.i_rms)
+        # ASA: Duty cycle worst case=0.5. This is to replace by suitable result out of mesh duty cycle
+        time_array = np.array([0, 0.5, 1]) * 1/sbc_dto.input_config.fs
 
         if plot:
-            plt.plot(sorted_max_angles, i_l1_max_current_waveform, color='red', label='peak current full waveform')
+            plt.plot(time_array, i_rms_max_current, color='red', label='peak current full waveform')
             plt.grid()
-            plt.xlabel('Angle in rad')
+            plt.xlabel('time in us')
             plt.ylabel('Current in A')
             plt.legend()
             plt.show()
 
-        return sorted_max_angles, i_l1_max_current_waveform
+        return time_array, i_rms_max_current
 
     @staticmethod
-    def export_transformer_target_parameters_dto(dab_dto: d_dtos.CircuitDabDTO) -> d_dtos.TransformerTargetParameters:
-        """
-        Export the optimization parameters for the transformer optimization (inside FEMMT).
+    def add_inductor_results(sbc_dto: d_dtos.CircuitSbcDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.CircuitSbcDTO:
+        """Add inductor results to the CircuitSbcDTO.
 
-        Note: the current counting system is adapted to FEMMT! The secondary current is counted negative!
-
-        :param dab_dto: DAB DTO
-        :type dab_dto: d_dtos.CircuitDabDTO
-        :return: DTO for the transformer optimization using FEMMT
-        :rtype: TransformerTargetParameters
-        """
-        # calculate the full 2pi waveform from the four given DAB currents
-        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = HandleDabDto.get_max_peak_waveform_transformer(dab_dto, plot=False)
-        # transfer 2pi periodic time into a real time
-        time = sorted_max_angles / 2 / np.pi / dab_dto.input_config.fs
-
-        return d_dtos.TransformerTargetParameters(
-            l_s12_target=dab_dto.input_config.Ls,
-            l_h_target=dab_dto.input_config.Lc2 * dab_dto.input_config.n ** 2,
-            n_target=dab_dto.input_config.n,
-            time_current_1_vec=np.array([time, i_l_s_max_current_waveform]),
-            time_current_2_vec=np.array([time, -i_hf_2_max_current_waveform]),
-            temperature=100)
-
-    @staticmethod
-    def add_inductor_results(dab_dto: d_dtos.CircuitDabDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.CircuitDabDTO:
-        """Add inductor results to the CircuitDabDTO.
-
-        :param dab_dto: Dual-active bridge DTO
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :param sbc_dto: Dual-active bridge DTO
+        :type sbc_dto: d_dtos.CircuitSbcDTO
         :param inductor_results: inductor losses
         :type inductor_results: InductorResults
         :return: Dual-active bridge DTO including the inductor losses
-        :rtype: d_dtos.CircuitDabDTO
+        :rtype: d_dtos.CircuitSbcDTO
         """
-        dab_dto.inductor_results = inductor_results
+        sbc_dto.inductor_results = inductor_results
 
-        return dab_dto
-
-    @staticmethod
-    def add_stacked_transformer_results(dab_dto: d_dtos.CircuitDabDTO, transformer_results: d_dtos.StackedTransformerResults) -> d_dtos.CircuitDabDTO:
-        """Add stacked transformer results to the CircuitDabDTO.
-
-        :param dab_dto: Dual-active bridge DTO
-        :type dab_dto: d_dtos.CircuitDabDTO
-        :param transformer_results: stacked transformer results
-        :type transformer_results: StackedTransformerResults
-        :return: Dual-active bridge DTO including the inductor losses
-        :rtype: d_dtos.CircuitDabDTO
-        """
-        dab_dto.stacked_transformer_results = transformer_results
-        return dab_dto
+        return sbc_dto
 
 class HandleTransistorDto:
     """Handle the transistor DTOs."""
@@ -485,7 +315,7 @@ class HandleTransistorDto:
 
         t_j_recommended = transistor.switch.t_j_max - 25
 
-        c_oss, q_oss = HandleDabDto.get_c_oss_from_tdb(transistor, margin_factor=c_oss_margin_factor)
+        c_oss, q_oss = HandleSbcDto.get_c_oss_from_tdb(transistor, margin_factor=c_oss_margin_factor)
 
         # export c_oss files for GeckoCIRCUITS
         path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
