@@ -33,7 +33,7 @@ class CapacitorSelection:
     def __init__(self):
         self._optimization_config_list = []
 
-    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, study_data: StudyData, circuit_filter_data: FilterData):
+    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, study_data: StudyData, circuit_filter_data: FilterData) -> None:
         """
         Initialize the capacitor selection.
 
@@ -90,7 +90,7 @@ class CapacitorSelection:
 
     @staticmethod
     def _start_optimization(circuit_filtered_point_file: str, act_cst_config: pecst.CapacitorRequirements, filter_data: FilterData,
-                            debug: Debug):
+                            debug: Debug) -> int:
         # capacitor requirements
         _, c_db_df_list = pecst.select_capacitors(act_cst_config)
 

@@ -53,6 +53,8 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
     general=tc.General(project_directory="Hallo"),
     breakpoints=tc.Breakpoints(circuit_pareto="no",
                                circuit_filtered="no",
+                               capacitor_1="no",
+                               capacitor_2="no",
                                inductor="no",
                                transformer="no",
                                heat_sink="no",
@@ -66,6 +68,12 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
     circuit=tc.Circuit(number_of_trials=1,
                        calculation_mode="continue",
                        subdirectory="dummy"),
+    capacitor_1=tc.Capacitor1(
+        calculation_mode="new",
+        subdirectory="dummy"),
+    capacitor_2=tc.Capacitor2(
+        calculation_mode="new",
+        subdirectory="dummy"),
     inductor=tc.Inductor(number_of_trials=1,
                          calculation_mode="continue",
                          subdirectory="dummy"),
@@ -82,6 +90,8 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
     configuration_data_files=tc.ConfigurationDataFiles(
         general_configuration_file="dummy",
         circuit_configuration_file="dummy",
+        capacitor_1_configuration_file="dummy",
+        capacitor_2_configuration_file="dummy",
         inductor_configuration_file="dummy",
         transformer_configuration_file="dummy",
         heat_sink_configuration_file="dummy")
