@@ -26,6 +26,7 @@ from dct import toml_checker as tc, ProgressStatus
 from dct import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
 from dct import CircuitOptimization
+from dct import CapacitorSelection
 from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
@@ -66,6 +67,8 @@ class DctMainCtl:
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_files: list[str] = []
         self._circuit_optimization: CircuitOptimization | None = None
+        self._capacitor_1_selection: CapacitorSelection | None = None
+        self._capacitor_2_selection: CapacitorSelection | None = None
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
@@ -115,6 +118,8 @@ class DctMainCtl:
         # Convert relative  paths to absolute paths
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
         circuit_path = os.path.join(project_directory, toml_prog_flow.circuit.subdirectory)
+        capacitor_1_path = os.path.join(project_directory, toml_prog_flow.capacitor_1.subdirectory)
+        capacitor_2_path = os.path.join(project_directory, toml_prog_flow.capacitor_2.subdirectory)
         inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
         transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
@@ -122,6 +127,8 @@ class DctMainCtl:
         summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
 
         path_dict = {'circuit': circuit_path,
+                     'capacitor_1': capacitor_1_path,
+                     'capacitor_2': capacitor_2_path,
                      'inductor': inductor_path,
                      'transformer': transformer_path,
                      'heat_sink': heat_sink_path,
@@ -1034,7 +1041,9 @@ class DctMainCtl:
         # --------------------------
         debug_toml_filepath = os.path.join(workspace_path, "debug_config.toml")
         is_debug_loaded, debug_dict = self.load_toml_file(debug_toml_filepath)
+
         if is_debug_loaded:
+            print("debug.toml config found.")
             logger.info("debug.toml config found.")
             toml_debug = dct.Debug(**debug_dict)
         else:
@@ -1072,6 +1081,18 @@ class DctMainCtl:
         self._circuit_study_data = dct.StudyData(
             study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory,
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+        )
+
+        self._capacitor_1_selection_data = dct.StudyData(
+            study_name=toml_prog_flow.configuration_data_files.capacitor_1_configuration_file.replace(".toml", ""),
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_1.subdirectory,
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+        )
+
+        self._capacitor_2_selection_data = dct.StudyData(
+            study_name=toml_prog_flow.configuration_data_files.capacitor_2_configuration_file.replace(".toml", ""),
+            optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_2.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
@@ -1162,6 +1183,26 @@ class DctMainCtl:
                     raise ValueError(f"Filtered results folder {filter_data.filtered_list_pathname} is empty.")
             else:
                 raise ValueError(f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist.")
+
+        # --------------------------
+        # Capacitor 1 flow control
+        # --------------------------
+        logger.debug("Read capacitor 1 flow control")
+
+        # Init circuit configuration
+        is_capacitor_1_loaded, dict_capacitor_1 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
+        toml_capacitor_1 = tc.TomlCapacitorSelection(**dict_capacitor_1)
+
+        if not is_capacitor_1_loaded:
+            raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
+
+        # Verify circuit parameters
+        # is_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
+        # if not is_consistent:
+        #     raise ValueError("Circuit optimization parameter in file ",
+        #                      f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
+
+
 
         # --------------------------
         # Inductor flow control
@@ -1343,6 +1384,51 @@ class DctMainCtl:
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
+
+        # --------------------------
+        # Capacitor 1 selection
+        # --------------------------
+        logger.info("Start capacitor 1 selection")
+
+        # Check, if electrical optimization is not to skip
+        if not toml_prog_flow.capacitor_1.calculation_mode == "skip":
+
+            # Allocate and initialize circuit configuration
+            self._capacitor_1_selection = CapacitorSelection()
+            self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, study_data=self._capacitor_1_selection_data, circuit_filter_data=filter_data)
+
+            # Check, if old study is to delete, if available
+            if toml_prog_flow.capacitor_1.calculation_mode == "new":
+                # delete old circuit study data
+                self.delete_study_content(self._capacitor_1_selection_data.optimization_directory, self._capacitor_1_selection_data.study_name)
+
+                # Create the filtered result folder
+                os.makedirs(self._capacitor_1_selection_data.optimization_directory, exist_ok=True)
+
+            # Perform circuit optimization
+            self._capacitor_1_selection.optimization_handler(filter_data=filter_data, debug=toml_debug)
+
+        # Check breakpoint
+        self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
+
+        # Check, if electrical optimization is not to skip
+        # if not toml_prog_flow.circuit.calculation_mode == "skip":
+        #
+        #     # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
+        #     if self._circuit_optimization is None:
+        #         raise ValueError("Serious programming error. Please write an issue!")
+        #
+        #     # Calculate the filtered results
+        #     self._circuit_optimization.filter_study_results()
+        #     # Get filtered result path
+        #
+        #     # Add filtered result list
+        #     for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
+        #         if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
+        #             filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
+        #
+        #     # Workaround: Set filtered result id list here, later to handle in circuit_optimization
+        #     self._filtered_list_files = filter_data.filtered_list_files
 
         # --------------------------
         # Inductor reluctance model optimization

@@ -117,8 +117,10 @@ class HandleDabDto:
             gecko_additional_params=gecko_additional_params,
             gecko_results=None,
             gecko_waveforms=None,
+            capacitor_1_results=None,
+            capacitor_2_results=None,
             inductor_results=None,
-            stacked_transformer_results=None
+            stacked_transformer_results=None,
         )
         return dab_dto
 
@@ -404,6 +406,45 @@ class HandleDabDto:
             plt.show()
 
         return sorted_max_angles, i_l1_max_current_waveform
+
+    @staticmethod
+    def get_max_rms_waveform_capacitor(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Get the capacitor waveform with the maximum RMS current out of the three-dimensional simulation array (v_1, v_2, P).
+
+        :param dab_dto: DAB data transfer object (DTO)
+        :type dab_dto: d_dtos.CircuitDabDTO
+        :param plot: True to plot the results, mostly for understanding and debugging
+        :type plot: bool
+        :return: sorted_max_rms_angles, i_hf1_max_rms_current_waveform, All as a numpy array.
+        :rtype: List[np.ndarray]
+        """
+        i_c1_sorted = np.transpose(dab_dto.calc_currents.i_hf_1_sorted, (1, 2, 3, 0))
+        i_c1_rms = dab_dto.calc_currents.i_hf_1_rms
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        max_index = (0, 0, 0)
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            max_index = vec_vvp if np.max(i_c1_rms[vec_vvp]) > np.max(i_c1_rms[max_index]) else max_index  # type: ignore
+            if plot:
+                plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
+                         d_waveforms.full_current_waveform_from_currents(i_c1_sorted[vec_vvp]), color='gray')
+
+        i_c1_max_rms_current_waveform = i_c1_sorted[max_index]
+
+        sorted_max_rms_angles, unique_indices = np.unique(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index]), return_index=True)
+        i_c1_max_rms_current_waveform = d_waveforms.full_current_waveform_from_currents(i_c1_max_rms_current_waveform)[unique_indices]
+
+        if plot:
+            plt.plot(sorted_max_rms_angles, i_c1_max_rms_current_waveform, color='red', label='peak current full waveform')
+            plt.grid()
+            plt.xlabel('Angle in rad')
+            plt.ylabel('Current in A')
+            plt.legend()
+            plt.show()
+
+        return sorted_max_rms_angles, i_c1_max_rms_current_waveform
+
 
     @staticmethod
     def export_transformer_target_parameters_dto(dab_dto: d_dtos.CircuitDabDTO) -> d_dtos.TransformerTargetParameters:
