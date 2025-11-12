@@ -47,7 +47,7 @@ class CapacitorSelection:
                 optimization_directory = os.path.join(study_data.optimization_directory, circuit_trial_file, study_data.study_name)
 
                 # figure out worst case working point for the capacitor per circuit design
-                sorted_max_rms_angles, i_c1_max_rms_current_waveform = HandleDabDto.get_max_rms_waveform_capacitor(circuit_dto, plot=True)
+                sorted_max_rms_angles, i_c1_max_rms_current_waveform = HandleDabDto.get_max_rms_waveform_capacitor(circuit_dto, plot=False)
                 time = sorted_max_rms_angles / (2 * np.pi * circuit_dto.input_config.fs)
                 v_max = np.max(circuit_dto.input_config.mesh_v1)
 
@@ -91,38 +91,43 @@ class CapacitorSelection:
             os.makedirs(act_cst_config.results_directory)
         c_db_df.to_csv(f"{act_cst_config.results_directory}/results.csv")
 
-        #df_filtered = pecst.filter_loss_list(c_db_df, factor_min_dc_losses=0.5, x=)
-        # if debug.general.is_debug:
-        #     # reduce dataset to the given number from the debug configuration
-        #     df_filtered = df_filtered.iloc[:debug.inductor.number_reluctance_working_point_max]
-        #
+        df_filtered = pecst.filter_df(c_db_df)
+        if debug.general.is_debug:
+            # reduce dataset to the given number from the debug configuration
+            df_filtered = df_filtered.iloc[:debug.capacitor_1.number_working_point_max]
+        # save Pareto front designs (reduced in case of active debugging)
+        df_filtered.to_csv(f"{act_cst_config.results_directory}/results_filtered.csv")
+
         # config_filepath = os.path.join(act_cst_config.inductor_optimization_directory, f"{act_cst_config.inductor_study_name}.pkl")
 
-        # # sweep through all current waveforms
-        # i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        # angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
-        #
-        # all_operation_point_geometry_numbers_list = df_filtered["number"].to_numpy()
-        #
-        # # Overtake the filtered operation points
-        # number_of_filtered_points = len(all_operation_point_geometry_numbers_list)
-        #
-        # logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
-        #
-        # # simulate all operating points
-        # for single_geometry_number in tqdm.tqdm(all_operation_point_geometry_numbers_list):
-        #     df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(single_geometry_number)]
-        #
-        #     logger.debug(f"single_geometry_number: \n"
-        #                  f"    {df_geometry_re_simulation_number.head()}")
-        #
+        # Load configuration
+        circuit_dto = HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+
+        # sweep through all current waveforms
+        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        all_operation_point_ordering_codes_list = df_filtered["ordering code"].to_numpy()
+
+        # Overtake the filtered operation points
+        number_of_filtered_points = len(all_operation_point_ordering_codes_list)
+
+        logger.info(f"Full-operating point simulation list: {all_operation_point_ordering_codes_list}")
+
+        # simulate all operating points
+        for ordering_code in tqdm.tqdm(all_operation_point_ordering_codes_list):
+            df_geometry_re_simulation_number = df_filtered[df_filtered["ordering code"] == ordering_code]
+
+            logger.debug(f"ordering_code: \n"
+                         f"    {df_geometry_re_simulation_number.head()}")
+
         #     combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
         #
         #     new_circuit_dto_directory = os.path.join(act_cst_config.inductor_optimization_directory, "08_circuit_dtos_incl_reluctance_inductor_losses")
         #     if not os.path.exists(new_circuit_dto_directory):
         #         os.makedirs(new_circuit_dto_directory)
         #
-        #     if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
+        #     if os.path.exists(os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")):
         #         logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
         #     else:
         #         # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
@@ -139,7 +144,7 @@ class CapacitorSelection:
         #                 logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
         #                 logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
         #                 logger.debug(f"   * Inductor study: {act_cst_config.inductor_study_name}")
-        #                 logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
+        #                 logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
         #
         #                 volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
         #                     df_geometry_re_simulation_number, current_waveform=current_waveform,
@@ -151,14 +156,14 @@ class CapacitorSelection:
         #                 volume=volume,
         #                 area_to_heat_sink=area_to_heat_sink,
         #                 circuit_trial_file=circuit_filtered_point_file,
-        #                 inductor_trial_number=single_geometry_number,
+        #                 inductor_trial_number=ordering_code,
         #             )
         #
-        #             pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+        #             pickle_file = os.path.join(new_circuit_dto_directory, f"{int(ordering_code)}.pkl")
         #             with open(pickle_file, 'wb') as output:
         #                 pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
         #         except:
-        #             logger.info(f"Re-simulation of inductor geometry {single_geometry_number} not possible due to non-possible geometry.")
+        #             logger.info(f"Re-simulation of inductor geometry {ordering_code} not possible due to non-possible geometry.")
         #
         # # returns the number of filtered results
         # return number_of_filtered_points

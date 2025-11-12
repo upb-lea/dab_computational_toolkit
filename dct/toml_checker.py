@@ -19,6 +19,11 @@ class DebugGeneral(BaseModel):
 
     is_debug: bool
 
+class DebugCapacitor(BaseModel):
+    """Debug information for the capacitor."""
+
+    number_working_point_max: int
+
 class DebugInductor(BaseModel):
     """Debug information for the inductor."""
 
@@ -35,6 +40,8 @@ class Debug(BaseModel):
     """General information in debug configuration."""
 
     general: DebugGeneral
+    capacitor_1: DebugCapacitor
+    capacitor_2: DebugCapacitor
     inductor: DebugInductor
     transformer: DebugTransformer
 

@@ -1048,6 +1048,12 @@ class DctMainCtl:
             toml_debug = dct.Debug(**debug_dict)
         else:
             toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False),
+                                   capacitor_1=dct.DebugCapacitor(
+                                       number_working_point_max=1
+                                   ),
+                                   capacitor_2=dct.DebugCapacitor(
+                                       number_working_point_max=1
+                                   ),
                                    inductor=dct.DebugInductor(
                                        number_reluctance_working_point_max=1,
                                        number_fem_working_point_max=1),
