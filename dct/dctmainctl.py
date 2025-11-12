@@ -1049,11 +1049,9 @@ class DctMainCtl:
         else:
             toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False),
                                    capacitor_1=dct.DebugCapacitor(
-                                       number_working_point_max=1
-                                   ),
+                                       number_working_point_max=1),
                                    capacitor_2=dct.DebugCapacitor(
-                                       number_working_point_max=1
-                                   ),
+                                       number_working_point_max=1),
                                    inductor=dct.DebugInductor(
                                        number_reluctance_working_point_max=1,
                                        number_fem_working_point_max=1),
@@ -1207,8 +1205,6 @@ class DctMainCtl:
         # if not is_consistent:
         #     raise ValueError("Circuit optimization parameter in file ",
         #                      f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
-
-
 
         # --------------------------
         # Inductor flow control
@@ -1401,7 +1397,8 @@ class DctMainCtl:
 
             # Allocate and initialize circuit configuration
             self._capacitor_1_selection = CapacitorSelection()
-            self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, study_data=self._capacitor_1_selection_data, circuit_filter_data=filter_data)
+            self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, study_data=self._capacitor_1_selection_data,
+                                                                       circuit_filter_data=filter_data)
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.capacitor_1.calculation_mode == "new":
@@ -1416,25 +1413,6 @@ class DctMainCtl:
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
-
-        # Check, if electrical optimization is not to skip
-        # if not toml_prog_flow.circuit.calculation_mode == "skip":
-        #
-        #     # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
-        #     if self._circuit_optimization is None:
-        #         raise ValueError("Serious programming error. Please write an issue!")
-        #
-        #     # Calculate the filtered results
-        #     self._circuit_optimization.filter_study_results()
-        #     # Get filtered result path
-        #
-        #     # Add filtered result list
-        #     for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
-        #         if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
-        #             filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
-        #
-        #     # Workaround: Set filtered result id list here, later to handle in circuit_optimization
-        #     self._filtered_list_files = filter_data.filtered_list_files
 
         # --------------------------
         # Inductor reluctance model optimization

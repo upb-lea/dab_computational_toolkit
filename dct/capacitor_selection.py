@@ -4,36 +4,46 @@
 import logging
 import os
 from multiprocessing import Pool, cpu_count
-from dct.server_ctl_dtos import ProgressData
-from dct.server_ctl_dtos import ProgressStatus
 import copy
 import pickle
 
 # 3rd party libraries
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 import tqdm
 
 # own libraries
 import pecst
 from dct.capacitor_optimization_dtos import CapacitorOptimizationDto
-from dct.toml_checker import TomlCapacitorSelection
+from dct.toml_checker import TomlCapacitorSelection, Debug
 from dct.datasets import HandleDabDto
 from dct.datasets_dtos import StudyData, FilterData
-from dct.toml_checker import Debug
+from dct.server_ctl_dtos import ProgressData, ProgressStatus
+from dct.functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
+from dct.datasets_dtos import CapacitorResults
 
 logger = logging.getLogger(__name__)
 
 class CapacitorSelection:
+    """Select suitable capacitors."""
+
     c_df: pd.DataFrame
     _optimization_config_list: list[CapacitorOptimizationDto]
 
     def __init__(self):
         self._optimization_config_list = []
 
-
     def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, study_data: StudyData, circuit_filter_data: FilterData):
+        """
+        Initialize the capacitor selection.
+
+        :param toml_capacitor: capacitor data
+        :type toml_capacitor: TomlCapacitorSelection
+        :param study_data: capacitor study data
+        :type study_data: StudyData
+        :param circuit_filter_data: filtered circuit data
+        :type circuit_filter_data: FilterData
+        """
         pecst.download_esr_csv_files()
 
         # Create the io_config_list for all trials
@@ -86,7 +96,6 @@ class CapacitorSelection:
 
         c_db_df = pd.concat(c_db_df_list)
 
-
         if not os.path.exists(act_cst_config.results_directory):
             os.makedirs(act_cst_config.results_directory)
         c_db_df.to_csv(f"{act_cst_config.results_directory}/results.csv")
@@ -98,8 +107,6 @@ class CapacitorSelection:
         # save Pareto front designs (reduced in case of active debugging)
         df_filtered.to_csv(f"{act_cst_config.results_directory}/results_filtered.csv")
 
-        # config_filepath = os.path.join(act_cst_config.inductor_optimization_directory, f"{act_cst_config.inductor_study_name}.pkl")
-
         # Load configuration
         circuit_dto = HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
 
@@ -108,6 +115,10 @@ class CapacitorSelection:
         angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
         all_operation_point_ordering_codes_list = df_filtered["ordering code"].to_numpy()
+        all_operation_point_volume_list = df_filtered["volume_total"].to_numpy()
+        all_operation_point_area_list = df_filtered["area_total"].to_numpy()
+        all_operation_point_n_series_list = df_filtered["in_series_needed"].to_numpy()
+        all_operation_point_n_parallel_list = df_filtered["in_parallel_needed"].to_numpy()
 
         # Overtake the filtered operation points
         number_of_filtered_points = len(all_operation_point_ordering_codes_list)
@@ -115,61 +126,61 @@ class CapacitorSelection:
         logger.info(f"Full-operating point simulation list: {all_operation_point_ordering_codes_list}")
 
         # simulate all operating points
-        for ordering_code in tqdm.tqdm(all_operation_point_ordering_codes_list):
+        for count, ordering_code in enumerate(tqdm.tqdm(all_operation_point_ordering_codes_list)):
+
+            volume_total = all_operation_point_volume_list[count]
+            area_total = all_operation_point_area_list[count]
             df_geometry_re_simulation_number = df_filtered[df_filtered["ordering code"] == ordering_code]
+            n_series = all_operation_point_n_series_list[count]
+            n_parallel = all_operation_point_n_parallel_list[count]
 
             logger.debug(f"ordering_code: \n"
                          f"    {df_geometry_re_simulation_number.head()}")
 
-        #     combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
-        #
-        #     new_circuit_dto_directory = os.path.join(act_cst_config.inductor_optimization_directory, "08_circuit_dtos_incl_reluctance_inductor_losses")
-        #     if not os.path.exists(new_circuit_dto_directory):
-        #         os.makedirs(new_circuit_dto_directory)
-        #
-        #     if os.path.exists(os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")):
-        #         logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
-        #     else:
-        #         # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
-        #         # e.g. winding is not fitting in the winding window
-        #         try:
-        #             for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-        #                 time, unique_indices = np.unique(dct.functions_waveforms.full_angle_waveform_from_angles(
-        #                     angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-        #                 current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
-        #
-        #                 current_waveform = np.array([time, current])
-        #                 logger.debug(f"{current_waveform=}")
-        #                 logger.debug("All operating point simulation of:")
-        #                 logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-        #                 logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
-        #                 logger.debug(f"   * Inductor study: {act_cst_config.inductor_study_name}")
-        #                 logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
-        #
-        #                 volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
-        #                     df_geometry_re_simulation_number, current_waveform=current_waveform,
-        #                     inductor_config_filepath=config_filepath)
-        #                 combined_loss_array[vec_vvp] = combined_losses
-        #
-        #             inductor_losses = dct.InductorResults(
-        #                 p_combined_losses=combined_loss_array,
-        #                 volume=volume,
-        #                 area_to_heat_sink=area_to_heat_sink,
-        #                 circuit_trial_file=circuit_filtered_point_file,
-        #                 inductor_trial_number=ordering_code,
-        #             )
-        #
-        #             pickle_file = os.path.join(new_circuit_dto_directory, f"{int(ordering_code)}.pkl")
-        #             with open(pickle_file, 'wb') as output:
-        #                 pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
-        #         except:
-        #             logger.info(f"Re-simulation of inductor geometry {ordering_code} not possible due to non-possible geometry.")
-        #
-        # # returns the number of filtered results
-        # return number_of_filtered_points
+            loss_total_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+
+            new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, "01_circuit_dtos_incl_capacitor_1_loss")
+            if not os.path.exists(new_circuit_dto_directory):
+                os.makedirs(new_circuit_dto_directory)
+
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")):
+                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+            else:
+                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                    time, unique_indices = np.unique(full_angle_waveform_from_angles(
+                                                     angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
+                    current = full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+
+                    current_waveform = np.array([time, current])
+                    logger.debug(f"{current_waveform=}")
+                    logger.debug("All operating point simulation of:")
+                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                    logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
+
+                    [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='ffT input current')
+
+                    loss_per_capacitor = pecst.power_loss_film_capacitor(ordering_code, frequency_list, current_amplitude_list,
+                                                                         number_parallel_capacitors=n_parallel)
+
+                    loss_total_array[vec_vvp] = loss_per_capacitor * n_series * n_parallel
+
+                capacitor_losses = CapacitorResults(
+                    p_combined_losses=loss_total_array,
+                    volume=volume_total,
+                    pcb_area=area_total,
+                    circuit_trial_file=circuit_filtered_point_file,
+                    capacitor_order_number=df_geometry_re_simulation_number,
+                )
+
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
+                with open(pickle_file, 'wb') as output:
+                    pickle.dump(capacitor_losses, output, pickle.HIGHEST_PROTOCOL)
+
+        # returns the number of filtered results
+        return number_of_filtered_points
 
     def optimization_handler(self, filter_data: FilterData, debug: Debug) -> None:
-
         """
         Control the multi simulation processes.
 
@@ -178,7 +189,6 @@ class CapacitorSelection:
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
         """
-
         number_cpus = cpu_count()
 
         with Pool(processes=number_cpus) as pool:

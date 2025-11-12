@@ -176,11 +176,11 @@ class CalcLosses:
 class CapacitorResults:
     """DTO contains the inductor losses."""
 
-    p_combined_losses: np.ndarray
-    volume: float
-    pcb_area: float
+    loss_total_array: np.ndarray
+    volume_total: float
+    area_total: float
     circuit_trial_file: str
-    capacitor_configuration_number: int
+    capacitor_order_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

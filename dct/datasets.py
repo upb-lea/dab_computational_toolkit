@@ -445,7 +445,6 @@ class HandleDabDto:
 
         return sorted_max_rms_angles, i_c1_max_rms_current_waveform
 
-
     @staticmethod
     def export_transformer_target_parameters_dto(dab_dto: d_dtos.CircuitDabDTO) -> d_dtos.TransformerTargetParameters:
         """
