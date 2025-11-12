@@ -797,9 +797,10 @@ class CircuitOptimization:
 
         logger.info(f"The study '{self._dab_config.circuit_study_name}' contains {len(df)} trials.")
 
-        for index, _ in df.iterrows():
-            transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_1_name_suggest"][index])
-            transistor_dto_2 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(df["params_transistor_2_name_suggest"][index])
+        for idx, _ in df.iterrows():
+            index = int(str(idx))
+            transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
+            transistor_dto_2 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_2_name_suggest"]))
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
@@ -963,7 +964,7 @@ class CircuitOptimization:
         y_vec = df[y][~np.isnan(df[x])]
         numpy_zip = np.column_stack((x_vec, y_vec))
         pareto_tuple_mask_vec = CircuitOptimization.is_pareto_efficient(numpy_zip)
-        pareto_df = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
+        pareto_df: pd.DataFrame = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
         return pareto_df
 
     @staticmethod
@@ -1007,7 +1008,7 @@ class CircuitOptimization:
         # clip losses to a maximum of the minimum losses
         ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
 
-        pareto_df_offset = df[df[y] < ref_loss_max]
+        pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
 
         return pareto_df_offset
 
