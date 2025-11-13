@@ -15,3 +15,4 @@ pygeckocircuits2
 transistordatabase
 femmt
 hct
+pecst

@@ -19,6 +19,11 @@ class DebugGeneral(BaseModel):
 
     is_debug: bool
 
+class DebugCapacitor(BaseModel):
+    """Debug information for the capacitor."""
+
+    number_working_point_max: int
+
 class DebugInductor(BaseModel):
     """Debug information for the inductor."""
 
@@ -35,6 +40,8 @@ class Debug(BaseModel):
     """General information in debug configuration."""
 
     general: DebugGeneral
+    capacitor_1: DebugCapacitor
+    capacitor_2: DebugCapacitor
     inductor: DebugInductor
     transformer: DebugTransformer
 
@@ -52,6 +59,8 @@ class Breakpoints(BaseModel):
 
     circuit_pareto: Literal['no', 'pause', 'stop']
     circuit_filtered: Literal['no', 'pause', 'stop']
+    capacitor_1: Literal['no', 'pause', 'stop']
+    capacitor_2: Literal['no', 'pause', 'stop']
     inductor: Literal['no', 'pause', 'stop']
     transformer: Literal['no', 'pause', 'stop']
     heat_sink: Literal['no', 'pause', 'stop']
@@ -71,6 +80,18 @@ class Circuit(BaseModel):
 
     number_of_trials: int
     calculation_mode: Literal['new', 'continue', 'skip']
+    subdirectory: str
+
+class Capacitor1(BaseModel):
+    """Flow control for the capacitor 1."""
+
+    calculation_mode: Literal['new', 'skip']
+    subdirectory: str
+
+class Capacitor2(BaseModel):
+    """Flow control for the capacitor 2."""
+
+    calculation_mode: Literal['new', 'skip']
     subdirectory: str
 
 class Inductor(BaseModel):
@@ -111,6 +132,8 @@ class ConfigurationDataFiles(BaseModel):
 
     general_configuration_file: str
     circuit_configuration_file: str
+    capacitor_1_configuration_file: str
+    capacitor_2_configuration_file: str
     inductor_configuration_file: str
     transformer_configuration_file: str
     heat_sink_configuration_file: str
@@ -122,6 +145,8 @@ class FlowControl(BaseModel):
     breakpoints: Breakpoints
     conditional_breakpoints: CondBreakpoints
     circuit: Circuit
+    capacitor_1: Capacitor1
+    capacitor_2: Capacitor2
     inductor: Inductor
     transformer: Transformer
     heat_sink: HeatSink
@@ -185,6 +210,19 @@ class TomlCircuitParetoDabDesign(BaseModel):
 
     design_space: TomlCircuitParetoDesignSpace
     filter_distance: TomlCircuitFilterDistance
+
+# ######################################################
+# capacitor 1 and capacitor 2
+# ######################################################
+
+class TomlCapacitorSelection(BaseModel):
+    """Capacitor selection details."""
+
+    maximum_peak_to_peak_voltage_ripple: float
+    temperature_ambient: float
+    voltage_safety_margin_percentage: float
+    maximum_number_series_capacitors: int
+    lifetime_h: float
 
 # ######################################################
 # inductor
