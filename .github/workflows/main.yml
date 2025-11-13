@@ -116,7 +116,7 @@ jobs:
             wget https://github.com/upb-lea/capacitor_selection_toolbox/archive/refs/heads/main.zip
             unzip main.zip
             rm main.zip
-            cd capacitor_selection_toolbox
+            cd capacitor_selection_toolbox-main
             pip install -e .
             cd ..
             echo show folder path
