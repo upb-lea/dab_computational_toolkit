@@ -1201,10 +1201,10 @@ class DctMainCtl:
             raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
 
         # Verify circuit parameters
-        # is_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
-        # if not is_consistent:
-        #     raise ValueError("Circuit optimization parameter in file ",
-        #                      f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
+        is_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
+        if not is_consistent:
+            raise ValueError("Circuit optimization parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
 
         # --------------------------
         # Inductor flow control

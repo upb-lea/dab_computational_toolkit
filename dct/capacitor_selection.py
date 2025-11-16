@@ -33,6 +33,22 @@ class CapacitorSelection:
     def __init__(self):
         self._optimization_config_list = []
 
+    @staticmethod
+    def verify_optimization_parameter(toml_capacitor: TomlCapacitorSelection) -> tuple[bool, str]:
+        """
+        Verify the parameters from toml file for the capacitor optimization.
+
+        Dummy method so far.
+
+        :param toml_capacitor: capacitor toml file to check
+        :type toml_capacitor: TomlCapacitorSelection
+        :return: is_consistent, issue_report
+        :rtype: tuple[bool, str]
+        """
+        if toml_capacitor:
+            pass
+        return True, ""
+
     def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, study_data: StudyData, circuit_filter_data: FilterData) -> None:
         """
         Initialize the capacitor selection.
