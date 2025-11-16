@@ -158,7 +158,7 @@ class CapacitorSelection:
                     logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
                     logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
 
-                    [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='ffT input current')
+                    [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='fft input current')
 
                     loss_per_capacitor = pecst.power_loss_film_capacitor(ordering_code, frequency_list, current_amplitude_list,
                                                                          number_parallel_capacitors=n_parallel)
