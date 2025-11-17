@@ -24,6 +24,9 @@ from dct.circuit_enums import *
 # summary
 from dct.summary_processing import *
 from dct.summary_pre_processing import *
+# capacitor selection classes
+from dct.capacitor_selection import *
+from dct.capacitor_optimization_dtos import *
 # optimization classes
 from dct.inductor_optimization import *
 from dct.transformer_optimization import *

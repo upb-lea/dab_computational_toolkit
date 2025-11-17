@@ -51,3 +51,24 @@ def full_waveforms_from_angles_currents(angles_rad_sorted: np.ndarray, *sorted_c
         sorted_currents_full_waveform = sorted_currents_full_waveform + (sorted_current_full_waveform,)  # type: ignore
 
     return sorted_currents_full_waveform
+
+def full_time_waveforms_from_angles_currents(frequency: float, angles_rad_sorted: np.ndarray, sorted_currents: np.ndarray) -> list[np.ndarray]:
+    """
+    Generate the full time and current waveform from the four angles and current values at [alpha, beta, gamma, delta].
+
+    Multiple current inputs possible. Sorts out same time values, e.g [0, 2, 3.14, 3,14] -> [0, 2, 3.14]
+
+    :param frequency: Frequency in Hz
+    :type frequency: float
+    :param angles_rad_sorted: [alpha, beta, gamma, delta], but in sorted order. Unit is radiant.
+    :type angles_rad_sorted: np.ndarray
+    :param sorted_currents: [i_alpha, i_beta, i_gamma, i_delta], but sorted
+    :type sorted_currents: np.ndarray
+    :return: 2pi-periodic time and current waveforms
+    :rtype: np.ndarray
+    """
+    full_angle_waveform = full_angle_waveform_from_angles(angles_rad_sorted)
+    full_time_waveform = full_angle_waveform / (2 * np.pi * frequency)
+    full_current_waveform = full_current_waveform_from_currents(sorted_currents)
+
+    return [full_time_waveform, full_current_waveform]

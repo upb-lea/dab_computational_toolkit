@@ -171,6 +171,23 @@ class CalcLosses:
             if k in names:
                 setattr(self, k, v)
 
+
+@dataclasses.dataclass(init=False)
+class CapacitorResults:
+    """DTO contains the inductor losses."""
+
+    loss_total_array: np.ndarray
+    volume_total: float
+    area_total: float
+    circuit_trial_file: str
+    capacitor_order_number: int
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
 @dataclasses.dataclass(init=False)
 class InductorResults:
     """DTO contains the inductor losses."""
@@ -292,6 +309,8 @@ class CircuitDabDTO:
     gecko_additional_params: GeckoAdditionalParameters
     gecko_results: GeckoResults | None
     gecko_waveforms: GeckoWaveforms | None
+    capacitor_1_results: CapacitorResults | None
+    capacitor_2_results: CapacitorResults | None
     inductor_results: InductorResults | None
     stacked_transformer_results: StackedTransformerResults | None
 
