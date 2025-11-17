@@ -1200,12 +1200,29 @@ class DctMainCtl:
         if not is_capacitor_1_loaded:
             raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
 
-        # Verify circuit parameters
-        is_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
+        # Verify capacitor parameters
+        is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_1)
         if not is_consistent:
-            raise ValueError("Circuit optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
+            raise ValueError("Capacitor optimization parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} are inconsistent!\n", issue_report)
 
+        # --------------------------
+        # Capacitor 2 flow control
+        # --------------------------
+        logger.debug("Read capacitor 2 flow control")
+
+        # Init circuit configuration
+        is_capacitor_2_loaded, dict_capacitor_2 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_2_configuration_file)
+        toml_capacitor_2 = tc.TomlCapacitorSelection(**dict_capacitor_2)
+
+        if not is_capacitor_2_loaded:
+            raise ValueError(f"Capacitor 2 configuration file: {toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} does not exist.")
+
+        # Verify capacitor parameters
+        is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_2)
+        if not is_consistent:
+            raise ValueError("Capacitor optimization parameter in file ",
+                             f"{toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} are inconsistent!\n", issue_report)
         # --------------------------
         # Inductor flow control
         # --------------------------
@@ -1413,6 +1430,33 @@ class DctMainCtl:
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
+
+        # --------------------------
+        # Capacitor 2 selection
+        # --------------------------
+        logger.info("Start capacitor 2 selection")
+
+        # Check, if electrical optimization is not to skip
+        if not toml_prog_flow.capacitor_2.calculation_mode == "skip":
+
+            # Allocate and initialize circuit configuration
+            self._capacitor_2_selection = CapacitorSelection()
+            self._capacitor_2_selection.initialize_capacitor_selection(toml_capacitor_2, study_data=self._capacitor_2_selection_data,
+                                                                       circuit_filter_data=filter_data)
+
+            # Check, if old study is to delete, if available
+            if toml_prog_flow.capacitor_2.calculation_mode == "new":
+                # delete old circuit study data
+                self.delete_study_content(self._capacitor_2_selection_data.optimization_directory, self._capacitor_2_selection_data.study_name)
+
+                # Create the filtered result folder
+                os.makedirs(self._capacitor_2_selection_data.optimization_directory, exist_ok=True)
+
+            # Perform circuit optimization
+            self._capacitor_2_selection.optimization_handler(filter_data=filter_data, debug=toml_debug)
+
+        # Check breakpoint
+        self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_2, "Capacitor 2 Pareto front calculated")
 
         # --------------------------
         # Inductor reluctance model optimization
