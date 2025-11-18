@@ -180,7 +180,9 @@ class CapacitorResults:
     volume_total: float
     area_total: float
     circuit_trial_file: str
-    capacitor_order_number: int
+    capacitor_order_number: str
+    n_parallel: int
+    n_series: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

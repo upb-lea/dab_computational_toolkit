@@ -1564,10 +1564,15 @@ class DctMainCtl:
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
         stacked_transformer_study_names = [self._transformer_study_data.study_name]
+        capacitor_1_study_names = [self._capacitor_1_selection_data.study_name]
+        capacitor_2_study_names = [self._capacitor_2_selection_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_pre_processing.generate_result_database(
             self._inductor_study_data, self._transformer_study_data, pre_summary_data,
-            inductor_study_names, stacked_transformer_study_names, filter_data)
+            inductor_study_names, stacked_transformer_study_names, filter_data,
+            self._capacitor_1_selection_data, self._capacitor_2_selection_data,
+            capacitor_1_study_names, capacitor_2_study_names
+        )
         #  Select the needed heat sink configuration
         self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
 
