@@ -12,6 +12,8 @@ class ParetoFilePaths:
     """File paths for the sub simulation optimization parts."""
 
     circuit: str
+    capacitor_1: str
+    capacitor_2: str
     inductor: str
     transformer: str
     heat_sink: str
