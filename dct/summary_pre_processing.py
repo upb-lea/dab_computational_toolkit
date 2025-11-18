@@ -260,7 +260,7 @@ class DctSummaryPreProcessing:
                 circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
             # End: ASA: No influence by inductor or transformer ################################
 
-            logger.info(f"{act_inductor_study_names=}")
+            logger.debug(f"{act_inductor_study_names=}")
 
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
@@ -278,7 +278,7 @@ class DctSummaryPreProcessing:
                     # Next circuit
                     continue
 
-                logger.info(f"{inductor_full_operating_range_list=}")
+                logger.debug(f"{inductor_full_operating_range_list=}")
 
                 # iterate inductor numbers
                 for inductor_number in inductor_full_operating_range_list:
@@ -295,7 +295,7 @@ class DctSummaryPreProcessing:
 
                     inductance_loss_matrix = inductor_dto.p_combined_losses
 
-                    logger.info(f"{act_stacked_transformer_study_names=}")
+                    logger.debug(f"{act_stacked_transformer_study_names=}")
 
                     # iterate transformer study
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
@@ -314,7 +314,7 @@ class DctSummaryPreProcessing:
                             # Next circuit
                             continue
 
-                        logger.info(f"{stacked_transformer_full_operating_range_list=}")
+                        logger.debug(f"{stacked_transformer_full_operating_range_list=}")
 
                         # iterate transformer numbers
                         for stacked_transformer_number in stacked_transformer_full_operating_range_list:
@@ -356,7 +356,7 @@ class DctSummaryPreProcessing:
                             # maximum delta temperature over the heat sink
                             delta_t_max_heat_sink_matrix = t_min_matrix - self.heat_sink_boundary_conditions.t_ambient
 
-                            logger.info(f"{act_capacitor_1_study_names=}")
+                            logger.debug(f"{act_capacitor_1_study_names=}")
 
                             for capacitor_1_study_name in act_capacitor_1_study_names:
                                 # Assemble directory name for capacitor 1 results
@@ -372,7 +372,7 @@ class DctSummaryPreProcessing:
                                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                                     # Next circuit
                                     continue
-                                logger.info(f"{capacitor_1_full_operating_range_list=}")
+                                logger.debug(f"{capacitor_1_full_operating_range_list=}")
 
                                 # iterate capacitor 1 numbers
                                 for capacitor_1_number in capacitor_1_full_operating_range_list:
@@ -387,7 +387,7 @@ class DctSummaryPreProcessing:
                                         raise ValueError(f"{capacitor_1_dto.circuit_trial_file=} != {circuit_trial_file}")
                                     if capacitor_1_dto.capacitor_order_number != capacitor_1_number:
                                         raise ValueError(f"{capacitor_1_dto.capacitor_order_number=} != {capacitor_1_number}")
-                                    logger.info(f"{act_capacitor_2_study_names=}")
+                                    logger.debug(f"{act_capacitor_2_study_names=}")
                                     for capacitor_2_study_name in act_capacitor_2_study_names:
                                         # Assemble directory name for capacitor 1 results
                                         capacitor_2_filepath_results = os.path.join(capacitor_2_study_data.optimization_directory,
@@ -402,7 +402,7 @@ class DctSummaryPreProcessing:
                                             logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                                             # Next circuit
                                             continue
-                                        logger.info(f"{capacitor_2_full_operating_range_list=}")
+                                        logger.debug(f"{capacitor_2_full_operating_range_list=}")
                                         # iterate capacitor 1 numbers
                                         for capacitor_2_number in capacitor_2_full_operating_range_list:
                                             capacitor_2_filepath_number = os.path.join(capacitor_2_filepath_results,
