@@ -1,11 +1,13 @@
 # Path configuration
 [general]
-    project_directory = "2025-08-04_example_1"
+    project_directory = "2025-11-25_example"
 
 [breakpoints]
     # possible values: no/pause/stop
     circuit_pareto = "no"  # After Electrical paretofront calculation
     circuit_filtered = "no"  # After Electrical filtered result calculation
+    capacitor_1 = "no"  # After capacitor 1 paretofront calculations of for all correspondent electrical points
+    capacitor_2 = "no"  # After capacitor 2 paretofront calculations of for all correspondent electrical points
     inductor = "no"    # After inductor paretofront calculations of for all correspondent electrical points
     transformer = "no" # After transformer paretofront calculations of for all correspondent electrical points
     heat_sink = "no"    # After heatsink paretofront calculation
@@ -14,7 +16,7 @@
 
 [conditional_breakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
     circuit = 1000        # Number of trials with ZVS less than 70%
-    inductor = 1000         # Number of trials which exceed a limit value?
+    inductor = 1000       # Number of trials which exceed a limit value?
     transformer = 1000      # Number of trials which exceed a limit value?
     heat_sink = 1000         # Number of trials which exceed a limit value?
 
@@ -23,19 +25,27 @@
     calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "01_circuit"
 
-[inductor]
-    number_of_trials = 2000
+[capacitor_1]
     calculation_mode = "skip" # (new,continue,skip)
+    subdirectory = "01_capacitor_1"
+
+[capacitor_2]
+    calculation_mode = "skip" # (new,continue,skip)
+    subdirectory = "01_capacitor_2"
+
+[inductor]
+    number_of_trials = 300
+    calculation_mode = "new" # (new,continue,skip)
     subdirectory = "02_inductor"
 
 [transformer]
-    number_of_trials = 5000
-    calculation_mode = "skip" # (new,continue,skip)
+    number_of_trials = 100
+    calculation_mode = "new" # (new,continue,skip)
     subdirectory = "03_transformer"
 
 [heat_sink]
     number_of_trials = 500
-    calculation_mode = "skip" # (new,continue,skip)
+    calculation_mode = "new" # (new,continue,skip)
     subdirectory = "04_heat_sink"
 
 [pre_summary]
@@ -43,12 +53,14 @@
     subdirectory = "05_pre_summary"
 
 [summary]
-    calculation_mode = "skip" # (new,skip)
+    calculation_mode = "new" # (new,skip)
     subdirectory = "06_summary"
 
 [configuration_data_files]
     general_configuration_file = "DabGeneralConf.toml"
     circuit_configuration_file = "DabCircuitConf.toml"
+    capacitor_1_configuration_file = "DabCapacitorConf.toml"
+    capacitor_2_configuration_file = "DabCapacitorConf.toml"
     inductor_configuration_file = "DabInductorConf.toml"
     transformer_configuration_file = "DabTransformerConf.toml"
     heat_sink_configuration_file = "DabHeatSinkConf.toml"
