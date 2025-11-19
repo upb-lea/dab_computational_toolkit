@@ -20,7 +20,8 @@ from _pytest.capture import CaptureFixture
 import zipfile
 
 # own libraries
-import dct
+from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization as CircuitOptimization
+from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
@@ -992,8 +993,8 @@ def test__get_page_main_data(test_index: int) -> None:
     test_dct._filtered_list_files = string_test_arrays[test_index % str_list_len]
     # Allocate dct optimization objects
     test_dct._heat_sink_optimization = dct.HeatSinkOptimization()
-    test_dct._circuit_optimization = dct.CircuitOptimization()
-    test_dct._summary_processing = dct.DctSummaryProcessing()
+    test_dct._circuit_optimization = CircuitOptimization()
+    test_dct._summary_processing = DabSummaryProcessing()
     # Perform the test of get_initialization_queue_data
     (test_dct._circuit_list, test_dct._inductor_main_list, test_dct._inductor_list, test_dct._transformer_main_list,
      test_dct._transformer_list, test_dct._heat_sink_list, test_dct._summary_list) = test_dct.get_initialization_queue_data(test_parameter_1)

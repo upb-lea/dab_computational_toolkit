@@ -295,7 +295,7 @@ class GeckoWaveforms:
                 setattr(self, k, v)
 
 @dataclasses.dataclass
-class CircuitDabDTO:
+class DabCircuitDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.ndarray | None
@@ -328,14 +328,14 @@ class TransformerTargetParameters:
     temperature: float
 
 @dataclasses.dataclass
-class StudyData:
+class DabStudyData:
     """Data class containing all general information to perform a study."""
 
     study_name: str
     optimization_directory: str
 
 @dataclasses.dataclass
-class FilterData:
+class DabFilterData:
     """Information about the filtered circuit designs."""
 
     filtered_list_files: list[str]

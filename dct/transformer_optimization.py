@@ -16,6 +16,10 @@ import tqdm
 # own libraries
 import dct.transformer_optimization_dtos
 import femmt as fmt
+import dct.topology.dab.dab_functions_waveforms as dabwav
+import dct.topology.dab.dab_datasets_dtos as d_dtos
+from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
+from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
 from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
@@ -182,16 +186,16 @@ class TransformerOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: dct.StudyData, filter_data: dct.FilterData) -> bool:
+    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: StudyData, filter_data: FilterData) -> bool:
         """
         Initialize the configuration.
 
         :param toml_transformer: transformer toml file
         :type toml_transformer: dct.TomlTransformer
         :param study_data: Study data
-        :type study_data: dct.StudyData
+        :type study_data: StudyData
         :param filter_data: Information about the filtered circuit designs
-        :type filter_data: dct.FilterData
+        :type filter_data: FilterData
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
@@ -344,7 +348,7 @@ class TransformerOptimization:
         return self._number_performed_calculations
 
     @staticmethod
-    def _optimize_reluctance_model(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+    def _optimize_reluctance_model(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
                                    act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
@@ -353,6 +357,8 @@ class TransformerOptimization:
         :type circuit_filtered_point_file: str
         :param act_sto_config: Process number (in case of parallel computing)
         :type act_sto_config: int
+        :param filter_data: Information about the filtered circuit designs
+        :type filter_data: FilterData
         :param act_target_number_trials: Number of trials for the reluctance model optimization
         :type act_target_number_trials: int
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
@@ -411,9 +417,9 @@ class TransformerOptimization:
             else:
                 for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
 
-                    time = dct.functions_waveforms.full_angle_waveform_from_angles(
+                    time = dabwav.full_angle_waveform_from_angles(
                         angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                    current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                    current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
 
                     current_waveform = np.array([time, current])
 
@@ -429,7 +435,7 @@ class TransformerOptimization:
                         df_geometry_re_simulation_number, current_waveform, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
-                results_dto = dct.StackedTransformerResults(
+                results_dto = d_dtos.StackedTransformerResults(
                     p_combined_losses=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
@@ -445,13 +451,13 @@ class TransformerOptimization:
         return number_of_filtered_points
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def optimization_handler_reluctance_model(self, filter_data: dct.FilterData, target_number_trials: int,
+    def optimization_handler_reluctance_model(self, filter_data: FilterData, target_number_trials: int,
                                               factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
         :param filter_data : Information about the filtered circuit designs
-        :type  filter_data : dct.FilterData
+        :type  filter_data : FilterData
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
         :param factor_dc_losses_min_max_list: Filter factor for the offset, related to the minimum/maximum DC losses
@@ -495,12 +501,12 @@ class TransformerOptimization:
 
             pool.starmap(func=TransformerOptimization._optimize_reluctance_model, iterable=parameters)
 
-    def fem_simulation_handler(self, filter_data: dct.FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
+    def fem_simulation_handler(self, filter_data: FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
         :param filter_data: Information about the filtered designs
-        :type  filter_data: dct.FilterData
+        :type  filter_data: FilterData
         :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
         :type  factor_dc_losses_min_max_list: float
         :param debug: Debug DTO
@@ -528,7 +534,7 @@ class TransformerOptimization:
             pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameters)
 
     @staticmethod
-    def _fem_simulation(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: dct.FilterData,
+    def _fem_simulation(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
@@ -538,7 +544,7 @@ class TransformerOptimization:
         :param act_sto_config: stacked transformer configuration for the optimization
         :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
-        :type  filter_data: dct.FilterData
+        :type  filter_data: FilterData
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
@@ -593,9 +599,9 @@ class TransformerOptimization:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
 
-                        time = dct.functions_waveforms.full_angle_waveform_from_angles(
+                        time = dabwav.full_angle_waveform_from_angles(
                             angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                        current = dct.functions_waveforms.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                        current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
 
                         current_waveform = np.array([time, current])
 
@@ -613,7 +619,7 @@ class TransformerOptimization:
 
                         result_array[vec_vvp] = combined_losses
 
-                    results_dto = dct.StackedTransformerResults(
+                    results_dto = d_dtos.StackedTransformerResults(
                         p_combined_losses=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,

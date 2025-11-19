@@ -95,7 +95,7 @@ DabHeatSinkConf
 DabInductorConf
 DabTransformerConf
 TomlHeatSink
-CircuitDabDTO
+DabCircuitDTO
 Pareto
 pareto
 DataFrame
@@ -303,7 +303,8 @@ fd
 pid
 tcp
 TODO
-CircuitOptimization
+DabCircuitOptimization
+DabStudyData
 readthedocs
 RAMDISK
 KeyboardInterrupt
@@ -362,3 +363,4 @@ MTB
 DabGeneralConf
 TomlCapacitorSelection
 TomlGeneral
+topologies

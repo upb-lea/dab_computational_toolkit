@@ -4,6 +4,8 @@
 import logging
 import copy
 from enum import Enum
+import os
+import tempfile
 
 # 3rd party libraries
 import pytest
@@ -11,7 +13,9 @@ from _pytest.logging import LogCaptureFixture
 from numpy.testing import assert_array_equal
 
 # own libraries
-import dct.circuit_optimization as test_circuit
+from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization as ClassUnderTest
+import dct.topology.dab.dab_circuit_topology_dtos as d_dtos
+import dct.topology.dab.dab_datasets as d_set
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
 import transistordatabase as tdb
@@ -81,10 +85,10 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
     caplog.set_level(logging.INFO)
 
     # Create the instance
-    test_object: dct.CircuitOptimization = dct.CircuitOptimization()
+    test_object: ClassUnderTest = ClassUnderTest()
 
     # Initialize configuration parameter
-    design_space = dct.CircuitParetoDesignSpace(
+    design_space = d_dtos.CircuitParetoDesignSpace(
         f_s_min_max_list=[100_000, 200_000],
         l_s_min_max_list=[10e-6, 10e-3],
         l_1_min_max_list=[10e-6, 10e-3],
@@ -95,12 +99,12 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
         c_par_1=1e-12,
         c_par_2=1e-12)
 
-    output_range = dct.CircuitOutputRange(
+    output_range = d_dtos.CircuitOutputRange(
         v1_min_max_list=[690, 710],
         v2_min_max_list=[175, 295],
         p_min_max_list=[-2000, 2000])
 
-    filter = dct.CircuitFilter(
+    filter = d_dtos.CircuitFilter(
         number_filtered_designs=1,
         difference_percentage=5)
 
@@ -111,7 +115,7 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
                          4: "Auto-weight given for all other 8 operating points: 0.125"}
 
     # set up sampling
-    sampling = dct.CircuitSampling(
+    sampling = d_dtos.CircuitSampling(
         sampling_method=sampling_method,
         sampling_points=5,
         sampling_random_seed=1,
@@ -122,7 +126,7 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
     )
 
     # set up input configuration
-    dab_config = dct.CircuitParetoDabDesign(
+    dab_config = d_dtos.CircuitParetoDabDesign(
         circuit_study_name="test",
         project_directory="",
         design_space=design_space,
@@ -130,15 +134,23 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
         sampling=sampling,
         filter=filter)
 
-    if expected_exception:
-        with pytest.raises(expected_exception):
-            dct.CircuitOptimization.calculate_fixed_parameters(dab_config)
-    else:
-        output = dct.CircuitOptimization.calculate_fixed_parameters(dab_config)
-        assert_array_equal(result_weighting, output.mesh_weights)
+    # set up file to store transistor losses
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create temporary directory
+        valid_filepath = os.path.join(tmpdir, "circuit_folder")
+        os.makedirs(valid_filepath, exist_ok=True)
+        # Set the path
+        d_set.HandleDabDto.set_c_oss_storage_directory(valid_filepath)
 
-        for info_message_id in expected_message_id_list:
-            assert info_message_dict[info_message_id] in caplog.text
+        if expected_exception:
+            with pytest.raises(expected_exception):
+                ClassUnderTest.calculate_fixed_parameters(dab_config)
+        else:
+            output = ClassUnderTest.calculate_fixed_parameters(dab_config)
+            assert_array_equal(result_weighting, output.mesh_weights)
+
+            for info_message_id in expected_message_id_list:
+                assert info_message_dict[info_message_id] in caplog.text
 
 
 #########################################################################################################
@@ -356,7 +368,7 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     value_name_low_limit_list: list[str] = []
 
     # Perform the test for the circuit
-    is_circuit_consistent, error_report_circuit = test_circuit.CircuitOptimization.verify_circuit_parameters(test_circuit_parameter)
+    is_circuit_consistent, error_report_circuit = ClassUnderTest.verify_circuit_parameters(test_circuit_parameter)
 
     if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary:
         # No error and empty report string
@@ -605,7 +617,7 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     test_flow_control_parameter: tc.FlowControl = copy.deepcopy(test_FlowControl_base)
 
     # Create the instance
-    test_dct: dct.CircuitOptimization = dct.CircuitOptimization()
+    test_dct: ClassUnderTest = ClassUnderTest()
 
     # Initialize the second test parameter
     test_flow_control_parameter.general.project_directory = string_test_values[test_index % str_test_len]

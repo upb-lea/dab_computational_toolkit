@@ -6,14 +6,14 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 # own libraries
-import dct
+import dct.topology.dab.dab_datasets_dtos as d_dtos
 
-def plot_mode_overview(dab_config: dct.CircuitDabDTO) -> None:
+def plot_mode_overview(dab_config: d_dtos.DabCircuitDTO) -> None:
     """
     Mode overview of the converter. This function is for debugging.
 
     :param dab_config: DAB configuration file
-    :type dab_config: dct.CircuitDabDTO
+    :type dab_config: dct.DabCircuitDTO
     """
     fig, axs = plt.subplots(2, 3, sharex=True, sharey=True)
 

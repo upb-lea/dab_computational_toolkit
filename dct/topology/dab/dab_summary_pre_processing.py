@@ -12,16 +12,16 @@ import numpy as np
 
 # own libraries
 import dct
+from dct.topology.dab.dab_datasets_dtos import DabStudyData
 from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 
-
 logger = logging.getLogger(__name__)
 
-class DctSummaryPreProcessing:
+class DabSummaryPreProcessing:
     """Perform the summary calculation based on optimization results."""
 
     _s_lock_stat: threading.Lock
@@ -179,17 +179,17 @@ class DctSummaryPreProcessing:
 
         return is_magnetic_list_generated, magnetic_result_numbers
 
-    def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
-                                 summary_data: dct.StudyData, act_inductor_study_names: list[str],
+    def generate_result_database(self, inductor_study_data: DabStudyData, transformer_study_data: DabStudyData,
+                                 summary_data: DabStudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
-        :type inductor_study_data: dct.StudyData
+        :type inductor_study_data: DabStudyData
         :param transformer_study_data: transformer study data
-        :type transformer_study_data: dct.StudyData
+        :type transformer_study_data: DabStudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: dct.StudyData
+        :type summary_data: DabStudyData
         :param act_inductor_study_names: List of names with inductor studies which are to process
         :type  act_inductor_study_names: list[str]
         :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
@@ -261,7 +261,7 @@ class DctSummaryPreProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummaryPreProcessing._generate_magnetic_number_list(inductor_filepath_results))
+                    DabSummaryPreProcessing._generate_magnetic_number_list(inductor_filepath_results))
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -293,7 +293,7 @@ class DctSummaryPreProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummaryPreProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
+                            DabSummaryPreProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
@@ -416,13 +416,13 @@ class DctSummaryPreProcessing:
         # return the database
         return df
 
-    def select_heat_sink_configuration(self, heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(self, heat_sink_study_data: DabStudyData, summary_data: DabStudyData, act_df_for_hs: pd.DataFrame) -> None:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: Information about the heat sink study name and study path
-        :type  heat_sink_study_data: dct.StudyData
+        :type  heat_sink_study_data: DabStudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: dct.StudyData
+        :type summary_data: DabStudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
         """

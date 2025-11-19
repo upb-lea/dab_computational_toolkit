@@ -10,8 +10,10 @@ import pandas as pd
 
 # own libraries
 import dct
+import dct.topology.dab.dab_generalplotsettings as gps
 import hct
 import femmt as fmt
+from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization
 
 class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
@@ -44,7 +46,7 @@ class ParetoPlots:
         :type ylim: list[float]
         """
         # set font to LaTeX font
-        dct.global_plot_settings_font_latex()
+        gps.global_plot_settings_font_latex()
 
         # generate plot
         fig = plt.figure(figsize=(80 / 25.4, 80 / 25.4), dpi=350)
@@ -104,18 +106,18 @@ class ParetoPlots:
         :type is_pre_summary: bool
         """
         # load circuit configuration file
-        dab_config = dct.CircuitOptimization.load_stored_config(
+        dab_config = DabCircuitOptimization.load_stored_config(
             toml_prog_flow.general.project_directory, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(
                 ".toml", ""))
         # generate circuit dataframe
-        df_circuit = dct.CircuitOptimization.study_to_df(dab_config)
+        df_circuit = DabCircuitOptimization.study_to_df(dab_config)
 
         if is_pre_summary:
             fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, "circuit")
         else:
             fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "circuit")
 
-        ParetoPlots.generate_pareto_plot([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[dct.colors()["black"]], alpha=0.5,
+        ParetoPlots.generate_pareto_plot([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[gps.colors()["black"]], alpha=0.5,
                                          x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
                                          label_list=[None], fig_name_path=fig_name)
 
@@ -239,7 +241,7 @@ class ParetoPlots:
         factor_m3_cm3 = 1e6
 
         # target color list and different heat sink areas to plot (split 3d plot into several 2d plots)
-        color_list = [dct.colors()["black"], dct.colors()["red"], dct.colors()["blue"], dct.colors()["green"]]
+        color_list = [gps.colors()["black"], gps.colors()["red"], gps.colors()["blue"], gps.colors()["green"]]
         a_min_m2_list = [0.002, 0.003, 0.005]
 
         study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
@@ -291,10 +293,10 @@ class ParetoPlots:
         else:
             df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.summary.subdirectory}/df_w_hs.csv")
 
-        df_filtered = dct.CircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
-                                                        factor_min_dc_losses=0.001, factor_max_dc_losses=10)
+        df_filtered = DabCircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                       factor_min_dc_losses=0.001, factor_max_dc_losses=10)
 
-        dct.global_plot_settings_font_latex()
+        gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
         x_values_list = [df["total_volume"] * 1e6, df_filtered["total_volume"] * 1e6]
         y_values_list = [df["total_mean_loss"], df_filtered["total_mean_loss"]]

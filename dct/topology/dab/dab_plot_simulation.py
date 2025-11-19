@@ -4,8 +4,8 @@ import logging
 
 # own libraries
 from dct.debug_tools import timeit
-import dct.datasets_dtos as d_dtos
-from dct import PlotDAB
+from . import dab_datasets_dtos as d_dtos
+from . import PlotDAB
 
 # 3rd party libraries
 import numpy as np
@@ -13,13 +13,13 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 @timeit
-def plot_gecko_simulation_results(dab_config: d_dtos.CircuitDabDTO, simulation_name: str, comment: str, directory: str,
+def plot_gecko_simulation_results(dab_config: d_dtos.DabCircuitDTO, simulation_name: str, comment: str, directory: str,
                                   show_plot: bool = True) -> None:
     """
     Plot the results from the GeckoCIRCUITS simulation.
 
     :param dab_config: Dual-Active-Bridge (DAB) configuration file
-    :type dab_config: CircuitDabDTO
+    :type dab_config: DabCircuitDTO
     :param simulation_name: Simulation name
     :type simulation_name: str
     :param comment: Comment for the simulation, appears in the logs.

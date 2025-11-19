@@ -2,19 +2,19 @@
 # python libraries
 
 # own libraries
-import dct.datasets_dtos as d_dtos
-import dct.functions_waveforms as fw
+from . import dab_datasets_dtos as d_dtos
+from . import dab_functions_waveforms as fw
 
 # 3rd party libraries
 import numpy as np
 from matplotlib import pyplot as plt
 
-def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False) -> None:
+def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: bool = False) -> None:
     """
     Plot calculated current waveforms for Ls, Lc1, Lc2.
 
     :param dab_dto: DAB DTO
-    :type dab_dto: CircuitDabDTO
+    :type dab_dto: DabCircuitDTO
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """
@@ -101,12 +101,12 @@ def plot_calc_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: 
             plt.tight_layout()
             plt.show()
 
-def plot_calc_i_hf_waveforms(dab_dto: d_dtos.CircuitDabDTO, compare_gecko_waveforms: bool = False) -> None:
+def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: bool = False) -> None:
     """
     Plot calculated current waveforms for i_hf_1 and i_hf_2.
 
     :param dab_dto: DAB DTO
-    :type dab_dto: CircuitDabDTO
+    :type dab_dto: DabCircuitDTO
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """

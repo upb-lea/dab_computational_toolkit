@@ -16,13 +16,13 @@ import pandas as pd
 import deepdiff
 import dct.sampling as sampling
 
-import dct.datasets_dtos
 # own libraries
-import dct.datasets_dtos as d_dtos
-import dct.circuit_optimization_dtos as circuit_dtos
-import dct.datasets as d_sets
+from . import dab_datasets_dtos as d_dtos
+from . import dab_circuit_topology_dtos as circuit_dtos
+from . import dab_datasets as d_sets
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
+from dct.boundary_check import BoundaryCheck
 from dct import toml_checker as tc
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
@@ -31,7 +31,7 @@ from dct.circuit_enums import SamplingEnum
 
 logger = logging.getLogger(__name__)
 
-class CircuitOptimization:
+class DabCircuitOptimization:
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     # Declaration of member types
@@ -90,7 +90,7 @@ class CircuitOptimization:
             logger.warning("Circuit configuration is empty!\n    Configuration is not saved!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         os.makedirs(self._dab_config.project_directory, exist_ok=True)
         with open(f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.pkl", 'wb') as output:
@@ -108,7 +108,7 @@ class CircuitOptimization:
         :return: Configuration file as circuit_dtos.DabDesign
         :rtype: circuit_dtos.CircuitParetoDabDesign
         """
-        filepaths = CircuitOptimization.load_filepaths(circuit_project_directory)
+        filepaths = DabCircuitOptimization.load_filepaths(circuit_project_directory)
         config_pickle_filepath = os.path.join(filepaths.circuit, circuit_study_name, f"{circuit_study_name}.pkl")
 
         with open(config_pickle_filepath, 'rb') as pickle_file_data:
@@ -163,15 +163,15 @@ class CircuitOptimization:
             else:
                 # Perform dictionary check
                 for keyword_entry in check_keyword[0]:
-                    is_check_passed, issue_report = dct.BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, check_keyword[1])
+                    is_check_passed, issue_report = BoundaryCheck.check_dictionary(keyword_dictionary, keyword_entry, check_keyword[1])
                     # Check if boundary check fails
                     if not is_check_passed:
                         inconsistency_report = inconsistency_report + issue_report
                         is_consistent = False
 
         # Check switching frequency range
-        float_f_s_min_max_list = dct.BoundaryCheck.convert_int_list_to_float_list(toml_circuit.design_space.f_s_min_max_list)
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+        float_f_s_min_max_list = BoundaryCheck.convert_int_list_to_float_list(toml_circuit.design_space.f_s_min_max_list)
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
             1000, 1e7, float_f_s_min_max_list, "f_s_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
@@ -184,13 +184,13 @@ class CircuitOptimization:
              (toml_circuit.design_space.l_2__min_max_list, "l_2__min_max_list")])
 
         # Perform the boundary check
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values_list(
             0, 1, toml_check_min_max_values_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
             0, 100, toml_circuit.design_space.n_min_max_list, "n_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
@@ -203,7 +203,7 @@ class CircuitOptimization:
              (toml_circuit.design_space.l_2__min_max_list, "l_2__min_max_list")])
 
         # Perform the boundary check
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values_list(
             0, 1, toml_check_min_max_values_list, c_flag.check_inclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
@@ -216,7 +216,7 @@ class CircuitOptimization:
 
         # Perform the boundary check
         # Check c_par_1 and c_par_2
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
             0, 1e-3, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
@@ -225,7 +225,7 @@ class CircuitOptimization:
         # Perform filter_distance value check
         group_name = "filter_distance"
         # Perform the boundary check for number_filtered_designs
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+        is_check_passed, issue_report = BoundaryCheck.check_float_value(
             0, 100, float(toml_circuit.filter_distance.number_filtered_designs),
             f"{group_name}: number_filtered_designs", c_flag.check_exclusive, c_flag.check_ignore)
         if not is_check_passed:
@@ -233,7 +233,7 @@ class CircuitOptimization:
             is_consistent = False
 
         # Perform the boundary check for number_filtered_designs
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+        is_check_passed, issue_report = BoundaryCheck.check_float_value(
             0.01, 100, toml_circuit.filter_distance.difference_percentage,
             f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_inclusive)
         if not is_check_passed:
@@ -257,7 +257,7 @@ class CircuitOptimization:
         :rtype: bool
         """
         # Verify optimization parameter
-        is_check_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit)
+        is_check_consistent, issue_report = DabCircuitOptimization.verify_circuit_parameters(toml_circuit)
         if not is_check_consistent:
             raise ValueError(
                 "Circuit optimization parameter are inconsistent!\n",
@@ -456,10 +456,10 @@ class CircuitOptimization:
         transistor_2_dto_list = []
 
         for transistor in act_dab_config.design_space.transistor_1_name_list:
-            transistor_1_dto_list.append(d_sets.HandleTransistorDto.tdb_to_transistor_dto(transistor))
+            transistor_1_dto_list.append(d_sets.HandleDabDto.tdb_to_transistor_dto(transistor))
 
         for transistor in act_dab_config.design_space.transistor_2_name_list:
-            transistor_2_dto_list.append(d_sets.HandleTransistorDto.tdb_to_transistor_dto(transistor))
+            transistor_2_dto_list.append(d_sets.HandleDabDto.tdb_to_transistor_dto(transistor))
 
         # choose sampling method
         if act_dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
@@ -538,7 +538,7 @@ class CircuitOptimization:
             return
 
         # Function to execute
-        func = lambda trial: CircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
+        func = lambda trial: DabCircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
 
         try:
             self._study_in_memory.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
@@ -561,7 +561,7 @@ class CircuitOptimization:
             return
 
         # Function to execute
-        func = lambda trial: CircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
+        func = lambda trial: DabCircuitOptimization._objective(trial, self._dab_config, self._fixed_parameters)
 
         # Each process create his own study instance with the same database and study name
         act_study = optuna.load_study(storage=act_storage_url, study_name=self._dab_config.circuit_study_name)
@@ -592,10 +592,19 @@ class CircuitOptimization:
                            "    No list is generated so that no optimization can be performed!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         circuit_study_working_directory = os.path.join(filepaths.circuit, self._dab_config.circuit_study_name)
         circuit_study_sqlite_database = os.path.join(circuit_study_working_directory, f"{self._dab_config.circuit_study_name}.sqlite3")
+
+        # Assemble the name for c_oss_storage_directory
+        new_c_oss_directory: str = os.path.join(circuit_study_working_directory, "dab_circuits")
+        # Create c_oss_storage_directory, it not exists
+        if not os.path.exists(new_c_oss_directory):
+            os.makedirs(new_c_oss_directory)
+
+        # Set the directory path
+        d_sets.HandleDabDto.set_c_oss_storage_directory(new_c_oss_directory)
 
         if os.path.exists(circuit_study_sqlite_database):
             logger.info("Existing circuit study found. Proceeding.")
@@ -611,7 +620,7 @@ class CircuitOptimization:
         # check for differences with the old configuration file
         config_on_disk_filepath = f"{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
-            config_on_disk = CircuitOptimization.load_stored_config(self._dab_config.project_directory, self._dab_config.circuit_study_name)
+            config_on_disk = DabCircuitOptimization.load_stored_config(self._dab_config.project_directory, self._dab_config.circuit_study_name)
             difference = deepdiff.DeepDiff(config_on_disk, self._dab_config, ignore_order=True, significant_digits=10)
             if difference:
                 raise ValueError("Configuration file has changed from previous simulation.\n"
@@ -621,7 +630,7 @@ class CircuitOptimization:
         directions = ['maximize', 'minimize']
 
         # Calculate the fixed parameters
-        self._fixed_parameters = CircuitOptimization.calculate_fixed_parameters(self._dab_config)
+        self._fixed_parameters = DabCircuitOptimization.calculate_fixed_parameters(self._dab_config)
 
         # Update statistical data
         with self._c_lock_stat:
@@ -723,7 +732,7 @@ class CircuitOptimization:
             logger.warning("Circuit configuration is not initialized!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         fig = optuna.visualization.plot_pareto_front(self._study_in_storage, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
         fig.update_layout(title=f"{self._dab_config.circuit_study_name} <br><sup>{self._dab_config.project_directory}</sup>")
@@ -734,7 +743,7 @@ class CircuitOptimization:
             fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None) -> dct.CircuitDabDTO:
+    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None) -> d_dtos.DabCircuitDTO:
         """
         Load a DAB-DTO from an optuna study.
 
@@ -747,15 +756,15 @@ class CircuitOptimization:
         if trial_number is None:
             raise NotImplementedError("needs to be implemented")
 
-        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
-        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
+        filepaths = DabCircuitOptimization.load_filepaths(dab_config.project_directory)
+        database_url = DabCircuitOptimization.create_sqlite_database_url(dab_config)
 
         loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name,
                                            storage=database_url, load_if_exists=True)
         logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
-        fix_parameters = CircuitOptimization.calculate_fixed_parameters(dab_config)
+        fix_parameters = DabCircuitOptimization.calculate_fixed_parameters(dab_config)
 
         dab_dto = d_sets.HandleDabDto.init_config(
             name=str(trial_number),
@@ -776,16 +785,16 @@ class CircuitOptimization:
 
         return dab_dto
 
-    def df_to_dab_dto_list(self, df: pd.DataFrame) -> list[d_dtos.CircuitDabDTO]:
+    def df_to_dab_dto_list(self, df: pd.DataFrame) -> list[d_dtos.DabCircuitDTO]:
         """
         Load a DAB-DTO from an optuna study.
 
         :param df: Pandas DataFrame to convert to the DAB-DTO list
         :type df: pd.DataFrame
         :return: List of DTO
-        :rtype:  list[d_dtos.CircuitDabDTO]
+        :rtype:  list[d_dtos.DabCircuitDTO]
         """
-        dab_dto_list: list[d_dtos.CircuitDabDTO] = []
+        dab_dto_list: list[d_dtos.DabCircuitDTO] = []
 
         # Check if configuration is not available or fixed parameters are not available
         if self._dab_config is None:
@@ -799,8 +808,8 @@ class CircuitOptimization:
 
         for idx, _ in df.iterrows():
             index = int(str(idx))
-            transistor_dto_1 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
-            transistor_dto_2 = d_sets.HandleTransistorDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_2_name_suggest"]))
+            transistor_dto_1 = d_sets.HandleDabDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
+            transistor_dto_2 = d_sets.HandleDabDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_2_name_suggest"]))
 
             dab_dto = d_sets.HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
@@ -829,8 +838,8 @@ class CircuitOptimization:
         :param dab_config: DAB optimization configuration file
         :type dab_config: circuit_dtos.CircuitParetoDabDesign
         """
-        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
-        database_url = CircuitOptimization.create_sqlite_database_url(dab_config)
+        filepaths = DabCircuitOptimization.load_filepaths(dab_config.project_directory)
+        database_url = DabCircuitOptimization.create_sqlite_database_url(dab_config)
         loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
         df = loaded_study.trials_dataframe()
         df.to_csv(f'{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.csv')
@@ -846,7 +855,7 @@ class CircuitOptimization:
         :return: SQLite URL
         :rtype: str
         """
-        filepaths = CircuitOptimization.load_filepaths(dab_config.project_directory)
+        filepaths = DabCircuitOptimization.load_filepaths(dab_config.project_directory)
         sqlite_storage_url = f"sqlite:///{filepaths.circuit}/{dab_config.circuit_study_name}/{dab_config.circuit_study_name}.sqlite3"
         return sqlite_storage_url
 
@@ -963,7 +972,7 @@ class CircuitOptimization:
         x_vec = df[x][~np.isnan(df[x])]
         y_vec = df[y][~np.isnan(df[x])]
         numpy_zip = np.column_stack((x_vec, y_vec))
-        pareto_tuple_mask_vec = CircuitOptimization.is_pareto_efficient(numpy_zip)
+        pareto_tuple_mask_vec = DabCircuitOptimization.is_pareto_efficient(numpy_zip)
         pareto_df: pd.DataFrame = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
         return pareto_df
 
@@ -989,7 +998,7 @@ class CircuitOptimization:
         # figure out pareto front
         # pareto_volume_list, pareto_core_hyst_list, pareto_dto_list = self.pareto_front(volume_list, core_hyst_loss_list, valid_design_list)
 
-        pareto_df: pd.DataFrame = CircuitOptimization.pareto_front_from_df(df, x, y)
+        pareto_df: pd.DataFrame = DabCircuitOptimization.pareto_front_from_df(df, x, y)
 
         vector_to_sort = np.array([pareto_df[x], pareto_df[y]])
 
@@ -1025,14 +1034,14 @@ class CircuitOptimization:
             logger.warning("Study is not calculated. First run 'start_proceed_study'!")
             return
 
-        filepaths = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         df = self._study_in_storage.trials_dataframe()
         df.to_csv(f'{filepaths.circuit}/{self._dab_config.circuit_study_name}/{self._dab_config.circuit_study_name}.csv')
 
         df = df[df["values_0"] == 100]
 
-        smallest_dto_list: list[d_dtos.CircuitDabDTO] = []
+        smallest_dto_list: list[d_dtos.DabCircuitDTO] = []
         df_smallest_all = df.nsmallest(n=1, columns=["values_1"])
         df_smallest = df.nsmallest(n=1, columns=["values_1"])
 
@@ -1072,13 +1081,13 @@ class CircuitOptimization:
         smallest_dto_list = self.df_to_dab_dto_list(df_smallest_all)
 
         # join if necessary
-        folders = CircuitOptimization.load_filepaths(self._dab_config.project_directory)
+        folders = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         dto_directory = os.path.join(folders.circuit, self._dab_config.circuit_study_name, "filtered_results")
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            # dto = dct.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
-            dct.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+            # dto = d_sets.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+            d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
         # Stop runtime measurement and update statistical data
         with self._c_lock_stat:
