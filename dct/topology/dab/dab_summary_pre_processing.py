@@ -15,6 +15,7 @@ import dct
 from dct.topology.dab.dab_datasets_dtos import DabStudyData
 from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
+from dct.datasets_dtos import CapacitorResults
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
@@ -139,8 +140,8 @@ class DabSummaryPreProcessing:
         return copy.deepcopy(self._progress_data)
 
     @staticmethod
-    def _generate_magnetic_number_list(act_dir_name: str) -> tuple[bool, list[str]]:
-        """Generate a list of the numbers from filenames.
+    def _generate_number_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
+        """Generate a list of the numbers from pickle filenames.
 
         :param act_dir_name : Name of the directory containing the files
         :type  act_dir_name : str
@@ -149,8 +150,8 @@ class DabSummaryPreProcessing:
         :rtype: tuple
         """
         # Variable declaration
-        magnetic_result_numbers: list[str] = []
-        is_magnetic_list_generated = False
+        result_numbers: list[str] = []
+        is_list_generated = False
 
         # Check if target folder 09_circuit_dtos_incl_inductor_losses is created
         if os.path.exists(act_dir_name):
@@ -166,7 +167,7 @@ class DabSummaryPreProcessing:
                     # Check file type
                     extension = os.path.splitext(os.path.basename(file_name))[1]
                     if extension == '.pkl':
-                        magnetic_result_numbers.append(device_number)
+                        result_numbers.append(device_number)
                     else:
                         logger.info(f"File {device_number}{extension} has no extension '.pkl'!")
                 else:
@@ -174,14 +175,16 @@ class DabSummaryPreProcessing:
         else:
             logger.info(f"Path {act_dir_name} does not exists!")
 
-        if magnetic_result_numbers:
-            is_magnetic_list_generated = True
+        if result_numbers:
+            is_list_generated = True
 
-        return is_magnetic_list_generated, magnetic_result_numbers
+        return is_list_generated, result_numbers
 
-    def generate_result_database(self, inductor_study_data: DabStudyData, transformer_study_data: DabStudyData,
-                                 summary_data: DabStudyData, act_inductor_study_names: list[str],
-                                 act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
+    def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
+                                 summary_data: dct.StudyData, act_inductor_study_names: list[str],
+                                 act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData,
+                                 capacitor_1_study_data: dct.StudyData, capacitor_2_study_data: dct.StudyData,
+                                 act_capacitor_1_study_names: list[str], act_capacitor_2_study_names: list[str]) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
@@ -189,7 +192,15 @@ class DabSummaryPreProcessing:
         :param transformer_study_data: transformer study data
         :type transformer_study_data: DabStudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: DabStudyData
+        :type summary_data: dct.StudyData
+        :param capacitor_1_study_data: List of names with capacitor studies which are to process
+        :type capacitor_1_study_data: list[str]
+        :param capacitor_2_study_data: List of names with capacitor studies which are to process
+        :type capacitor_2_study_data: list[str]
+        :param act_capacitor_1_study_names: List of names with capacitor studies which are to process
+        :type  act_capacitor_1_study_names: list[str]
+        :param act_capacitor_2_study_names: List of names with capacitor studies which are to process
+        :type  act_capacitor_2_study_names: list[str]
         :param act_inductor_study_names: List of names with inductor studies which are to process
         :type  act_inductor_study_names: list[str]
         :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
@@ -249,7 +260,7 @@ class DabSummaryPreProcessing:
                 circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
             # End: ASA: No influence by inductor or transformer ################################
 
-            logger.info(f"{circuit_trial_file=}")
+            logger.debug(f"{act_inductor_study_names=}")
 
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
@@ -261,11 +272,14 @@ class DabSummaryPreProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DabSummaryPreProcessing._generate_magnetic_number_list(inductor_filepath_results))
+                    DctSummaryPreProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
+
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
+
+                logger.debug(f"{inductor_full_operating_range_list=}")
 
                 # iterate inductor numbers
                 for inductor_number in inductor_full_operating_range_list:
@@ -282,6 +296,8 @@ class DabSummaryPreProcessing:
 
                     inductance_loss_matrix = inductor_dto.p_combined_losses
 
+                    logger.debug(f"{act_stacked_transformer_study_names=}")
+
                     # iterate transformer study
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
 
@@ -293,11 +309,14 @@ class DabSummaryPreProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DabSummaryPreProcessing._generate_magnetic_number_list(stacked_transformer_filepath_results))
+                            DctSummaryPreProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
+
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
                             continue
+
+                        logger.debug(f"{stacked_transformer_full_operating_range_list=}")
 
                         # iterate transformer numbers
                         for stacked_transformer_number in stacked_transformer_full_operating_range_list:
@@ -314,11 +333,6 @@ class DabSummaryPreProcessing:
 
                             transformer_loss_matrix = transformer_dto.p_combined_losses
 
-                            total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix + \
-                                                 transformer_dto.p_combined_losses)
-
-                            # maximum loss indices
-                            max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
                             # Calculate losses of circuit1 and 2
                             max_loss_circuit_1_index = np.unravel_index(b1_transistor_cond_loss_matrix.argmax(),
                                                                         np.shape(b1_transistor_cond_loss_matrix))
@@ -344,67 +358,153 @@ class DabSummaryPreProcessing:
                             # maximum delta temperature over the heat sink
                             delta_t_max_heat_sink_matrix = t_min_matrix - self.heat_sink_boundary_conditions.t_ambient
 
-                            r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
+                            logger.debug(f"{act_capacitor_1_study_names=}")
 
-                            r_th_target = r_th_heat_sink_target_matrix.min()
+                            for capacitor_1_study_name in act_capacitor_1_study_names:
+                                # Assemble directory name for capacitor 1 results
+                                capacitor_1_filepath_results = os.path.join(capacitor_1_study_data.optimization_directory,
+                                                                            circuit_trial_file,
+                                                                            capacitor_1_study_name,
+                                                                            "01_circuit_dtos_incl_capacitor_loss")
 
-                            data = {
-                                # circuit
-                                "circuit_trial_file": circuit_trial_file,
-                                "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
-                                "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
-                                "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],
-                                "circuit_max_circuit_ob_loss": total_transistor_cond_loss_matrix[max_loss_circuit_2_index],
-                                "circuit_max_inductor_loss": total_transistor_cond_loss_matrix[max_loss_inductor_index],
-                                "circuit_max_transformer_loss": total_transistor_cond_loss_matrix[max_loss_transformer_index],
-                                "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
-                                "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
-                                "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
-                                "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
-                                "circuit_heat_sink_temperature_max_1": circuit_heat_sink_max_1_matrix[max_loss_circuit_1_index],
-                                "circuit_heat_sink_temperature_max_2": circuit_heat_sink_max_2_matrix[max_loss_circuit_2_index],
-                                "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
-                                # inductor
-                                "inductor_study_name": inductor_study_name,
-                                "inductor_number": inductor_number,
-                                "inductor_volume": inductor_dto.volume,
-                                "inductor_mean_loss": np.mean(inductance_loss_matrix),
-                                "inductor_max_all_loss": inductance_loss_matrix[max_loss_all_index],
-                                "inductor_max_circuit_ib_loss": inductance_loss_matrix[max_loss_circuit_1_index],
-                                "inductor_max_circuit_ob_loss": inductance_loss_matrix[max_loss_circuit_2_index],
-                                "inductor_max_inductor_loss": inductance_loss_matrix[max_loss_inductor_index],
-                                "inductor_max_transformer_loss": inductance_loss_matrix[max_loss_transformer_index],
-                                "inductor_t_max": 0,
-                                "inductor_heat_sink_temperature_max": temperature_inductor_heat_sink_max_matrix[max_loss_inductor_index],
-                                "inductor_area": inductor_dto.area_to_heat_sink,
-                                # transformer
-                                "transformer_study_name": stacked_transformer_study_name,
-                                "transformer_number": stacked_transformer_number,
-                                "transformer_volume": transformer_dto.volume,
-                                "transformer_mean_loss": np.mean(transformer_dto.p_combined_losses),
-                                "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
-                                "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
-                                "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],
-                                "transformer_max_inductor_loss": transformer_loss_matrix[max_loss_inductor_index],
-                                "transformer_max_transformer_loss": transformer_loss_matrix[max_loss_transformer_index],
-                                "transformer_t_max": 0,
-                                "transformer_heat_sink_temperature_max": temperature_xfmr_heat_sink_max_matrix[max_loss_transformer_index],
-                                "transformer_area": transformer_dto.area_to_heat_sink,
+                                # Check, if stacked transformer number list cannot be generated
+                                is_capacitor_1_list_generated, capacitor_1_full_operating_range_list = (
+                                    DctSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
+                                if not is_capacitor_1_list_generated:
+                                    logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
+                                    # Next circuit
+                                    continue
+                                logger.debug(f"{capacitor_1_full_operating_range_list=}")
 
-                                # summary
-                                "total_losses": total_loss_matrix[max_loss_all_index],
+                                # iterate capacitor 1 numbers
+                                for capacitor_1_number in capacitor_1_full_operating_range_list:
+                                    capacitor_1_filepath_number = os.path.join(capacitor_1_filepath_results,
+                                                                               f"{capacitor_1_number}.pkl")
 
-                                # heat sink
-                                "r_th_heat_sink": r_th_target
-                            }
-                            local_df = pd.DataFrame([data])
+                                    # get capacitor 1 results
+                                    with open(capacitor_1_filepath_number, 'rb') as pickle_file_data:
+                                        capacitor_1_dto: CapacitorResults = pickle.load(pickle_file_data)
 
-                            df = pd.concat([df, local_df], axis=0)
+                                    if capacitor_1_dto.circuit_trial_file != circuit_trial_file:
+                                        raise ValueError(f"{capacitor_1_dto.circuit_trial_file=} != {circuit_trial_file}")
+                                    if capacitor_1_dto.capacitor_order_number != capacitor_1_number:
+                                        raise ValueError(f"{capacitor_1_dto.capacitor_order_number=} != {capacitor_1_number}")
+                                    logger.debug(f"{act_capacitor_2_study_names=}")
+                                    for capacitor_2_study_name in act_capacitor_2_study_names:
+                                        # Assemble directory name for capacitor 1 results
+                                        capacitor_2_filepath_results = os.path.join(capacitor_2_study_data.optimization_directory,
+                                                                                    circuit_trial_file,
+                                                                                    capacitor_2_study_name,
+                                                                                    "01_circuit_dtos_incl_capacitor_loss")
+
+                                        # Check, if stacked transformer number list cannot be generated
+                                        is_capacitor_2_list_generated, capacitor_2_full_operating_range_list = (
+                                            DctSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
+                                        if not is_capacitor_2_list_generated:
+                                            logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
+                                            # Next circuit
+                                            continue
+                                        logger.debug(f"{capacitor_2_full_operating_range_list=}")
+                                        # iterate capacitor 1 numbers
+                                        for capacitor_2_number in capacitor_2_full_operating_range_list:
+                                            capacitor_2_filepath_number = os.path.join(capacitor_2_filepath_results,
+                                                                                       f"{capacitor_2_number}.pkl")
+
+                                            # get capacitor 1 results
+                                            with open(capacitor_2_filepath_number, 'rb') as pickle_file_data:
+                                                capacitor_2_dto = pickle.load(pickle_file_data)
+
+                                            if capacitor_2_dto.circuit_trial_file != circuit_trial_file:
+                                                raise ValueError(f"{capacitor_2_dto.circuit_trial_file=} != {circuit_trial_file}")
+                                            if capacitor_2_dto.capacitor_order_number != capacitor_2_number:
+                                                raise ValueError(f"{capacitor_2_dto.capacitor_order_number=} != {capacitor_2_number}")
+
+                                            total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix + \
+                                                                 transformer_dto.p_combined_losses + capacitor_1_dto.loss_total_array + \
+                                                                 capacitor_2_dto.loss_total_array)
+                                            # maximum loss indices
+                                            max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
+
+                                            r_th_heat_sink_target_matrix = delta_t_max_heat_sink_matrix / total_loss_matrix
+
+                                            r_th_target = r_th_heat_sink_target_matrix.min()
+                                            data = {
+                                                # circuit
+                                                "circuit_trial_file": circuit_trial_file,
+                                                "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
+                                                "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
+                                                "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],
+                                                "circuit_max_circuit_ob_loss": total_transistor_cond_loss_matrix[max_loss_circuit_2_index],
+                                                "circuit_max_inductor_loss": total_transistor_cond_loss_matrix[max_loss_inductor_index],
+                                                "circuit_max_transformer_loss": total_transistor_cond_loss_matrix[max_loss_transformer_index],
+                                                "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
+                                                "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
+                                                "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
+                                                "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
+                                                "circuit_heat_sink_temperature_max_1": circuit_heat_sink_max_1_matrix[max_loss_circuit_1_index],
+                                                "circuit_heat_sink_temperature_max_2": circuit_heat_sink_max_2_matrix[max_loss_circuit_2_index],
+                                                "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
+                                                # inductor
+                                                "inductor_study_name": inductor_study_name,
+                                                "inductor_number": inductor_number,
+                                                "inductor_volume": inductor_dto.volume,
+                                                "inductor_mean_loss": np.mean(inductance_loss_matrix),
+                                                "inductor_max_all_loss": inductance_loss_matrix[max_loss_all_index],
+                                                "inductor_max_circuit_ib_loss": inductance_loss_matrix[max_loss_circuit_1_index],
+                                                "inductor_max_circuit_ob_loss": inductance_loss_matrix[max_loss_circuit_2_index],
+                                                "inductor_max_inductor_loss": inductance_loss_matrix[max_loss_inductor_index],
+                                                "inductor_max_transformer_loss": inductance_loss_matrix[max_loss_transformer_index],
+                                                "inductor_t_max": 0,
+                                                "inductor_heat_sink_temperature_max": temperature_inductor_heat_sink_max_matrix[max_loss_inductor_index],
+                                                "inductor_area": inductor_dto.area_to_heat_sink,
+                                                # transformer
+                                                "transformer_study_name": stacked_transformer_study_name,
+                                                "transformer_number": stacked_transformer_number,
+                                                "transformer_volume": transformer_dto.volume,
+                                                "transformer_mean_loss": np.mean(transformer_dto.p_combined_losses),
+                                                "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
+                                                "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
+                                                "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],
+                                                "transformer_max_inductor_loss": transformer_loss_matrix[max_loss_inductor_index],
+                                                "transformer_max_transformer_loss": transformer_loss_matrix[max_loss_transformer_index],
+                                                "transformer_t_max": 0,
+                                                "transformer_heat_sink_temperature_max": temperature_xfmr_heat_sink_max_matrix[max_loss_transformer_index],
+                                                "transformer_area": transformer_dto.area_to_heat_sink,
+
+                                                # capacitor 1
+                                                "capacitor_1_study_name": capacitor_1_study_name,
+                                                "capacitor_1_number": capacitor_1_number,
+                                                "capacitor_1_volume": capacitor_1_dto.volume_total,
+                                                "capacitor_1_mean_loss": np.mean(capacitor_1_dto.loss_total_array),
+                                                "capacitor_1_area": capacitor_1_dto.area_total,
+                                                "capacitor_1_n_parallel": capacitor_1_dto.n_parallel,
+                                                "capacitor_1_n_series": capacitor_1_dto.n_series,
+
+                                                # capacitor 2
+                                                "capacitor_2_study_name": capacitor_2_study_name,
+                                                "capacitor_2_number": capacitor_2_number,
+                                                "capacitor_2_volume": capacitor_2_dto.volume_total,
+                                                "capacitor_2_mean_loss": np.mean(capacitor_2_dto.loss_total_array),
+                                                "capacitor_2_area": capacitor_2_dto.area_total,
+                                                "capacitor_2_n_parallel": capacitor_2_dto.n_parallel,
+                                                "capacitor_2_n_series": capacitor_2_dto.n_series,
+
+                                                # summary
+                                                "total_losses": total_loss_matrix[max_loss_all_index],
+
+                                                # heat sink
+                                                "r_th_heat_sink": r_th_target
+                                            }
+                                            local_df = pd.DataFrame([data])
+
+                                            df = pd.concat([df, local_df], axis=0)
 
         # Calculate the total area as sum of circuit,  inductor and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
-        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
-        df["total_mean_loss"] = df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"]
-        df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"]
+        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]  # heat sink area, capacitors do not need heat sink area
+
+        df["total_mean_loss"] = (df["circuit_mean_loss"] + df["inductor_mean_loss"] + df["transformer_mean_loss"] + \
+                                 df["capacitor_1_mean_loss"] + df["capacitor_2_mean_loss"])
+        df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"] + df["capacitor_1_volume"] + df["capacitor_2_volume"]
         # Save results to file (ASA : later to store only on demand)
         df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
 
@@ -448,7 +548,7 @@ class DabSummaryPreProcessing:
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
-        act_df_for_hs["total_volume"] = act_df_for_hs["transformer_volume"] + act_df_for_hs["inductor_volume"] + act_df_for_hs["heat_sink_volume"]
+        act_df_for_hs["total_volume"] = act_df_for_hs["volume_wo_heat_sink"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
         act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/df_w_hs.csv")

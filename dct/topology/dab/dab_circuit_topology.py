@@ -77,6 +77,8 @@ class DabCircuitOptimization:
 
         file_path_dto = circuit_dtos.ParetoFilePaths(
             circuit=loaded_file["circuit"],
+            capacitor_1=loaded_file["capacitor_1"],
+            capacitor_2=loaded_file["capacitor_2"],
             transformer=loaded_file["transformer"],
             inductor=loaded_file["inductor"],
             heat_sink=loaded_file["heat_sink"]

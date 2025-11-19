@@ -157,7 +157,7 @@ class CapacitorSelection:
 
             loss_total_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-            new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, "01_circuit_dtos_incl_capacitor_1_loss")
+            new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, "01_circuit_dtos_incl_capacitor_loss")
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
@@ -184,11 +184,13 @@ class CapacitorSelection:
                     loss_total_array[vec_vvp] = loss_per_capacitor * n_series * n_parallel
 
                 capacitor_losses = CapacitorResults(
-                    p_combined_losses=loss_total_array,
-                    volume=volume_total,
-                    pcb_area=area_total,
+                    loss_total_array=loss_total_array,
+                    volume_total=volume_total,
+                    area_total=area_total,
                     circuit_trial_file=circuit_filtered_point_file,
-                    capacitor_order_number=df_geometry_re_simulation_number,
+                    capacitor_order_number=df_geometry_re_simulation_number['ordering code'].values[0],
+                    n_series=n_series,
+                    n_parallel=n_parallel
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
