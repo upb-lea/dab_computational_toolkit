@@ -15,7 +15,7 @@ import dct
 from dct.topology.dab.dab_datasets_dtos import DabStudyData
 from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
-from dct.datasets_dtos import CapacitorResults
+from dct.topology.dab.dab_datasets_dtos import CapacitorResults
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
@@ -221,6 +221,9 @@ class DabSummaryPreProcessing:
         # Result DataFrame
         df = pd.DataFrame()
 
+        # Debug
+        prog_counter: int = 0
+
         # iterate circuit numbers
         for circuit_trial_file in filter_data.filtered_list_files:
             # Assemble pkl-filename
@@ -272,7 +275,7 @@ class DabSummaryPreProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummaryPreProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
+                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
 
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
@@ -309,7 +312,7 @@ class DabSummaryPreProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummaryPreProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
+                            DabSummaryPreProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
 
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
@@ -317,6 +320,8 @@ class DabSummaryPreProcessing:
                             continue
 
                         logger.debug(f"{stacked_transformer_full_operating_range_list=}")
+                        print(f"Iteration: {prog_counter}")
+                        prog_counter = prog_counter + 1
 
                         # iterate transformer numbers
                         for stacked_transformer_number in stacked_transformer_full_operating_range_list:
@@ -369,7 +374,7 @@ class DabSummaryPreProcessing:
 
                                 # Check, if stacked transformer number list cannot be generated
                                 is_capacitor_1_list_generated, capacitor_1_full_operating_range_list = (
-                                    DctSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
+                                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
                                 if not is_capacitor_1_list_generated:
                                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                                     # Next circuit
@@ -399,13 +404,14 @@ class DabSummaryPreProcessing:
 
                                         # Check, if stacked transformer number list cannot be generated
                                         is_capacitor_2_list_generated, capacitor_2_full_operating_range_list = (
-                                            DctSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
+                                            DabSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
                                         if not is_capacitor_2_list_generated:
                                             logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                                             # Next circuit
                                             continue
                                         logger.debug(f"{capacitor_2_full_operating_range_list=}")
-                                        # iterate capacitor 1 numbers
+
+                                        # iterate capacitor 2 numbers
                                         for capacitor_2_number in capacitor_2_full_operating_range_list:
                                             capacitor_2_filepath_number = os.path.join(capacitor_2_filepath_results,
                                                                                        f"{capacitor_2_number}.pkl")
