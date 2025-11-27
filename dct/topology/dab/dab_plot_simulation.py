@@ -4,8 +4,8 @@ import logging
 
 # own libraries
 from dct.debug_tools import timeit
-from . import dab_datasets_dtos as d_dtos
-from . import PlotDAB
+from dct.topology.dab import dab_datasets_dtos as d_dtos
+from dct.topology.dab import PlotDAB
 
 # 3rd party libraries
 import numpy as np

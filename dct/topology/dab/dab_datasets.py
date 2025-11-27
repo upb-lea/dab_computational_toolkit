@@ -12,13 +12,13 @@ import transistordatabase as tdb
 from matplotlib import pyplot as plt
 
 # own libraries
-from . import dab_datasets_dtos as d_dtos
-from . import dab_functions_waveforms as d_waveforms
-from . import dab_mod_zvs as mod
-from . import dab_currents as dct_currents
-from . import dab_geckosimulation as dct_gecko
-from . import dab_losses as dct_loss
-from .dab_circuit_topology_dtos import CircuitSampling
+from dct.topology.dab import dab_datasets_dtos as d_dtos
+from dct.topology.dab import dab_functions_waveforms as d_waveforms
+from dct.topology.dab import dab_mod_zvs as mod
+from dct.topology.dab import dab_currents as dct_currents
+from dct.topology.dab import dab_geckosimulation as dct_gecko
+from dct.topology.dab import dab_losses as dct_loss
+from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 

@@ -22,6 +22,7 @@ from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
 from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
 import dct.topology.dab.dab_datasets_dtos as d_dtos
 import dct.topology.dab.dab_functions_waveforms as dabwav
+import dct.topology.dab.dab_datasets as dab_dset
 
 # configure root logger
 logger = logging.getLogger(__name__)
@@ -187,9 +188,9 @@ class InductorOptimization:
             # Check filename
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
-                circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
+                circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath)
                 # get the peak current waveform
-                sorted_max_angles, i_l_1_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_inductor(
+                sorted_max_angles, i_l_1_max_current_waveform = dab_dset.HandleDabDto.get_max_peak_waveform_inductor(
                     circuit_dto, False)
                 time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
                 # Generate new io_config
@@ -272,7 +273,7 @@ class InductorOptimization:
         number_of_filtered_points = 0
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -464,7 +465,7 @@ class InductorOptimization:
         process_number = current_process().name
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
 
         df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
         df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(

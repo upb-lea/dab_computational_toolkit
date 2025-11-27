@@ -17,6 +17,7 @@ import tqdm
 import dct.transformer_optimization_dtos
 import femmt as fmt
 import dct.topology.dab.dab_functions_waveforms as dabwav
+import dct.topology.dab.dab_datasets as dab_dset
 import dct.topology.dab.dab_datasets_dtos as d_dtos
 from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
 from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
@@ -277,12 +278,12 @@ class TransformerOptimization:
             # Check filename
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
-                circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath)
+                circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath)
                 # get the peak current waveform
-                sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dct.HandleDabDto.get_max_peak_waveform_transformer(
+                sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dab_dset.HandleDabDto.get_max_peak_waveform_transformer(
                     circuit_dto, False)
                 time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
-                transformer_target_params = dct.HandleDabDto.export_transformer_target_parameters_dto(
+                transformer_target_params = dab_dset.HandleDabDto.export_transformer_target_parameters_dto(
                     dab_dto=circuit_dto)
 
                 # Generate new sto_config
@@ -370,7 +371,7 @@ class TransformerOptimization:
         number_of_filtered_points = 0
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
         # Check number of trials
         if act_target_number_trials > 0:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(
@@ -556,7 +557,7 @@ class TransformerOptimization:
         process_number = current_process().name
 
         # Load configuration
-        circuit_dto = dct.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
 
         # Filter study. Use same filter as in the reluctance model
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)

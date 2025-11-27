@@ -2,8 +2,8 @@
 # python libraries
 
 # own libraries
-from . import dab_datasets_dtos as d_dtos
-from . import dab_functions_waveforms as fw
+from dct.topology.dab import dab_datasets_dtos as d_dtos
+from dct.topology.dab import dab_functions_waveforms as fw
 
 # 3rd party libraries
 import numpy as np

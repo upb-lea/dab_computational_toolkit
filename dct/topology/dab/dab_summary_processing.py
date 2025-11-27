@@ -18,6 +18,7 @@ from dct.heat_sink_optimization import ThermalCalcSupport
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
+import dct.topology.dab.dab_datasets as dab_dset
 
 
 logger = logging.getLogger(__name__)
@@ -217,7 +218,7 @@ class DabSummaryProcessing:
             circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
 
             # Get circuit results
-            circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
+            circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath_number)
 
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues

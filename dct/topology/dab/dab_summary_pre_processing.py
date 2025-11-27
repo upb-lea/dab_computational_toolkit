@@ -19,6 +19,7 @@ from dct.topology.dab.dab_datasets_dtos import CapacitorResults
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
+import dct.topology.dab.dab_datasets as dab_dset
 
 logger = logging.getLogger(__name__)
 
@@ -221,16 +222,13 @@ class DabSummaryPreProcessing:
         # Result DataFrame
         df = pd.DataFrame()
 
-        # Debug
-        prog_counter: int = 0
-
         # iterate circuit numbers
         for circuit_trial_file in filter_data.filtered_list_files:
             # Assemble pkl-filename
             circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
 
             # Get circuit results
-            circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
+            circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath_number)
 
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
@@ -320,8 +318,6 @@ class DabSummaryPreProcessing:
                             continue
 
                         logger.debug(f"{stacked_transformer_full_operating_range_list=}")
-                        print(f"Iteration: {prog_counter}")
-                        prog_counter = prog_counter + 1
 
                         # iterate transformer numbers
                         for stacked_transformer_number in stacked_transformer_full_operating_range_list:

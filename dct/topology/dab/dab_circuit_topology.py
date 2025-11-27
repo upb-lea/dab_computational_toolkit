@@ -17,9 +17,9 @@ import deepdiff
 import dct.sampling as sampling
 
 # own libraries
-from . import dab_datasets_dtos as d_dtos
-from . import dab_circuit_topology_dtos as circuit_dtos
-from . import dab_datasets as d_sets
+from dct.topology.dab import dab_datasets_dtos as d_dtos
+from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
+from dct.topology.dab import dab_datasets as d_sets
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
