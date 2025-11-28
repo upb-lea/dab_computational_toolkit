@@ -8,5 +8,5 @@ import os
 import dct
 
 DCT_ROOT = os.path.dirname(os.path.realpath(dct.__file__))
-GECKO_PATH = os.path.join(DCT_ROOT,"topology","dab","GeckoCIRCUITS")
+GECKO_PATH = os.path.join(DCT_ROOT, "topology", "dab", "GeckoCIRCUITS")
 SIMULATION_INPUT = "simulation_input"
