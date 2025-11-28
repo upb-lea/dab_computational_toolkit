@@ -12,6 +12,7 @@ import transistordatabase as tdb
 from matplotlib import pyplot as plt
 
 # own libraries
+from dct.constant_path import GECKO_PATH
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_functions_waveforms as d_waveforms
 from dct.topology.dab import dab_mod_zvs as mod
@@ -57,7 +58,8 @@ class HandleDabDto:
     @staticmethod
     def init_config(name: str, mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                     sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
-                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.DabCircuitDTO:
+                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO,
+                    lossfilepath: str, c_par_1: float, c_par_2: float) -> d_dtos.DabCircuitDTO:
         """
         Initialize the DAB structure.
 
@@ -85,11 +87,14 @@ class HandleDabDto:
         :type transistor_dto_1: TransistorDTO
         :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatabase available transistors.
         :type transistor_dto_2: TransistorDTO
+        :param lossfilepath: Path to store the calculated transistor loss
+        :type  lossfilepath: str
         :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
         :type c_par_1: float
         :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
         :type c_par_2: float
-        :return:
+        :return: Configuration data for the actual design
+        :rtype:  d_dtos.DabCircuitDTO
         """
         input_configuration = d_dtos.CircuitConfig(mesh_v1=mesh_v1,
                                                    mesh_v2=mesh_v2,
@@ -102,6 +107,7 @@ class HandleDabDto:
                                                    fs=np.array(fs),
                                                    transistor_dto_1=transistor_dto_1,
                                                    transistor_dto_2=transistor_dto_2,
+                                                   lossfilepath=lossfilepath,
                                                    c_par_1=c_par_1,
                                                    c_par_2=c_par_2,
                                                    )
@@ -131,8 +137,8 @@ class HandleDabDto:
         gecko_additional_params = d_dtos.GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
             number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
-            simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
-            lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
+            simfilepath=os.path.join(GECKO_PATH, 'DAB_MOSFET_Modulation_v8.ipes'),
+            lossfilepath=lossfilepath)
 
         dab_dto = d_dtos.DabCircuitDTO(
             name=name,

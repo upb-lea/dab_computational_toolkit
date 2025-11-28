@@ -25,6 +25,7 @@ class FixedParameters:
 
     transistor_1_dto_list: list[TransistorDTO]
     transistor_2_dto_list: list[TransistorDTO]
+    transistorlosses_filepath: str
     mesh_v1: np.ndarray
     mesh_v2: np.ndarray
     mesh_p: np.ndarray

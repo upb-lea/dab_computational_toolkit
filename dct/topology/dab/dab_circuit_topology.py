@@ -17,6 +17,7 @@ import deepdiff
 import dct.sampling as sampling
 
 # own libraries
+from dct.constant_path import SIMULATION_INPUT
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
 from dct.topology.dab import dab_datasets as d_sets
@@ -424,6 +425,7 @@ class DabCircuitOptimization:
             fs=f_s_suggest,
             lc1=l_1_suggest,
             lc2=l_2__suggest / n_suggest ** 2,
+            lossfilepath=fixed_parameters.transistorlosses_filepath,
             c_par_1=dab_config.design_space.c_par_1,
             c_par_2=dab_config.design_space.c_par_2,
             transistor_dto_1=transistor_1_dto,
@@ -517,6 +519,7 @@ class DabCircuitOptimization:
         return d_dtos.FixedParameters(
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
+            transistorlosses_filepath="Invalid_Path",
             mesh_v1=np.atleast_3d(v1_operating_points),
             mesh_v2=np.atleast_3d(v2_operating_points),
             mesh_p=np.atleast_3d(p_operating_points),
@@ -633,6 +636,8 @@ class DabCircuitOptimization:
 
         # Calculate the fixed parameters
         self._fixed_parameters = DabCircuitOptimization.calculate_fixed_parameters(self._dab_config)
+        # Add path to losses (workaround because filepaths need to be replaced by better approach)
+        self._fixed_parameters. transistorlosses_filepath = os.path.join(filepaths.circuit, SIMULATION_INPUT)
 
         # Update statistical data
         with self._c_lock_stat:
@@ -782,7 +787,8 @@ class DabCircuitOptimization:
             c_par_1=dab_config.design_space.c_par_1,
             c_par_2=dab_config.design_space.c_par_2,
             transistor_dto_1=trials_dict["transistor_1_name_suggest"],
-            transistor_dto_2=trials_dict["transistor_2_name_suggest"]
+            transistor_dto_2=trials_dict["transistor_2_name_suggest"],
+            lossfilepath=fix_parameters.transistorlosses_filepath
         )
 
         return dab_dto
@@ -827,7 +833,8 @@ class DabCircuitOptimization:
                 c_par_1=self._dab_config.design_space.c_par_1,
                 c_par_2=self._dab_config.design_space.c_par_2,
                 transistor_dto_1=transistor_dto_1,
-                transistor_dto_2=transistor_dto_2
+                transistor_dto_2=transistor_dto_2,
+                lossfilepath=self._fixed_parameters.transistorlosses_filepath
             )
             dab_dto_list.append(dab_dto)
 
