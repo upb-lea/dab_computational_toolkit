@@ -14,7 +14,7 @@ import matplotlib.axes
 
 # own libraries
 from dct.debug_tools import *
-from dct.plot_window import *
+from .dab_plot_window import *
 
 logger = logging.getLogger(__name__)
 

@@ -25,6 +25,7 @@ class FixedParameters:
 
     transistor_1_dto_list: list[TransistorDTO]
     transistor_2_dto_list: list[TransistorDTO]
+    transistorlosses_filepath: str
     mesh_v1: np.ndarray
     mesh_v2: np.ndarray
     mesh_p: np.ndarray
@@ -297,7 +298,7 @@ class GeckoWaveforms:
                 setattr(self, k, v)
 
 @dataclasses.dataclass
-class CircuitDabDTO:
+class DabCircuitDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.ndarray | None
@@ -330,14 +331,14 @@ class TransformerTargetParameters:
     temperature: float
 
 @dataclasses.dataclass
-class StudyData:
+class DabStudyData:
     """Data class containing all general information to perform a study."""
 
     study_name: str
     optimization_directory: str
 
 @dataclasses.dataclass
-class FilterData:
+class DabFilterData:
     """Information about the filtered circuit designs."""
 
     filtered_list_files: list[str]

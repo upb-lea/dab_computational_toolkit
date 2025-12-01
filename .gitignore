@@ -6,6 +6,9 @@ dab_modulation_output*
 *.nlc
 *.npz
 */__pycache__/
+dct/__pycache__/
+dct/topology/__pycache__/
+dct/topology/dab/__pycache__/
 dct/design_check/__pycache__/
 *.sqlite3
 *.html

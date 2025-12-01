@@ -12,23 +12,54 @@ import transistordatabase as tdb
 from matplotlib import pyplot as plt
 
 # own libraries
-import dct.datasets_dtos as d_dtos
-import dct.functions_waveforms as d_waveforms
-import dct.mod_zvs as mod
-import dct.currents as dct_currents
-import dct.geckosimulation as dct_gecko
-import dct.losses as dct_loss
-from dct.circuit_optimization_dtos import CircuitSampling
+from dct.constant_path import GECKO_PATH
+from dct.topology.dab import dab_datasets_dtos as d_dtos
+from dct.topology.dab import dab_functions_waveforms as d_waveforms
+from dct.topology.dab import dab_mod_zvs as mod
+from dct.topology.dab import dab_currents as dct_currents
+from dct.topology.dab import dab_geckosimulation as dct_gecko
+from dct.topology.dab import dab_losses as dct_loss
+from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
 class HandleDabDto:
     """Class to handle the DabDTO, e.g. save and load the files."""
 
+    c_oss_storage_directory: str = ""
+
+    @staticmethod
+    def set_c_oss_storage_directory(act_c_oss_storage_directory: str) -> bool:
+        """
+        Set the transistor database path.
+
+        :param act_c_oss_storage_directory: Directory for storage of transistor switch loss
+        :type  act_c_oss_storage_directory: str
+        :return: True, if the path exists, else false
+        :rtype: bool
+        """
+        # Variable declaration
+        valid_directory_flag: bool = False
+
+        # Get absolute path name of the directory
+        abs_dir = os.path.abspath(act_c_oss_storage_directory)
+
+        # check path
+        if os.path.exists(abs_dir):
+            HandleDabDto.c_oss_storage_directory = abs_dir
+            logger.debug(f"Directory {act_c_oss_storage_directory} exists.")
+            # Set return value to True
+            valid_directory_flag = True
+        else:
+            logger.warning(f"Directory {abs_dir} does not exist!")
+
+        return valid_directory_flag
+
     @staticmethod
     def init_config(name: str, mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                     sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
-                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO, c_par_1: float, c_par_2: float) -> d_dtos.CircuitDabDTO:
+                    transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO,
+                    lossfilepath: str, c_par_1: float, c_par_2: float) -> d_dtos.DabCircuitDTO:
         """
         Initialize the DAB structure.
 
@@ -56,11 +87,14 @@ class HandleDabDto:
         :type transistor_dto_1: TransistorDTO
         :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatabase available transistors.
         :type transistor_dto_2: TransistorDTO
+        :param lossfilepath: Path to store the calculated transistor loss
+        :type  lossfilepath: str
         :param c_par_1: Parasitic PCB capacitance per transistor footprint of bridge 1
         :type c_par_1: float
         :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
         :type c_par_2: float
-        :return:
+        :return: Configuration data for the actual design
+        :rtype:  d_dtos.DabCircuitDTO
         """
         input_configuration = d_dtos.CircuitConfig(mesh_v1=mesh_v1,
                                                    mesh_v2=mesh_v2,
@@ -73,6 +107,7 @@ class HandleDabDto:
                                                    fs=np.array(fs),
                                                    transistor_dto_1=transistor_dto_1,
                                                    transistor_dto_2=transistor_dto_2,
+                                                   lossfilepath=lossfilepath,
                                                    c_par_1=c_par_1,
                                                    c_par_2=c_par_2,
                                                    )
@@ -102,10 +137,10 @@ class HandleDabDto:
         gecko_additional_params = d_dtos.GeckoAdditionalParameters(
             t_dead1=50e-9, t_dead2=50e-9, timestep=1e-9,
             number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
-            simfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits', 'DAB_MOSFET_Modulation_v8.ipes')),
-            lossfilepath=os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..', 'circuits')))
+            simfilepath=os.path.join(GECKO_PATH, 'DAB_MOSFET_Modulation_v8.ipes'),
+            lossfilepath=lossfilepath)
 
-        dab_dto = d_dtos.CircuitDabDTO(
+        dab_dto = d_dtos.DabCircuitDTO(
             name=name,
             timestamp=None,
             metadata=None,
@@ -125,7 +160,7 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def add_gecko_simulation_results(dab_dto: d_dtos.CircuitDabDTO, get_waveforms: bool = False) -> d_dtos.CircuitDabDTO:
+    def add_gecko_simulation_results(dab_dto: d_dtos.DabCircuitDTO, get_waveforms: bool = False) -> d_dtos.DabCircuitDTO:
         """
         Add GeckoCIRCUITS simulation results to the given DTO.
 
@@ -264,12 +299,12 @@ class HandleDabDto:
         return qoss
 
     @staticmethod
-    def save(dab_dto: d_dtos.CircuitDabDTO, name: str, directory: str, timestamp: bool = True) -> None:
+    def save(dab_dto: d_dtos.DabCircuitDTO, name: str, directory: str, timestamp: bool = True) -> None:
         """
         Save the DabDTO-class to a npz file.
 
         :param dab_dto: Class to store
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :param name: Filename
         :type name: str
         :param directory: Directory to store the results
@@ -310,7 +345,7 @@ class HandleDabDto:
             pickle.dump(dab_dto, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_from_file(file: str) -> d_dtos.CircuitDabDTO:
+    def load_from_file(file: str) -> d_dtos.DabCircuitDTO:
         """
         Load everything from the given .npz file.
 
@@ -327,17 +362,17 @@ class HandleDabDto:
 
         with open(file, 'rb') as pickle_file_data:
             loaded_circuit_dto = pickle.load(pickle_file_data)
-            if not isinstance(loaded_circuit_dto, d_dtos.CircuitDabDTO):
-                raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type CircuitDabDTO.")
+            if not isinstance(loaded_circuit_dto, d_dtos.DabCircuitDTO):
+                raise TypeError(f"Loaded pickle file {loaded_circuit_dto} not of type DabCircuitDTO.")
             return loaded_circuit_dto
 
     @staticmethod
-    def get_max_peak_waveform_transformer(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def get_max_peak_waveform_transformer(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Get the transformer waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
         :param dab_dto: DAB data transfer object (DTO)
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform. All as a numpy array.
@@ -371,12 +406,12 @@ class HandleDabDto:
         return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
 
     @staticmethod
-    def get_max_peak_waveform_inductor(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def get_max_peak_waveform_inductor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
         :param dab_dto: DAB data transfer object (DTO)
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_l1_max_current_waveform. All as a numpy array.
@@ -408,12 +443,12 @@ class HandleDabDto:
         return sorted_max_angles, i_l1_max_current_waveform
 
     @staticmethod
-    def get_max_rms_waveform_capacitor(dab_dto: d_dtos.CircuitDabDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def get_max_rms_waveform_capacitor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Get the capacitor waveform with the maximum RMS current out of the three-dimensional simulation array (v_1, v_2, P).
 
         :param dab_dto: DAB data transfer object (DTO)
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_rms_angles, i_hf1_max_rms_current_waveform, All as a numpy array.
@@ -446,14 +481,14 @@ class HandleDabDto:
         return sorted_max_rms_angles, i_c1_max_rms_current_waveform
 
     @staticmethod
-    def export_transformer_target_parameters_dto(dab_dto: d_dtos.CircuitDabDTO) -> d_dtos.TransformerTargetParameters:
+    def export_transformer_target_parameters_dto(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.TransformerTargetParameters:
         """
         Export the optimization parameters for the transformer optimization (inside FEMMT).
 
         Note: the current counting system is adapted to FEMMT! The secondary current is counted negative!
 
         :param dab_dto: DAB DTO
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :return: DTO for the transformer optimization using FEMMT
         :rtype: TransformerTargetParameters
         """
@@ -471,36 +506,33 @@ class HandleDabDto:
             temperature=100)
 
     @staticmethod
-    def add_inductor_results(dab_dto: d_dtos.CircuitDabDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.CircuitDabDTO:
-        """Add inductor results to the CircuitDabDTO.
+    def add_inductor_results(dab_dto: d_dtos.DabCircuitDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.DabCircuitDTO:
+        """Add inductor results to the DabCircuitDTO.
 
         :param dab_dto: Dual-active bridge DTO
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :param inductor_results: inductor losses
         :type inductor_results: InductorResults
         :return: Dual-active bridge DTO including the inductor losses
-        :rtype: d_dtos.CircuitDabDTO
+        :rtype: d_dtos.DabCircuitDTO
         """
         dab_dto.inductor_results = inductor_results
 
         return dab_dto
 
     @staticmethod
-    def add_stacked_transformer_results(dab_dto: d_dtos.CircuitDabDTO, transformer_results: d_dtos.StackedTransformerResults) -> d_dtos.CircuitDabDTO:
-        """Add stacked transformer results to the CircuitDabDTO.
+    def add_stacked_transformer_results(dab_dto: d_dtos.DabCircuitDTO, transformer_results: d_dtos.StackedTransformerResults) -> d_dtos.DabCircuitDTO:
+        """Add stacked transformer results to the DabCircuitDTO.
 
         :param dab_dto: Dual-active bridge DTO
-        :type dab_dto: d_dtos.CircuitDabDTO
+        :type dab_dto: d_dtos.DabCircuitDTO
         :param transformer_results: stacked transformer results
         :type transformer_results: StackedTransformerResults
         :return: Dual-active bridge DTO including the inductor losses
-        :rtype: d_dtos.CircuitDabDTO
+        :rtype: d_dtos.DabCircuitDTO
         """
         dab_dto.stacked_transformer_results = transformer_results
         return dab_dto
-
-class HandleTransistorDto:
-    """Handle the transistor DTOs."""
 
     @staticmethod
     def tdb_to_transistor_dto(transistor_name: str, c_oss_margin_factor: float = 1.2) -> d_dtos.TransistorDTO:
@@ -517,6 +549,10 @@ class HandleTransistorDto:
         db = tdb.DatabaseManager()
         db.set_operation_mode_json()
 
+        # Check if a valid directory is not initialized
+        if HandleDabDto.c_oss_storage_directory == "":
+            raise ValueError("A valid transistor database directory is not set./n"+"Use method 'set_c_oss_storage_directory' for this purpose!")
+
         transistor: tdb.Transistor = db.load_transistor(transistor_name)
 
         if transistor.type != "MOSFET" and transistor.type != "SiC-MOSFET":
@@ -525,12 +561,12 @@ class HandleTransistorDto:
 
         t_j_recommended = transistor.switch.t_j_max - 25
 
-        c_oss, q_oss = HandleDabDto.get_c_oss_from_tdb(transistor, margin_factor=c_oss_margin_factor)
+        c_oss, q_oss = (HandleDabDto.get_c_oss_from_tdb
+                        (transistor, margin_factor=c_oss_margin_factor))
 
         # export c_oss files for GeckoCIRCUITS
-        path_to_save_c_oss_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'circuits')
-        if not os.path.exists(os.path.join(path_to_save_c_oss_files, f"{transistor.name}_c_oss.nlc")):
-            transistor.export_geckocircuits_coss(filepath=path_to_save_c_oss_files, margin_factor=c_oss_margin_factor)
+        if not os.path.exists(os.path.join(HandleDabDto.c_oss_storage_directory, f"{transistor.name}_c_oss.nlc")):
+            transistor.export_geckocircuits_coss(filepath=HandleDabDto.c_oss_storage_directory, margin_factor=c_oss_margin_factor)
 
         transistor.quickstart_wp()
 

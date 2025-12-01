@@ -25,16 +25,16 @@ import dct
 from dct import toml_checker as tc, ProgressStatus
 from dct import server_ctl_dtos as srv_ctl_dtos
 # Circuit, inductor, transformer and heat sink optimization class
-from dct import CircuitOptimization
+from dct.topology.dab import DabCircuitOptimization
 from dct import CapacitorSelection
 from dct import InductorOptimization
 from dct import TransformerOptimization
 from dct import HeatSinkOptimization
-from dct import ParetoPlots
+from dct.topology.dab.dab_plot_control import ParetoPlots
 from dct import generate_logging_config
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
-from dct.summary_processing import DctSummaryProcessing
-from dct.summary_pre_processing import DctSummaryPreProcessing
+from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
+from dct.topology.dab.dab_summary_pre_processing import DabSummaryPreProcessing
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
@@ -42,7 +42,8 @@ from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.boundary_check import CheckCondition as c_flag
-
+from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
+from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
 logger = logging.getLogger(__name__)
 
 class DctMainCtl:
@@ -66,14 +67,14 @@ class DctMainCtl:
         # Optimization class instances
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_files: list[str] = []
-        self._circuit_optimization: CircuitOptimization | None = None
+        self._circuit_optimization: DabCircuitOptimization | None = None
         self._capacitor_1_selection: CapacitorSelection | None = None
         self._capacitor_2_selection: CapacitorSelection | None = None
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
-        self._summary_pre_processing: DctSummaryPreProcessing | None = None
-        self._summary_processing: DctSummaryProcessing | None = None
+        self._summary_pre_processing: DabSummaryPreProcessing | None = None
+        self._summary_processing: DabSummaryProcessing | None = None
 
         # Filtered point results in case of skip
         self._inductor_number_filtered_points_skip_list: list[int] = []
@@ -1082,19 +1083,19 @@ class DctMainCtl:
         # -----------------------------------------
 
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
-        self._circuit_study_data = dct.StudyData(
+        self._circuit_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
-        self._capacitor_1_selection_data = dct.StudyData(
+        self._capacitor_1_selection_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.capacitor_1_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_1.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
-        self._capacitor_2_selection_data = dct.StudyData(
+        self._capacitor_2_selection_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.capacitor_2_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_2.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
@@ -1105,22 +1106,22 @@ class DctMainCtl:
             optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
-        self._transformer_study_data = dct.StudyData(
+        self._transformer_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
-        self._heat_sink_study_data = dct.StudyData(
+        self._heat_sink_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
                                                 toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
         )
 
-        pre_summary_data = dct.StudyData(study_name="pre_summary",
-                                         optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory))
-        summary_data = dct.StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
+        pre_summary_data = StudyData(study_name="pre_summary",
+                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory))
+        summary_data = StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
 
-        filter_data = dct.FilterData(
+        filter_data = FilterData(
             filtered_list_files=[],
             filtered_list_pathname=os.path.join(
                 project_directory, toml_prog_flow.circuit.subdirectory,
@@ -1163,7 +1164,7 @@ class DctMainCtl:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
         # Verify circuit parameters
-        is_consistent, issue_report = dct.CircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
+        is_consistent, issue_report = dct.topology.dab.DabCircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
         if not is_consistent:
             raise ValueError("Circuit optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
@@ -1336,17 +1337,17 @@ class DctMainCtl:
 
         # Start the data exchange queue thread
         srv_response_stop_flag = False
-        _srv_response_handler = threading.Thread(target=self._srv_response_queue,
-                                                 args=(srv_request_queue, srv_response_queue), daemon=True)
+        # _srv_response_handler = threading.Thread(target=self._srv_response_queue,
+        #                                         args=(srv_request_queue, srv_response_queue), daemon=True)
 
-        _srv_response_handler.start()
+        # _srv_response_handler.start()
 
         # Start the server
-        srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
+        # srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
 
         # Initialize key input handler
-        self._key_input_handler = threading.Thread(target=self._key_input,
-                                                   args=(srv_request_queue, srv_response_queue), daemon=True)
+        # self._key_input_handler = threading.Thread(target=self._key_input,
+        #                                            args=(srv_request_queue, srv_response_queue), daemon=True)
 
         # -- Start optimization  ----------------------------------------------------------------------------------------
         # --------------------------
@@ -1358,7 +1359,7 @@ class DctMainCtl:
         if not toml_prog_flow.circuit.calculation_mode == "skip":
 
             # Allocate and initialize circuit configuration
-            self._circuit_optimization = CircuitOptimization()
+            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
             self._circuit_optimization.initialize_circuit_optimization(toml_general, toml_circuit, toml_prog_flow)
 
             # Check, if old study is to delete, if available
@@ -1556,7 +1557,7 @@ class DctMainCtl:
         logger.info("Start pre-summary.")
 
         # Allocate summary data object
-        self._summary_pre_processing = DctSummaryPreProcessing()
+        self._summary_pre_processing = DabSummaryPreProcessing()
 
         # Initialization thermal data
         if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
@@ -1616,7 +1617,7 @@ class DctMainCtl:
         logger.info("Start final summary.")
 
         # Allocate summary data object
-        self._summary_processing = DctSummaryProcessing()
+        self._summary_processing = DabSummaryProcessing()
 
         # Initialization thermal data
         if not self._summary_processing.init_thermal_configuration(toml_heat_sink):

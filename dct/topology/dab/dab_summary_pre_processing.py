@@ -12,17 +12,18 @@ import numpy as np
 
 # own libraries
 import dct
+from dct.topology.dab.dab_datasets_dtos import DabStudyData
 from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
-from dct.datasets_dtos import CapacitorResults
+from dct.topology.dab.dab_datasets_dtos import CapacitorResults
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-
+import dct.topology.dab.dab_datasets as dab_dset
 
 logger = logging.getLogger(__name__)
 
-class DctSummaryPreProcessing:
+class DabSummaryPreProcessing:
     """Perform the summary calculation based on optimization results."""
 
     _s_lock_stat: threading.Lock
@@ -188,9 +189,9 @@ class DctSummaryPreProcessing:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
-        :type inductor_study_data: dct.StudyData
+        :type inductor_study_data: DabStudyData
         :param transformer_study_data: transformer study data
-        :type transformer_study_data: dct.StudyData
+        :type transformer_study_data: DabStudyData
         :param summary_data: Information about the summary name and path
         :type summary_data: dct.StudyData
         :param capacitor_1_study_data: List of names with capacitor studies which are to process
@@ -227,7 +228,7 @@ class DctSummaryPreProcessing:
             circuit_filepath_number = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
 
             # Get circuit results
-            circuit_dto = dct.HandleDabDto.load_from_file(circuit_filepath_number)
+            circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath_number)
 
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
@@ -272,7 +273,8 @@ class DctSummaryPreProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
-                    DctSummaryPreProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
+                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
+
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -308,7 +310,8 @@ class DctSummaryPreProcessing:
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
-                            DctSummaryPreProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
+                            DabSummaryPreProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
+
                         if not is_transformer_list_generated:
                             logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
                             # Next circuit
@@ -367,7 +370,7 @@ class DctSummaryPreProcessing:
 
                                 # Check, if stacked transformer number list cannot be generated
                                 is_capacitor_1_list_generated, capacitor_1_full_operating_range_list = (
-                                    DctSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
+                                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
                                 if not is_capacitor_1_list_generated:
                                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                                     # Next circuit
@@ -397,13 +400,14 @@ class DctSummaryPreProcessing:
 
                                         # Check, if stacked transformer number list cannot be generated
                                         is_capacitor_2_list_generated, capacitor_2_full_operating_range_list = (
-                                            DctSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
+                                            DabSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
                                         if not is_capacitor_2_list_generated:
                                             logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                                             # Next circuit
                                             continue
                                         logger.debug(f"{capacitor_2_full_operating_range_list=}")
-                                        # iterate capacitor 1 numbers
+
+                                        # iterate capacitor 2 numbers
                                         for capacitor_2_number in capacitor_2_full_operating_range_list:
                                             capacitor_2_filepath_number = os.path.join(capacitor_2_filepath_results,
                                                                                        f"{capacitor_2_number}.pkl")
@@ -514,13 +518,13 @@ class DctSummaryPreProcessing:
         # return the database
         return df
 
-    def select_heat_sink_configuration(self, heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(self, heat_sink_study_data: DabStudyData, summary_data: DabStudyData, act_df_for_hs: pd.DataFrame) -> None:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: Information about the heat sink study name and study path
-        :type  heat_sink_study_data: dct.StudyData
+        :type  heat_sink_study_data: DabStudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: dct.StudyData
+        :type summary_data: DabStudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
         """

@@ -4,7 +4,7 @@
 import numpy as np
 
 # own modules
-import dct.datasets_dtos as dtos
+from dct.topology.dab import dab_datasets_dtos as dtos
 
 def transistor_conduction_loss(transistor_rms_current: float, transistor_dto: dtos.TransistorDTO) -> np.ndarray:
     """
