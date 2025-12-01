@@ -1,6 +1,6 @@
 
 """Make all topologies visible."""
-from dct.topology import dab
+from . import dab
 
 __all__ = ["dab"]
 

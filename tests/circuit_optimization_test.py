@@ -16,14 +16,15 @@ from numpy.testing import assert_array_equal
 from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization as ClassUnderTest
 import dct.topology.dab.dab_circuit_topology_dtos as d_dtos
 import dct.topology.dab.dab_datasets as d_set
-import dct.toml_checker as tc
-import dct.server_ctl_dtos
+import dct.topology.dab.dab_toml_checker as dab_tc
 import transistordatabase as tdb
-from dct import SamplingEnum
+from dct.circuit_enums import SamplingEnum
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
 
+# Global variable to indicate, if transistor database is up to date
+is_tbd_updated: bool = False
 
 class TestCase(Enum):
     """Enum of test types."""
@@ -38,11 +39,91 @@ class TestCase(Enum):
     TooMuchEntries = 5          # Test when the list has got too much entries ( Only for minimum maximum list)
     ExceedLowerLimit = 6        # Test when the lower limit is exceeded
     ExceedUpperLimit = 7        # Test when the lower limit is exceeded
-    # Special test of additional point list: Valid test case
-    APt_NumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
-    # Special test of additional point list: Valid test case
-    SpecialTestNumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
+    # Data are not initialized
+    DataNotInitialized = 8  # Test when Number of entries in additional point list is inconsistent
 
+#########################################################################################################
+# Functions to setup test configurations
+#########################################################################################################
+
+def generate_additional_point_list(number_of_points: int, boundary_list: list[float]) -> list[list[float]]:
+    """Generate a list with additional points.
+
+    This method generates a list of additional point lists. The property of the generated additional point lists
+    is like follow: Values at lower boundary | values at upper boundary | values in between | values in between |
+                    values in between | values exceed the lower limit | values exceed the upper limit
+
+    :param number_of_points: Number of additional points
+    :type  number_of_points: int
+    :param boundary_list: List with minimum and maximum value of the points
+    :type  boundary_list: list[float]
+    :return: List of lists of additional points
+    :rtype: list[list[float]
+    """
+    # Variable declaration
+    difference = boundary_list[1] - boundary_list[0]
+    delta = difference / number_of_points / 20
+    step = (difference - (4 * delta)) / number_of_points
+    lower_boundary: list[float] = []
+    upper_boundary: list[float] = []
+    in_between: list[float] = []
+    exceed_lower_boundary: list[float] = []
+    exceed_upper_boundary: list[float] = []
+    for item in range(number_of_points):
+        lower_boundary.append(boundary_list[0] + (item * delta))
+        upper_boundary.append(boundary_list[1] - (item * delta))
+        in_between.append(boundary_list[0] + delta + (item * step))
+        exceed_lower_boundary.append(boundary_list[0] - (item * delta))
+        exceed_upper_boundary.append(boundary_list[1] + delta + (item * step))
+
+    # Create new objects
+    in_between1 = copy.deepcopy(in_between)
+    in_between2 = copy.deepcopy(in_between)
+    in_between3 = copy.deepcopy(in_between)
+
+    result_list: list[list[float]] = (
+        [lower_boundary, upper_boundary, in_between, in_between1, in_between2, in_between3, exceed_lower_boundary, exceed_upper_boundary])
+
+    return result_list
+
+def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
+    """Generate a list with additional weighting points.
+
+    This method generates a list of additional weighting point lists. The property of the generated additional point lists
+    is like follow: Values at lower boundary | values at upper boundary | values in between | values in between |
+                    values in between | values exceed the lower limit | values exceed the upper limit
+
+    :param number_of_points: Number of additional weighting points
+    :type  number_of_points: int
+    :return: List of lists of additional weighting points
+    :rtype: list[list[float]
+    """
+    # Variable declaration
+    delta = 1 / (number_of_points)
+    lower_boundary: list[float] = []
+    upper_boundary: list[float] = []
+    in_between: list[float] = []
+    exceed_lower_boundary: list[float] = []
+    exceed_upper_boundary: list[float] = []
+    for _ in range(number_of_points):
+        lower_boundary.append(0)
+        upper_boundary.append(delta)
+        in_between.append(delta * 0.9)
+        exceed_lower_boundary.append(delta * 0.9)
+        exceed_upper_boundary.append(delta * 1.1)
+
+    # Set the first value below limit (0)
+    exceed_lower_boundary[0] = -0.01
+
+    # Create new objects
+    in_between1 = copy.deepcopy(in_between)
+    in_between2 = copy.deepcopy(in_between)
+    in_between3 = copy.deepcopy(in_between)
+
+    result_list: list[list[float]] = (
+        [lower_boundary, upper_boundary, in_between, in_between1, in_between2, in_between3, exceed_lower_boundary, exceed_upper_boundary])
+
+    return result_list
 
 #########################################################################################################
 # test of calculate_fixed_parameters
@@ -53,18 +134,18 @@ class TestCase(Enum):
     "additional_user_weighting_point_list, expected_exception, result_weighting, expected_message_id_list",
     [
         # user-given operating points
-        (dct.SamplingEnum.latin_hypercube, [700], [200], [1000], [0.5], None, [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]], [2]),
+        (SamplingEnum.latin_hypercube, [700], [200], [1000], [0.5], None, [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]], [2]),
         # no user-given operating points
-        (dct.SamplingEnum.latin_hypercube, [], [], [], [], None, [[[0.2], [0.2], [0.2], [0.2], [0.2]]], [3]),
+        (SamplingEnum.latin_hypercube, [], [], [], [], None, [[[0.2], [0.2], [0.2], [0.2], [0.2]]], [3]),
         # meshgrid, no user-given operating points. Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
-        (dct.SamplingEnum.meshgrid, [], [], [], [], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]], [0, 1, 4]),
+        (SamplingEnum.meshgrid, [], [], [], [], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]], [0, 1, 4]),
         # meshgrid, with user-given operating points (will be ignored). Internal algorithm increases sampling points from 5 to 8, so weighting is 0.125
-        (dct.SamplingEnum.meshgrid, [700], [200], [1000], [0.5], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]], [0, 1, 4]),
+        (SamplingEnum.meshgrid, [700], [200], [1000], [0.5], None, [[[0.125, 0.125], [0.125, 0.125]], [[0.125, 0.125], [0.125, 0.125]]], [0, 1, 4]),
         # value error expected
-        (dct.SamplingEnum.latin_hypercube, [700], [200], [1000], [1.5], ValueError, None, []),
+        (SamplingEnum.latin_hypercube, [700], [200], [1000], [1.5], ValueError, None, []),
     ]
 )
-def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dct.SamplingEnum, v1_additional_user_point_list: list[float],
+def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: SamplingEnum, v1_additional_user_point_list: list[float],
                                   v2_additional_user_point_list: list[float],
                                   p_additional_user_point_list: list[float], additional_user_weighting_point_list: list[float],
                                   expected_exception: type, result_weighting: list[float], expected_message_id_list: dict) -> None:
@@ -154,8 +235,263 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: dc
 
 
 #########################################################################################################
-# test of verify_optimization_parameter
+# test of test_load_and_verify_general_parameters
 #########################################################################################################
+
+# test parameter list (counter)
+@pytest.mark.parametrize("test_index, test_type, u_points_test_index, u_points_test_type", [
+    # Valid test case
+    # Test value at lower boundary
+    (0, TestCase.LowerBoundary, -1, TestCase.InBetween),
+    # Test value at lower boundary
+    (1, TestCase.UpperBoundary, -1, TestCase.InBetween),
+    # Test value in between
+    (2, TestCase.InBetween, -1, TestCase.InBetween),
+    # Failure test case
+    # Test when minimum > maximum ( Only for minimum maximum list)
+    (3, TestCase.BoundaryInconsistent, -1, TestCase.InBetween),
+    # Test when the list has got too few entries ( Only for minimum maximum list)
+    (4, TestCase.TooLessEntries, -1, TestCase.InBetween),
+    # Test when the list has got too many entries ( Only for minimum maximum list)
+    (5, TestCase.TooMuchEntries, -1, TestCase.InBetween),
+    # Test when the lower limit is exceeded
+    (6, TestCase.ExceedLowerLimit, -1, TestCase.InBetween),
+    # Test when the lower limit is exceeded
+    (7, TestCase.ExceedUpperLimit, -1, TestCase.InBetween),
+    # Test of additional user points
+    # Additional user points: Test value at lower boundary
+    (2, TestCase.InBetween, 0, TestCase.LowerBoundary),
+    # Additional user points: Test value at lower boundary
+    (2, TestCase.InBetween, 1, TestCase.UpperBoundary),
+    # Additional user points: Test value in between
+    (2, TestCase.InBetween, 2, TestCase.InBetween),
+    # Failure test case
+    # Additional user points: Test when inconsistent number of user points in v1
+    (2, TestCase.InBetween, 3, TestCase.BoundaryInconsistent),
+    # Additional user points: Test when inconsistent number of user points in v2
+    (2, TestCase.InBetween, 4, TestCase.BoundaryInconsistent),
+    # Additional user points: Test when inconsistent number of user points in p
+    (2, TestCase.InBetween, 5, TestCase.BoundaryInconsistent),
+    # Additional user points: Test when the lower limit is exceeded
+    (2, TestCase.InBetween, 6, TestCase.ExceedLowerLimit),
+    # Additional user points: Test when the lower limit is exceeded
+    (2, TestCase.InBetween, 7, TestCase.ExceedUpperLimit)
+])
+# Unit test function
+def test_load_and_verify_general_parameters(test_index: int, test_type: TestCase,
+                                            u_points_test_index: int, u_points_test_type: TestCase) -> None:
+    """Test the method load_toml_file.
+
+    :param test_index: Test index of the used list element (not valid for additional point list)
+    :type  test_index: int
+    :param test_type: Type of performed test (not valid for additional point list test)
+    :type  test_type: TestCase
+    :param u_points_test_index: Test index of the used list element of the additional point list
+    :type  u_points_test_index: int
+    :param u_points_test_type: Type of performed test for additional point list
+    :type  u_points_test_type: TestCase
+    """
+    # Variable declaration
+    test_object: ClassUnderTest = ClassUnderTest()
+
+    # Called only on time while parametric test
+    # List entries for values and list (exception *in between for values):
+    # at lower boundary | at upper boundary | in between | minimum > maximum* | too few entries*
+    # too many entries* | exceed the lower limit | exceed the upper limit
+    float_min_max_list_configuration_gt0_lt1500: list[list[float]] = (
+        [[1e-18, 1e-18], [1499.9, 1499.9], [1000, 1300], [1000, 300], [500], [600, 1000, 1300], [-10, 1200], [40.5, 1500]])
+    float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
+        [[-9.9999, -9.9999], [9.999e4, 9.9999e4], [2000, 5e4], [2e2, 50], [2000], [2000, 2.5e4, 3e4], [-1.01e5, 3222], [2000, -1.01e5]])
+    int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
+    int_value_ge0 = [0, 181877627, 1111, 4332, 4889393, 334544, -1, 10000]
+
+    # Initialize the general parameters
+    test_general_parameter: dab_tc.TomlDabGeneral = dab_tc.TomlDabGeneral(
+        output_range=dab_tc.TomlDabOutputRange(
+            v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
+            v2_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
+            p_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
+        sampling=dab_tc.TomlDabSampling(
+            sampling_method=SamplingEnum.meshgrid,
+            sampling_points=int_value_gt0[test_index],
+            sampling_random_seed=int_value_ge0[test_index],
+            v1_additional_user_point_list=[],
+            v2_additional_user_point_list=[],
+            p_additional_user_point_list=[],
+            additional_user_weighting_point_list=[]),
+    )
+
+    # Check if number of user points>0
+    if u_points_test_index >= 0:
+        # at lower boundary | at upper boundary | in between | inconsistent number of entries V1 | inconsistent number of entries V2
+        # inconsistent number of entries p | exceed the lower limit | exceed the upper limit
+        v1_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.output_range.v1_min_max_list)
+        v2_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.output_range.v2_min_max_list)
+        p_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.output_range.p_min_max_list)
+        w_point_list: list[list[float]] = generate_weighting_point_list(3)
+        # Manipulate list for inconsistency by deleting one value
+        del v1_additional_point_list[3][0]
+        del v2_additional_point_list[4][0]
+        del p_additional_point_list[5][0]
+        # Set additional user point parameters
+        test_general_parameter.sampling.v1_additional_user_point_list = v1_additional_point_list[u_points_test_index]
+        test_general_parameter.sampling.v2_additional_user_point_list = v2_additional_point_list[u_points_test_index]
+        test_general_parameter.sampling.p_additional_user_point_list = p_additional_point_list[u_points_test_index]
+        test_general_parameter.sampling.additional_user_weighting_point_list = w_point_list[u_points_test_index]
+        # In case of additional user point test, the test type for remaining parameter must be in_between
+        assert test_type == TestCase.InBetween
+
+    # Perform the test for the general parameters
+    # Create boundary list from minimum-maximum list with assigned parameters
+    min_max_list_name_list_general: list[str] = ["v1_min_max_list", "v2_min_max_list", "p_min_max_list"]
+    value_name_list_general: list[str] = []
+    value_name_low_limit_list_general: list[str] = ["sampling_points", "sampling_random_seed"]
+    u_point_name_list: list[str] = (["v1_additional_user_point_list", "v2_additional_user_point_list",
+                                     "p_additional_user_point_list", "additional_user_weighting_point_list"])
+
+    # Convert general parameter class to a dict
+    test_general_parameter_dict = test_general_parameter.model_dump()
+
+    # Perform the test for the general parameters
+    is_consistent, error_report = test_object.load_and_verify_general_parameters(test_general_parameter_dict)
+
+    if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary:
+        # No error and empty report string
+        assert error_report == ""
+        assert is_consistent
+
+    elif test_type == TestCase.InBetween:
+        # Check additional point test type
+        if u_points_test_type == TestCase.LowerBoundary or u_points_test_type == TestCase.UpperBoundary or u_points_test_type == TestCase.InBetween:
+            # No error and empty report string
+            assert error_report == ""
+            assert is_consistent
+
+        elif u_points_test_type == TestCase.BoundaryInconsistent:
+            # Check if not any minimum-maximum list parameters is identified
+            for parameter_name in min_max_list_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if not any value_name_list_general parameter is identified
+            for parameter_name in value_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if all additional user point list parameters are identified
+            for parameter_name in u_point_name_list:
+                assert parameter_name in error_report
+
+            # Error is indicated
+            assert not is_consistent
+
+        elif u_points_test_type == TestCase.ExceedLowerLimit:
+            # Check if not any minimum-maximum list parameters is identified
+            for parameter_name in min_max_list_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if not any value_name_list_general parameter is identified
+            for parameter_name in value_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if all additional user point list parameters are identified
+            for parameter_name in u_point_name_list:
+                assert parameter_name in error_report
+            # Error is indicated
+            assert not is_consistent
+
+        elif u_points_test_type == TestCase.ExceedUpperLimit:
+            # Check if not any minimum-maximum list parameters is identified
+            for parameter_name in min_max_list_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if not any value_name_list_general parameter is identified
+            for parameter_name in value_name_list_general:
+                assert parameter_name not in error_report
+
+            # Check if all additional user point list parameters are identified
+            for parameter_name in u_point_name_list:
+                assert parameter_name in error_report
+            # Error is indicated
+            assert not is_consistent
+
+    elif test_type == TestCase.ExceedUpperLimit:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if all value_name_list_general parameters are identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.ExceedLowerLimit:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if all value_name_list_general list parameters are identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if all value_name_low_limit_list_general parameters are identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.TooLessEntries:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_list_general parameter is identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name not in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.TooMuchEntries:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_list_general parameter is identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name not in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+    elif test_type == TestCase.BoundaryInconsistent:
+        # Check if all minimum-maximum list parameters are identified
+        for parameter_name in min_max_list_name_list_general:
+            assert parameter_name in error_report
+
+        # Check if not any value_name_list_general parameter is identified
+        for parameter_name in value_name_list_general:
+            assert parameter_name not in error_report
+
+        # Check if not any value_name_low_limit_list_general parameter is identified
+        for parameter_name in value_name_low_limit_list_general:
+            assert parameter_name not in error_report
+        # Error is indicated
+        assert not is_consistent
+
+#########################################################################################################
+# test of load_and_verify_circuit_parameters
+#########################################################################################################
+
 
 """ Information
 ## Circuit #####################################################################
@@ -194,91 +530,18 @@ def get_transistor_name_list() -> list[str]:
     :return: List of transistor names
     :rtype: list[str]
     """
+    # Variable declaration
+    global is_tbd_updated
+
     # Create dictionary from transistor database list
     transistor_database = tdb.DatabaseManager()
     transistor_database.set_operation_mode_json()
-    transistor_database.update_from_fileexchange(True)
+    if not is_tbd_updated:
+        transistor_database.update_from_fileexchange(True)
+    # Set to True to indicate to prevent obsolete re-update
+    is_tbd_updated = True
     keyword_list: list[str] = transistor_database.get_transistor_names_list()
     return keyword_list
-
-def generate_additional_point_list(number_of_points: int, boundary_list: list[float]) -> list[list[float]]:
-    """Generate a list with additional points.
-
-    This method generates a list of additional point lists. The property of the generated additional point lists
-    is like follow: Values at lower boundary | values at upper boundary | values in between | values in between |
-                    values in between | values exceed the lower limit | values exceed the upper limit
-
-    :param number_of_points: Number of additional points
-    :type  number_of_points: int
-    :param boundary_list: List with minimum and maximum value of the points
-    :type  boundary_list: list[float]
-    :return: List of lists of additional points
-    :rtype: list[list[float]
-    """
-    # Variable declaration
-    difference = boundary_list[1] - boundary_list[0]
-    delta = difference / number_of_points / 20
-    step = (difference - (4 * delta)) / number_of_points
-    lower_boundary: list[float] = []
-    upper_boundary: list[float] = []
-    in_between: list[float] = []
-    exceed_lower_boundary: list[float] = []
-    exceed_upper_boundary: list[float] = []
-    for item in range(number_of_points):
-        lower_boundary.append(boundary_list[0] + (item * delta))
-        upper_boundary.append(boundary_list[1] - (item * delta))
-        in_between.append(boundary_list[0] + delta + (item * step))
-        exceed_lower_boundary.append(boundary_list[0] - (item * delta))
-        exceed_upper_boundary.append(boundary_list[1] + delta + (item * step))
-
-    # Create new objects
-    in_between1 = copy.deepcopy(in_between)
-    in_between2 = copy.deepcopy(in_between)
-    in_between3 = copy.deepcopy(in_between)
-
-    result_list: list[list[float]] = (
-        [lower_boundary, upper_boundary, in_between, in_between1, in_between2, in_between3, exceed_lower_boundary, exceed_upper_boundary])
-
-    return result_list
-
-def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
-    """Generate a list with additional weighting points.
-
-    This method generates a list of additional weighting point lists. The property of the generated additional point lists
-    is like follow: Values at lower boundary | values at upper boundary | values in between | values in between |
-                    values in between | values exceed the lower limit | values exceed the upper limit
-
-    :param number_of_points: Number of additional weighting points
-    :type  number_of_points: int
-    :return: List of lists of additional weighting points
-    :rtype: list[list[float]
-    """
-    # Variable declaration
-    delta = 1 / (number_of_points)
-    lower_boundary: list[float] = []
-    upper_boundary: list[float] = []
-    in_between: list[float] = []
-    exceed_lower_boundary: list[float] = []
-    exceed_upper_boundary: list[float] = []
-    for _ in range(number_of_points):
-        lower_boundary.append(0)
-        upper_boundary.append(delta)
-        in_between.append(delta * 0.9)
-        exceed_lower_boundary.append(delta * 0.9)
-        exceed_upper_boundary.append(delta * 1.1)
-
-    # Set the first value below limit (0)
-    exceed_lower_boundary[0] = -0.01
-
-    # Create new objects
-    in_between1 = copy.deepcopy(in_between)
-    in_between2 = copy.deepcopy(in_between)
-    in_between3 = copy.deepcopy(in_between)
-
-    result_list: list[list[float]] = (
-        [lower_boundary, upper_boundary, in_between, in_between1, in_between2, in_between3, exceed_lower_boundary, exceed_upper_boundary])
-
-    return result_list
 
 # test parameter list (counter)
 @pytest.mark.parametrize("test_index, test_type", [
@@ -302,7 +565,7 @@ def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
     (7, TestCase.ExceedUpperLimit),
 ])
 # Unit test function
-def test_verify_optimization_parameter(get_transistor_name_list: list[str], test_index: int, test_type: TestCase) -> None:
+def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str], test_index: int, test_type: TestCase) -> None:
     """Test the method load_toml_file.
 
     :param get_transistor_name_list: List of transistor names
@@ -313,6 +576,9 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     :type  test_type: TestCase
     """
     # Variable declaration
+    test_object: ClassUnderTest = ClassUnderTest()
+    global is_tbd_updated
+
     # Called only on time while parametric test
     transistor_name_list = get_transistor_name_list
     t_list_len = len(transistor_name_list)
@@ -345,8 +611,8 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
 
     # Initialize the circuit parameters
-    test_circuit_parameter: tc.TomlCircuitParetoDabDesign = tc.TomlCircuitParetoDabDesign(
-        design_space=tc.TomlCircuitParetoDesignSpace(
+    test_circuit_parameter: dab_tc.TomlDabCircuitParetoDesign = dab_tc.TomlDabCircuitParetoDesign(
+        design_space=dab_tc.TomlDabCircuitParetoDesignSpace(
             f_s_min_max_list=int_min_max_list_configuration_gt1000_lt1e7[test_index],
             l_s_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
             l_1_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
@@ -356,7 +622,7 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
             transistor_2_name_list=transistor_name_list_configuration[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
-        filter_distance=dct.TomlCircuitFilterDistance(
+        filter_distance=dab_tc.TomlDabCircuitFilterDistance(
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])
     )
@@ -367,8 +633,11 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     value_name_list: list[str] = ["c_par_1", "c_par_2", "difference_percentage"]
     value_name_low_limit_list: list[str] = []
 
+    # Convert circuit parameter class to a dict
+    test_circuit_parameter_dict = test_circuit_parameter.model_dump()
+
     # Perform the test for the circuit
-    is_circuit_consistent, error_report_circuit = ClassUnderTest.verify_circuit_parameters(test_circuit_parameter)
+    is_circuit_consistent, error_report_circuit = test_object.load_and_verify_circuit_parameters(test_circuit_parameter_dict, is_tbd_updated)
 
     if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary:
         # No error and empty report string
@@ -455,7 +724,7 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
 # test of initialize_circuit_optimization
 #########################################################################################################
 
-# initialize_circuit_optimization(self, toml_circuit: tc.TomlCircuitParetoDabDesign, toml_prog_flow: tc.FlowControl) -> bool:
+# initialize_circuit_optimization(self, toml_circuit: dab_tc.TomlDabCircuitParetoDesign, toml_prog_flow: tc.FlowControl) -> bool:
 # test parameter list (counter)
 @pytest.mark.parametrize("test_index, test_type, is_error", [
     # Valid test case
@@ -466,8 +735,8 @@ def test_verify_optimization_parameter(get_transistor_name_list: list[str], test
     # Test value in between
     (2, TestCase.InBetween, False),
     # Failure test case
-    # Test when the lower limit is exceeded
-    (3, TestCase.ExceedLowerLimit, True),
+    # Test when the circuit is not loaded
+    (3, TestCase.DataNotInitialized, True),
 ])
 # Unit test function
 def test_initialize_circuit_optimization(get_transistor_name_list: list[str], test_index: int, test_type: TestCase, is_error: bool) -> None:
@@ -483,6 +752,8 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     :type  is_error: bool
     """
     # Variable declaration
+    global is_tbd_updated
+
     # Called only on time while parametric test
     transistor_name_list = get_transistor_name_list
     t_list_len = len(transistor_name_list)
@@ -518,24 +789,24 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     int_value_ge0 = [0, 181877627, 1111, 10000]
 
     # Initialize the general parameters
-    test_general_parameter: tc.TomlGeneral = tc.TomlGeneral(
-        output_range=tc.TomlOutputRange(
+    test_general_parameter: dab_tc.TomlDabGeneral = dab_tc.TomlDabGeneral(
+        output_range=dab_tc.TomlDabOutputRange(
             v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
             v2_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
             p_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
-        sampling=dct.TomlSampling(
+        sampling=dab_tc.TomlDabSampling(
             sampling_method=SamplingEnum.meshgrid,
             sampling_points=int_value_gt0[test_index],
             sampling_random_seed=int_value_ge0[test_index],
             v1_additional_user_point_list=[],
             v2_additional_user_point_list=[],
             p_additional_user_point_list=[],
-            additional_user_weighting_point_list=[]),
+            additional_user_weighting_point_list=[])
     )
 
     # Initialize the circuit parameters
-    test_circuit_parameter: tc.TomlCircuitParetoDabDesign = tc.TomlCircuitParetoDabDesign(
-        design_space=tc.TomlCircuitParetoDesignSpace(
+    test_circuit_parameter: dab_tc.TomlDabCircuitParetoDesign = dab_tc.TomlDabCircuitParetoDesign(
+        design_space=dab_tc.TomlDabCircuitParetoDesignSpace(
             f_s_min_max_list=int_min_max_list_configuration_gt1000_lt1e7[test_index],
             l_s_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
             l_1_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
@@ -545,58 +816,9 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             transistor_2_name_list=transistor_name_list_configuration[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
-        filter_distance=dct.TomlCircuitFilterDistance(
+        filter_distance=dab_tc.TomlDabCircuitFilterDistance(
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])
-    )
-
-    # FlowControl base parameter set
-    test_FlowControl_base: tc.FlowControl = tc.FlowControl(
-        general=tc.General(project_directory="Hallo"),
-        breakpoints=tc.Breakpoints(circuit_pareto="no",
-                                   circuit_filtered="no",
-                                   capacitor_1="no",
-                                   capacitor_2="no",
-                                   inductor="no",
-                                   transformer="no",
-                                   heat_sink="no",
-                                   pre_summary="no",
-                                   summary="no"),
-        conditional_breakpoints=tc.CondBreakpoints(
-            circuit=1,
-            inductor=2,
-            transformer=3,
-            heat_sink=1),
-        circuit=tc.Circuit(number_of_trials=1,
-                           calculation_mode="continue",
-                           subdirectory="dummy"),
-        capacitor_1=tc.Capacitor1(
-            calculation_mode="new",
-            subdirectory="dummy"),
-        capacitor_2=tc.Capacitor2(
-            calculation_mode="new",
-            subdirectory="dummy"),
-        inductor=tc.Inductor(number_of_trials=1,
-                             calculation_mode="continue",
-                             subdirectory="dummy"),
-        transformer=tc.Transformer(number_of_trials=1,
-                                   calculation_mode="continue",
-                                   subdirectory="dummy"),
-        heat_sink=tc.HeatSink(number_of_trials=1,
-                              calculation_mode="continue",
-                              subdirectory="dummy"),
-        pre_summary=tc.PreSummary(calculation_mode="new",
-                                  subdirectory="dummy"),
-        summary=tc.Summary(calculation_mode="new",
-                           subdirectory="dummy"),
-        configuration_data_files=tc.ConfigurationDataFiles(
-            general_configuration_file="dummy",
-            circuit_configuration_file="dummy",
-            capacitor_1_configuration_file="dummy",
-            capacitor_2_configuration_file="dummy",
-            inductor_configuration_file="dummy",
-            transformer_configuration_file="dummy",
-            heat_sink_configuration_file="dummy")
     )
 
     # at lower boundary | at upper boundary | in between | exceed the upper limit
@@ -613,50 +835,56 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     string_test_values: list[str] = ["A", "b9", "Test123", "x_Y_z890"]
     str_test_len = len(string_test_values)
 
-    # Constant values of FlowControl
-    test_flow_control_parameter: tc.FlowControl = copy.deepcopy(test_FlowControl_base)
-
     # Create the instance
-    test_dct: ClassUnderTest = ClassUnderTest()
+    test_object: ClassUnderTest = ClassUnderTest()
 
     # Initialize the second test parameter
-    test_flow_control_parameter.general.project_directory = string_test_values[test_index % str_test_len]
     test_string_circuit = string_test_values[(test_index + 1) % str_test_len]
-    test_flow_control_parameter.configuration_data_files.circuit_configuration_file = test_string_circuit+".toml"
+
+    # Convert general parameter class to a dict
+    test_general_parameter_dict = test_general_parameter.model_dump()
+    # Convert circuit parameter class to a dict
+    test_circuit_parameter_dict = test_circuit_parameter.model_dump()
+
+    # Init study and path information
+    test_object.init_study_information(test_string_circuit, string_test_values[test_index % str_test_len],
+                                       string_test_values[(test_index + 1) % str_test_len])
 
     # Check if no error is expected
     if not is_error:
+        # Load the data from dict
+        test_object.load_and_verify_general_parameters(test_general_parameter_dict)
+        test_object.load_and_verify_circuit_parameters(test_circuit_parameter_dict, is_tbd_updated)
         # Perform the test
-        is_initialized = test_dct.initialize_circuit_optimization(test_general_parameter, test_circuit_parameter, test_flow_control_parameter)
+        is_initialized = test_object.initialize_circuit_optimization()
 
-        assert test_dct._dab_config is not None
+        assert test_object._dab_config is not None
 
         # Check valid result
-        assert test_dct._dab_config.design_space.f_s_min_max_list == test_circuit_parameter.design_space.f_s_min_max_list
-        assert test_dct._dab_config.design_space.l_1_min_max_list == test_circuit_parameter.design_space.l_1_min_max_list
-        assert test_dct._dab_config.design_space.l_2__min_max_list == test_circuit_parameter.design_space.l_2__min_max_list
-        assert test_dct._dab_config.design_space.l_s_min_max_list == test_circuit_parameter.design_space.l_s_min_max_list
-        assert test_dct._dab_config.design_space.n_min_max_list == test_circuit_parameter.design_space.n_min_max_list
-        assert test_dct._dab_config.design_space.transistor_1_name_list == test_circuit_parameter.design_space.transistor_1_name_list
-        assert test_dct._dab_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
-        assert test_dct._dab_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
-        assert test_dct._dab_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
-        assert test_dct._dab_config.output_range.v1_min_max_list == test_general_parameter.output_range.v1_min_max_list
-        assert test_dct._dab_config.output_range.v2_min_max_list == test_general_parameter.output_range.v2_min_max_list
-        assert test_dct._dab_config.output_range.p_min_max_list == test_general_parameter.output_range.p_min_max_list
-        assert test_dct._dab_config.sampling.sampling_method == test_general_parameter.sampling.sampling_method
-        assert test_dct._dab_config.sampling.sampling_points == test_general_parameter.sampling.sampling_points
-        assert test_dct._dab_config.sampling.v1_additional_user_point_list == test_general_parameter.sampling.v1_additional_user_point_list
-        assert test_dct._dab_config.sampling.v2_additional_user_point_list == test_general_parameter.sampling.v2_additional_user_point_list
-        assert test_dct._dab_config.sampling.p_additional_user_point_list == test_general_parameter.sampling.p_additional_user_point_list
-        assert test_dct._dab_config.filter.number_filtered_designs == test_circuit_parameter.filter_distance.number_filtered_designs
-        assert test_dct._dab_config.filter.difference_percentage == test_circuit_parameter.filter_distance.difference_percentage
-        assert test_dct._dab_config.project_directory == test_flow_control_parameter.general.project_directory
-        assert test_dct._dab_config.circuit_study_name == test_string_circuit
+        assert test_object._dab_config.design_space.f_s_min_max_list == test_circuit_parameter.design_space.f_s_min_max_list
+        assert test_object._dab_config.design_space.l_1_min_max_list == test_circuit_parameter.design_space.l_1_min_max_list
+        assert test_object._dab_config.design_space.l_2__min_max_list == test_circuit_parameter.design_space.l_2__min_max_list
+        assert test_object._dab_config.design_space.l_s_min_max_list == test_circuit_parameter.design_space.l_s_min_max_list
+        assert test_object._dab_config.design_space.n_min_max_list == test_circuit_parameter.design_space.n_min_max_list
+        assert test_object._dab_config.design_space.transistor_1_name_list == test_circuit_parameter.design_space.transistor_1_name_list
+        assert test_object._dab_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
+        assert test_object._dab_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
+        assert test_object._dab_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
+        assert test_object._dab_config.output_range.v1_min_max_list == test_general_parameter.output_range.v1_min_max_list
+        assert test_object._dab_config.output_range.v2_min_max_list == test_general_parameter.output_range.v2_min_max_list
+        assert test_object._dab_config.output_range.p_min_max_list == test_general_parameter.output_range.p_min_max_list
+        assert test_object._dab_config.sampling.sampling_method == test_general_parameter.sampling.sampling_method
+        assert test_object._dab_config.sampling.sampling_points == test_general_parameter.sampling.sampling_points
+        assert test_object._dab_config.sampling.v1_additional_user_point_list == test_general_parameter.sampling.v1_additional_user_point_list
+        assert test_object._dab_config.sampling.v2_additional_user_point_list == test_general_parameter.sampling.v2_additional_user_point_list
+        assert test_object._dab_config.sampling.p_additional_user_point_list == test_general_parameter.sampling.p_additional_user_point_list
+        assert test_object._dab_config.filter.number_filtered_designs == test_circuit_parameter.filter_distance.number_filtered_designs
+        assert test_object._dab_config.filter.difference_percentage == test_circuit_parameter.filter_distance.difference_percentage
+        assert test_object._dab_config.project_directory == string_test_values[test_index % str_test_len]
+        assert test_object._dab_config.circuit_study_name == test_string_circuit
         assert is_initialized
     else:
         with pytest.raises(ValueError) as error_message:
             # Perform the test
-            is_initialized = test_dct.initialize_circuit_optimization(test_general_parameter, test_circuit_parameter, test_flow_control_parameter)
-            assert "Circuit optimization parameter are inconsistent!" in str(error_message.value)
-            assert not is_initialized
+            is_initialized = test_object.initialize_circuit_optimization()
+        assert "Serious programming error 1c. Please write an issue!" in str(error_message.value)

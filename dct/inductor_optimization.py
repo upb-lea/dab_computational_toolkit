@@ -18,8 +18,8 @@ import dct.inductor_optimization_dtos
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
-from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
+from dct.datasets_dtos import StudyData
+from dct.datasets_dtos import FilterData
 import dct.topology.dab.dab_datasets_dtos as d_dtos
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset

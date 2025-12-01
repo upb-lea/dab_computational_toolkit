@@ -7,6 +7,7 @@ import pickle
 import datetime
 import threading
 import copy
+from typing import Any
 
 # 3rd party libraries
 import optuna
@@ -18,21 +19,24 @@ import dct.sampling as sampling
 
 # own libraries
 from dct.constant_path import SIMULATION_INPUT
-from dct.topology.dab import dab_datasets_dtos as d_dtos
-from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
-from dct.topology.dab import dab_datasets as d_sets
+from . import dab_datasets_dtos as d_dtos
+from . import dab_circuit_topology_dtos as circuit_dtos
+from . import dab_datasets as d_sets
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
-from dct import toml_checker as tc
+from . import dab_toml_checker as dab_tc
+from dct.datasets_dtos import StudyData
+from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
+from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 
 logger = logging.getLogger(__name__)
 
-class DabCircuitOptimization:
+class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_tc.TomlDabCircuitParetoDesign]):
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
     # Declaration of member types
@@ -44,7 +48,7 @@ class DabCircuitOptimization:
     _study_in_storage: optuna.Study | None
     _fixed_parameters: d_dtos.FixedParameters | None
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the configuration list for the circuit optimizations."""
         # Variable allocation
         self._c_lock_stat = threading.Lock()
@@ -58,6 +62,11 @@ class DabCircuitOptimization:
         self._study_in_memory = None
         self._study_in_storage = None
         self._fixed_parameters = None
+
+        # General optimization parameter
+        self._toml_general: dab_tc.TomlDabGeneral | None = None
+        # Circuit optimization parameter
+        self._toml_circuit: dab_tc.TomlDabCircuitParetoDesign | None = None
 
     @staticmethod
     def load_filepaths(project_directory: str) -> circuit_dtos.ParetoFilePaths:
@@ -121,16 +130,138 @@ class DabCircuitOptimization:
 
         return loaded_pareto_dto
 
-    @staticmethod
-    def verify_circuit_parameters(toml_circuit: tc.TomlCircuitParetoDabDesign, is_tdb_to_update: bool = False) -> tuple[bool, str]:
+    def load_and_verify_general_parameters(self, toml_dict: dict[str, Any]) -> tuple[bool, str]:
         """Verify the input parameter ranges.
 
-        :param toml_circuit: toml circuit configuration
-        :type toml_circuit: dct.TomlCircuitParetoDabDesign
+        :param toml_dict: toml general configuration
+        :type toml_dict: dict[str, Any]
+        :return: True, if the configuration was consistent and empty string or False and report of the issues
+        :rtype: tuple[bool, str]
+        """
+        # Variable declaration
+        inconsistency_report: str = ""
+        is_consistent: bool = True
+        toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
+
+        # Convert and check toml file content
+        toml_general: dab_tc.TomlDabGeneral = dab_tc.TomlDabGeneral(**toml_dict)
+
+        # Check v1_min_max_list and v2_min_max_list
+        toml_check_min_max_value_multi_list = (
+            [(toml_general.output_range.v1_min_max_list, "v1_min_max_list",
+              toml_general.sampling.v1_additional_user_point_list, "v1_additional_user_point_list"),
+             (toml_general.output_range.v2_min_max_list, "v2_min_max_list",
+              toml_general.sampling.v2_additional_user_point_list, "v2_additional_user_point_list")])
+
+        # Output range parameter and sampling parameter check
+        group_name = "output_range or sampling"
+        # Init is_user_point_list_consistent-flag
+        is_user_point_list_consistent = False
+        # Evaluate list length
+        len_additional_user_v1 = len(toml_general.sampling.v1_additional_user_point_list)
+        len_additional_user_v2 = len(toml_general.sampling.v2_additional_user_point_list)
+        len_additional_user_p = len(toml_general.sampling.p_additional_user_point_list)
+        len_additional_user_w = len(toml_general.sampling.additional_user_weighting_point_list)
+        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_p == len_additional_user_w
+        len_check2 = len_additional_user_p == len_additional_user_w
+        # Check if the additional user point lists are consistent
+        if len_check1 and len_check2:
+            is_user_point_list_consistent = True
+
+        # Perform the boundary check
+        for check_parameter in toml_check_min_max_value_multi_list:
+            is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
+                0, 1500, check_parameter[0], f"output_range: {check_parameter[1]}", c_flag.check_exclusive, c_flag.check_exclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+            elif is_user_point_list_consistent:
+                for voltage_value in check_parameter[2]:
+                    is_check_passed, issue_report = BoundaryCheck.check_float_value(
+                        check_parameter[0][0], check_parameter[0][1], voltage_value,
+                        f"sampling: {check_parameter[3]}", c_flag.check_inclusive, c_flag.check_inclusive)
+                    if not is_check_passed:
+                        inconsistency_report = inconsistency_report + issue_report
+                        is_consistent = False
+            else:
+                act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
+                act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
+                act_report = act_report + f"    p_additional_user_point_list ({len_additional_user_p}) and "
+                act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
+                act_report = act_report + "needs to be the same!\n)"
+                inconsistency_report = (inconsistency_report + act_report)
+                is_consistent = False
+
+        # Perform the boundary check  of p_min_max_list
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
+            -100000, 100000, toml_general.output_range.p_min_max_list, "output_range: p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+        elif is_user_point_list_consistent:
+            for power_value in toml_general.sampling.p_additional_user_point_list:
+                is_check_passed, issue_report = BoundaryCheck.check_float_value(
+                    toml_general.output_range.p_min_max_list[0], toml_general.output_range.p_min_max_list[1], power_value,
+                    "sampling: p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                if not is_check_passed:
+                    inconsistency_report = inconsistency_report + issue_report
+                    is_consistent = False
+
+        # Remaining Sampling parameter check
+        group_name = "sampling"
+        # Check additional_user_weighting_point_list
+        # Initialize variable
+        weighting_sum: float = 0.0
+        # Perform the boundary check  of p_min_max_list
+        for weight_value in toml_general.sampling.additional_user_weighting_point_list:
+            is_check_passed, issue_report = BoundaryCheck.check_float_value(
+                0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
+            weighting_sum = weighting_sum + weight_value
+
+        # Check the sum
+        if weighting_sum > 1:
+            is_consistent = False
+            act_report = "    The sum of parameter entries of parameter additional_user_weighting_point_list "
+            act_report = act_report + f"{weighting_sum} has to be less equal 1!\n"
+            inconsistency_report = inconsistency_report + act_report
+
+        # Perform the boundary check for sampling points
+        is_check_passed, issue_report = BoundaryCheck.check_float_value(
+            0, 1, float(toml_general.sampling.sampling_points),
+            f"{group_name}: sampling_points", c_flag.check_exclusive, c_flag.check_ignore)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Check sampling random seed
+        # Perform the boundary check for number_filtered_designs
+        is_check_passed, issue_report = BoundaryCheck.check_float_value(
+            0, 1, float(toml_general.sampling.sampling_random_seed),
+            f"{group_name}: sampling_random_seed", c_flag.check_inclusive, c_flag.check_ignore)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+            # delete old parameter
+            self._toml_general = None
+        else:
+            # Overtake the parameter
+            self._toml_general = toml_general
+
+        return is_consistent, inconsistency_report
+
+    def load_and_verify_circuit_parameters(self, toml_dict: dict[str, Any], is_tdb_to_update: bool = False) -> tuple[bool, str]:
+        """Load and verify the circuit input parameter.
+
+        :param toml_dict: dictionary with circuit configuration
+        :type  toml_dict: dict[str, Any]
         :param is_tdb_to_update: True to update the transistor database
         :type is_tdb_to_update: bool
-        :return: True, if the configuration was consistent
-        :rtype: bool
+        :return: True, if the configuration was consistent and empty string or False and report of the issues
+        :rtype: tuple[bool, str]
         """
         # Variable declaration
         inconsistency_report: str = ""
@@ -138,6 +269,9 @@ class DabCircuitOptimization:
         toml_check_keyword_list: list[tuple[list[str], str]]
         toml_check_min_max_values_list: list[tuple[list[float], str]]
         toml_check_value_list: list[tuple[float, str]]
+
+        # Convert and check toml file content
+        toml_circuit: dab_tc.TomlDabCircuitParetoDesign = dab_tc.TomlDabCircuitParetoDesign(**toml_dict)
 
         # Design space parameter check
         # Create dictionary from transistor database list
@@ -242,72 +376,99 @@ class DabCircuitOptimization:
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
+            # delete old parameter
+            self._toml_circuit = None
+        else:
+            # Overtake the parameter
+            self._toml_circuit = toml_circuit
 
         return is_consistent, inconsistency_report
 
-    def initialize_circuit_optimization(self, toml_general: tc.TomlGeneral, toml_circuit: tc.TomlCircuitParetoDabDesign,
-                                        toml_prog_flow: tc.FlowControl) -> bool:
+    @staticmethod
+    def _is_optimization_skippable(study_data: StudyData, filter_data: FilterData) -> tuple[bool, str]:
+        # Variable declaration
+        # skippable flag
+        is_skippable: bool = False
+        # Report string
+        issue_report: str = ""
+
+        if not StudyData.check_study_data(study_data.optimization_directory, study_data.study_name):
+            issue_report = f"Study {study_data.study_name} in path {study_data.optimization_directory} does not exist. "
+            issue_report = issue_report + "No sqlite3-database found!"
+        else:
+            # Check, if data are available (skip case)
+            # Check if filtered results folder exists
+            if os.path.exists(filter_data.filtered_list_pathname):
+                # Add filtered result list
+                for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
+                    if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
+                        filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
+
+                if not filter_data.filtered_list_files:
+                    issue_report = f"Filtered results folder {filter_data.filtered_list_pathname} is empty."
+                else:
+                    is_skippable = True
+            else:
+                issue_report = f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist."
+
+        # Return evaluation result
+        return is_skippable, issue_report
+
+    def initialize_circuit_optimization(self) -> bool:
         """
         Initialize the circuit_dto for circuit optimization.
 
-        :param toml_general: toml file class for the general parameters
-        :type toml_general: tc.TomlGeneral
-        :param toml_circuit: toml file class for the circuit
-        :type toml_circuit: tc.TomlCircuitParetoDabDesign
-        :param toml_prog_flow: toml file class for the flow control
-        :type toml_prog_flow: tc.FlowControl
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """
-        # Verify optimization parameter
-        is_check_consistent, issue_report = DabCircuitOptimization.verify_circuit_parameters(toml_circuit)
-        if not is_check_consistent:
-            raise ValueError(
-                "Circuit optimization parameter are inconsistent!\n",
-                issue_report)
+        # Check if toml_circuit, toml_general and study data are still initialized
+        if self._toml_general is None or self._toml_circuit is None or CircuitOptimizationBase.circuit_study_data is None:
+            # Serious programming error: In verification check these variables should be initialized
+            # This has to be guaranteed by the workflow
+            raise ValueError("Serious programming error 1c. Please write an issue!")
 
         # Initialize the circuit_dtos
         design_space = circuit_dtos.CircuitParetoDesignSpace(
-            f_s_min_max_list=toml_circuit.design_space.f_s_min_max_list,
-            l_s_min_max_list=toml_circuit.design_space.l_s_min_max_list,
-            l_1_min_max_list=toml_circuit.design_space.l_1_min_max_list,
-            l_2__min_max_list=toml_circuit.design_space.l_2__min_max_list,
-            n_min_max_list=toml_circuit.design_space.n_min_max_list,
-            transistor_1_name_list=toml_circuit.design_space.transistor_1_name_list,
-            transistor_2_name_list=toml_circuit.design_space.transistor_2_name_list,
-            c_par_1=toml_circuit.design_space.c_par_1,
-            c_par_2=toml_circuit.design_space.c_par_2
+            f_s_min_max_list=self._toml_circuit.design_space.f_s_min_max_list,
+            l_s_min_max_list=self._toml_circuit.design_space.l_s_min_max_list,
+            l_1_min_max_list=self._toml_circuit.design_space.l_1_min_max_list,
+            l_2__min_max_list=self._toml_circuit.design_space.l_2__min_max_list,
+            n_min_max_list=self._toml_circuit.design_space.n_min_max_list,
+            transistor_1_name_list=self._toml_circuit.design_space.transistor_1_name_list,
+            transistor_2_name_list=self._toml_circuit.design_space.transistor_2_name_list,
+            c_par_1=self._toml_circuit.design_space.c_par_1,
+            c_par_2=self._toml_circuit.design_space.c_par_2
         )
 
         output_range = circuit_dtos.CircuitOutputRange(
-            v1_min_max_list=toml_general.output_range.v1_min_max_list,
-            v2_min_max_list=toml_general.output_range.v2_min_max_list,
-            p_min_max_list=toml_general.output_range.p_min_max_list)
+            v1_min_max_list=self._toml_general.output_range.v1_min_max_list,
+            v2_min_max_list=self._toml_general.output_range.v2_min_max_list,
+            p_min_max_list=self._toml_general.output_range.p_min_max_list)
 
         filter = circuit_dtos.CircuitFilter(
-            number_filtered_designs=toml_circuit.filter_distance.number_filtered_designs,
-            difference_percentage=toml_circuit.filter_distance.difference_percentage
+            number_filtered_designs=self._toml_circuit.filter_distance.number_filtered_designs,
+            difference_percentage=self._toml_circuit.filter_distance.difference_percentage
         )
 
         # None can not be handled by toml correct, so this is a workaround. By default, "random" in toml equals "None"
         local_sampling_random_seed: int | None = None
         # In case of a concrete seed was given, overwrite None with the given one
-        if isinstance(toml_general.sampling.sampling_random_seed, int):
-            local_sampling_random_seed = int(toml_general.sampling.sampling_random_seed)
+        if isinstance(self._toml_general.sampling.sampling_random_seed, int):
+            local_sampling_random_seed = int(self._toml_general.sampling.sampling_random_seed)
 
         sampling = circuit_dtos.CircuitSampling(
-            sampling_method=toml_general.sampling.sampling_method,
-            sampling_points=toml_general.sampling.sampling_points,
+            sampling_method=self._toml_general.sampling.sampling_method,
+            sampling_points=self._toml_general.sampling.sampling_points,
             sampling_random_seed=local_sampling_random_seed,
-            v1_additional_user_point_list=toml_general.sampling.v1_additional_user_point_list,
-            v2_additional_user_point_list=toml_general.sampling.v2_additional_user_point_list,
-            p_additional_user_point_list=toml_general.sampling.p_additional_user_point_list,
-            additional_user_weighting_point_list=toml_general.sampling.additional_user_weighting_point_list
+            v1_additional_user_point_list=self._toml_general.sampling.v1_additional_user_point_list,
+            v2_additional_user_point_list=self._toml_general.sampling.v2_additional_user_point_list,
+            p_additional_user_point_list=self._toml_general.sampling.p_additional_user_point_list,
+            additional_user_weighting_point_list=self._toml_general.sampling.additional_user_weighting_point_list
         )
 
         self._dab_config = circuit_dtos.CircuitParetoDabDesign(
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
-            project_directory=toml_prog_flow.general.project_directory,
+            circuit_study_name=CircuitOptimizationBase.circuit_study_data.study_name,
+            project_directory=CircuitOptimizationBase.project_directory,
             design_space=design_space,
             output_range=output_range,
             sampling=sampling,
@@ -1030,18 +1191,29 @@ class DabCircuitOptimization:
 
         return pareto_df_offset
 
-    def filter_study_results(self) -> None:
+    def filter_study_results(self) -> tuple[bool, str]:
         """Filter the study result and use GeckoCIRCUITS for detailed calculation."""
+        # Variable initialization
+        is_filter_available: bool = False
+        issue_report: str = ""
+
         # Check if configuration is not available and if study is not available
         if self._dab_config is None:
-            logger.warning("Circuit configuration is not loaded!")
-            return
-        elif not self._is_study_available:
-            logger.warning("Study is not calculated. First run 'start_proceed_study'!")
-            return
-        elif self._study_in_storage is None:
-            logger.warning("Study is not calculated. First run 'start_proceed_study'!")
-            return
+            issue_report = "Circuit configuration is not loaded!"
+            return is_filter_available, issue_report
+        if not self._is_study_available:
+            issue_report = "Study is not calculated. First run 'start_proceed_study'!"
+            return is_filter_available, issue_report
+        if self._study_in_storage is None:
+            issue_report = "Study is not calculated. First run 'start_proceed_study'!"
+            return is_filter_available, issue_report
+
+        is_filter_available = True
+
+        # Evaluate previous result
+        if not is_filter_available:
+            logger.warning(issue_report)
+            return is_filter_available, issue_report
 
         filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
@@ -1092,14 +1264,28 @@ class DabCircuitOptimization:
         # join if necessary
         folders = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
-        dto_directory = os.path.join(folders.circuit, self._dab_config.circuit_study_name, "filtered_results")
+        dto_directory = CircuitOptimizationBase.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
             # dto = d_sets.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
             d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+
+        # Update the filtered result list
+        CircuitOptimizationBase.filter_data.filtered_list_files = []
+        for filtered_circuit_result in os.listdir(dto_directory):
+            # Check if it is a file
+            if os.path.isfile(os.path.join(dto_directory, filtered_circuit_result)):
+                CircuitOptimizationBase.filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
+
+        # Evaluate the result: Has the list minimum one entry
+        if len(CircuitOptimizationBase.filter_data.filtered_list_files) == 0:
+            is_filter_available = False
+            issue_report = "No design could be selected!"
 
         # Stop runtime measurement and update statistical data
         with self._c_lock_stat:
             self._progress_run_time.stop_trigger()
             self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.Done
+
+        return is_filter_available, issue_report

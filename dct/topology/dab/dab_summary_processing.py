@@ -12,7 +12,7 @@ import numpy as np
 
 # own libraries
 import dct
-from dct.topology.dab.dab_datasets_dtos import DabStudyData
+from dct.datasets_dtos import StudyData
 from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
 import hct
@@ -181,17 +181,17 @@ class DabSummaryProcessing:
 
         return is_magnetic_list_generated, magnetic_result_numbers
 
-    def generate_result_database(self, inductor_study_data: DabStudyData, transformer_study_data: DabStudyData,
-                                 summary_data: DabStudyData, act_inductor_study_names: list[str],
+    def generate_result_database(self, inductor_study_data: StudyData, transformer_study_data: StudyData,
+                                 summary_data: StudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
-        :type inductor_study_data: DabStudyData
+        :type inductor_study_data: StudyData
         :param transformer_study_data: transformer study data
-        :type transformer_study_data: DabStudyData
+        :type transformer_study_data: StudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: DabStudyData
+        :type summary_data: StudyData
         :param act_inductor_study_names: List of names with inductor studies which are to process
         :type  act_inductor_study_names: list[str]
         :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
@@ -418,13 +418,13 @@ class DabSummaryProcessing:
         # return the database
         return df
 
-    def select_heat_sink_configuration(self, heat_sink_study_data: DabStudyData, summary_data: DabStudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(self, heat_sink_study_data: StudyData, summary_data: StudyData, act_df_for_hs: pd.DataFrame) -> None:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: Information about the heat sink study name and study path
-        :type  heat_sink_study_data: DabStudyData
+        :type  heat_sink_study_data: StudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: DabStudyData
+        :type summary_data: StudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
         """
