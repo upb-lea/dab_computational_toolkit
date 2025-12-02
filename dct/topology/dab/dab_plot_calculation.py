@@ -4,8 +4,8 @@
 import os
 
 # own libraries
-from .dab_datasets_dtos import DabCircuitDTO
-from .dab_plotdab import PlotDAB
+from dct.topology.dab.dab_datasets_dtos import DabCircuitDTO
+from dct.topology.dab.dab_plotdab import PlotDAB
 
 # 3rd party libraries
 import numpy as np

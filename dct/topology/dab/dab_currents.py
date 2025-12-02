@@ -1,7 +1,7 @@
 """Current calculations, like RMS currents and currents for certain angles."""
 
 # own libraries
-from .dab_datasets_dtos import CircuitConfig, CalcFromCircuitConfig, CalcModulation
+from dct.topology.dab.dab_datasets_dtos import CircuitConfig, CalcFromCircuitConfig, CalcModulation
 
 # 3rd party libraries
 import numpy as np

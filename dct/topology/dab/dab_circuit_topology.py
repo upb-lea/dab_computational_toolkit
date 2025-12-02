@@ -19,13 +19,13 @@ import dct.sampling as sampling
 
 # own libraries
 from dct.constant_path import SIMULATION_INPUT
-from . import dab_datasets_dtos as d_dtos
-from . import dab_circuit_topology_dtos as circuit_dtos
-from . import dab_datasets as d_sets
+from dct.topology.dab import dab_datasets_dtos as d_dtos
+from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
+from dct.topology.dab import dab_datasets as d_sets
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
-from . import dab_toml_checker as dab_tc
+from dct.topology.dab import dab_toml_checker as dab_tc
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData
