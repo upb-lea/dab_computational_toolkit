@@ -2,8 +2,7 @@
 
 # python libraries
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
-from typing import Any
+from typing import Generic, TypeVar, Any
 import os
 
 # 3rd party libraries
@@ -11,8 +10,7 @@ from pydantic import BaseModel
 import optuna
 
 # Own libraries
-from dct.datasets_dtos import StudyData
-from dct.datasets_dtos import FilterData
+from dct.datasets_dtos import StudyData, FilterData
 from dct.server_ctl_dtos import ProgressData
 
 # Type of general optimization parameter

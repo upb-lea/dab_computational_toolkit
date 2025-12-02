@@ -26,10 +26,8 @@ import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
 from dct.topology.dab import dab_toml_checker as dab_tc
-from dct.datasets_dtos import StudyData
-from dct.datasets_dtos import FilterData
-from dct.server_ctl_dtos import ProgressData
-from dct.server_ctl_dtos import ProgressStatus
+from dct.datasets_dtos import StudyData, FilterData
+from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
@@ -1260,9 +1258,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
 
         smallest_dto_list = self.df_to_dab_dto_list(df_smallest_all)
-
-        # join if necessary
-        folders = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         dto_directory = CircuitOptimizationBase.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)
