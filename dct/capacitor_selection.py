@@ -18,8 +18,8 @@ from dct.capacitor_optimization_dtos import CapacitorOptimizationDto
 from dct.toml_checker import TomlCapacitorSelection, Debug
 # ASA Need to be moved to general class
 from dct.topology.dab.dab_datasets import HandleDabDto
-from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
-from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
+from dct.datasets_dtos import StudyData
+from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
 from dct.topology.dab.dab_datasets_dtos import CapacitorResults

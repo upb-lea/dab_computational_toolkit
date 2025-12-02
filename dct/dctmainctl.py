@@ -22,10 +22,12 @@ import json
 
 # own libraries
 import dct
-from dct import toml_checker as tc, ProgressStatus
+from dct import toml_checker as tc
+from dct.server_ctl_dtos import ProgressStatus
 from dct import server_ctl_dtos as srv_ctl_dtos
+from dct.datasets_dtos import StudyData
 # Circuit, inductor, transformer and heat sink optimization class
-from dct.topology.dab import DabCircuitOptimization
+from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct import CapacitorSelection
 from dct import InductorOptimization
 from dct import TransformerOptimization
@@ -41,9 +43,6 @@ from dct.server_ctl import RequestCmd
 from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.boundary_check import CheckCondition as c_flag
-from dct.topology.dab.dab_datasets_dtos import DabStudyData as StudyData
-from dct.topology.dab.dab_datasets_dtos import DabFilterData as FilterData
 logger = logging.getLogger(__name__)
 
 class DctMainCtl:
@@ -67,7 +66,7 @@ class DctMainCtl:
         # Optimization class instances
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_files: list[str] = []
-        self._circuit_optimization: DabCircuitOptimization | None = None
+        self._circuit_optimization: CircuitOptimizationBase | None = None
         self._capacitor_1_selection: CapacitorSelection | None = None
         self._capacitor_2_selection: CapacitorSelection | None = None
         self._inductor_optimization: InductorOptimization | None = None
@@ -282,39 +281,6 @@ class DctMainCtl:
         """
         # Still not defined
         pass
-
-    @staticmethod
-    def check_study_data(study_path: str, study_name: str) -> bool:
-        """
-        Verify if the study path and sqlite3-database file exists.
-
-        Works for all types of studies (circuit, inductor, transformer, heat sink).
-        :param study_path: drive location path to the study
-        :type  study_path: str
-        :param study_name: Name of the study
-        :type  study_name: str
-        :return: True, if the optimization could be performed successful
-        :rtype: bool
-        """
-        # Variable definition
-        # return value initialization to false
-        is_study_existing = False
-
-        # check path
-        if os.path.exists(study_path) or study_path == "":
-            # Assemble file name
-            study_name = study_name + ".sqlite3"
-            target_file = os.path.join(study_path, study_name)
-            # check filename
-            if os.path.isfile(target_file):
-                is_study_existing = True
-            else:
-                logger.info(f"File {target_file} does not exists!")
-        else:
-            logger.info(f"Path {study_path} does not exists!")
-
-        # True = study exists
-        return is_study_existing
 
     @staticmethod
     def get_number_of_pkl_files(filtered_file_path: str) -> int:
@@ -709,17 +675,18 @@ class DctMainCtl:
             # Pareto front of circuit
             if self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.InProgress:
                 # Get Pareto front from memory
-                response_data.evaluation_info = f"Circuit configuration file: {self._circuit_list[c_configuration_index].configuration_name}"
+                response_data.evaluation_info = (
+                    f"Circuit configuration file: {self._circuit_list[c_configuration_index].configuration_name}")
                 response_data.pareto_front_optuna = self._circuit_optimization.get_actual_pareto_html()
             elif not self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.Idle:
                 # Get Pareto front from file
-                if self.check_study_data(self._circuit_study_data.optimization_directory,
-                                         self._circuit_study_data.study_name):
+                if StudyData.check_study_data(CircuitOptimizationBase.circuit_study_data.optimization_directory,
+                                              CircuitOptimizationBase.circuit_study_data.study_name):
                     response_data.evaluation_info = f"Circuit configuration: {self._circuit_list[c_configuration_index].configuration_name}"
                     response_data.pareto_front_optuna = self._circuit_optimization.get_pareto_html(
-                        self._circuit_study_data.study_name,
-                        os.path.join(self._circuit_study_data.optimization_directory,
-                                     self._circuit_study_data.study_name+".sqlite3"))
+                        CircuitOptimizationBase.circuit_study_data.study_name,
+                        os.path.join(CircuitOptimizationBase.circuit_study_data.optimization_directory,
+                                     CircuitOptimizationBase.circuit_study_data.study_name+".sqlite3"))
             else:
                 response_data.evaluation_info = "Pareto front calculation still not started!"
         # Pareto front of inductor
@@ -746,7 +713,7 @@ class DctMainCtl:
                     sqlite_file_path = os.path.join(self._inductor_study_data.optimization_directory,
                                                     filtered_points_name_list[c_filtered_point_index][0],
                                                     self._inductor_study_data.study_name)
-                    if self.check_study_data(sqlite_file_path, self._inductor_study_data.study_name):
+                    if StudyData.check_study_data(sqlite_file_path, self._inductor_study_data.study_name):
                         response_data.evaluation_info = (f"Inductor configuration file: {self._inductor_list[item_configuration_index].configuration_name}"
                                                          f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}")
                         response_data.pareto_front_optuna = self._circuit_optimization.get_pareto_html(
@@ -777,7 +744,7 @@ class DctMainCtl:
                     sqlite_file_path = os.path.join(self._transformer_study_data.optimization_directory,
                                                     filtered_points_name_list[c_filtered_point_index][0],
                                                     self._transformer_study_data.study_name)
-                    if self.check_study_data(sqlite_file_path, self._transformer_study_data.study_name):
+                    if StudyData.check_study_data(sqlite_file_path, self._transformer_study_data.study_name):
                         response_data.evaluation_info = (
                             f"Transformer configuration file: {self._transformer_list[item_configuration_index].configuration_name}"
                             f" of filtered point: {filtered_points_name_list[c_filtered_point_index][0]}"
@@ -806,7 +773,7 @@ class DctMainCtl:
                         is_pareto_file_available = True
                 if is_pareto_file_available or self._heat_sink_list[item_configuration_index].progress_data.progress_status == ProgressStatus.Skipped:
                     # Get Pareto front from file
-                    if self.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
+                    if StudyData.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
                         response_data.evaluation_info = f"Heat sink configuration file: {self._heat_sink_list[item_configuration_index].configuration_name}"
                         response_data.pareto_front_optuna = self._circuit_optimization.get_pareto_html(
                             self._heat_sink_study_data.study_name, os.path.join(self._heat_sink_study_data.optimization_directory,
@@ -874,121 +841,6 @@ class DctMainCtl:
             with self._key_input_lock:
                 self._key_input_string = key_input_string
 
-    @staticmethod
-    def verify_general_parameters(toml_general: tc.TomlGeneral) -> tuple[bool, str]:
-        """Verify the input parameter ranges.
-
-        :param toml_general: toml general configuration
-        :type toml_general: dct.TomlGeneral
-        :return: True, if the configuration was consistent
-        :rtype: bool
-        """
-        inconsistency_report: str = ""
-        is_consistent: bool = True
-        toml_check_min_max_value_multi_list: list[tuple[list[float], str, list[float], str]]
-
-        # Check v1_min_max_list and v2_min_max_list
-        toml_check_min_max_value_multi_list = (
-            [(toml_general.output_range.v1_min_max_list, "v1_min_max_list",
-              toml_general.sampling.v1_additional_user_point_list, "v1_additional_user_point_list"),
-             (toml_general.output_range.v2_min_max_list, "v2_min_max_list",
-              toml_general.sampling.v2_additional_user_point_list, "v2_additional_user_point_list")])
-
-        # Output range parameter and sampling parameter check
-        group_name = "output_range or sampling"
-        # Init is_user_point_list_consistent-flag
-        is_user_point_list_consistent = False
-        # Evaluate list length
-        len_additional_user_v1 = len(toml_general.sampling.v1_additional_user_point_list)
-        len_additional_user_v2 = len(toml_general.sampling.v2_additional_user_point_list)
-        len_additional_user_p = len(toml_general.sampling.p_additional_user_point_list)
-        len_additional_user_w = len(toml_general.sampling.additional_user_weighting_point_list)
-        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_p == len_additional_user_w
-        len_check2 = len_additional_user_p == len_additional_user_w
-        # Check if the additional user point lists are consistent
-        if len_check1 and len_check2:
-            is_user_point_list_consistent = True
-
-        # Perform the boundary check
-        for check_parameter in toml_check_min_max_value_multi_list:
-            is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-                0, 1500, check_parameter[0], f"output_range: {check_parameter[1]}", c_flag.check_exclusive, c_flag.check_exclusive)
-            if not is_check_passed:
-                inconsistency_report = inconsistency_report + issue_report
-                is_consistent = False
-            elif is_user_point_list_consistent:
-                for voltage_value in check_parameter[2]:
-                    is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                        check_parameter[0][0], check_parameter[0][1], voltage_value,
-                        f"sampling: {check_parameter[3]}", c_flag.check_inclusive, c_flag.check_inclusive)
-                    if not is_check_passed:
-                        inconsistency_report = inconsistency_report + issue_report
-                        is_consistent = False
-            else:
-                act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
-                act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
-                act_report = act_report + f"    p_additional_user_point_list ({len_additional_user_p}) and "
-                act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
-                act_report = act_report + "needs to be the same!\n)"
-                inconsistency_report = (inconsistency_report + act_report)
-                is_consistent = False
-
-        # Perform the boundary check  of p_min_max_list
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-            -100000, 100000, toml_general.output_range.p_min_max_list, "output_range: p_min_max_list", c_flag.check_exclusive, c_flag.check_exclusive)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-        elif is_user_point_list_consistent:
-            for power_value in toml_general.sampling.p_additional_user_point_list:
-                is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                    toml_general.output_range.p_min_max_list[0], toml_general.output_range.p_min_max_list[1], power_value,
-                    "sampling: p_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
-                if not is_check_passed:
-                    inconsistency_report = inconsistency_report + issue_report
-                    is_consistent = False
-
-        # Remaining Sampling parameter check
-        group_name = "sampling"
-        # Check additional_user_weighting_point_list
-        # Initialize variable
-        weighting_sum: float = 0.0
-        # Perform the boundary check  of p_min_max_list
-        for weight_value in toml_general.sampling.additional_user_weighting_point_list:
-            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                0, 1, weight_value, "additional_user_weighting_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
-            if not is_check_passed:
-                inconsistency_report = inconsistency_report + issue_report
-                is_consistent = False
-
-            weighting_sum = weighting_sum + weight_value
-
-        # Check the sum
-        if weighting_sum > 1:
-            is_consistent = False
-            act_report = "    The sum of parameter entries of parameter additional_user_weighting_point_list "
-            act_report = act_report + f"{weighting_sum} has to be less equal 1!\n"
-            inconsistency_report = inconsistency_report + act_report
-
-        # Perform the boundary check for sampling points
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-            0, 1, float(toml_general.sampling.sampling_points),
-            f"{group_name}: sampling_points", c_flag.check_exclusive, c_flag.check_ignore)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-
-        # Check sampling random seed
-        # Perform the boundary check for number_filtered_designs
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-            0, 1, float(toml_general.sampling.sampling_random_seed),
-            f"{group_name}: sampling_random_seed", c_flag.check_inclusive, c_flag.check_ignore)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-
-        return is_consistent, inconsistency_report
-
     def run_optimization_from_toml_configurations(self, workspace_path: str) -> None:
         """Perform the main program.
 
@@ -1046,19 +898,16 @@ class DctMainCtl:
         if is_debug_loaded:
             print("debug.toml config found.")
             logger.info("debug.toml config found.")
-            toml_debug = dct.Debug(**debug_dict)
+            toml_debug = tc.Debug(**debug_dict)
         else:
-            toml_debug = dct.Debug(general=dct.DebugGeneral(is_debug=False),
-                                   capacitor_1=dct.DebugCapacitor(
-                                       number_working_point_max=1),
-                                   capacitor_2=dct.DebugCapacitor(
-                                       number_working_point_max=1),
-                                   inductor=dct.DebugInductor(
-                                       number_reluctance_working_point_max=1,
-                                       number_fem_working_point_max=1),
-                                   transformer=dct.DebugTransformer(
-                                       number_reluctance_working_point_max=1,
-                                       number_fem_working_point_max=1))
+            toml_debug = tc.Debug(general=tc.DebugGeneral(is_debug=False),
+                                  capacitor_1=tc.DebugCapacitor(number_working_point_max=1),
+                                  capacitor_2=tc.DebugCapacitor(number_working_point_max=1),
+                                  inductor=tc.DebugInductor(number_reluctance_working_point_max=1,
+                                                            number_fem_working_point_max=1),
+                                  transformer=tc.DebugTransformer(number_reluctance_working_point_max=1,
+                                                                  number_fem_working_point_max=1))
+
         # --------------------------
         # Flow control
         # --------------------------
@@ -1083,11 +932,6 @@ class DctMainCtl:
         # -----------------------------------------
 
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
-        self._circuit_study_data = StudyData(
-            study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
-            optimization_directory=os.path.join(project_directory, toml_prog_flow.circuit.subdirectory,
-                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
-        )
 
         self._capacitor_1_selection_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.capacitor_1_configuration_file.replace(".toml", ""),
@@ -1101,7 +945,7 @@ class DctMainCtl:
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
         )
 
-        self._inductor_study_data = dct.StudyData(
+        self._inductor_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
@@ -1121,32 +965,30 @@ class DctMainCtl:
                                      optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory))
         summary_data = StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
 
-        filter_data = FilterData(
-            filtered_list_files=[],
-            filtered_list_pathname=os.path.join(
-                project_directory, toml_prog_flow.circuit.subdirectory,
-                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results"),
-            circuit_study_name=toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
-        )
-
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
          self._transformer_list, self._heat_sink_list, self._summary_list) = self.get_initialization_queue_data(toml_prog_flow)
+
+        # --------------------------
+        # Select topology
+        # --------------------------
+
+        # Allocate and initialize circuit configuration (Currently the only topology. Has to be set later in program flow toml file
+        self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
 
         # --------------------------
         # General toml control
         # --------------------------
         logger.debug("Read general toml control")
 
-        # Init circuit configuration
+        # Init general configuration
         is_general_toml_loaded, dict_general_toml = self.load_toml_file(toml_prog_flow.configuration_data_files.general_configuration_file)
-        toml_general = tc.TomlGeneral(**dict_general_toml)
 
         if not is_general_toml_loaded:
             raise ValueError(f"General toml configuration file: {toml_prog_flow.configuration_data_files.general_configuration_file} does not exist.")
 
-        # Verify general parameters
-        is_general_toml_consistent, general_issue_report = DctMainCtl.verify_general_parameters(toml_general)
+        is_general_toml_consistent, general_issue_report = self._circuit_optimization.load_and_verify_general_parameters(dict_general_toml)
+
         if not is_general_toml_consistent:
             raise ValueError("General parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.general_configuration_file} are inconsistent!\n", general_issue_report)
@@ -1156,15 +998,20 @@ class DctMainCtl:
         # --------------------------
         logger.debug("Read circuit flow control")
 
+        # Init study and path information
+        self._circuit_optimization.init_study_information(
+            toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
+            project_directory, toml_prog_flow.circuit.subdirectory)
+
         # Init circuit configuration
-        is_circuit_loaded, dict_circuit = self.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
-        toml_circuit = tc.TomlCircuitParetoDabDesign(**dict_circuit)
+        is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
 
         if not is_circuit_loaded:
             raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
 
+        is_consistent, issue_report = self._circuit_optimization.load_and_verify_circuit_parameters(dict_circuit)
+
         # Verify circuit parameters
-        is_consistent, issue_report = dct.topology.dab.DabCircuitOptimization.verify_circuit_parameters(toml_circuit, toml_debug.general.is_debug)
         if not is_consistent:
             raise ValueError("Circuit optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
@@ -1172,22 +1019,11 @@ class DctMainCtl:
         # Check, if electrical optimization is to skip
         if toml_prog_flow.circuit.calculation_mode == "skip":
             # Check, if data are available (skip case)
-            if not self.check_study_data(self._circuit_study_data.optimization_directory, self._circuit_study_data.study_name):
-                raise ValueError(f"Study {self._circuit_study_data.study_name} in path {self._circuit_study_data.optimization_directory} does not exist. "
-                                 f"No sqlite3-database found!")
-            # Check, if data are available (skip case)
-            # Check if filtered results folder exists
-            if os.path.exists(filter_data.filtered_list_pathname):
-                # Add filtered result list
-                for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
-                    if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
-                        filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
-                        # Store list id for progress (Workaround)
-                        self._filtered_list_files = filter_data.filtered_list_files
-                if not filter_data.filtered_list_files:
-                    raise ValueError(f"Filtered results folder {filter_data.filtered_list_pathname} is empty.")
-            else:
-                raise ValueError(f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist.")
+            is_skippable, issue_report = self._circuit_optimization.is_circuit_optimization_skippable()
+
+            # Evaluate the result
+            if not is_skippable:
+                raise ValueError("Circuit optimization is not skippable:\n" + f"{issue_report}")
 
         # --------------------------
         # Capacitor 1 flow control
@@ -1245,16 +1081,22 @@ class DctMainCtl:
 
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
+            # Check if circuit is not skipped
+            if toml_prog_flow.circuit.calculation_mode == "skip":
+                raise ValueError(
+                    f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
+                    f"This causes that study {self._inductor_study_data.study_name} is not skippable!")
+
             # Initialize _inductor_number_filtered_points_skip_list
             self._inductor_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
 
-            for id_entry in filter_data.filtered_list_files:
+            for id_entry in (self._circuit_optimization.filter_data.filtered_list_files):
                 # Assemble pathname
                 inductor_results_datapath = os.path.join(self._inductor_study_data.optimization_directory,
                                                          str(id_entry), self._inductor_study_data.study_name)
                 # Check, if data are available (skip case)
-                if self.check_study_data(inductor_results_datapath, self._inductor_study_data.study_name):
+                if StudyData.check_study_data(inductor_results_datapath, self._inductor_study_data.study_name):
                     self._inductor_number_filtered_points_skip_list.append(
                         self.get_number_of_pkl_files(os.path.join(inductor_results_datapath,
                                                                   "09_circuit_dtos_incl_inductor_losses")))
@@ -1283,16 +1125,22 @@ class DctMainCtl:
 
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
+            # Check if circuit is not skipped
+            if toml_prog_flow.circuit.calculation_mode == "skip":
+                raise ValueError(
+                    f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
+                    f"This causes that study {self._transformer_study_data.study_name} is not skippable!")
+
             # Initialize _transformer_number_filtered_points_skip_list
             self._transformer_number_filtered_points_skip_list = []
             # For loop to check, if all filtered values are available
-            for id_entry in filter_data.filtered_list_files:
+            for id_entry in self._circuit_optimization.filter_data.filtered_list_files:
                 # Assemble pathname
                 transformer_results_datapath = os.path.join(self._transformer_study_data.optimization_directory,
                                                             str(id_entry),
                                                             self._transformer_study_data.study_name)
                 # Check, if data are available (skip case)
-                if self.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
+                if StudyData.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
                     self._transformer_number_filtered_points_skip_list.append(
                         self.get_number_of_pkl_files(os.path.join(transformer_results_datapath,
                                                                   "09_circuit_dtos_incl_transformer_losses")))
@@ -1321,7 +1169,7 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if toml_prog_flow.heat_sink.calculation_mode == "skip":
             # Check, if data are available (skip case)
-            if not self.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
+            if not StudyData.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
                 raise ValueError(
                     f"Study {self._heat_sink_study_data.study_name} in path "
                     f"{self._heat_sink_study_data.optimization_directory} does not exist. No sqlite3-database found!")
@@ -1358,17 +1206,17 @@ class DctMainCtl:
         # Check, if electrical optimization is not to skip
         if not toml_prog_flow.circuit.calculation_mode == "skip":
 
-            # Allocate and initialize circuit configuration
-            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
-            self._circuit_optimization.initialize_circuit_optimization(toml_general, toml_circuit, toml_prog_flow)
+            # Initialize circuit configuration
+            self._circuit_optimization.initialize_circuit_optimization()
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.circuit.calculation_mode == "new":
                 # delete old circuit study data
-                self.delete_study_content(self._circuit_study_data.optimization_directory, self._circuit_study_data.study_name)
+                self.delete_study_content(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                          self._circuit_optimization.circuit_study_data.study_name)
 
                 # Create the filtered result folder
-                os.makedirs(filter_data.filtered_list_pathname, exist_ok=True)
+                os.makedirs(self._circuit_optimization.filter_data.filtered_list_pathname, exist_ok=True)
                 # Delete obsolete folders of inductor and transformer
                 self.delete_study_content(self._inductor_study_data.optimization_directory)
                 self.delete_study_content(self._transformer_study_data.optimization_directory)
@@ -1383,20 +1231,18 @@ class DctMainCtl:
         if not toml_prog_flow.circuit.calculation_mode == "skip":
 
             # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
+            # Error is to prevent by the workflow
             if self._circuit_optimization is None:
-                raise ValueError("Serious programming error. Please write an issue!")
+                raise ValueError("Serious programming error 1a. Please write an issue!")
 
             # Calculate the filtered results
-            self._circuit_optimization.filter_study_results()
-            # Get filtered result path
-
-            # Add filtered result list
-            for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
-                if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
-                    filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
+            is_filter_data_available, issue_report = self._circuit_optimization.filter_study_results()
+            # Evaluate the filtered data result (Program stop has to be removed, if multiple circuit configuration are optimized)
+            if not is_filter_data_available:
+                raise ValueError("Filtered data error:"+issue_report)
 
             # Workaround: Set filtered result id list here, later to handle in circuit_optimization
-            self._filtered_list_files = filter_data.filtered_list_files
+            self._filtered_list_files = self._circuit_optimization.filter_data.filtered_list_files
 
         # Set the number of calculations for the magnetic components
         self._inductor_main_list[0].number_calculations = len(self._filtered_list_files)
@@ -1416,7 +1262,7 @@ class DctMainCtl:
             # Allocate and initialize circuit configuration
             self._capacitor_1_selection = CapacitorSelection()
             self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, study_data=self._capacitor_1_selection_data,
-                                                                       circuit_filter_data=filter_data)
+                                                                       circuit_filter_data=self._circuit_optimization.filter_data)
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.capacitor_1.calculation_mode == "new":
@@ -1427,7 +1273,7 @@ class DctMainCtl:
                 os.makedirs(self._capacitor_1_selection_data.optimization_directory, exist_ok=True)
 
             # Perform circuit optimization
-            self._capacitor_1_selection.optimization_handler(filter_data=filter_data, debug=toml_debug)
+            self._capacitor_1_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data, debug=toml_debug)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
@@ -1443,7 +1289,7 @@ class DctMainCtl:
             # Allocate and initialize circuit configuration
             self._capacitor_2_selection = CapacitorSelection()
             self._capacitor_2_selection.initialize_capacitor_selection(toml_capacitor_2, study_data=self._capacitor_2_selection_data,
-                                                                       circuit_filter_data=filter_data)
+                                                                       circuit_filter_data=self._circuit_optimization.filter_data)
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.capacitor_2.calculation_mode == "new":
@@ -1454,7 +1300,7 @@ class DctMainCtl:
                 os.makedirs(self._capacitor_2_selection_data.optimization_directory, exist_ok=True)
 
             # Perform circuit optimization
-            self._capacitor_2_selection.optimization_handler(filter_data=filter_data, debug=toml_debug)
+            self._capacitor_2_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data, debug=toml_debug)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_2, "Capacitor 2 Pareto front calculated")
@@ -1479,12 +1325,13 @@ class DctMainCtl:
 
             # Allocate and initialize inductor configuration
             self._inductor_optimization = InductorOptimization()
-            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data, filter_data)
+            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
+                                                                              self._circuit_optimization.filter_data)
 
             # Perform inductor optimization
             self._inductor_optimization.optimization_handler_reluctance_model(
-                filter_data, toml_prog_flow.inductor.number_of_trials, toml_inductor.filter_distance.factor_dc_losses_min_max_list,
-                debug=toml_debug)
+                self._circuit_optimization.filter_data, toml_prog_flow.inductor.number_of_trials,
+                toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1514,11 +1361,11 @@ class DctMainCtl:
             # Allocate and initialize transformer configuration
             self._transformer_optimization = TransformerOptimization()
             self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
-                                                                                    filter_data)
+                                                                                    self._circuit_optimization.filter_data)
             # Perform transformer optimization
             self._transformer_optimization.optimization_handler_reluctance_model(
-                filter_data, toml_prog_flow.transformer.number_of_trials, toml_transformer.filter_distance.factor_dc_losses_min_max_list,
-                debug=toml_debug)
+                self._circuit_optimization.filter_data, toml_prog_flow.transformer.number_of_trials,
+                toml_transformer.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1570,7 +1417,7 @@ class DctMainCtl:
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_pre_processing.generate_result_database(
             self._inductor_study_data, self._transformer_study_data, pre_summary_data,
-            inductor_study_names, stacked_transformer_study_names, filter_data,
+            inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
             self._capacitor_1_selection_data, self._capacitor_2_selection_data,
             capacitor_1_study_names, capacitor_2_study_names
         )
@@ -1597,7 +1444,8 @@ class DctMainCtl:
             # Perform inductor FEM simulation
             if self._inductor_optimization is not None:
                 self._inductor_optimization.fem_simulation_handler(
-                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+                    self._circuit_optimization.filter_data,
+                    toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Transformer FEM simulation
@@ -1609,7 +1457,8 @@ class DctMainCtl:
             # Perform transformer FEM simulation
             if self._transformer_optimization is not None:
                 self._transformer_optimization.fem_simulation_handler(
-                    filter_data, toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+                    self._circuit_optimization.filter_data,
+                    toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
         # --------------------------
         # Final summary calculation
@@ -1628,7 +1477,7 @@ class DctMainCtl:
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_processing.generate_result_database(
             self._inductor_study_data, self._transformer_study_data, summary_data,
-            inductor_study_names, stacked_transformer_study_names, filter_data)
+            inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data)
         #  Select the needed heat sink configuration
         self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 

@@ -88,7 +88,6 @@ coss
 req
 TransistorCooling
 CircuitParetoDabDesign
-TomlCircuitParetoDabDesign
 sqlite
 DabCircuitConf
 DabHeatSinkConf
@@ -364,3 +363,10 @@ DabGeneralConf
 TomlCapacitorSelection
 TomlGeneral
 topologies
+skippable
+TomlGData
+TomlCData
+TomlCircuit
+ngspice
+TomlDabCircuitParetoDesign
+TomlDabGeneral
