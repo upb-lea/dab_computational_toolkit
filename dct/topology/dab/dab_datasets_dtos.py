@@ -6,6 +6,9 @@ import dataclasses
 # 3rd party libraries
 import numpy as np
 
+# own libraries
+from dct.capacitor_optimization_dtos import CapacitorResults
+
 @dataclasses.dataclass
 class TransistorDTO:
     """Contains constant transistor information."""
@@ -165,25 +168,6 @@ class CalcLosses:
     p_m1_conduction: np.ndarray
     p_m2_conduction: np.ndarray
     p_dab_conduction: np.ndarray
-
-    def __init__(self, **kwargs):
-        names = set([f.name for f in dataclasses.fields(self)])
-        for k, v in kwargs.items():
-            if k in names:
-                setattr(self, k, v)
-
-
-@dataclasses.dataclass(init=False)
-class CapacitorResults:
-    """DTO contains the inductor losses."""
-
-    loss_total_array: np.ndarray
-    volume_total: float
-    area_total: float
-    circuit_trial_file: str
-    capacitor_order_number: str
-    n_parallel: int
-    n_series: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
