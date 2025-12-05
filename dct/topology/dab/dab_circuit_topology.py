@@ -995,6 +995,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 transistor_dto_2=transistor_dto_2,
                 lossfilepath=self._fixed_parameters.transistorlosses_filepath
             )
+
+            dab_dto = d_sets.HandleDabDto.generate_components_target_requirements(dab_dto)
+
             dab_dto_list.append(dab_dto)
 
         return dab_dto_list
@@ -1262,7 +1265,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         dto_directory = CircuitOptimizationBase.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            # dto = d_sets.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+            print(type(smallest_dto_list[0]))
+            dto = d_sets.HandleDabDto.generate_components_target_requirements(dto)
             d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list

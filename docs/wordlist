@@ -370,3 +370,6 @@ TomlCircuit
 ngspice
 TomlDabCircuitParetoDesign
 TomlDabGeneral
+InductorRequirements
+TransformerRequirements
+CapacitorRequirements

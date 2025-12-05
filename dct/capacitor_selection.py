@@ -21,6 +21,7 @@ from dct.topology.dab.dab_datasets import HandleDabDto
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
+from dct.topology.dab.dab_datasets_dtos import ComponentRequirements
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
 from dct.capacitor_optimization_dtos import CapacitorResults
 
@@ -51,14 +52,14 @@ class CapacitorSelection:
             pass
         return True, ""
 
-    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, study_data: StudyData, circuit_filter_data: FilterData) -> None:
+    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, capacitor_study_data: StudyData, circuit_filter_data: FilterData) -> None:
         """
         Initialize the capacitor selection.
 
         :param toml_capacitor: capacitor data
         :type toml_capacitor: TomlCapacitorSelection
-        :param study_data: capacitor study data
-        :type study_data: StudyData
+        :param capacitor_study_data: capacitor study data
+        :type capacitor_study_data: StudyData
         :param circuit_filter_data: filtered circuit data
         :type circuit_filter_data: FilterData
         """
@@ -71,27 +72,25 @@ class CapacitorSelection:
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
                 circuit_dto = HandleDabDto.load_from_file(circuit_filepath)
+                optimization_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_trial_file, capacitor_study_data.study_name)
 
-                optimization_directory = os.path.join(study_data.optimization_directory, circuit_trial_file, study_data.study_name)
-
-                # figure out worst case working point for the capacitor per circuit design
-                sorted_max_rms_angles, i_c1_max_rms_current_waveform = HandleDabDto.get_max_rms_waveform_capacitor(circuit_dto, plot=False)
-                time = sorted_max_rms_angles / (2 * np.pi * circuit_dto.input_config.fs)
-                v_max = np.max(circuit_dto.input_config.mesh_v1)
+                # catch mypy type issue
+                if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                    raise TypeError("circuit DTO file is incomplete.")
 
                 # generate capacitor requirements from circuit simulation data
                 capacitor_requirements_dto = pecst.CapacitorRequirements(
                     maximum_peak_to_peak_voltage_ripple=toml_capacitor.maximum_peak_to_peak_voltage_ripple,
-                    current_waveform_for_op_max_current=np.array([time, i_c1_max_rms_current_waveform]),
-                    v_dc_for_op_max_voltage=v_max,
+                    current_waveform_for_op_max_current=np.array([circuit_dto.component_requirements.capacitor_requirements[0].time,
+                                                                  circuit_dto.component_requirements.capacitor_requirements[0].i_max_rms_current_waveform]),
+                    v_dc_for_op_max_voltage=circuit_dto.component_requirements.capacitor_requirements[0].v_max,
                     temperature_ambient=toml_capacitor.temperature_ambient,
                     voltage_safety_margin_percentage=toml_capacitor.voltage_safety_margin_percentage,
                     capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
                     maximum_number_series_capacitors=toml_capacitor.maximum_number_series_capacitors,
                     capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
                     lifetime_h=toml_capacitor.lifetime_h,
-                    results_directory=optimization_directory
-                )
+                    results_directory=optimization_directory)
 
                 # Initialize the statistical data
                 stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,

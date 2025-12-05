@@ -1261,7 +1261,7 @@ class DctMainCtl:
 
             # Allocate and initialize circuit configuration
             self._capacitor_1_selection = CapacitorSelection()
-            self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, study_data=self._capacitor_1_selection_data,
+            self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, capacitor_study_data=self._capacitor_1_selection_data,
                                                                        circuit_filter_data=self._circuit_optimization.filter_data)
 
             # Check, if old study is to delete, if available
@@ -1288,7 +1288,7 @@ class DctMainCtl:
 
             # Allocate and initialize circuit configuration
             self._capacitor_2_selection = CapacitorSelection()
-            self._capacitor_2_selection.initialize_capacitor_selection(toml_capacitor_2, study_data=self._capacitor_2_selection_data,
+            self._capacitor_2_selection.initialize_capacitor_selection(toml_capacitor_2, capacitor_study_data=self._capacitor_2_selection_data,
                                                                        circuit_filter_data=self._circuit_optimization.filter_data)
 
             # Check, if old study is to delete, if available
