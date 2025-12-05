@@ -14,7 +14,7 @@ import numpy as np
 import dct
 from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
-from dct.topology.dab.dab_datasets_dtos import CapacitorResults
+from dct.capacitor_optimization_dtos import CapacitorResults
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime

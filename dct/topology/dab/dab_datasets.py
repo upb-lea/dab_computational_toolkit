@@ -20,6 +20,7 @@ from dct.topology.dab import dab_currents as dct_currents
 from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,7 @@ class HandleDabDto:
             calc_modulation=modulation_parameters,
             calc_currents=calc_currents,
             calc_losses=calc_losses,
+            component_requirements=None,
             gecko_additional_params=gecko_additional_params,
             gecko_results=None,
             gecko_waveforms=None,
@@ -582,3 +584,37 @@ class HandleDabDto:
         )
 
         return transistor_dto
+
+    @staticmethod
+    def generate_capacitor_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> CapacitorRequirements:
+        """Capacitor requirements.
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: capacitor requirements
+        :rtype: CapacitorRequirements
+        """
+        sorted_max_rms_angles, i_c1_max_rms_current_waveform = HandleDabDto.get_max_rms_waveform_capacitor(dab_dto, plot=False)
+        capacitor_1_requirements = CapacitorRequirements(
+            sorted_max_rms_angles=sorted_max_rms_angles,
+            i_max_rms_current_waveform=i_c1_max_rms_current_waveform,
+            time=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            v_max=np.max(dab_dto.input_config.mesh_v1)
+        )
+        return capacitor_1_requirements
+
+    @staticmethod
+    def generate_components_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
+        """
+        DAB component requirements (capacitors, inductor, transformer).
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: updated DAB circuit DTO
+        :rtype: d_dtos.DabCircuitDTO
+        """
+        capacitor_1_requirements = HandleDabDto.generate_capacitor_target_requirements(dab_dto)
+
+        dab_dto.component_requirements = d_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements])
+
+        return dab_dto
