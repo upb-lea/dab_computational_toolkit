@@ -72,7 +72,7 @@ class CapacitorSelection:
             if os.path.isfile(circuit_filepath):
                 # Read results from circuit optimization
                 circuit_dto = HandleDabDto.load_from_file(circuit_filepath)
-                optimization_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_trial_file, capacitor_study_data.study_name)
+                trial_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_trial_file, capacitor_study_data.study_name)
 
                 # catch mypy type issue
                 if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
@@ -90,7 +90,7 @@ class CapacitorSelection:
                     maximum_number_series_capacitors=toml_capacitor.maximum_number_series_capacitors,
                     capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
                     lifetime_h=toml_capacitor.lifetime_h,
-                    results_directory=optimization_directory)
+                    results_directory=trial_directory)
 
                 # Initialize the statistical data
                 stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,

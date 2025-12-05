@@ -9,7 +9,6 @@ import pickle
 # 3rd party libraries
 import numpy as np
 import transistordatabase as tdb
-from dct.topology.dab.dab_datasets_dtos import CapacitorRequirements
 from matplotlib import pyplot as plt
 
 # own libraries
@@ -21,6 +20,7 @@ from dct.topology.dab import dab_currents as dct_currents
 from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements
 
 logger = logging.getLogger(__name__)
 

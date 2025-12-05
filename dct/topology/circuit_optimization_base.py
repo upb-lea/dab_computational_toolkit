@@ -12,6 +12,7 @@ import optuna
 # Own libraries
 from dct.datasets_dtos import StudyData, FilterData
 from dct.server_ctl_dtos import ProgressData
+from dct.topology.component_requirements_from_circuit import ComponentRequirements
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")
@@ -186,5 +187,15 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :return: Pareto front html page
         :rtype: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_component_requirements() -> ComponentRequirements:
+        """Get all component requirements.
+
+        :return: Component requirements
+        :rtype: ComponentRequirements
         """
         pass

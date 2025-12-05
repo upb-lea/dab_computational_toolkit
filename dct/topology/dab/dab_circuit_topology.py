@@ -31,6 +31,7 @@ from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
+from dct.topology.component_requirements_from_circuit import ComponentRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -1288,3 +1289,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             self._progress_data.progress_status = ProgressStatus.Done
 
         return is_filter_available, issue_report
+
+    @staticmethod
+    def get_component_requirements() -> ComponentRequirements:
+        """Get all component requirements.
+
+        :return: Component requirements
+        :rtype: ComponentRequirements
+        """
+        return ComponentRequirements(capacitor_requirements=None)
