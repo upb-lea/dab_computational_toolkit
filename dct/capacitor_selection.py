@@ -21,7 +21,7 @@ from dct.topology.dab.dab_datasets import HandleDabDto
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
-from dct.topology.dab.dab_datasets_dtos import ComponentRequirements
+from dct.topology.component_requirements_from_circuit import ComponentRequirements
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
 from dct.capacitor_optimization_dtos import CapacitorResults
 
