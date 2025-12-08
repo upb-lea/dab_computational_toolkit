@@ -17,7 +17,7 @@ class StudyData:
         """
         Initialize the member variables.
 
-        If no member variables are provided, its will be initialized as empty strings, which corresponds to invald values.
+        If no member variables are provided, its will be initialized as empty strings, which corresponds to invalid values.
         :param optimization_directory: Drive location folder to the optimization data
         :type  optimization_directory: str
         :param circuit_study_name: Name of the study
@@ -26,11 +26,6 @@ class StudyData:
         self.study_name = study_name
         self.optimization_directory = optimization_directory
         
-    def set_study_data(self):
-        # Initialize the member variables
-        self.study_name = ""
-        self.optimization_directory = ""
-
     @staticmethod
     def check_study_data(study_path: str, study_name: str) -> bool:
         """
@@ -72,7 +67,7 @@ class FilterData:
         """
         Initialize the member variables.
 
-        If no member variables are provided, its will be initialized as empty strings, which corresponds to invald values.
+        If no member variables are provided, its will be initialized as empty strings, which corresponds to invalid values.
         :param filtered_list_pathname: drive location folder to the filtered data
         :type  filtered_list_pathname: str
         :param circuit_study_name: Name of the study
@@ -82,5 +77,3 @@ class FilterData:
         self.filtered_list_files: list[str] = []
         self.filtered_list_pathname: str = filtered_list_pathname
         self.circuit_study_name: str = circuit_study_name
-
-

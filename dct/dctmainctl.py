@@ -1428,13 +1428,8 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
-        circuit_results: circuit_dtos.CircuitParetoDabDesign = DabCircuitOptimization.load_stored_config(
-            self._circuit_optimization.circuit_study_data.optimization_directory,
-            self._circuit_optimization.circuit_study_data.study_name
-        )
-
-        ParetoPlots.plot_circuit_results(self._circuit_optimization.circuit_study_data, pre_summary_data.optimization_directory,
-                                         is_pre_summary=True)
+        ParetoPlots.plot_circuit_results(self._circuit_optimization.circuit_study_data,
+                                         pre_summary_data.optimization_directory, is_pre_summary=False)
         ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=True)
         ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=True)
         ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=True)
@@ -1491,9 +1486,8 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         self.generate_zip_archive(toml_prog_flow)
 
-        ParetoPlots.plot_circuit_results(self._circuit_optimization.circuit_study_data.optimization_directory,
+        ParetoPlots.plot_circuit_results(self._circuit_optimization.circuit_study_data,
                                          summary_data.optimization_directory, is_pre_summary=False)
-        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=False)

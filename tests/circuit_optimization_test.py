@@ -730,7 +730,7 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
     # Valid test case
     # Test value at lower boundary
     (0, TestCase.LowerBoundary, False),
-    # Test value at lower boundary
+    # Test value at upper boundary
     (1, TestCase.UpperBoundary, False),
     # Test value in between
     (2, TestCase.InBetween, False),

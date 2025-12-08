@@ -33,9 +33,8 @@ class TomlCData(BaseModel, ABC):
 class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
     """Represent the base class for electrical converter optimization depending on the topology."""
 
-    def __init__(self):
-        """ Initialize the member variables."""
-
+    def __init__(self) -> None:
+        """Initialize the member variables."""
         self.project_directory: str = ""
         self.circuit_study_data: StudyData = StudyData()
         self.filter_data: FilterData = FilterData()
@@ -51,7 +50,7 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type  sub_directory: Sub directory path
         """
         # Project directory
-        CircuitOptimizationBase.project_directory = project_directory
+        self.project_directory = project_directory
         # Circuit path
         self.circuit_study_data = StudyData(
             study_name=study_name, optimization_directory=os.path.join(project_directory, sub_directory, study_name))

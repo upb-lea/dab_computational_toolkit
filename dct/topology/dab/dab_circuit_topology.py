@@ -2,7 +2,6 @@
 # Python libraries
 import os
 import logging
-import json
 import pickle
 import datetime
 import threading
@@ -48,8 +47,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
     def __init__(self) -> None:
         """Initialize the configuration list for the circuit optimizations."""
-
-        # Call the constructor of the baseclass
+        # Call the constructor of the base class
         super().__init__()
         # Variable allocation
         self._c_lock_stat = threading.Lock()
@@ -69,33 +67,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Circuit optimization parameter
         self._toml_circuit: dab_tc.TomlDabCircuitParetoDesign | None = None
 
-    @staticmethod
-    def load_filepaths(project_directory: str) -> circuit_dtos.ParetoFilePaths:
-        """
-        Load file path of the subdirectories of the project.
-
-        :param project_directory: project directory file path
-        :type project_directory: str
-        :return: File path in a DTO
-        :rtype: circuit_dtos.ParetoFilePaths
-        """
-        filepath_config = f"{project_directory}/filepath_config.json"
-        if os.path.exists(filepath_config):
-            with open(filepath_config, 'r', encoding='utf8') as json_file:
-                loaded_file = json.load(json_file)
-        else:
-            raise ValueError("Project does not exist.")
-
-        file_path_dto = circuit_dtos.ParetoFilePaths(
-            circuit=loaded_file["circuit"],
-            capacitor_1=loaded_file["capacitor_1"],
-            capacitor_2=loaded_file["capacitor_2"],
-            transformer=loaded_file["transformer"],
-            inductor=loaded_file["inductor"],
-            heat_sink=loaded_file["heat_sink"]
-        )
-        return file_path_dto
-
     def save_config(self) -> None:
         """Save the actual configuration file as pickle file on the disk."""
         # Check if a configuration is loaded
@@ -103,26 +74,22 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             logger.warning("Circuit configuration is empty!\n    Configuration is not saved!")
             return
 
-        # filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
-
         os.makedirs(self.circuit_study_data.optimization_directory, exist_ok=True)
         with open(f"{self.circuit_study_data.optimization_directory}/{self._dab_config.circuit_study_name}.pkl", 'wb') as output:
             pickle.dump(self._dab_config, output, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_stored_config(circuit_project_directory: str, circuit_study_name: str) -> circuit_dtos.CircuitParetoDabDesign:
+    def load_stored_config(act_circuit_study_data: StudyData) -> circuit_dtos.CircuitParetoDabDesign:
         """
         Load pickle configuration file from disk.
 
-        :param circuit_project_directory: project directory
-        :type circuit_project_directory: str
-        :param circuit_study_name: name of the circuit study
-        :type circuit_study_name: str
+        :param act_circuit_study_data: Information about the circuit study name and study path
+        :type  act_circuit_study_data: StudyData
         :return: Configuration file as circuit_dtos.DabDesign
         :rtype: circuit_dtos.CircuitParetoDabDesign
         """
-        # filepaths = DabCircuitOptimization.load_filepaths(circuit_project_directory)
-        config_pickle_filepath = os.path.join(circuit_project_directory, f"{circuit_study_name}.pkl")
+        config_pickle_filepath = os.path.join(act_circuit_study_data.optimization_directory,
+                                              f"{act_circuit_study_data.study_name}.pkl")
 
         with open(config_pickle_filepath, 'rb') as pickle_file_data:
             loaded_pareto_dto = pickle.load(pickle_file_data)
@@ -759,8 +726,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                            "    No list is generated so that no optimization can be performed!")
             return
 
-        # filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
-
         circuit_study_sqlite_database = os.path.join(self.circuit_study_data.optimization_directory,
                                                      f"{self._dab_config.circuit_study_name}.sqlite3")
 
@@ -787,7 +752,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # check for differences with the old configuration file
         config_on_disk_filepath = f"{self.circuit_study_data.optimization_directory}/{self._dab_config.circuit_study_name}.pkl"
         if os.path.exists(config_on_disk_filepath):
-            config_on_disk = DabCircuitOptimization.load_stored_config(self._dab_config.project_directory, self._dab_config.circuit_study_name)
+            config_on_disk = DabCircuitOptimization.load_stored_config(self.circuit_study_data)
             difference = deepdiff.DeepDiff(config_on_disk, self._dab_config, ignore_order=True, significant_digits=10)
             if difference:
                 raise ValueError("Configuration file has changed from previous simulation.\n"
@@ -901,8 +866,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             logger.warning("Circuit configuration is not initialized!")
             return
 
-        # filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
-
         fig = optuna.visualization.plot_pareto_front(self._study_in_storage, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
         fig.update_layout(title=f"{self._dab_config.circuit_study_name} <br><sup>{self._dab_config.project_directory}</sup>")
         fig.write_html(
@@ -912,10 +875,13 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             fig.show()
 
     @staticmethod
-    def load_dab_dto_from_study(dab_config: circuit_dtos.CircuitParetoDabDesign, trial_number: int | None = None) -> d_dtos.DabCircuitDTO:
+    def load_dab_dto_from_study(act_study_data: StudyData, dab_config: circuit_dtos.CircuitParetoDabDesign,
+                                trial_number: int | None = None) -> d_dtos.DabCircuitDTO:
         """
         Load a DAB-DTO from an optuna study.
 
+        :param act_study_data: Information about the circuit study name and study path
+        :type  act_study_data: StudyData
         :param dab_config: DAB optimization configuration file
         :type dab_config: circuit_dtos.CircuitParetoDabDesign
         :param trial_number: trial number to load to the DTO
@@ -925,12 +891,11 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         if trial_number is None:
             raise NotImplementedError("needs to be implemented")
 
-        # filepaths = DabCircuitOptimization.load_filepaths(dab_config.project_directory)
-        database_url = DabCircuitOptimization.create_sqlite_database_url(dab_config)
+        database_url = DabCircuitOptimization.create_sqlite_database_url(act_study_data)
 
-        loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name,
+        loaded_study = optuna.create_study(study_name=act_study_data.study_name,
                                            storage=database_url, load_if_exists=True)
-        logger.info(f"The study '{dab_config.circuit_study_name}' contains {len(loaded_study.trials)} trials.")
+        logger.info(f"The study '{act_study_data.study_name}' contains {len(loaded_study.trials)} trials.")
         trials_dict = loaded_study.trials[trial_number].params
 
         fix_parameters = DabCircuitOptimization.calculate_fixed_parameters(dab_config)
@@ -1003,31 +968,31 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         return dab_dto_list
 
     @staticmethod
-    def study_to_df(dab_config: circuit_dtos.CircuitParetoDabDesign) -> pd.DataFrame:
+    def study_to_df(act_study_data: StudyData) -> pd.DataFrame:
         """Create a DataFrame from a study.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: circuit_dtos.CircuitParetoDabDesign
+        :param act_study_data: Information about the circuit study name and study path
+        :type  act_study_data: StudyData
+        :return: study result data transferred to Pandas dataframe
+        :rtype: pd.DataFrame
         """
-        # filepaths = DabCircuitOptimization.load_filepaths(dab_config.project_directory)
-        database_url = DabCircuitOptimization.create_sqlite_database_url(dab_config)
-        loaded_study = optuna.create_study(study_name=dab_config.circuit_study_name, storage=database_url, load_if_exists=True)
+        database_url = DabCircuitOptimization.create_sqlite_database_url(act_study_data)
+        loaded_study = optuna.create_study(study_name=act_study_data.study_name, storage=database_url, load_if_exists=True)
         df = loaded_study.trials_dataframe()
-        df.to_csv(f'{self.circuit_study_data.optimization_directory}/{dab_config.circuit_study_name}.csv')
+        df.to_csv(f'{act_study_data.optimization_directory}/{act_study_data.study_name}.csv')
         return df
 
     @staticmethod
-    def create_sqlite_database_url(dab_config: circuit_dtos.CircuitParetoDabDesign) -> str:
+    def create_sqlite_database_url(act_study_data: StudyData) -> str:
         """
         Create the DAB circuit optimization sqlite URL.
 
-        :param dab_config: DAB optimization configuration file
-        :type dab_config: circuit_dtos.CircuitParetoDabDesign
+        :param act_study_data: Information about the circuit study name and study path
+        :type  act_study_data: StudyData
         :return: SQLite URL
         :rtype: str
         """
-        # filepaths = DabCircuitOptimization.load_filepaths(dab_config.project_directory)
-        sqlite_storage_url = f"sqlite:///{self.circuit_study_data.optimization_directory}/{dab_config.circuit_study_name}.sqlite3"
+        sqlite_storage_url = f"sqlite:///{act_study_data.optimization_directory}/{act_study_data.study_name}.sqlite3"
         return sqlite_storage_url
 
     @staticmethod
@@ -1215,8 +1180,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         if not is_filter_available:
             logger.warning(issue_report)
             return is_filter_available, issue_report
-
-        # filepaths = DabCircuitOptimization.load_filepaths(self._dab_config.project_directory)
 
         df = self._study_in_storage.trials_dataframe()
         df.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._dab_config.circuit_study_name}.csv')
