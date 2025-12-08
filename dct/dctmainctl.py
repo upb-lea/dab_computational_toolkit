@@ -43,6 +43,8 @@ from dct.server_ctl import RequestCmd
 from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
+from dct.circuit_enums import TopologyEnum
+
 logger = logging.getLogger(__name__)
 
 class DctMainCtl:
@@ -973,8 +975,14 @@ class DctMainCtl:
         # Select topology
         # --------------------------
 
-        # Allocate and initialize circuit configuration (Currently the only topology. Has to be set later in program flow toml file
-        self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+        # Allocate and initialize circuit configuration
+        if toml_prog_flow.general.topology == TopologyEnum.DAB.name:
+            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+        elif toml_prog_flow.general.topology == TopologyEnum.SBC.name:
+            self._circuit_optimization = dct.topology.sbc.SbcCircuitOptimization()
+        else: # Serious programming error:
+            # Valid keywords has to be guaranteed by toml_checker.py
+            raise ValueError("Serious programming error 1b. Please write an issue!")
 
         # --------------------------
         # General toml control

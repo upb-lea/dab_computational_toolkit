@@ -52,6 +52,7 @@ class General(BaseModel):
     """General flow control information."""
 
     project_directory: str
+    topology: Literal['DAB', 'SBC']
 
 class Breakpoints(BaseModel):
     """Flow control breakpoints."""

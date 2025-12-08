@@ -7,3 +7,8 @@ class SamplingEnum(enum.Enum):
 
     meshgrid = "meshgrid"
     latin_hypercube = "latin_hypercube"
+
+class TopologyEnum(enum.Enum):
+    """Enum for the different topologies."""
+    DAB = "DAB"
+    SBC = "SBC"

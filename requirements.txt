@@ -9,6 +9,7 @@ fastapi
 itsdangerous
 python-multipart
 pydantic
+scikit-learn
 toml
 # libraries provided by LEA
 pygeckocircuits2
