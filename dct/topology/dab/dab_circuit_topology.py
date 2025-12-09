@@ -17,7 +17,7 @@ import deepdiff
 import dct.sampling as sampling
 
 # own libraries
-from dct.constant_path import SIMULATION_INPUT
+from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
 from dct.topology.dab import dab_datasets as d_sets
@@ -730,7 +730,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                                                      f"{self._dab_config.circuit_study_name}.sqlite3")
 
         # Assemble the name for c_oss_storage_directory
-        new_c_oss_directory: str = os.path.join(self.circuit_study_data.optimization_directory, "dab_circuits")
+        new_c_oss_directory: str = os.path.join(self.circuit_study_data.optimization_directory, GECKO_COMPONENT_MODELS_DIRECTORY)
         # Create c_oss_storage_directory, it not exists
         if not os.path.exists(new_c_oss_directory):
             os.makedirs(new_c_oss_directory)
@@ -764,7 +764,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Calculate the fixed parameters
         self._fixed_parameters = DabCircuitOptimization.calculate_fixed_parameters(self._dab_config)
         # Add path to losses
-        self._fixed_parameters.transistorlosses_filepath = os.path.join(self.circuit_study_data.optimization_directory, SIMULATION_INPUT)
+        self._fixed_parameters.transistorlosses_filepath = os.path.join(self.circuit_study_data.optimization_directory, GECKO_COMPONENT_MODELS_DIRECTORY)
 
         # Update statistical data
         with self._c_lock_stat:
