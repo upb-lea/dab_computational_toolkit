@@ -973,7 +973,7 @@ class DctMainCtl:
         # Select topology
         # --------------------------
 
-        # Allocate and initialize circuit configuration (Currently the only topology. Has to be set later in program flow toml file
+        # Allocate and initialize circuit configuration (Currently the only topology). Has to be set later in program flow toml file
         self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
 
         # --------------------------
@@ -1082,7 +1082,7 @@ class DctMainCtl:
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
             # Check if circuit is not skipped
-            if toml_prog_flow.circuit.calculation_mode == "skip":
+            if toml_prog_flow.circuit.calculation_mode != "skip":
                 raise ValueError(
                     f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
                     f"This causes that study {self._inductor_study_data.study_name} is not skippable!")
@@ -1126,7 +1126,7 @@ class DctMainCtl:
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
             # Check if circuit is not skipped
-            if toml_prog_flow.circuit.calculation_mode == "skip":
+            if toml_prog_flow.circuit.calculation_mode != "skip":
                 raise ValueError(
                     f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
                     f"This causes that study {self._transformer_study_data.study_name} is not skippable!")
@@ -1261,8 +1261,16 @@ class DctMainCtl:
 
             # Allocate and initialize circuit configuration
             self._capacitor_1_selection = CapacitorSelection()
+
+            capacitor_1_requirements_list = []
+            for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
+                circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
+                capacitor_requirements = self._circuit_optimization.get_capacitor_requirements(circuit_filepath)
+                capacitor_1_requirements_list.append(capacitor_requirements[0])
+
             self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, capacitor_study_data=self._capacitor_1_selection_data,
-                                                                       circuit_filter_data=self._circuit_optimization.filter_data)
+                                                                       circuit_filter_data=self._circuit_optimization.filter_data,
+                                                                       capacitor_requirements_list=capacitor_1_requirements_list)
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.capacitor_1.calculation_mode == "new":
@@ -1273,7 +1281,9 @@ class DctMainCtl:
                 os.makedirs(self._capacitor_1_selection_data.optimization_directory, exist_ok=True)
 
             # Perform circuit optimization
-            self._capacitor_1_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data, debug=toml_debug)
+            self._capacitor_1_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
+                                                             capacitor_requirements_list=capacitor_1_requirements_list,
+                                                             debug=toml_debug)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
@@ -1288,8 +1298,16 @@ class DctMainCtl:
 
             # Allocate and initialize circuit configuration
             self._capacitor_2_selection = CapacitorSelection()
+
+            capacitor_2_requirements_list = []
+            for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
+                circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
+                capacitor_requirements = self._circuit_optimization.get_capacitor_requirements(circuit_filepath)
+                capacitor_2_requirements_list.append(capacitor_requirements[1])
+
             self._capacitor_2_selection.initialize_capacitor_selection(toml_capacitor_2, capacitor_study_data=self._capacitor_2_selection_data,
-                                                                       circuit_filter_data=self._circuit_optimization.filter_data)
+                                                                       circuit_filter_data=self._circuit_optimization.filter_data,
+                                                                       capacitor_requirements_list=capacitor_2_requirements_list)
 
             # Check, if old study is to delete, if available
             if toml_prog_flow.capacitor_2.calculation_mode == "new":
@@ -1300,7 +1318,9 @@ class DctMainCtl:
                 os.makedirs(self._capacitor_2_selection_data.optimization_directory, exist_ok=True)
 
             # Perform circuit optimization
-            self._capacitor_2_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data, debug=toml_debug)
+            self._capacitor_2_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
+                                                             capacitor_requirements_list=capacitor_2_requirements_list,
+                                                             debug=toml_debug)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_2, "Capacitor 2 Pareto front calculated")

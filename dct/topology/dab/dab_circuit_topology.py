@@ -31,7 +31,7 @@ from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
-from dct.topology.component_requirements_from_circuit import ComponentRequirements
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements, ComponentRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -1266,7 +1266,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         dto_directory = CircuitOptimizationBase.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            print(type(smallest_dto_list[0]))
             dto = d_sets.HandleDabDto.generate_components_target_requirements(dto)
             d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
@@ -1291,10 +1290,21 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         return is_filter_available, issue_report
 
     @staticmethod
-    def get_component_requirements() -> ComponentRequirements:
-        """Get all component requirements.
+    def get_capacitor_requirements(circuit_filepath: str) -> list[CapacitorRequirements]:
+        """Get the capacitor requirements.
 
-        :return: Component requirements
-        :rtype: ComponentRequirements
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Capacitor Requirements
+        :rtype: CapacitorRequirements
         """
-        return ComponentRequirements(capacitor_requirements=None)
+        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
+        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded component requirements have wrong type.")
+
+        if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded capacitor requirements have wrong type.")
+
+        return circuit_dto.component_requirements.capacitor_requirements

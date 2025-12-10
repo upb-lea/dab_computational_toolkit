@@ -16,13 +16,10 @@ import tqdm
 import pecst
 from dct.capacitor_optimization_dtos import CapacitorOptimizationDto
 from dct.toml_checker import TomlCapacitorSelection, Debug
-# ASA Need to be moved to general class
-from dct.topology.dab.dab_datasets import HandleDabDto
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
-from dct.topology.component_requirements_from_circuit import ComponentRequirements
-from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements
 from dct.capacitor_optimization_dtos import CapacitorResults
 
 logger = logging.getLogger(__name__)
@@ -52,7 +49,8 @@ class CapacitorSelection:
             pass
         return True, ""
 
-    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, capacitor_study_data: StudyData, circuit_filter_data: FilterData) -> None:
+    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, capacitor_study_data: StudyData, circuit_filter_data: FilterData,
+                                       capacitor_requirements_list: list[CapacitorRequirements]) -> None:
         """
         Initialize the capacitor selection.
 
@@ -62,52 +60,49 @@ class CapacitorSelection:
         :type capacitor_study_data: StudyData
         :param circuit_filter_data: filtered circuit data
         :type circuit_filter_data: FilterData
+        :param capacitor_requirements_list: list with capacitor requirements
+        :type capacitor_requirements_list: list[CapacitorRequirements]
         """
         pecst.download_esr_csv_files()
 
         # Create the io_config_list for all trials
-        for circuit_trial_file in circuit_filter_data.filtered_list_files:
-            circuit_filepath = os.path.join(circuit_filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-            # Check filename
-            if os.path.isfile(circuit_filepath):
-                # Read results from circuit optimization
-                circuit_dto = HandleDabDto.load_from_file(circuit_filepath)
-                trial_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_trial_file, capacitor_study_data.study_name)
+        for count, capacitor_requirements in enumerate(capacitor_requirements_list):
 
-                # catch mypy type issue
-                if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
-                    raise TypeError("circuit DTO file is incomplete.")
+            circuit_trial_file = circuit_filter_data.filtered_list_files[count]
+            trial_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_trial_file, capacitor_study_data.study_name)
 
-                # generate capacitor requirements from circuit simulation data
-                capacitor_requirements_dto = pecst.CapacitorRequirements(
-                    maximum_peak_to_peak_voltage_ripple=toml_capacitor.maximum_peak_to_peak_voltage_ripple,
-                    current_waveform_for_op_max_current=np.array([circuit_dto.component_requirements.capacitor_requirements[0].time,
-                                                                  circuit_dto.component_requirements.capacitor_requirements[0].i_max_rms_current_waveform]),
-                    v_dc_for_op_max_voltage=circuit_dto.component_requirements.capacitor_requirements[0].v_max,
-                    temperature_ambient=toml_capacitor.temperature_ambient,
-                    voltage_safety_margin_percentage=toml_capacitor.voltage_safety_margin_percentage,
-                    capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
-                    maximum_number_series_capacitors=toml_capacitor.maximum_number_series_capacitors,
-                    capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
-                    lifetime_h=toml_capacitor.lifetime_h,
-                    results_directory=trial_directory)
+            # catch mypy type issue
+            if not isinstance(capacitor_requirements, CapacitorRequirements):
+                raise TypeError("circuit DTO file is incomplete.")
 
-                # Initialize the statistical data
-                stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
-                                                            progress_status=ProgressStatus.Idle)
+            # generate capacitor requirements from circuit simulation data
+            capacitor_requirements_dto = pecst.CapacitorRequirements(
+                maximum_peak_to_peak_voltage_ripple=toml_capacitor.maximum_peak_to_peak_voltage_ripple,
+                current_waveform_for_op_max_current=np.array([capacitor_requirements.time_vec,
+                                                              capacitor_requirements.current_vec]),
+                v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
+                temperature_ambient=toml_capacitor.temperature_ambient,
+                voltage_safety_margin_percentage=toml_capacitor.voltage_safety_margin_percentage,
+                capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
+                maximum_number_series_capacitors=toml_capacitor.maximum_number_series_capacitors,
+                capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
+                lifetime_h=toml_capacitor.lifetime_h,
+                results_directory=trial_directory)
 
-                capacitor_dto = CapacitorOptimizationDto(
-                    circuit_filtered_point_filename=circuit_trial_file,
-                    progress_data=copy.deepcopy(stat_data_init),
-                    capacitor_optimization_dto=capacitor_requirements_dto)
+            # Initialize the statistical data
+            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
+                                                        progress_status=ProgressStatus.Idle)
 
-                self._optimization_config_list.append(capacitor_dto)
-            else:
-                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
+            capacitor_optimization_dto = CapacitorOptimizationDto(
+                circuit_filtered_point_filename=circuit_trial_file,
+                progress_data=copy.deepcopy(stat_data_init),
+                capacitor_optimization_dto=capacitor_requirements_dto)
+
+            self._optimization_config_list.append(capacitor_optimization_dto)
 
     @staticmethod
     def _start_optimization(circuit_filtered_point_file: str, act_cst_config: pecst.CapacitorRequirements, filter_data: FilterData,
-                            debug: Debug) -> int:
+                            capacitor_requirements: CapacitorRequirements, debug: Debug) -> int:
         # capacitor requirements
         _, c_db_df_list = pecst.select_capacitors(act_cst_config)
 
@@ -123,13 +118,6 @@ class CapacitorSelection:
             df_filtered = df_filtered.iloc[:debug.capacitor_1.number_working_point_max]
         # save Pareto front designs (reduced in case of active debugging)
         df_filtered.to_csv(f"{act_cst_config.results_directory}/results_filtered.csv")
-
-        # Load configuration
-        circuit_dto = HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
-
-        # sweep through all current waveforms
-        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
         all_operation_point_ordering_codes_list = df_filtered["ordering code"].to_numpy()
         all_operation_point_volume_list = df_filtered["volume_total"].to_numpy()
@@ -154,19 +142,18 @@ class CapacitorSelection:
             logger.debug(f"ordering_code: \n"
                          f"    {df_geometry_re_simulation_number.head()}")
 
-            loss_total_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+            loss_total_array = np.full_like(capacitor_requirements.current_array[:, :, :, 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, "01_circuit_dtos_incl_capacitor_loss")
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                logger.info(f"Re-simulation of {ordering_code} already exists. Skip.")
             else:
-                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-                    time, unique_indices = np.unique(full_angle_waveform_from_angles(
-                                                     angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-                    current = full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                for vec_vvp in np.ndindex(capacitor_requirements.current_array[:, :, :, 0].shape):
+                    time = capacitor_requirements.time_array[vec_vvp]
+                    current = capacitor_requirements.current_array[vec_vvp]
 
                     current_waveform = np.array([time, current])
                     logger.debug(f"{current_waveform=}")
@@ -199,7 +186,8 @@ class CapacitorSelection:
         # returns the number of filtered results
         return number_of_filtered_points
 
-    def optimization_handler(self, filter_data: FilterData, debug: Debug) -> None:
+    def optimization_handler(self, filter_data: FilterData, capacitor_requirements_list: list[CapacitorRequirements],
+                             debug: Debug) -> None:
         """
         Control the multi simulation processes.
 
@@ -207,6 +195,8 @@ class CapacitorSelection:
         :type  filter_data: dct.FilterData
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
+        :param capacitor_requirements_list: list with capacitor requirements
+        :type capacitor_requirements_list: list[CapacitorRequirements]
         """
         number_cpus = cpu_count()
 
@@ -218,10 +208,13 @@ class CapacitorSelection:
                     if count == number_cpus:
                         break
 
+                capacitor_requirements = capacitor_requirements_list[count]
+
                 parameters.append((
                     act_optimization_configuration.circuit_filtered_point_filename,
                     act_optimization_configuration.capacitor_optimization_dto,
                     filter_data,
+                    capacitor_requirements,
                     debug
                 ))
 
