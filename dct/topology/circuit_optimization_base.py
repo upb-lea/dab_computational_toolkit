@@ -12,6 +12,7 @@ import optuna
 # Own libraries
 from dct.datasets_dtos import StudyData, FilterData
 from dct.server_ctl_dtos import ProgressData
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")
@@ -184,5 +185,17 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :return: Pareto front html page
         :rtype: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_capacitor_requirements(circuit_filepath: str) -> list[CapacitorRequirements]:
+        """Get the capacitor requirements.
+
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Capacitor requirements
+        :rtype: CapacitorRequirements
         """
         pass
