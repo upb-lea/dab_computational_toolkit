@@ -11,6 +11,7 @@ import pandas as pd
 # own libraries
 import dct
 import dct.topology.dab.dab_generalplotsettings as gps
+from dct.datasets_dtos import StudyData
 import hct
 import femmt as fmt
 from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization
@@ -96,26 +97,26 @@ class ParetoPlots:
         return files
 
     @staticmethod
-    def plot_circuit_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
+    def plot_circuit_results(circuit_study_data: StudyData, summary_directory: str, is_pre_summary: bool = False) -> None:
         """
         Plot the results of the circuit optimization in the Pareto plane.
 
-        :param toml_prog_flow: Flow control toml file
-        :type toml_prog_flow: tc.FlowControl
+        :param circuit_study_data: Information about the circuit study name and study path
+        :type  circuit_study_data: StudyData
+        :param summary_directory: Path of the summary directory
+        :type  summary_directory: str
         :param is_pre_summary: True to store the results in the pre_summary directory
         :type is_pre_summary: bool
         """
         # load circuit configuration file
-        dab_config = DabCircuitOptimization.load_stored_config(
-            toml_prog_flow.general.project_directory, toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(
-                ".toml", ""))
+        dab_config = DabCircuitOptimization.load_stored_config(circuit_study_data)
         # generate circuit dataframe
-        df_circuit = DabCircuitOptimization.study_to_df(dab_config)
+        df_circuit = DabCircuitOptimization.study_to_df(circuit_study_data)
 
         if is_pre_summary:
-            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, "circuit")
+            fig_name = os.path.join(summary_directory, "circuit")
         else:
-            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "circuit")
+            fig_name = os.path.join(summary_directory, "circuit")
 
         ParetoPlots.generate_pareto_plot([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[gps.colors()["black"]], alpha=0.5,
                                          x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",

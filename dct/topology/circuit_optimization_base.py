@@ -33,13 +33,13 @@ class TomlCData(BaseModel, ABC):
 class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
     """Represent the base class for electrical converter optimization depending on the topology."""
 
-    # Study information
-    project_directory: str
-    circuit_study_data: StudyData
-    filter_data: FilterData
+    def __init__(self) -> None:
+        """Initialize the member variables."""
+        self.project_directory: str = ""
+        self.circuit_study_data: StudyData = StudyData()
+        self.filter_data: FilterData = FilterData()
 
-    @classmethod
-    def init_study_information(cls, study_name: str, project_directory: str, sub_directory: str) -> None:
+    def init_study_information(self, study_name: str, project_directory: str, sub_directory: str) -> None:
         """Initialize the study information.
 
         :param study_name: Name of the study
@@ -50,33 +50,31 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type  sub_directory: Sub directory path
         """
         # Project directory
-        CircuitOptimizationBase.project_directory = project_directory
+        self.project_directory = project_directory
         # Circuit path
-        CircuitOptimizationBase.circuit_study_data = StudyData(
+        self.circuit_study_data = StudyData(
             study_name=study_name, optimization_directory=os.path.join(project_directory, sub_directory, study_name))
 
         # Filtered data path and list
-        CircuitOptimizationBase.filter_data = FilterData(
-            circuit_study_name=CircuitOptimizationBase.circuit_study_data.study_name, filtered_list_files=[],
-            filtered_list_pathname=os.path.join(CircuitOptimizationBase.circuit_study_data.optimization_directory,
+        self.filter_data = FilterData(
+            circuit_study_name=self.circuit_study_data.study_name,
+            filtered_list_pathname=os.path.join(self.circuit_study_data.optimization_directory,
                                                 "filtered_results")
         )
 
-    @classmethod
-    def is_circuit_optimization_skippable(cls) -> tuple[bool, str]:
+    def is_circuit_optimization_skippable(self) -> tuple[bool, str]:
         """Control procedure of skippable optimization check.
 
         :return: True, if the optimization is skippable and empty string or False and report of the issues
         :rtype: tuple[bool, str]
         """
-        if CircuitOptimizationBase.circuit_study_data is None and CircuitOptimizationBase.filter_data is None:
+        if self.circuit_study_data is None and self.filter_data is None:
             # The method to initialize study information needs to be called first.
             # This has to be guaranteed by the workflow
             return False, "Serious programming error 1b. Please write an issue!"
 
         # Check, if all data are available
-        is_skipable, issue_report = cls._is_optimization_skippable(
-            CircuitOptimizationBase.circuit_study_data, CircuitOptimizationBase.filter_data)
+        is_skipable, issue_report = self.__class__._is_optimization_skippable(self.circuit_study_data, self.filter_data)
 
         # return result
         return is_skipable, issue_report

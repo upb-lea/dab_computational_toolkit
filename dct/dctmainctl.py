@@ -1082,7 +1082,7 @@ class DctMainCtl:
         # Check, if inductor optimization is to skip
         if toml_prog_flow.inductor.calculation_mode == "skip":
             # Check if circuit is not skipped
-            if toml_prog_flow.circuit.calculation_mode == "skip":
+            if toml_prog_flow.circuit.calculation_mode != "skip":
                 raise ValueError(
                     f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
                     f"This causes that study {self._inductor_study_data.study_name} is not skippable!")
@@ -1126,7 +1126,7 @@ class DctMainCtl:
         # Check, if transformer optimization is to skip
         if toml_prog_flow.transformer.calculation_mode == "skip":
             # Check if circuit is not skipped
-            if toml_prog_flow.circuit.calculation_mode == "skip":
+            if toml_prog_flow.circuit.calculation_mode != "skip":
                 raise ValueError(
                     f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
                     f"This causes that study {self._transformer_study_data.study_name} is not skippable!")
@@ -1428,7 +1428,8 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
-        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=True)
+        ParetoPlots.plot_circuit_results(self._circuit_optimization.circuit_study_data,
+                                         pre_summary_data.optimization_directory, is_pre_summary=False)
         ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=True)
         ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=True)
         ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=True)
@@ -1485,7 +1486,8 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         self.generate_zip_archive(toml_prog_flow)
 
-        ParetoPlots.plot_circuit_results(toml_prog_flow, is_pre_summary=False)
+        ParetoPlots.plot_circuit_results(self._circuit_optimization.circuit_study_data,
+                                         summary_data.optimization_directory, is_pre_summary=False)
         ParetoPlots.plot_inductor_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_transformer_results(toml_prog_flow, is_pre_summary=False)
         ParetoPlots.plot_heat_sink_results(toml_prog_flow, is_pre_summary=False)
