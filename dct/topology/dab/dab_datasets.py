@@ -20,6 +20,8 @@ from dct.topology.dab import dab_currents as dct_currents
 from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
+from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +151,7 @@ class HandleDabDto:
             calc_modulation=modulation_parameters,
             calc_currents=calc_currents,
             calc_losses=calc_losses,
+            component_requirements=None,
             gecko_additional_params=gecko_additional_params,
             gecko_results=None,
             gecko_waveforms=None,
@@ -443,7 +446,7 @@ class HandleDabDto:
         return sorted_max_angles, i_l1_max_current_waveform
 
     @staticmethod
-    def get_max_rms_waveform_capacitor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def get_max_rms_waveform_capacitor_1(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Get the capacitor waveform with the maximum RMS current out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -451,7 +454,7 @@ class HandleDabDto:
         :type dab_dto: d_dtos.DabCircuitDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
-        :return: sorted_max_rms_angles, i_hf1_max_rms_current_waveform, All as a numpy array.
+        :return: angle_vec, i_hf1_max_rms_current_waveform, All as a numpy array.
         :rtype: List[np.ndarray]
         """
         i_c1_sorted = np.transpose(dab_dto.calc_currents.i_hf_1_sorted, (1, 2, 3, 0))
@@ -481,6 +484,44 @@ class HandleDabDto:
         return sorted_max_rms_angles, i_c1_max_rms_current_waveform
 
     @staticmethod
+    def get_max_rms_waveform_capacitor_2(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Get the capacitor waveform with the maximum RMS current out of the three-dimensional simulation array (v_1, v_2, P).
+
+        :param dab_dto: DAB data transfer object (DTO)
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :param plot: True to plot the results, mostly for understanding and debugging
+        :type plot: bool
+        :return: angle_vec, i_hf1_max_rms_current_waveform, All as a numpy array.
+        :rtype: List[np.ndarray]
+        """
+        i_c2_sorted = np.transpose(dab_dto.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))
+        i_c2_rms = dab_dto.calc_currents.i_hf_2_rms
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        max_index = (0, 0, 0)
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            max_index = vec_vvp if np.max(i_c2_rms[vec_vvp]) > np.max(i_c2_rms[max_index]) else max_index  # type: ignore
+            if plot:
+                plt.plot(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]),
+                         d_waveforms.full_current_waveform_from_currents(i_c2_sorted[vec_vvp]), color='gray')
+
+        i_c2_max_rms_current_waveform = i_c2_sorted[max_index]
+
+        sorted_max_rms_angles, unique_indices = np.unique(d_waveforms.full_angle_waveform_from_angles(angles_rad_sorted[max_index]), return_index=True)
+        i_c2_max_rms_current_waveform = d_waveforms.full_current_waveform_from_currents(i_c2_max_rms_current_waveform)[unique_indices]
+
+        if plot:
+            plt.plot(sorted_max_rms_angles, i_c2_max_rms_current_waveform, color='red', label='peak current full waveform')
+            plt.grid()
+            plt.xlabel('Angle in rad')
+            plt.ylabel('Current in A')
+            plt.legend()
+            plt.show()
+
+        return sorted_max_rms_angles, i_c2_max_rms_current_waveform
+
+    @staticmethod
     def export_transformer_target_parameters_dto(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.TransformerTargetParameters:
         """
         Export the optimization parameters for the transformer optimization (inside FEMMT).
@@ -494,7 +535,7 @@ class HandleDabDto:
         """
         # calculate the full 2pi waveform from the four given DAB currents
         sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = HandleDabDto.get_max_peak_waveform_transformer(dab_dto, plot=False)
-        # transfer 2pi periodic time into a real time
+        # transfer 2pi periodic time_vec into a real time_vec
         time = sorted_max_angles / 2 / np.pi / dab_dto.input_config.fs
 
         return d_dtos.TransformerTargetParameters(
@@ -582,3 +623,112 @@ class HandleDabDto:
         )
 
         return transistor_dto
+
+    @staticmethod
+    def generate_capacitor_1_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> CapacitorRequirements:
+        """Capacitor 1 requirements.
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: capacitor requirements
+        :rtype: CapacitorRequirements
+        """
+        # get the single maximum operating point
+        sorted_max_rms_angles, i_c1_max_rms_current_waveform = HandleDabDto.get_max_rms_waveform_capacitor_1(dab_dto, plot=False)
+
+        # get all current waveforms for all operating points
+        i_l1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        dimension_0 = np.shape(i_l1_sorted)[0]
+        dimension_1 = np.shape(i_l1_sorted)[1]
+        dimension_2 = np.shape(i_l1_sorted)[2]
+        dimension_3 = np.shape(i_l1_sorted)[3]
+
+        time_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+        current_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            time = full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / dab_dto.input_config.fs
+
+            # needs np.unique( , return_index=True)
+            current = full_current_waveform_from_currents(i_l1_sorted[vec_vvp])  # [unique_indices]
+
+            time_array[vec_vvp] = time
+            current_array[vec_vvp] = current
+
+        time_array_resorted = np.transpose(time_array, (0, 1, 2, 3))
+        current_array_resorted = np.transpose(current_array, (0, 1, 2, 3))
+
+        capacitor_1_requirements = CapacitorRequirements(
+            current_vec=i_c1_max_rms_current_waveform,
+            time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            time_array=time_array_resorted,
+            current_array=current_array_resorted,
+            v_dc_max=np.max(dab_dto.input_config.mesh_v1),
+            study_name=""
+        )
+        return capacitor_1_requirements
+
+    @staticmethod
+    def generate_capacitor_2_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> CapacitorRequirements:
+        """Capacitor 2 requirements.
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: capacitor requirements
+        :rtype: CapacitorRequirements
+        """
+        # get the single maximum operating point
+        sorted_max_rms_angles, i_c2_max_rms_current_waveform = HandleDabDto.get_max_rms_waveform_capacitor_2(dab_dto, plot=False)
+
+        # get all current waveforms for all operating points
+        i_hf2_sorted = np.transpose(dab_dto.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        dimension_0 = np.shape(i_hf2_sorted)[0]
+        dimension_1 = np.shape(i_hf2_sorted)[1]
+        dimension_2 = np.shape(i_hf2_sorted)[2]
+        dimension_3 = np.shape(i_hf2_sorted)[3]
+
+        time_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+        current_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            time = full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / dab_dto.input_config.fs
+
+            # needs np.unique( , return_index=True)
+            current = full_current_waveform_from_currents(i_hf2_sorted[vec_vvp])  # [unique_indices]
+
+            time_array[vec_vvp] = time
+            current_array[vec_vvp] = current
+
+        time_array_resorted = np.transpose(time_array, (0, 1, 2, 3))
+        current_array_resorted = np.transpose(current_array, (0, 1, 2, 3))
+
+        capacitor_2_requirements = CapacitorRequirements(
+            current_vec=i_c2_max_rms_current_waveform,
+            time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            time_array=time_array_resorted,
+            current_array=current_array_resorted,
+            v_dc_max=np.max(dab_dto.input_config.mesh_v1),
+            study_name=""
+        )
+        return capacitor_2_requirements
+
+    @staticmethod
+    def generate_components_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
+        """
+        DAB component requirements (capacitors, inductor, transformer).
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: updated DAB circuit DTO
+        :rtype: d_dtos.DabCircuitDTO
+        """
+        capacitor_1_requirements = HandleDabDto.generate_capacitor_1_target_requirements(dab_dto)
+        capacitor_2_requirements = HandleDabDto.generate_capacitor_2_target_requirements(dab_dto)
+
+        dab_dto.component_requirements = d_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements, capacitor_2_requirements])
+
+        return dab_dto

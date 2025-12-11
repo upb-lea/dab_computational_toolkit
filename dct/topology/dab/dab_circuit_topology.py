@@ -32,6 +32,7 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
+from dct.topology.component_requirements_from_circuit import CapacitorRequirements, ComponentRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -965,6 +966,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 transistor_dto_2=transistor_dto_2,
                 lossfilepath=self._fixed_parameters.transistorlosses_filepath
             )
+
+            dab_dto = d_sets.HandleDabDto.generate_components_target_requirements(dab_dto)
+
             dab_dto_list.append(dab_dto)
 
         return dab_dto_list
@@ -1134,7 +1138,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         dto_directory = self.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            # dto = d_sets.HandleDabDto.add_gecko_simulation_results(dto, get_waveforms=True)
+            dto = d_sets.HandleDabDto.generate_components_target_requirements(dto)
             d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list
@@ -1156,6 +1160,26 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             self._progress_data.progress_status = ProgressStatus.Done
 
         return is_filter_available, issue_report
+
+    @staticmethod
+    def get_capacitor_requirements(circuit_filepath: str) -> list[CapacitorRequirements]:
+        """Get the capacitor requirements.
+
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Capacitor Requirements
+        :rtype: CapacitorRequirements
+        """
+        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
+        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded component requirements have wrong type.")
+
+        if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded capacitor requirements have wrong type.")
+
+        return circuit_dto.component_requirements.capacitor_requirements
 
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:
