@@ -9,12 +9,13 @@ from matplotlib import pyplot as plt
 import pandas as pd
 
 # own libraries
-import dct
-import dct.topology.dab.dab_generalplotsettings as gps
+import dct.generalplotsettings as gps
 from dct.datasets_dtos import StudyData
 import hct
 import femmt as fmt
-from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization
+from dct.datasets_dtos import PlotData
+from dct.topology.circuit_optimization_base import CircuitOptimizationBase
+
 
 class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
@@ -82,66 +83,45 @@ class ParetoPlots:
             pickle.dump(fig, f)
 
     @staticmethod
-    def read_circuit_numbers_from_filestructure(toml_prog_flow: dct.FlowControl) -> list[str]:
-        """
-        Get the filtered circuit numbers from the "filtered_results" folder.
-
-        :param toml_prog_flow: Flow control toml file
-        :type toml_prog_flow: tc.FlowControl
-        :return: List with number of filtered circuit simulations
-        :rtype: list[int]
-        """
-        for _, _, files in os.walk(os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.circuit.subdirectory,
-                                   toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""), "filtered_results")):
-            files = [file.replace(".pkl", "") for file in files]
-        return files
-
-    @staticmethod
-    def plot_circuit_results(circuit_study_data: StudyData, summary_directory: str, is_pre_summary: bool = False) -> None:
+    def plot_circuit_results(circuit_optimization: CircuitOptimizationBase, summary_directory: str) -> None:
         """
         Plot the results of the circuit optimization in the Pareto plane.
 
-        :param circuit_study_data: Information about the circuit study name and study path
-        :type  circuit_study_data: StudyData
-        :param summary_directory: Path of the summary directory
+        :param circuit_optimization: circuit optimization class
+        :type  circuit_optimization: CircuitOptimizationBase
+        :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
-        :param is_pre_summary: True to store the results in the pre_summary directory
-        :type is_pre_summary: bool
         """
-        # load circuit configuration file
-        dab_config = DabCircuitOptimization.load_stored_config(circuit_study_data)
-        # generate circuit dataframe
-        df_circuit = DabCircuitOptimization.study_to_df(circuit_study_data)
+        # Set the target directory
+        fig_name = os.path.join(summary_directory, "circuit")
 
-        if is_pre_summary:
-            fig_name = os.path.join(summary_directory, "circuit")
-        else:
-            fig_name = os.path.join(summary_directory, "circuit")
+        # Read data from circuit
+        plot_data: PlotData = circuit_optimization.get_circuit_plot_data(circuit_optimization.circuit_study_data)
 
-        ParetoPlots.generate_pareto_plot([df_circuit["values_0"]], [df_circuit["values_1"]], color_list=[gps.colors()["black"]], alpha=0.5,
-                                         x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
-                                         label_list=[None], fig_name_path=fig_name)
+        ParetoPlots.generate_pareto_plot(plot_data.x_values_list, plot_data.y_values_list, color_list=plot_data.color_list,
+                                         alpha=plot_data.alpha, x_label=plot_data.x_label, y_label=plot_data.y_label,
+                                         label_list=plot_data.label_list, fig_name_path=fig_name)
 
     @staticmethod
-    def plot_inductor_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
+    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
         """
         Plot the results of the inductor optimization in the Pareto plane.
 
-        :param toml_prog_flow: Flow control toml file
-        :type toml_prog_flow: tc.FlowControl
-        :param is_pre_summary: True to store the results in the pre_summary directory
-        :type is_pre_summary: bool
+        :param inductor_study_data: Information about the inductor study name and study path
+        :type  inductor_study_data: StudyData
+        :param filtered_list_files: List of filtered circuit design names
+        :type  filtered_list_files: list[str]
+        :param summary_directory: Path of the summary directory (pre-summary or summary directory)
+        :type  summary_directory: str
         """
-        circuit_numbers = ParetoPlots.read_circuit_numbers_from_filestructure(toml_prog_flow)
-
-        project_name = toml_prog_flow.general.project_directory
-        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
-        inductor_study_name = toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", "")
-
-        for circuit_number in circuit_numbers:
-
-            file_path = f"/{project_name}/{toml_prog_flow.inductor.subdirectory}/{circuit_study_name}/{circuit_number}/{inductor_study_name}"
-            config_pickle_filepath = os.path.join(file_path, f"{inductor_study_name}.pkl")
+        # Loop over all filtered circuit designs
+        for circuit_number in filtered_list_files:
+            # Assemble file path for actual circuit design
+            file_path = os.path.join(inductor_study_data.optimization_directory, circuit_number,
+                                     inductor_study_data.study_name)
+            # Assemble pkl-file name
+            config_pickle_filepath = os.path.join(file_path, f"{inductor_study_data.study_name}.pkl")
+            # Load data from pkl-file
             config = fmt.optimization.InductorOptimization.ReluctanceModel.load_config(config_pickle_filepath)
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(config)
 
@@ -166,34 +146,33 @@ class ParetoPlots:
             y_scale_min = 0.9 * df_filtered["values_1"].min()
             y_scale_max = 1.1 * df_filtered["values_1"].max()
 
-            if is_pre_summary:
-                fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, f"inductor_c{circuit_number}")
-            else:
-                fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, f"inductor_c{circuit_number}")
+            # Set the target directory
+            fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}")
 
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                              y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
-    def plot_transformer_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
+    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
         """
         Plot the results of the transformer optimization in the Pareto plane.
 
-        :param toml_prog_flow: Flow control toml file
-        :type toml_prog_flow: tc.FlowControl
-        :param is_pre_summary: True to store the results in the pre_summary directory
-        :type is_pre_summary: bool
+        :param transformer_study_data: Information about the transformer study name and study path
+        :type  transformer_study_data: StudyData
+        :param filtered_list_files: List of filtered circuit design names
+        :type  filtered_list_files: list[str]
+        :param summary_directory: Path of the summary directory (pre-summary or summary directory)
+        :type  summary_directory: str
         """
-        circuit_numbers = ParetoPlots.read_circuit_numbers_from_filestructure(toml_prog_flow)
-
-        project_name = toml_prog_flow.general.project_directory
-        circuit_study_name = toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")
-        transformer_study_name = toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", "")
-
-        for circuit_number in circuit_numbers:
-            file_path = f"/{project_name}/{toml_prog_flow.transformer.subdirectory}/{circuit_study_name}/{circuit_number}/{transformer_study_name}"
-            config_pickle_filepath = os.path.join(file_path, f"{transformer_study_name}.pkl")
+        # Loop over all filtered circuit designs
+        for circuit_number in filtered_list_files:
+            # Assemble file path for actual circuit design
+            file_path = os.path.join(transformer_study_data.optimization_directory, circuit_number,
+                                     transformer_study_data.study_name)
+            # Assemble pkl-file name
+            config_pickle_filepath = os.path.join(file_path, f"{transformer_study_data.study_name}.pkl")
+            # Load data from pkl-file
             config = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.load_config(config_pickle_filepath)
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(config)
 
@@ -218,24 +197,22 @@ class ParetoPlots:
             y_scale_min = 0.9 * df_filtered["values_1"].min()
             y_scale_max = 1.1 * df_filtered["values_1"].max()
 
-            if is_pre_summary:
-                fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, f"transformer_c{circuit_number}")
-            else:
-                fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, f"transformer_c{circuit_number}")
+            # Set the target directory
+            fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}")
 
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                              y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
-    def plot_heat_sink_results(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
+    def plot_heat_sink_results(heat_sink_study_data: StudyData, summary_directory: str) -> None:
         """
         Plot the results of the heat sink optimization in the Pareto plane.
 
-        :param toml_prog_flow: Flow control toml file
-        :type toml_prog_flow: tc.FlowControl
-        :param is_pre_summary: True to store the results in the pre_summary directory
-        :type is_pre_summary: bool
+        :param heat_sink_study_data: Information about the heat sink study name and study path
+        :type  heat_sink_study_data: StudyData
+        :param summary_directory: Path of the summary directory (pre-summary or summary directory)
+        :type  summary_directory: str
         """
         # factor definitions
         factor_m2_cm2 = 10000
@@ -245,10 +222,10 @@ class ParetoPlots:
         color_list = [gps.colors()["black"], gps.colors()["red"], gps.colors()["blue"], gps.colors()["green"]]
         a_min_m2_list = [0.002, 0.003, 0.005]
 
-        study_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")
-        heat_sink_pkl_path = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
-                                          study_name, f"{study_name}.pkl")
-
+        # Assemble heat sink pkl-file name
+        heat_sink_pkl_path = os.path.join(heat_sink_study_data.optimization_directory,
+                                          f"{heat_sink_study_data.study_name}.pkl")
+        # Load data from pkl-file
         config = hct.Optimization.load_config(heat_sink_pkl_path)
         df_heat_sink = hct.Optimization.study_to_df(config)
 
@@ -268,10 +245,8 @@ class ParetoPlots:
             y_values_list.append(df_a_min["values_1"])
             legend_list.append(f"{int(area_min * factor_m2_cm2)} cm²")
 
-        if is_pre_summary:
-            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, "heat_sink")
-        else:
-            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "heat_sink")
+        # Set the target directory
+        fig_name = os.path.join(summary_directory, "heat_sink")
 
         # plot all the different heat sink areas
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha=0.5,
@@ -280,22 +255,22 @@ class ParetoPlots:
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary(toml_prog_flow: dct.FlowControl, is_pre_summary: bool = False) -> None:
+    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
-        :param toml_prog_flow: Flow control toml file
-        :type toml_prog_flow: tc.FlowControl
-        :param is_pre_summary: True to store the results in the pre_summary directory
-        :type is_pre_summary: bool
+        :param summary_study_data: Information about the summary study name and study path
+        :type  summary_study_data: StudyData
+        :param circuit_optimization: circuit optimization class
+        :type  circuit_optimization: CircuitOptimizationBase
         """
-        if is_pre_summary:
-            df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.pre_summary.subdirectory}/df_w_hs.csv")
-        else:
-            df = pd.read_csv(f"{toml_prog_flow.general.project_directory}/{toml_prog_flow.summary.subdirectory}/df_w_hs.csv")
+        # Assemble summary data csv-file name
+        summary_data_csv_file = os.path.join(summary_study_data.optimization_directory, "df_w_hs.csv")
+        # Load data frame from csv-file
+        df = pd.read_csv(summary_data_csv_file)
 
-        df_filtered = DabCircuitOptimization.filter_df(df, x="total_volume", y="total_mean_loss",
-                                                       factor_min_dc_losses=0.001, factor_max_dc_losses=10)
+        df_filtered = circuit_optimization.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                     factor_min_dc_losses=0.001, factor_max_dc_losses=10)
 
         gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
@@ -303,10 +278,8 @@ class ParetoPlots:
         y_values_list = [df["total_mean_loss"], df_filtered["total_mean_loss"]]
         label_list: list[str | None] = ["Design", "Best designs"]
 
-        if is_pre_summary:
-            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.pre_summary.subdirectory, "summary")
-        else:
-            fig_name = os.path.join(toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory, "summary")
+        # Set the target directory
+        fig_name = os.path.join(summary_study_data.optimization_directory, "summary")
 
         x_scale_min = 0.9 * df_filtered["total_volume"].min() * 1e6
         x_scale_max = 1.1 * df_filtered["total_volume"].max() * 1e6

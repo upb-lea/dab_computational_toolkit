@@ -7,5 +7,4 @@ from dct.topology.dab.dab_plot_window import *
 from dct.topology.dab.dab_plot_calculation import *
 from dct.topology.dab.dab_plot_simulation import *
 from dct.topology.dab.dab_plot_waveforms import *
-from dct.topology.dab.dab_generalplotsettings import *
 from dct.topology.dab.dab_functions_waveforms import *
