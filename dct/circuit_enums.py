@@ -10,7 +10,7 @@ class SamplingEnum(enum.Enum):
 
 
 class CalcModeEnum(enum.Enum):
-    """Enum for analytic and simulation calculation mode."""
+    """Enum for calculation mode."""
 
     # Calculate new
     new_mode = "new"

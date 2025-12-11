@@ -4,7 +4,6 @@
 import dataclasses
 import os
 import logging
-from typing import Any
 
 # 3rd party libraries
 
@@ -84,8 +83,8 @@ class FilterData:
 class PlotData:
     """Contains data to plot with plot function."""
 
-    x_values_list: list[Any]
-    y_values_list: list[Any]
+    x_values_list: list[list[float]]
+    y_values_list: list[list[float]]
     color_list: list[str]
     alpha: float
     x_label: str
