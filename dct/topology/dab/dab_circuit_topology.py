@@ -1193,7 +1193,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Load circuit study data
         df_circuit = DabCircuitOptimization.study_to_df(act_study_data)
 
-        # Convert from list[Series[Any]] to list[float]
+        # Convert from list[Series[Any]] to list[list[float]]
         circuit_x_values_list: list[list[float]] = [df_circuit["values_0"].to_list()]
         circuit_y_values_list: list[list[float]] = [df_circuit["values_1"].to_list()]
 
