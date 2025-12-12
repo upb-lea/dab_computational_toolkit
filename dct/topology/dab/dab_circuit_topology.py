@@ -30,6 +30,8 @@ from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
+from dct.datasets_dtos import PlotData
+import dct.generalplotsettings as gps
 from dct.topology.component_requirements_from_circuit import CapacitorRequirements, ComponentRequirements
 
 logger = logging.getLogger(__name__)
@@ -1065,102 +1067,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         pd.read_csv(csv_filepath, header=0, index_col=0, delimiter=';')
         return df
 
-    @staticmethod
-    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
-        """
-        Find the pareto-efficient points.
-
-        :param costs: An (n_points, n_costs) array
-        :type costs: np.array
-        :param return_mask: True to return a mask
-        :type return_mask: bool
-        :return: An array of indices of pareto-efficient points.
-            If return_mask is True, this will be an (n_points, ) boolean array
-            Otherwise it will be a (n_efficient_points, ) integer array of indices.
-        :rtype: np.array
-        """
-        is_efficient = np.arange(costs.shape[0])
-        n_points = costs.shape[0]
-        next_point_index = 0  # Next index in the is_efficient array to search for
-        while next_point_index < len(costs):
-            non_dominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
-            non_dominated_point_mask[next_point_index] = True  # type: ignore
-            is_efficient = is_efficient[non_dominated_point_mask]  # Remove dominated points
-            costs = costs[non_dominated_point_mask]
-            next_point_index = int(np.sum(non_dominated_point_mask[:next_point_index])) + 1  # type: ignore
-        if return_mask:
-            is_efficient_mask = np.zeros(n_points, dtype=bool)
-            is_efficient_mask[is_efficient] = True
-            return is_efficient_mask
-        else:
-            return is_efficient
-
-    @staticmethod
-    def pareto_front_from_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
-        """
-        Calculate the Pareto front from a Pandas DataFrame. Return a Pandas DataFrame.
-
-        :param df: Pandas DataFrame
-        :type df: pd.DataFrame
-        :param x: Name of x-parameter from df to show in Pareto plane
-        :type x: str
-        :param y: Name of y-parameter from df to show in Pareto plane
-        :type y: str
-        :return: Pandas DataFrame with pareto efficient points
-        :rtype: pd.DataFrame
-        """
-        x_vec = df[x][~np.isnan(df[x])]
-        y_vec = df[y][~np.isnan(df[x])]
-        numpy_zip = np.column_stack((x_vec, y_vec))
-        pareto_tuple_mask_vec = DabCircuitOptimization.is_pareto_efficient(numpy_zip)
-        pareto_df: pd.DataFrame = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
-        return pareto_df
-
-    @staticmethod
-    def filter_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1", factor_min_dc_losses: float = 1.2,
-                  factor_max_dc_losses: float = 10) -> pd.DataFrame:
-        """
-        Remove designs with too high losses compared to the minimum losses.
-
-        :param df: pandas DataFrame with study results
-        :type df: pd.DataFrame
-        :param x: x-value name for Pareto plot filtering
-        :type x: str
-        :param y: y-value name for Pareto plot filtering
-        :type y: str
-        :param factor_min_dc_losses: filter factor for the minimum dc losses
-        :type factor_min_dc_losses: float
-        :param factor_max_dc_losses: dc_max_loss = factor_max_dc_losses * min_available_dc_losses_in_pareto_front
-        :type factor_max_dc_losses: float
-        :returns: pandas DataFrame with Pareto front near points
-        :rtype: pd.DataFrame
-        """
-        # figure out pareto front
-        # pareto_volume_list, pareto_core_hyst_list, pareto_dto_list = self.pareto_front(volume_list, core_hyst_loss_list, valid_design_list)
-
-        pareto_df: pd.DataFrame = DabCircuitOptimization.pareto_front_from_df(df, x, y)
-
-        vector_to_sort = np.array([pareto_df[x], pareto_df[y]])
-
-        # sorting 2d array by 1st row
-        # https://stackoverflow.com/questions/49374253/sort-a-numpy-2d-array-by-1st-row-maintaining-columns
-        sorted_vector = vector_to_sort[:, vector_to_sort[0].argsort()]
-        x_pareto_vec = sorted_vector[0]
-        y_pareto_vec = sorted_vector[1]
-
-        total_losses_list = df[y][~np.isnan(df[y])].to_numpy()
-
-        min_total_dc_losses = total_losses_list[np.argmin(total_losses_list)]
-        loss_offset = factor_min_dc_losses * min_total_dc_losses
-
-        ref_loss_max = np.interp(df[x], x_pareto_vec, y_pareto_vec) + loss_offset
-        # clip losses to a maximum of the minimum losses
-        ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
-
-        pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
-
-        return pareto_df_offset
-
     def filter_study_results(self) -> tuple[bool, str]:
         """Filter the study result and use GeckoCIRCUITS for detailed calculation."""
         # Variable initialization
@@ -1274,3 +1180,28 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             raise TypeError("Loaded capacitor requirements have wrong type.")
 
         return circuit_dto.component_requirements.capacitor_requirements
+
+    @staticmethod
+    def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:
+        """Provide the circuit data to plot.
+
+        :param act_study_data: Information about the circuit study name and study path
+        :type  act_study_data: StudyData
+        :return: Plot data and legend
+        :rtype: PlotData
+        """
+        # Load circuit study data
+        df_circuit = DabCircuitOptimization.study_to_df(act_study_data)
+
+        # Convert from list[Series[Any]] to list[list[float]]
+        circuit_x_values_list: list[list[float]] = [df_circuit["values_0"].to_list()]
+        circuit_y_values_list: list[list[float]] = [df_circuit["values_1"].to_list()]
+
+        # Extract circuit plot data from data frame
+        circuit_plot_data: PlotData = (
+            PlotData(x_values_list=circuit_x_values_list, y_values_list=circuit_y_values_list,
+                     color_list=[gps.colors()["black"]], alpha=0.5,
+                     x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
+                     label_list=[None], fig_name_path=act_study_data.study_name))
+
+        return circuit_plot_data

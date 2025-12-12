@@ -303,6 +303,7 @@ pid
 tcp
 TODO
 DabCircuitOptimization
+CircuitOptimizationBase
 DabStudyData
 readthedocs
 RAMDISK
@@ -336,6 +337,7 @@ sqrt
 dataframe
 ProgressStatus
 plotWindow
+PlotData
 None's
 rc
 uvicorn

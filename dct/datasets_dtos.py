@@ -77,3 +77,19 @@ class FilterData:
         self.filtered_list_files: list[str] = []
         self.filtered_list_pathname: str = filtered_list_pathname
         self.circuit_study_name: str = circuit_study_name
+
+
+@dataclasses.dataclass
+class PlotData:
+    """Contains data to plot with plot function."""
+
+    x_values_list: list[list[float]]
+    y_values_list: list[list[float]]
+    color_list: list[str]
+    alpha: float
+    x_label: str
+    y_label: str
+    label_list: list[str | None]
+    fig_name_path: str
+    xlim: list | None = None
+    ylim: list | None = None
