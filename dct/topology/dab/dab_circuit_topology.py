@@ -363,24 +363,20 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Report string
         issue_report: str = ""
 
-        if not StudyData.check_study_data(study_data.optimization_directory, study_data.study_name):
-            issue_report = f"Study {study_data.study_name} in path {study_data.optimization_directory} does not exist. "
-            issue_report = issue_report + "No sqlite3-database found!"
-        else:
-            # Check, if data are available (skip case)
-            # Check if filtered results folder exists
-            if os.path.exists(filter_data.filtered_list_pathname):
-                # Add filtered result list
-                for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
-                    if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
-                        filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
+        # Check, if data are available (skip case)
+        # Check if filtered results folder exists
+        if os.path.exists(filter_data.filtered_list_pathname):
+            # Add filtered result list
+            for filtered_circuit_result in os.listdir(filter_data.filtered_list_pathname):
+                if os.path.isfile(os.path.join(filter_data.filtered_list_pathname, filtered_circuit_result)):
+                    filter_data.filtered_list_files.append(os.path.splitext(filtered_circuit_result)[0])
 
-                if not filter_data.filtered_list_files:
-                    issue_report = f"Filtered results folder {filter_data.filtered_list_pathname} is empty."
-                else:
-                    is_skippable = True
+            if not filter_data.filtered_list_files:
+                issue_report = f"Filtered results folder {filter_data.filtered_list_pathname} is empty."
             else:
-                issue_report = f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist."
+                is_skippable = True
+        else:
+            issue_report = f"Filtered circuit results folder {filter_data.filtered_list_pathname} does not exist."
 
         # Return evaluation result
         return is_skippable, issue_report

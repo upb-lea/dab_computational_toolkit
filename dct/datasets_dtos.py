@@ -7,13 +7,16 @@ import logging
 
 # 3rd party libraries
 
+# own libraries
+from dct.circuit_enums import CalcModeEnum
+
 # Initialize logger
 logger = logging.getLogger(__name__)
 
 class StudyData:
     """Data class containing all general information to perform a study."""
 
-    def __init__(self, study_name: str = "", optimization_directory: str = ""):
+    def __init__(self, study_name: str, optimization_directory: str, calculation_mode: CalcModeEnum):
         """
         Initialize the member variables.
 
@@ -25,6 +28,11 @@ class StudyData:
         """
         self.study_name = study_name
         self.optimization_directory = optimization_directory
+        self.calculation_mode = calculation_mode
+        # Check if optimization_directory is not empty
+        if optimization_directory != "":
+            # Create optimization_directory if not exists
+            os.makedirs(optimization_directory, exist_ok=True)
         
     @staticmethod
     def check_study_data(study_path: str, study_name: str) -> bool:

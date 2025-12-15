@@ -23,7 +23,7 @@ from dct.datasets_dtos import FilterData
 import dct.topology.dab.dab_datasets_dtos as d_dtos
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
-
+from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
 # configure root logger
 logger = logging.getLogger(__name__)
 
@@ -311,7 +311,8 @@ class InductorOptimization:
 
             combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-            new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory, "08_circuit_dtos_incl_reluctance_inductor_losses")
+            new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
+                                                     CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
@@ -498,7 +499,8 @@ class InductorOptimization:
 
                 combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-                new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory, "09_circuit_dtos_incl_inductor_losses")
+                new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
+                                                         CIRCUIT_INDUCTOR_LOSSES_FOLDER)
                 if not os.path.exists(new_circuit_dto_directory):
                     os.makedirs(new_circuit_dto_directory)
 

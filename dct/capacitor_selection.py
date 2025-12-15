@@ -21,6 +21,7 @@ from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.topology.component_requirements_from_circuit import CapacitorRequirements
 from dct.capacitor_optimization_dtos import CapacitorResults
+from dct.constant_path import CIRCUIT_CAPACITOR_LOSS_FOLDER
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +145,7 @@ class CapacitorSelection:
 
             loss_total_array = np.full_like(capacitor_requirements.current_array[:, :, :, 0], np.nan)
 
-            new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, "01_circuit_dtos_incl_capacitor_loss")
+            new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, CIRCUIT_CAPACITOR_LOSS_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 

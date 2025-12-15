@@ -19,6 +19,7 @@ from _pytest.logging import LogCaptureFixture
 from _pytest.capture import CaptureFixture
 import zipfile
 
+
 # own libraries
 import dct
 from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization as CircuitOptimization
@@ -28,6 +29,7 @@ from dct import server_ctl_dtos as srv_ctl_dtos
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.dctmainctl import DctMainCtl
 import dct.datasets_dtos as d_dtos
+from dct.circuit_enums import CalcModeEnum
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -492,8 +494,13 @@ def test_check_study_data(caplog: LogCaptureFixture, is_path_existing: bool, is_
         # Perform the test
         with caplog.at_level(logging.INFO):
             # Create the instance (Later to move this test function to a separate unit test file
-            test_d_dtos: d_dtos.StudyData = d_dtos.StudyData(target_study_name, path_name)
+            test_d_dtos: d_dtos.StudyData = d_dtos.StudyData(target_study_name, path_name, CalcModeEnum.new_mode)
             target_study_name = "study_data"
+
+            # Check test case for is_path_existing == False
+            if not is_path_existing:
+                # Delete not_existing_folder due to created by d_dtos.StudyData
+                os.removedirs(path_name)
 
             test_result = test_d_dtos.check_study_data(path_name, target_study_name)
             # Expected messages
@@ -835,6 +842,40 @@ def test_generate_zip_archive(caplog: LogCaptureFixture, is_path_existing: bool,
                 assert caplog.records[0].message.startswith(expected_message[exp_message_id])
             else:
                 assert "" == expected_message[exp_message_id]
+
+#########################################################################################################
+# test of _is_skippable
+#########################################################################################################
+
+# def _is_skippable(act_study_data: StudyData, complete_file_name: str, is_sqlite_check_enabled: bool = False,
+#                   index_list: list[str] | None = None) -> tuple[bool, str]:
+
+#########################################################################################################
+# _set_processing_complete
+#########################################################################################################
+
+# def _set_processing_complete(base_directory: str, subdirectory: str, complete_file_name: str,
+#                              index_list: list[str] | None = None) -> None:
+
+#########################################################################################################
+# _is_processing_complete
+#########################################################################################################
+
+# def _is_processing_complete(base_directory: str, act_complete_file_name: str) -> tuple[bool, str]:
+
+#########################################################################################################
+# _delete_processing_complete
+#########################################################################################################
+
+# def _delete_processing_complete(base_directory: str, act_complete_file_name: str) -> bool:
+
+
+#########################################################################################################
+# _update_calculation_mode, _get_calculation_mode
+#########################################################################################################
+
+# def _update_calculation_mode(circuit_calculation_mode: CalcModeEnum, dependent_study_data: StudyData) -> None:
+# def _get_calculation_mode(calculation_mode_value: str) -> CalcModeEnum:
 
 #########################################################################################################
 # test of get_initialization_queue_data

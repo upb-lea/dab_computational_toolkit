@@ -19,6 +19,7 @@ import dct.topology.dab.dab_datasets as d_set
 import dct.topology.dab.dab_toml_checker as dab_tc
 import transistordatabase as tdb
 from dct.circuit_enums import SamplingEnum
+from dct.circuit_enums import CalcModeEnum
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -848,7 +849,8 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
 
     # Init study and path information
     test_object.init_study_information(test_string_circuit, string_test_values[test_index % str_test_len],
-                                       string_test_values[(test_index + 1) % str_test_len])
+                                       string_test_values[(test_index + 1) % str_test_len],
+                                       CalcModeEnum.new_mode)
 
     # Check if no error is expected
     if not is_error:

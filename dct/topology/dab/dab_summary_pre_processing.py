@@ -16,9 +16,11 @@ from dct import ProgressStatus
 from dct.heat_sink_optimization import ThermalCalcSupport
 from dct.capacitor_optimization_dtos import CapacitorResults
 import hct
+import dct.topology.dab.dab_datasets as dab_dset
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-import dct.topology.dab.dab_datasets as dab_dset
+from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +155,7 @@ class DabSummaryPreProcessing:
         result_numbers: list[str] = []
         is_list_generated = False
 
-        # Check if target folder 09_circuit_dtos_incl_inductor_losses is created
+        # Check if target folder exists
         if os.path.exists(act_dir_name):
             # Create list of filepaths
             file_list = os.listdir(act_dir_name)
@@ -265,10 +267,10 @@ class DabSummaryPreProcessing:
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
 
-                # Assemble directory name for inductor results:.../09_circuit_dtos_incl_inductor_losses
+                # Assemble directory name for inductor results:.../CIRCUIT_INDUCTOR_LOSSES_FOLDER
                 inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file,
                                                          inductor_study_name,
-                                                         "08_circuit_dtos_incl_reluctance_inductor_losses")
+                                                         CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
@@ -301,11 +303,11 @@ class DabSummaryPreProcessing:
                     # iterate transformer study
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
 
-                        # Assemble directory name for transformer  results:.../09_circuit_dtos_incl_transformer_losses
+                        # Assemble directory name for transformer  results:.../CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER
                         stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
                                                                             circuit_trial_file,
                                                                             stacked_transformer_study_name,
-                                                                            "08_circuit_dtos_incl_reluctance_transformer_losses")
+                                                                            CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (
@@ -365,7 +367,7 @@ class DabSummaryPreProcessing:
                                 capacitor_1_filepath_results = os.path.join(capacitor_1_study_data.optimization_directory,
                                                                             circuit_trial_file,
                                                                             capacitor_1_study_name,
-                                                                            "01_circuit_dtos_incl_capacitor_loss")
+                                                                            CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
                                 # Check, if stacked transformer number list cannot be generated
                                 is_capacitor_1_list_generated, capacitor_1_full_operating_range_list = (
@@ -395,7 +397,7 @@ class DabSummaryPreProcessing:
                                         capacitor_2_filepath_results = os.path.join(capacitor_2_study_data.optimization_directory,
                                                                                     circuit_trial_file,
                                                                                     capacitor_2_study_name,
-                                                                                    "01_circuit_dtos_incl_capacitor_loss")
+                                                                                    CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
                                         # Check, if stacked transformer number list cannot be generated
                                         is_capacitor_2_list_generated, capacitor_2_full_operating_range_list = (

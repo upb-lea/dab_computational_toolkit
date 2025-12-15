@@ -20,6 +20,7 @@ from importlib.metadata import version
 # 3rd party libraries
 import json
 
+
 # own libraries
 import dct
 from dct import toml_checker as tc
@@ -44,6 +45,11 @@ from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import CalcModeEnum
+from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER,
+                               CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER,
+                               FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
+                               SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
+
 logger = logging.getLogger(__name__)
 
 class DctMainCtl:
@@ -398,6 +404,238 @@ class DctMainCtl:
         else:
             # Warn user
             logger.warning(f"Path {folder_selection[0]} does not exists!")
+
+    @staticmethod
+    def _is_skippable(act_study_data: StudyData, complete_file_name: str, is_sqlite_check_enabled: bool = False,
+                      index_list: list[str] | None = None) -> tuple[bool, str]:
+        """Verify, if the optimization is skippable.
+
+        The verification bases on the availability of a sqlite database file and
+        the check of optimization complete by usage of a complete_file.
+
+        :param act_study_data: Information about the study name and study path
+        :type  act_study_data: StudyData
+        :param complete_file_name: file name which contains the completion list (without path)
+        :type  complete_file_name: str
+        :param is_sqlite_check_enabled: Flag, which indicates, if the sqlite database check is enabled
+        :type  is_sqlite_check_enabled: bool
+        :param index_list: List with the name of filtered results
+        :type  index_list: str
+        :return: True, if the file could be created, False if the file could not create, i.e. no pkl-files is found.
+        :rtype: bool
+        """
+        # Variable declaration and initialization
+        is_processing_complete: bool
+        issue_report: str
+
+        # Check is_sqlite_check_enabled-flag
+        if is_sqlite_check_enabled:
+            # Check if index_list is not empty
+            if index_list:
+                # For loop to check, if sqlite database for all filtered values are available
+                for id_entry in (index_list):
+                    # Assemble pathname
+                    results_datapath = os.path.join(act_study_data.optimization_directory,
+                                                    str(id_entry), act_study_data.study_name)
+                    # Check, if data are available (skip case)
+                    if not StudyData.check_study_data(results_datapath, act_study_data.study_name):
+                        raise ValueError(
+                            f"Study {act_study_data.study_name} in path {results_datapath} "
+                            "does not exist or file path is wrong. No sqlite3-database found!")
+            else:
+                # Check, if data are available (skip case)
+                if not StudyData.check_study_data(act_study_data.optimization_directory, act_study_data.study_name):
+                    raise ValueError(f"Study {act_study_data.study_name} in path {act_study_data.optimization_directory} "
+                                     "does not exist. No sqlite3-database found!")
+
+        # Check if the processing is completed for all designs
+        is_processing_complete, issue_report = DctMainCtl._is_processing_complete(act_study_data.optimization_directory,
+                                                                                  complete_file_name)
+
+        return is_processing_complete, issue_report
+
+    @staticmethod
+    def _set_processing_complete(base_directory: str, subdirectory: str, complete_file_name: str,
+                                 index_list: list[str] | None = None) -> None:
+        """Create the 'processing_complete.json' file to indicate the completion of the calculation.
+
+        At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
+        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
+        The verification bases on all created pkl-files while optimization. E.g. the path to these files are assembled
+        by , 'base_directory'/filter_results_list'-entry/'subdirectory'. If the filter_results_list is empty only
+        'base_directory' is taken as path to pkl-files. An exception occurs, if base_directory does not exist.
+
+        :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
+        :type  base_directory: str
+        :param subdirectory: (relative) subdirectory path to pkl-files
+        :type  subdirectory: str
+        :param index_list: List with the name of filtered results
+        :type  index_list: str
+        :param complete_file_name: List with the name of filtered results
+        :type  complete_file_name: str
+        :return: True, if the file could be created, False if the file could not create, i.e. no pkl-files is found.
+        :rtype: bool
+        """
+        # Variable declaration and initialization
+        path_list: list[str] = []
+        pkl_file_list: list[str] = []
+        processing_complete_file = os.path.join(base_directory, complete_file_name)
+
+        # Check if file exists
+        # Check path
+        if not (os.path.exists(base_directory) or base_directory == ""):
+            raise ValueError(f"Path {base_directory} does not exists!")
+
+        # Create path list
+        if index_list:
+            for entry in index_list:
+                path_list.append(os.path.join(base_directory, entry, subdirectory))
+        else:
+            # pkl-files searched in base_directory/subdirectory
+            path_list.append(os.path.join(base_directory, subdirectory))
+
+        # Create pkl-file completion list
+        for path_entry in path_list:
+            # Check path
+            if not (os.path.exists(path_entry) or path_entry == ""):
+                raise ValueError(f"Path {path_entry} does not exists!")
+            # Create list
+            for filename in os.listdir(path_entry):
+                if filename.endswith(".pkl"):
+                    pkl_file_list.append(os.path.join(path_entry, filename))
+        # Store processing_complete_file
+        with open(processing_complete_file, "w", encoding="utf-8") as file_handle:
+            json.dump(pkl_file_list, file_handle, indent=2)
+
+    @staticmethod
+    def _is_processing_complete(base_directory: str, act_complete_file_name: str) -> tuple[bool, str]:
+        """Verify the completion of the calculation by usage of the 'processing_complete.json' file.
+
+        Check, if all files exists, which are listed in 'processing_complete.json' file
+        If no 'processing_complete.json' file exists at base_directory or the list is empty
+        the verification fails. An exception occurs, if base_directory does not exist.
+
+        :param base_directory: Directory for 'processing_complete.json' file
+        :type  base_directory: str
+        :return: True, if the verification is performed successful and empty string or False and report of the issues
+        :rtype: tuple[bool, str]
+        """
+        # Variable declaration and initialization
+        issue_report: str = ""
+        pkl_file_list: list[str] = []
+        processing_complete_file = os.path.join(base_directory, act_complete_file_name)
+        is_processing_complete = False
+
+        # Check if file exists
+        # Check path
+        if os.path.exists(base_directory) or base_directory == "":
+            # Check filename
+            if os.path.isfile(processing_complete_file):
+                # Load the pkl_file_list from file
+                with open(processing_complete_file, "r", encoding="utf-8") as file_handle:
+                    pkl_file_list = json.load(file_handle)
+                    # Check if list is not empty
+                    if not pkl_file_list:
+                        issue_report = (f"List in file {act_complete_file_name} is empty!")
+            else:
+                issue_report = issue_report + (f"File {act_complete_file_name} does not exists!\n")
+        else:
+            raise ValueError(f"Path {base_directory} does not exists!")
+
+        # Check if list is not empty
+        if pkl_file_list:
+            # Set return value to true
+            is_processing_complete = True
+            # Loop over all entries
+            for entry in pkl_file_list:
+                # Check if the file exists
+                if not os.path.isfile(entry):
+                    issue_report = issue_report + (f"File {entry} does not exists!")
+                    is_processing_complete = False
+
+        return is_processing_complete, issue_report
+
+    @staticmethod
+    def _delete_processing_complete(base_directory: str, act_complete_file_name: str) -> bool:
+        """Delete the 'processing_complete.json' file.
+
+        Remark: An exception occurs, if base_directory does not exist.
+
+        :param base_directory: Directory for 'processing_complete.json' file
+        :type  base_directory: str
+        :return: True, if the file can be deleted or does not exist, otherwise False
+        :rtype: bool
+        """
+        # Variable declaration and initialization
+        processing_complete_file = os.path.join(base_directory, act_complete_file_name)
+        is_file_removed: bool = False
+
+        # Check path
+        if os.path.exists(base_directory) or base_directory == "":
+            # Check if file exists
+            if os.path.isfile(processing_complete_file):
+                # Delete the file
+                try:
+                    os.remove(processing_complete_file)
+                    is_file_removed = True
+                except PermissionError:
+                    logger.warning("File processing_complete.json is write protected!")
+                except Exception as e:
+                    logger.warning(f"Deletion error of file processing_complete.json: {e}")
+            else:
+                is_file_removed = True
+        else:
+            raise ValueError(f"Path {base_directory} does not exists!")
+
+        return is_file_removed
+
+    @staticmethod
+    def _update_calculation_mode(circuit_calculation_mode: CalcModeEnum, dependent_study_data: StudyData) -> None:
+        """Update the calculation mode of the dependent study according circuit_calculation_mode.
+
+        if circuit_calculation_mode is new_mode the calculation mode of the dependent study data is set to new
+        if circuit_calculation_mode is continues_mode the calculation mode of the dependent study data
+        is set to continues_mode, if it's mode was not new_mode.
+
+        :param calculation_mode_value: calculation mode from circuit study data
+        :type  calculation_mode_value: CalcModeEnum
+        :param dependent_study_data: Dependent study data
+        :type  dependent_study_data: StudyData
+        """
+        # Check depending study mode
+        # new_mode of depending study is kept independent from circuit study calculation mode
+        if dependent_study_data.calculation_mode != CalcModeEnum.new_mode:
+            # Circuit calculation mode new_mode forces new_mode for dependent study
+            if circuit_calculation_mode == CalcModeEnum.new_mode:
+                dependent_study_data.calculation_mode = CalcModeEnum.new_mode
+            # Circuit calculation mode continue_mode request minimum continue_mode for dependent study
+            elif circuit_calculation_mode == CalcModeEnum.continue_mode:
+                dependent_study_data.calculation_mode = CalcModeEnum.continue_mode
+
+    @staticmethod
+    def _get_calculation_mode(calculation_mode_value: str) -> CalcModeEnum:
+        """Provide the correspondent calculation mode based on the calculation mode value string.
+
+        :param calculation_mode_value: Calculation mode value, which corresponds to a string
+        :type  calculation_mode_value: str
+        :return: Calculation mode
+        :rtype: CalcModeEnum
+        """
+        # Variable declaration and initialization
+        result_enum: CalcModeEnum
+
+        if calculation_mode_value == CalcModeEnum.new_mode.value:
+            result_enum = CalcModeEnum.new_mode
+        elif calculation_mode_value == CalcModeEnum.continue_mode.value:
+            result_enum = CalcModeEnum.continue_mode
+        elif calculation_mode_value == CalcModeEnum.skip_mode.value:
+            result_enum = CalcModeEnum.skip_mode
+        else:
+            raise ValueError(f"Enum value {calculation_mode_value} is invalid!\n"
+                             f"only {CalcModeEnum.new_mode.value}, {CalcModeEnum.continue_mode.value}, "
+                             f"and {CalcModeEnum.skip_mode.value} are valid!\n")
+
+        return result_enum
 
     @staticmethod
     def get_initialization_queue_data(act_toml_prog_flow: tc.FlowControl) \
@@ -939,34 +1177,42 @@ class DctMainCtl:
         self._capacitor_1_selection_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.capacitor_1_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_1.subdirectory,
-                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")),
+            calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.capacitor_1.calculation_mode)
         )
 
         self._capacitor_2_selection_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.capacitor_2_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_2.subdirectory,
-                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")),
+            calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.capacitor_2.calculation_mode)
         )
 
         self._inductor_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.inductor_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
-                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")),
+            calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.inductor.calculation_mode)
         )
         self._transformer_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.transformer_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory,
-                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""))
+                                                toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")),
+            calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.transformer.calculation_mode)
         )
         self._heat_sink_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
-                                                toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""))
+                                                toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
+            calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.heat_sink.calculation_mode)
         )
 
         pre_summary_data = StudyData(study_name="pre_summary",
-                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory))
-        summary_data = StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
+                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory),
+                                     calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.pre_summary.calculation_mode))
+
+        summary_data = StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory),
+                                 calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.summary.calculation_mode))
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
@@ -1004,7 +1250,8 @@ class DctMainCtl:
         # Init study and path information
         self._circuit_optimization.init_study_information(
             toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
-            project_directory, toml_prog_flow.circuit.subdirectory)
+            project_directory, toml_prog_flow.circuit.subdirectory,
+            DctMainCtl._get_calculation_mode(toml_prog_flow.circuit.calculation_mode))
 
         # Init circuit configuration
         is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
@@ -1020,20 +1267,40 @@ class DctMainCtl:
                              f"{toml_prog_flow.configuration_data_files.circuit_configuration_file} are inconsistent!\n", issue_report)
 
         # Check, if electrical optimization is to skip
-        if toml_prog_flow.circuit.calculation_mode == CalcModeEnum.skip_mode.value:
-            # Check, if data are available (skip case)
-            is_skippable, issue_report = self._circuit_optimization.is_circuit_optimization_skippable()
+        if self._circuit_optimization.circuit_study_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check completion of process
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._circuit_optimization.circuit_study_data,
+                                                                  PROCESSING_COMPLETE_FILE, True, [])
+            # Evaluate the result of completion check
+            if is_skippable:
+                # Check topology dependent skip reason
+                is_skippable, issue_report = self._circuit_optimization.is_circuit_optimization_skippable()
 
-            # Evaluate the result
+            # Evaluate the result of circuit check
             if not is_skippable:
                 raise ValueError("Circuit optimization is not skippable:\n" + f"{issue_report}")
+        else:
+            circuit_calculation_mode = self._circuit_optimization.circuit_study_data.calculation_mode
+            # If circuit calculation mode is not skipped, all further calculation modes are impacted
+            DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._capacitor_1_selection_data)
+            DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._capacitor_2_selection_data)
+            DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._inductor_study_data)
+            DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._transformer_study_data)
+
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if self._circuit_optimization.circuit_study_data.calculation_mode == CalcModeEnum.new_mode:
+            # delete old circuit study data
+            self.delete_study_content(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                      self._circuit_optimization.circuit_study_data.study_name)
+            # Create the deleted filtered result folder
+            os.makedirs(self._circuit_optimization.filter_data.filtered_list_pathname, exist_ok=True)
 
         # --------------------------
         # Capacitor 1 flow control
         # --------------------------
         logger.debug("Read capacitor 1 flow control")
 
-        # Init circuit configuration
+        # Init capacitor configuration
         is_capacitor_1_loaded, dict_capacitor_1 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
         toml_capacitor_1 = tc.TomlCapacitorSelection(**dict_capacitor_1)
 
@@ -1045,6 +1312,21 @@ class DctMainCtl:
         if not is_consistent:
             raise ValueError("Capacitor optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} are inconsistent!\n", issue_report)
+
+        # Check, if capacitor1 selection is to skip
+        if self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check if capacitor1 selection is skippable
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_1_selection_data,
+                                                                  PROCESSING_COMPLETE_FILE)
+            # Evaluate the result of circuit check
+            if not is_skippable:
+                logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
+                self._capacitor_1_selection_data.calculation_mode = CalcModeEnum.continue_mode
+
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.new_mode:
+            # delete old circuit study data
+            self.delete_study_content(self._capacitor_1_selection_data.optimization_directory, self._capacitor_1_selection_data.study_name)
 
         # --------------------------
         # Capacitor 2 flow control
@@ -1063,6 +1345,22 @@ class DctMainCtl:
         if not is_consistent:
             raise ValueError("Capacitor optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} are inconsistent!\n", issue_report)
+
+        # Check, if capacitor2 selection is to skip
+        if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check if capacitor1 selection is skippable
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_2_selection_data,
+                                                                  PROCESSING_COMPLETE_FILE)
+            # Evaluate the result of circuit check
+            if not is_skippable:
+                logger.warning("Capacitor 2 selection is not skippable:\n" + f"{issue_report}")
+                self._capacitor_2_selection_data.calculation_mode = CalcModeEnum.continue_mode
+
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.new_mode:
+            # delete old circuit study data
+            self.delete_study_content(self._capacitor_2_selection_data.optimization_directory, self._capacitor_2_selection_data.study_name)
+
         # --------------------------
         # Inductor flow control
         # --------------------------
@@ -1083,38 +1381,35 @@ class DctMainCtl:
                              f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
 
         # Overtake the calculation mode
-        inductor_sim_calculation_mode: str = toml_prog_flow.inductor.calculation_mode
+        inductor_sim_calculation_mode: CalcModeEnum = self._inductor_study_data.calculation_mode
         # Check, if inductor optimization is to skip
-        if toml_prog_flow.inductor.calculation_mode == CalcModeEnum.skip_mode.value:
-            # Check if circuit is not skipped
-            if toml_prog_flow.circuit.calculation_mode != CalcModeEnum.skip_mode.value:
-                raise ValueError(
-                    f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
-                    f"This causes that study {self._inductor_study_data.study_name} is not skippable!")
-
+        if self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Initialize _inductor_number_filtered_points_skip_list
             self._inductor_number_filtered_analytic_points_skip_list = []
+            # Check if the optimization is skippable for analytic calculation
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._inductor_study_data, RELUCTANCE_COMPLETE_FILE, True,
+                                                                  self._circuit_optimization.filter_data.filtered_list_files)
+            # Evaluate if the optimization is skippable for analytic calculation
+            if not is_skippable:
+                self._inductor_study_data.calculation_mode = CalcModeEnum.new_mode
+                inductor_sim_calculation_mode = CalcModeEnum.continue_mode
+                self._capacitor_1_selection_data.calculation_mode = CalcModeEnum.continue_mode
+                logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
+                               f"{issue_report}")
+            else:
+                # Check if the optimization is skippable for simulation calculation
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._inductor_study_data, SIMULATION_COMPLETE_FILE, True,
+                                                                      self._circuit_optimization.filter_data.filtered_list_files)
+                # Evaluate if the optimization is skippable for simulation calculation
+                if not is_skippable:
+                    logger.warning("Inductor optimization (simulation part) is not skippable:\n"
+                                   f"{issue_report}")
+                    inductor_sim_calculation_mode = CalcModeEnum.continue_mode
 
-            # For loop to check, if all filtered values are available
-            for id_entry in (self._circuit_optimization.filter_data.filtered_list_files):
-                # Assemble pathname
-                inductor_results_datapath = os.path.join(self._inductor_study_data.optimization_directory,
-                                                         str(id_entry), self._inductor_study_data.study_name)
-                # Check, if data are available (skip case)
-                if StudyData.check_study_data(inductor_results_datapath, self._inductor_study_data.study_name):
-                    self._inductor_number_filtered_analytic_points_skip_list.append(
-                        self.get_number_of_pkl_files(os.path.join(inductor_results_datapath,
-                                                                  "08_circuit_dtos_incl_reluctance_inductor_losses")))
-                    self._inductor_number_filtered_simulation_points_skip_list.append(
-                        self.get_number_of_pkl_files(os.path.join(inductor_results_datapath,
-                                                                  "09_circuit_dtos_incl_inductor_losses")))
-                    # Verify the inductor calculation mode for the simulation
-                    if self._inductor_number_filtered_simulation_points_skip_list and self._inductor_number_filtered_analytic_points_skip_list:
-                        if self._inductor_number_filtered_simulation_points_skip_list[-1] != self._inductor_number_filtered_analytic_points_skip_list[-1]:
-                            inductor_sim_calculation_mode = CalcModeEnum.continue_mode.value
-                else:
-                    raise ValueError(
-                        f"Study {self._inductor_study_data.study_name} in path {inductor_results_datapath} does not exist. No sqlite3-database found!")
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if self._inductor_study_data.calculation_mode == CalcModeEnum.new_mode:
+            # Delete old inductor study
+            self.delete_study_content(self._inductor_study_data.optimization_directory)
 
         # --------------------------
         # Transformer flow control
@@ -1136,41 +1431,36 @@ class DctMainCtl:
                              f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
 
         # Overtake the calculation mode
-        transformer_sim_calculation_mode: str = toml_prog_flow.transformer.calculation_mode
+        transformer_sim_calculation_mode: CalcModeEnum = self._transformer_study_data.calculation_mode
         # Check, if transformer optimization is to skip
-        if toml_prog_flow.transformer.calculation_mode == CalcModeEnum.skip_mode.value:
-            # Check if circuit is not skipped
-            if toml_prog_flow.circuit.calculation_mode != CalcModeEnum.skip_mode.value:
-                raise ValueError(
-                    f"Circuit Study {self._circuit_optimization.circuit_study_data.study_name} is not skipped.\n",
-                    f"This causes that study {self._transformer_study_data.study_name} is not skippable!")
-
+        if self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Initialize _transformer_number_filtered_points_skip_list
             self._transformer_number_filtered_analytic_points_skip_list = []
-            # For loop to check, if all filtered values are available
-            for id_entry in self._circuit_optimization.filter_data.filtered_list_files:
-                # Assemble pathname
-                transformer_results_datapath = os.path.join(self._transformer_study_data.optimization_directory,
-                                                            str(id_entry),
-                                                            self._transformer_study_data.study_name)
-                # Check, if data are available (skip case)
-                if StudyData.check_study_data(transformer_results_datapath, self._transformer_study_data.study_name):
-                    self._transformer_number_filtered_analytic_points_skip_list.append(
-                        self.get_number_of_pkl_files(os.path.join(transformer_results_datapath,
-                                                                  "08_circuit_dtos_incl_reluctance_transformer_losses")))
-                    self._transformer_number_filtered_simulation_points_skip_list.append(
-                        self.get_number_of_pkl_files(os.path.join(transformer_results_datapath,
-                                                                  "09_circuit_dtos_incl_transformer_losses")))
-                    # Verify the inductor calculation mode for the simulation
-                    if self._transformer_number_filtered_simulation_points_skip_list and self._transformer_number_filtered_analytic_points_skip_list:
-                        if self._transformer_number_filtered_simulation_points_skip_list[-1] != self._transformer_number_filtered_analytic_points_skip_list[-1]:
-                            transformer_sim_calculation_mode = CalcModeEnum.continue_mode.value
 
-                else:
-                    raise ValueError(
-                        f"Study {self._transformer_study_data.study_name} in path {transformer_results_datapath}"
-                        "does not exist. No sqlite3-database found!"
-                    )
+            # Check if the optimization is skippable for simulation calculation
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._transformer_study_data, RELUCTANCE_COMPLETE_FILE, True,
+                                                                  self._circuit_optimization.filter_data.filtered_list_files)
+            # Evaluate if the optimization is skippable for analytic calculation
+            if not is_skippable:
+                self._transformer_study_data.calculation_mode = CalcModeEnum.new_mode
+                transformer_sim_calculation_mode = CalcModeEnum.continue_mode
+                logger.warning("Transformer optimization (analytic and simulation part) are not skippable:\n"
+                               f"{issue_report}")
+            else:
+                # Check if the optimization is skippable for simulation calculation
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._transformer_study_data, SIMULATION_COMPLETE_FILE,
+                                                                      True,
+                                                                      self._circuit_optimization.filter_data.filtered_list_files)
+                # Evaluate if the optimization is skippable for simulation calculation
+                if not is_skippable:
+                    transformer_sim_calculation_mode = CalcModeEnum.continue_mode
+                    logger.warning("Transformer optimization (simulation part) is not skippable:\n"
+                                   f"{issue_report}")
+
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if self._transformer_study_data.calculation_mode == CalcModeEnum.new_mode:
+            # Delete old transformer study
+            self.delete_study_content(self._transformer_study_data.optimization_directory)
 
         # --------------------------
         # Heat sink flow control
@@ -1189,12 +1479,21 @@ class DctMainCtl:
                              f"{toml_prog_flow.configuration_data_files.heat_sink_configuration_file} are inconsistent!\n", issue_report)
 
         # Check, if heat sink optimization is to skip
-        if toml_prog_flow.heat_sink.calculation_mode == CalcModeEnum.skip_mode.value:
-            # Check, if data are available (skip case)
-            if not StudyData.check_study_data(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name):
-                raise ValueError(
-                    f"Study {self._heat_sink_study_data.study_name} in path "
-                    f"{self._heat_sink_study_data.optimization_directory} does not exist. No sqlite3-database found!")
+        if self._heat_sink_study_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check if the optimization is skippable
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._heat_sink_study_data,
+                                                                  PROCESSING_COMPLETE_FILE, True, [])
+
+            # Evaluate if the optimization is skippable
+            if not is_skippable:
+                self._heat_sink_study_data.calculation_mode = CalcModeEnum.continue_mode
+                logger.warning("heat sink optimization is not skippable:\n"
+                               f"{issue_report}")
+
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if self._heat_sink_study_data.calculation_mode == CalcModeEnum.new_mode:
+            # Delete old heat sink study
+            self.delete_study_content(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name)
 
         # -- Start server  --------------------------------------------------------------------------------------------
 
@@ -1226,23 +1525,14 @@ class DctMainCtl:
         logger.info("Start circuit optimization.")
 
         # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.circuit.calculation_mode == CalcModeEnum.skip_mode.value:
+        if not self._circuit_optimization.circuit_study_data.calculation_mode == CalcModeEnum.skip_mode:
 
             # Initialize circuit configuration
             self._circuit_optimization.initialize_circuit_optimization()
 
-            # Check, if old study is to delete, if available
-            if toml_prog_flow.circuit.calculation_mode == CalcModeEnum.new_mode.value:
-                # delete old circuit study data
-                self.delete_study_content(self._circuit_optimization.circuit_study_data.optimization_directory,
-                                          self._circuit_optimization.circuit_study_data.study_name)
-
-                # Create the filtered result folder
-                os.makedirs(self._circuit_optimization.filter_data.filtered_list_pathname, exist_ok=True)
-                # Delete obsolete folders of inductor and transformer
-                self.delete_study_content(self._inductor_study_data.optimization_directory)
-                self.delete_study_content(self._transformer_study_data.optimization_directory)
-
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                                   PROCESSING_COMPLETE_FILE)
             # Perform circuit optimization
             self._circuit_optimization.start_proceed_study(number_trials=toml_prog_flow.circuit.number_of_trials)
 
@@ -1250,8 +1540,7 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_pareto, "Electric Pareto front calculated")
 
         # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.circuit.calculation_mode == CalcModeEnum.skip_mode.value:
-
+        if not self._circuit_optimization.circuit_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
             # Error is to prevent by the workflow
             if self._circuit_optimization is None:
@@ -1259,9 +1548,14 @@ class DctMainCtl:
 
             # Calculate the filtered results
             is_filter_data_available, issue_report = self._circuit_optimization.filter_study_results()
+
             # Evaluate the filtered data result (Program stop has to be removed, if multiple circuit configuration are optimized)
             if not is_filter_data_available:
                 raise ValueError("Filtered data error:"+issue_report)
+
+            # Set processing complete indicator
+            DctMainCtl._set_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                                FILTERED_RESULTS_PATH, PROCESSING_COMPLETE_FILE)
 
             # Workaround: Set filtered result id list here, later to handle in circuit_optimization
             self._filtered_list_files = self._circuit_optimization.filter_data.filtered_list_files
@@ -1278,9 +1572,8 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start capacitor 1 selection")
 
-        # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.capacitor_1.calculation_mode == CalcModeEnum.skip_mode.value:
-
+        # Check, if capacitor optimization is not to skip
+        if not self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.skip_mode:
             # Allocate and initialize circuit configuration
             self._capacitor_1_selection = CapacitorSelection()
 
@@ -1295,17 +1588,23 @@ class DctMainCtl:
                                                                        capacitor_requirements_list=capacitor_1_requirements_list)
 
             # Check, if old study is to delete, if available
-            if toml_prog_flow.capacitor_1.calculation_mode == CalcModeEnum.new_mode.value:
+            if self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.new_mode:
                 # delete old circuit study data
                 self.delete_study_content(self._capacitor_1_selection_data.optimization_directory, self._capacitor_1_selection_data.study_name)
 
-                # Create the filtered result folder
-                os.makedirs(self._capacitor_1_selection_data.optimization_directory, exist_ok=True)
-
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(self._capacitor_1_selection_data.optimization_directory,
+                                                   PROCESSING_COMPLETE_FILE)
             # Perform circuit optimization
             self._capacitor_1_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
                                                              capacitor_requirements_list=capacitor_1_requirements_list,
                                                              debug=toml_debug)
+            # Set processing complete indicator
+            design_directory = os.path.join(self._capacitor_1_selection_data.study_name,
+                                            CIRCUIT_CAPACITOR_LOSS_FOLDER)
+            DctMainCtl._set_processing_complete(self._capacitor_1_selection_data.optimization_directory,
+                                                design_directory, PROCESSING_COMPLETE_FILE,
+                                                self._circuit_optimization.filter_data.filtered_list_files)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
@@ -1316,7 +1615,7 @@ class DctMainCtl:
         logger.info("Start capacitor 2 selection")
 
         # Check, if electrical optimization is not to skip
-        if not toml_prog_flow.capacitor_2.calculation_mode == CalcModeEnum.skip_mode.value:
+        if not self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.skip_mode:
 
             # Allocate and initialize circuit configuration
             self._capacitor_2_selection = CapacitorSelection()
@@ -1331,19 +1630,19 @@ class DctMainCtl:
                                                                        circuit_filter_data=self._circuit_optimization.filter_data,
                                                                        capacitor_requirements_list=capacitor_2_requirements_list)
 
-            # Check, if old study is to delete, if available
-            if toml_prog_flow.capacitor_2.calculation_mode == CalcModeEnum.new_mode.value:
-                # delete old circuit study data
-                self.delete_study_content(self._capacitor_2_selection_data.optimization_directory, self._capacitor_2_selection_data.study_name)
-
-                # Create the filtered result folder
-                os.makedirs(self._capacitor_2_selection_data.optimization_directory, exist_ok=True)
-
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(self._capacitor_2_selection_data.optimization_directory,
+                                                   PROCESSING_COMPLETE_FILE)
             # Perform circuit optimization
             self._capacitor_2_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
                                                              capacitor_requirements_list=capacitor_2_requirements_list,
                                                              debug=toml_debug)
-
+            # Set processing complete indicator
+            design_directory = os.path.join(self._capacitor_2_selection_data.study_name,
+                                            CIRCUIT_CAPACITOR_LOSS_FOLDER)
+            DctMainCtl._set_processing_complete(self._capacitor_2_selection_data.optimization_directory,
+                                                design_directory, PROCESSING_COMPLETE_FILE,
+                                                self._circuit_optimization.filter_data.filtered_list_files)
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_2, "Capacitor 2 Pareto front calculated")
 
@@ -1355,27 +1654,31 @@ class DctMainCtl:
         # Start the inductor processing time measurement
         self._inductor_progress_time[0].reset_start_trigger()
 
-        # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not inductor_sim_calculation_mode == CalcModeEnum.skip_mode.value:
+        # Allocate and initialize inductor configuration
+        self._inductor_optimization = InductorOptimization()
+        self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
+                                                                          self._circuit_optimization.filter_data)
+
+        # Check, if inductor optimization is not to skip
+        if not self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Set the status to InProgress
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
 
-            # Check, if old study is to delete, if available
-            if toml_prog_flow.inductor.calculation_mode == CalcModeEnum.new_mode.value:
-                # Delete old inductor study
-                self.delete_study_content(self._inductor_study_data.optimization_directory)
-
-            # Allocate and initialize inductor configuration
-            self._inductor_optimization = InductorOptimization()
-            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
-                                                                              self._circuit_optimization.filter_data)
-
             # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
-            if not toml_prog_flow.inductor.calculation_mode == CalcModeEnum.skip_mode.value:
+            if not self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
+                # Delete processing complete indicator
+                DctMainCtl._delete_processing_complete(self._inductor_study_data.optimization_directory,
+                                                       RELUCTANCE_COMPLETE_FILE)
                 # Perform inductor optimization
                 self._inductor_optimization.optimization_handler_reluctance_model(
                     self._circuit_optimization.filter_data, toml_prog_flow.inductor.number_of_trials,
                     toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+                # Set processing complete indicator
+                design_directory = os.path.join(self._inductor_study_data.study_name,
+                                                CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
+                DctMainCtl._set_processing_complete(self._inductor_study_data.optimization_directory,
+                                                    design_directory, RELUCTANCE_COMPLETE_FILE,
+                                                    self._circuit_optimization.filter_data.filtered_list_files)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1393,25 +1696,32 @@ class DctMainCtl:
 
         # Start the transformer processing time measurement
         self._transformer_progress_time[0].reset_start_trigger()
+
+        # Allocate and initialize transformer configuration
+        self._transformer_optimization = TransformerOptimization()
+        self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer,
+                                                                                self._transformer_study_data,
+                                                                                self._circuit_optimization.filter_data)
+
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not transformer_sim_calculation_mode == CalcModeEnum.skip_mode.value:
+        if not self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Set the status to InProgress
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
-            # Check, if old study is to delete, if available
-            if toml_prog_flow.transformer.calculation_mode == CalcModeEnum.new_mode.value:
-                # Delete old transformer study
-                self.delete_study_content(self._transformer_study_data.optimization_directory)
 
-            # Allocate and initialize transformer configuration
-            self._transformer_optimization = TransformerOptimization()
-            self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
-                                                                                    self._circuit_optimization.filter_data)
-
-            if not toml_prog_flow.transformer.calculation_mode == CalcModeEnum.skip_mode.value:
+            if not self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
+                # Delete processing complete indicator
+                DctMainCtl._delete_processing_complete(self._transformer_study_data.optimization_directory,
+                                                       RELUCTANCE_COMPLETE_FILE)
                 # Perform transformer optimization
                 self._transformer_optimization.optimization_handler_reluctance_model(
                     self._circuit_optimization.filter_data, toml_prog_flow.transformer.number_of_trials,
                     toml_transformer.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+                # Set processing complete indicator
+                design_directory = os.path.join(self._transformer_study_data.study_name,
+                                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
+                DctMainCtl._set_processing_complete(self._transformer_study_data.optimization_directory,
+                                                    design_directory, RELUCTANCE_COMPLETE_FILE,
+                                                    self._circuit_optimization.filter_data.filtered_list_files)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -1428,19 +1738,19 @@ class DctMainCtl:
         logger.info("Start heat sink optimization.")
 
         # Check, if heat sink optimization is to skip
-        if not toml_prog_flow.heat_sink.calculation_mode == CalcModeEnum.skip_mode.value:
-            # Check, if old study is to delete, if available
-            if toml_prog_flow.heat_sink.calculation_mode == CalcModeEnum.new_mode.value:
-                # Delete old heat sink study
-                self.delete_study_content(self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name)
-
+        if not self._heat_sink_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Allocate and initialize heat sink configuration
             self._heat_sink_optimization = HeatSinkOptimization()
             self._heat_sink_optimization.initialize_heat_sink_optimization(toml_heat_sink, toml_prog_flow)
 
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(self._heat_sink_study_data.optimization_directory,
+                                                   PROCESSING_COMPLETE_FILE)
             # Perform heat sink optimization
             self._heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
-
+            # Set processing complete indicator
+            DctMainCtl._set_processing_complete(self._heat_sink_study_data.optimization_directory,
+                                                "", PROCESSING_COMPLETE_FILE)
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
 
@@ -1492,12 +1802,21 @@ class DctMainCtl:
         logger.info("Start inductor FEM simulations.")
 
         # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not inductor_sim_calculation_mode == CalcModeEnum.skip_mode.value:
+        if not inductor_sim_calculation_mode == CalcModeEnum.skip_mode:
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(self._inductor_study_data.optimization_directory,
+                                                   SIMULATION_COMPLETE_FILE)
             # Perform inductor FEM simulation
-            if self._inductor_optimization is not None:
-                self._inductor_optimization.fem_simulation_handler(
-                    self._circuit_optimization.filter_data,
-                    toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+            self._inductor_optimization.fem_simulation_handler(
+                self._circuit_optimization.filter_data,
+                toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+
+            # Set processing complete indicator
+            design_directory = os.path.join(self._inductor_study_data.study_name,
+                                            CIRCUIT_INDUCTOR_LOSSES_FOLDER)
+            DctMainCtl._set_processing_complete(self._inductor_study_data.optimization_directory,
+                                                design_directory, SIMULATION_COMPLETE_FILE,
+                                                self._circuit_optimization.filter_data.filtered_list_files)
 
         # --------------------------
         # Transformer FEM simulation
@@ -1505,12 +1824,20 @@ class DctMainCtl:
         logger.info("Start transformer FEM simulations.")
 
         # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-        if not transformer_sim_calculation_mode == CalcModeEnum.skip_mode.value:
+        if not transformer_sim_calculation_mode == CalcModeEnum.skip_mode:
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(self._transformer_study_data.optimization_directory,
+                                                   SIMULATION_COMPLETE_FILE)
             # Perform transformer FEM simulation
-            if self._transformer_optimization is not None:
-                self._transformer_optimization.fem_simulation_handler(
-                    self._circuit_optimization.filter_data,
-                    toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+            self._transformer_optimization.fem_simulation_handler(
+                self._circuit_optimization.filter_data,
+                toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
+            # Set processing complete indicator
+            design_directory = os.path.join(self._transformer_study_data.study_name,
+                                            CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+            DctMainCtl._set_processing_complete(self._transformer_study_data.optimization_directory,
+                                                design_directory, SIMULATION_COMPLETE_FILE,
+                                                self._circuit_optimization.filter_data.filtered_list_files)
 
         # --------------------------
         # Final summary calculation
