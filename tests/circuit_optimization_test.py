@@ -847,46 +847,50 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     # Convert circuit parameter class to a dict
     test_circuit_parameter_dict = test_circuit_parameter.model_dump()
 
-    # Init study and path information
-    test_object.init_study_information(test_string_circuit, string_test_values[test_index % str_test_len],
-                                       string_test_values[(test_index + 1) % str_test_len],
-                                       CalcModeEnum.new_mode)
+    # Create path
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Assemble project directory path
+        project_directory = os.path.join(tmpdir, string_test_values[test_index % str_test_len])
+        # Init study and path information
+        test_object.init_study_information(test_string_circuit, project_directory,
+                                           string_test_values[(test_index + 1) % str_test_len],
+                                           CalcModeEnum.new_mode)
 
-    # Check if no error is expected
-    if not is_error:
-        # Load the data from dict
-        test_object.load_and_verify_general_parameters(test_general_parameter_dict)
-        test_object.load_and_verify_circuit_parameters(test_circuit_parameter_dict, is_tbd_updated)
-        # Perform the test
-        is_initialized = test_object.initialize_circuit_optimization()
-
-        assert test_object._dab_config is not None
-
-        # Check valid result
-        assert test_object._dab_config.design_space.f_s_min_max_list == test_circuit_parameter.design_space.f_s_min_max_list
-        assert test_object._dab_config.design_space.l_1_min_max_list == test_circuit_parameter.design_space.l_1_min_max_list
-        assert test_object._dab_config.design_space.l_2__min_max_list == test_circuit_parameter.design_space.l_2__min_max_list
-        assert test_object._dab_config.design_space.l_s_min_max_list == test_circuit_parameter.design_space.l_s_min_max_list
-        assert test_object._dab_config.design_space.n_min_max_list == test_circuit_parameter.design_space.n_min_max_list
-        assert test_object._dab_config.design_space.transistor_1_name_list == test_circuit_parameter.design_space.transistor_1_name_list
-        assert test_object._dab_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
-        assert test_object._dab_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
-        assert test_object._dab_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
-        assert test_object._dab_config.output_range.v1_min_max_list == test_general_parameter.output_range.v1_min_max_list
-        assert test_object._dab_config.output_range.v2_min_max_list == test_general_parameter.output_range.v2_min_max_list
-        assert test_object._dab_config.output_range.p_min_max_list == test_general_parameter.output_range.p_min_max_list
-        assert test_object._dab_config.sampling.sampling_method == test_general_parameter.sampling.sampling_method
-        assert test_object._dab_config.sampling.sampling_points == test_general_parameter.sampling.sampling_points
-        assert test_object._dab_config.sampling.v1_additional_user_point_list == test_general_parameter.sampling.v1_additional_user_point_list
-        assert test_object._dab_config.sampling.v2_additional_user_point_list == test_general_parameter.sampling.v2_additional_user_point_list
-        assert test_object._dab_config.sampling.p_additional_user_point_list == test_general_parameter.sampling.p_additional_user_point_list
-        assert test_object._dab_config.filter.number_filtered_designs == test_circuit_parameter.filter_distance.number_filtered_designs
-        assert test_object._dab_config.filter.difference_percentage == test_circuit_parameter.filter_distance.difference_percentage
-        assert test_object._dab_config.project_directory == string_test_values[test_index % str_test_len]
-        assert test_object._dab_config.circuit_study_name == test_string_circuit
-        assert is_initialized
-    else:
-        with pytest.raises(ValueError) as error_message:
+        # Check if no error is expected
+        if not is_error:
+            # Load the data from dict
+            test_object.load_and_verify_general_parameters(test_general_parameter_dict)
+            test_object.load_and_verify_circuit_parameters(test_circuit_parameter_dict, is_tbd_updated)
             # Perform the test
             is_initialized = test_object.initialize_circuit_optimization()
-        assert "Serious programming error 1c. Please write an issue!" in str(error_message.value)
+
+            assert test_object._dab_config is not None
+
+            # Check valid result
+            assert test_object._dab_config.design_space.f_s_min_max_list == test_circuit_parameter.design_space.f_s_min_max_list
+            assert test_object._dab_config.design_space.l_1_min_max_list == test_circuit_parameter.design_space.l_1_min_max_list
+            assert test_object._dab_config.design_space.l_2__min_max_list == test_circuit_parameter.design_space.l_2__min_max_list
+            assert test_object._dab_config.design_space.l_s_min_max_list == test_circuit_parameter.design_space.l_s_min_max_list
+            assert test_object._dab_config.design_space.n_min_max_list == test_circuit_parameter.design_space.n_min_max_list
+            assert test_object._dab_config.design_space.transistor_1_name_list == test_circuit_parameter.design_space.transistor_1_name_list
+            assert test_object._dab_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
+            assert test_object._dab_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
+            assert test_object._dab_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
+            assert test_object._dab_config.output_range.v1_min_max_list == test_general_parameter.output_range.v1_min_max_list
+            assert test_object._dab_config.output_range.v2_min_max_list == test_general_parameter.output_range.v2_min_max_list
+            assert test_object._dab_config.output_range.p_min_max_list == test_general_parameter.output_range.p_min_max_list
+            assert test_object._dab_config.sampling.sampling_method == test_general_parameter.sampling.sampling_method
+            assert test_object._dab_config.sampling.sampling_points == test_general_parameter.sampling.sampling_points
+            assert test_object._dab_config.sampling.v1_additional_user_point_list == test_general_parameter.sampling.v1_additional_user_point_list
+            assert test_object._dab_config.sampling.v2_additional_user_point_list == test_general_parameter.sampling.v2_additional_user_point_list
+            assert test_object._dab_config.sampling.p_additional_user_point_list == test_general_parameter.sampling.p_additional_user_point_list
+            assert test_object._dab_config.filter.number_filtered_designs == test_circuit_parameter.filter_distance.number_filtered_designs
+            assert test_object._dab_config.filter.difference_percentage == test_circuit_parameter.filter_distance.difference_percentage
+            assert test_object._dab_config.project_directory == project_directory
+            assert test_object._dab_config.circuit_study_name == test_string_circuit
+            assert is_initialized
+        else:
+            with pytest.raises(ValueError) as error_message:
+                # Perform the test
+                is_initialized = test_object.initialize_circuit_optimization()
+            assert "Serious programming error 1c. Please write an issue!" in str(error_message.value)

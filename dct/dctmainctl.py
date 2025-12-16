@@ -407,7 +407,7 @@ class DctMainCtl:
 
     @staticmethod
     def _is_skippable(act_study_data: StudyData, complete_file_name: str, is_sqlite_check_enabled: bool = False,
-                      index_list: list[str] | None = None) -> tuple[bool, str]:
+                      circuit_filtered_index_list: list[str] | None = None) -> tuple[bool, str]:
         """Verify, if the optimization is skippable.
 
         The verification bases on the availability of a sqlite database file and
@@ -419,9 +419,9 @@ class DctMainCtl:
         :type  complete_file_name: str
         :param is_sqlite_check_enabled: Flag, which indicates, if the sqlite database check is enabled
         :type  is_sqlite_check_enabled: bool
-        :param index_list: List with the name of filtered results
-        :type  index_list: str
-        :return: True, if the file could be created, False if the file could not create, i.e. no pkl-files is found.
+        :param circuit_filtered_index_list: List with the name of filtered results
+        :type  circuit_filtered_index_list: str
+        :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
         :rtype: bool
         """
         # Variable declaration and initialization
@@ -431,9 +431,9 @@ class DctMainCtl:
         # Check is_sqlite_check_enabled-flag
         if is_sqlite_check_enabled:
             # Check if index_list is not empty
-            if index_list:
+            if circuit_filtered_index_list:
                 # For loop to check, if sqlite database for all filtered values are available
-                for id_entry in (index_list):
+                for id_entry in (circuit_filtered_index_list):
                     # Assemble pathname
                     results_datapath = os.path.join(act_study_data.optimization_directory,
                                                     str(id_entry), act_study_data.study_name)
@@ -446,7 +446,7 @@ class DctMainCtl:
                 # Check, if data are available (skip case)
                 if not StudyData.check_study_data(act_study_data.optimization_directory, act_study_data.study_name):
                     raise ValueError(f"Study {act_study_data.study_name} in path {act_study_data.optimization_directory} "
-                                     "does not exist. No sqlite3-database found!")
+                                     "does not exist or file path is wrong. No sqlite3-database found!")
 
         # Check if the processing is completed for all designs
         is_processing_complete, issue_report = DctMainCtl._is_processing_complete(act_study_data.optimization_directory,
@@ -456,7 +456,7 @@ class DctMainCtl:
 
     @staticmethod
     def _set_processing_complete(base_directory: str, subdirectory: str, complete_file_name: str,
-                                 index_list: list[str] | None = None) -> None:
+                                 circuit_filtered_index_list: list[str] | None = None) -> None:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
@@ -469,11 +469,11 @@ class DctMainCtl:
         :type  base_directory: str
         :param subdirectory: (relative) subdirectory path to pkl-files
         :type  subdirectory: str
-        :param index_list: List with the name of filtered results
-        :type  index_list: str
+        :param circuit_filtered_index_list: List with the name of filtered results
+        :type  circuit_filtered_index_list: str
         :param complete_file_name: List with the name of filtered results
         :type  complete_file_name: str
-        :return: True, if the file could be created, False if the file could not create, i.e. no pkl-files is found.
+        :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
         :rtype: bool
         """
         # Variable declaration and initialization
@@ -487,8 +487,8 @@ class DctMainCtl:
             raise ValueError(f"Path {base_directory} does not exists!")
 
         # Create path list
-        if index_list:
-            for entry in index_list:
+        if circuit_filtered_index_list:
+            for entry in circuit_filtered_index_list:
                 path_list.append(os.path.join(base_directory, entry, subdirectory))
         else:
             # pkl-files searched in base_directory/subdirectory
@@ -538,7 +538,7 @@ class DctMainCtl:
                     if not pkl_file_list:
                         issue_report = (f"List in file {act_complete_file_name} is empty!")
             else:
-                issue_report = issue_report + (f"File {act_complete_file_name} does not exists!\n")
+                issue_report = issue_report + (f"File {act_complete_file_name} in path {base_directory} does not exists!\n")
         else:
             raise ValueError(f"Path {base_directory} does not exists!")
 
@@ -550,7 +550,7 @@ class DctMainCtl:
             for entry in pkl_file_list:
                 # Check if the file exists
                 if not os.path.isfile(entry):
-                    issue_report = issue_report + (f"File {entry} does not exists!")
+                    issue_report = issue_report + (f"File {entry} does not exists!\n")
                     is_processing_complete = False
 
         return is_processing_complete, issue_report
