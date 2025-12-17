@@ -376,3 +376,4 @@ InductorRequirements
 TransformerRequirements
 CapacitorRequirements
 ComponentRequirements
+CalcModeEnum

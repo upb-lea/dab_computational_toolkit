@@ -15,6 +15,8 @@ import numpy as np
 from dct.datasets_dtos import StudyData, FilterData, PlotData
 from dct.server_ctl_dtos import ProgressData
 from dct.topology.component_requirements_from_circuit import CapacitorRequirements
+from dct.circuit_enums import CalcModeEnum
+from dct.constant_path import FILTERED_RESULTS_PATH
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")
@@ -39,10 +41,10 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
     def __init__(self) -> None:
         """Initialize the member variables."""
         self.project_directory: str = ""
-        self.circuit_study_data: StudyData = StudyData()
-        self.filter_data: FilterData = FilterData()
+        self.circuit_study_data: StudyData = StudyData("", "", CalcModeEnum.new_mode)
 
-    def init_study_information(self, study_name: str, project_directory: str, sub_directory: str) -> None:
+    def init_study_information(self, study_name: str, project_directory: str,
+                               sub_directory: str, calculation_mode: CalcModeEnum) -> None:
         """Initialize the study information.
 
         :param study_name: Name of the study
@@ -51,18 +53,20 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type  project_directory: Project folder path
         :param sub_directory: Sub directory of the circuit optimization
         :type  sub_directory: Sub directory path
+        :param calculation_mode: Calculation mode of the circuit optimization
+        :type  calculation_mode: CalcModeEnum
         """
         # Project directory
         self.project_directory = project_directory
         # Circuit path
         self.circuit_study_data = StudyData(
-            study_name=study_name, optimization_directory=os.path.join(project_directory, sub_directory, study_name))
+            study_name=study_name, optimization_directory=os.path.join(project_directory, sub_directory, study_name),
+            calculation_mode=calculation_mode)
 
         # Filtered data path and list
         self.filter_data = FilterData(
             circuit_study_name=self.circuit_study_data.study_name,
-            filtered_list_pathname=os.path.join(self.circuit_study_data.optimization_directory,
-                                                "filtered_results")
+            filtered_list_pathname=os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
         )
 
     def is_circuit_optimization_skippable(self) -> tuple[bool, str]:
