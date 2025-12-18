@@ -498,7 +498,7 @@ class DctMainCtl:
         for path_entry in path_list:
             # Check path
             if not (os.path.exists(path_entry) or path_entry == ""):
-                raise ValueError(f"Path {path_entry} does not exists!")
+                raise ValueError(f"pkl-file path {path_entry} does not exists!")
             # Create list
             for filename in os.listdir(path_entry):
                 if filename.endswith(".pkl"):
@@ -579,9 +579,9 @@ class DctMainCtl:
                     os.remove(processing_complete_file)
                     is_file_removed = True
                 except PermissionError:
-                    logger.warning("File processing_complete.json is write protected!")
+                    logger.warning(f"File {processing_complete_file} is write protected!")
                 except Exception as e:
-                    logger.warning(f"Deletion error of file processing_complete.json: {e}")
+                    logger.warning(f"Deletion error of file {processing_complete_file}: {e}")
             else:
                 is_file_removed = True
         else:
