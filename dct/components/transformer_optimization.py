@@ -14,7 +14,8 @@ import numpy as np
 import tqdm
 
 # own libraries
-import dct.transformer_optimization_dtos
+import dct
+from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
 import femmt as fmt
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
@@ -33,7 +34,7 @@ class TransformerOptimization:
     """Optimization of the transformer."""
 
     # List with configurations to optimize and lock variable
-    _optimization_config_list: list[dct.transformer_optimization_dtos.TransformerOptimizationDto]
+    _optimization_config_list: list[TransformerOptimizationDto]
     _t_lock_stat: threading.Lock
     _progress_run_time: RunTime
 
@@ -204,7 +205,7 @@ class TransformerOptimization:
         is_list_generation_successful = False
 
         # Verify optimization parameter
-        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        is_consistent, issue_report = TransformerOptimization.verify_optimization_parameter(toml_transformer)
         if not is_consistent:
             raise ValueError(
                 "Transformer optimization parameter are inconsistent!\n",
@@ -299,10 +300,9 @@ class TransformerOptimization:
                 # misc
                 next_io_config.stacked_transformer_optimization_directory\
                     = os.path.join(study_data.optimization_directory, str(circuit_trial_file), sto_config.stacked_transformer_study_name)
-                transformer_dto = dct.transformer_optimization_dtos.TransformerOptimizationDto(
-                    circuit_filtered_point_filename=circuit_trial_file,
-                    progress_data=copy.deepcopy(stat_data_init),
-                    transformer_optimization_dto=next_io_config)
+                transformer_dto = TransformerOptimizationDto(circuit_filtered_point_filename=circuit_trial_file,
+                                                             progress_data=copy.deepcopy(stat_data_init),
+                                                             transformer_optimization_dto=next_io_config)
 
                 self._optimization_config_list.append(transformer_dto)
             else:

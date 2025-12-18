@@ -14,7 +14,7 @@ import numpy as np
 # Own libraries
 from dct.datasets_dtos import StudyData, FilterData, PlotData
 from dct.server_ctl_dtos import ProgressData
-from dct.topology.component_requirements_from_circuit import CapacitorRequirements
+from dct.components.component_requirements import CapacitorRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
 

@@ -14,7 +14,7 @@ import numpy as np
 import dct
 from dct.datasets_dtos import StudyData
 from dct import ProgressStatus
-from dct.heat_sink_optimization import ThermalCalcSupport
+from dct.components.heat_sink_optimization import ThermalCalcSupport
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime

@@ -8,7 +8,7 @@ from enum import Enum
 import pytest
 
 # own libraries
-import dct.heat_sink_optimization as test_circuit
+import dct.components.heat_sink_optimization as test_circuit
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
 

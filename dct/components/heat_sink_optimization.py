@@ -14,7 +14,7 @@ from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.heat_sink_dtos import *
+from dct.components.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)
 
