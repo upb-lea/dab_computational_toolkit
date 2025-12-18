@@ -1287,6 +1287,8 @@ def test__delete_processing_complete(caplog: LogCaptureFixture, test_id: int, is
 
     :param caplog: class instance for logger data
     :type  caplog: LogCaptureFixture
+    :param test_id: Index of the test to change test file name
+    :type  test_id: int
     :param is_path_existing: Flag to indicate, if the path exists
     :type  is_path_existing: bool
     :param is_file_existing: Flag to indicate, if the file exists
