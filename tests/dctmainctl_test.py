@@ -2,6 +2,7 @@
 
 # python libraries
 import os
+import stat
 import sys
 import shutil
 import tempfile
@@ -18,6 +19,7 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 from _pytest.capture import CaptureFixture
 import zipfile
+import json
 
 
 # own libraries
@@ -867,12 +869,10 @@ def test_generate_zip_archive(caplog: LogCaptureFixture, is_path_existing: bool,
     (True, True, False, True, 0)
 ])
 # Unit test function
-def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool, is_sqlite_stored: bool,
+def test__is_skippable(is_sqlite_check_enabled: bool, is_sqlite_stored: bool,
                        is_index_list: bool, is_processing_complete: bool, exp_message_id: int) -> None:
     """Test method def _is_skippable(act_study_data: StudyData, ...) -> tuple[bool, str] according values.
 
-    :param caplog: class instance for logger data
-    :type  caplog: LogCaptureFixture
     :param is_sqlite_check_enabled: Flag to indicate, if sqlite test is enabled
     :type  is_sqlite_check_enabled: bool
     :param is_sqlite_stored: Flag to indicate, if the sqlite test fails
@@ -888,8 +888,10 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
     target_study_name = "test_study_name"
     string_test_values: list[str] = ["A", "c9", "Test123", "x_Y_z890", "6Secure_Pass01", "Alpha_Bravo_2024", "z_Z9y_Y8_x_X7", "7Long_String_Test999"]
     processing_complete_test_file: str = "processing_complete_test_file.json"
+    processing_complete_path_test_file: str
     index_list: list[str] | None = None
     first_pkl_path_name: str
+    json_file_list: list[str] = []
 
     # Prepare the setup
     # Create path
@@ -916,6 +918,8 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
                         pkl_path_file_name = os.path.join(pkl_path_name, pkl_file+".pkl")
                         with open(pkl_path_file_name, "wb") as f:
                             f.write(os.urandom(1024))
+                        # Store file path  for json-list
+                        json_file_list.append(pkl_path_file_name)
                 else:
                     os.makedirs(path_name, exist_ok=True)
 
@@ -930,9 +934,9 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
             # Check if processing complete file is store
             if is_processing_complete:
                 # Create processing complete file
-                subdirectory: str = os.path.join(test_study_data.study_name, test_study_data.study_name)
-                DctMainCtl._set_processing_complete(test_study_data.optimization_directory, subdirectory,
-                                                    processing_complete_test_file, string_test_values)
+                processing_complete_path_test_file = os.path.join(test_study_data.optimization_directory, processing_complete_test_file)
+                with open(processing_complete_path_test_file, "w", encoding="utf-8") as file_handle:
+                    json.dump(json_file_list, file_handle, indent=2)
 
         else:
             # Check if sqlite file is to store
@@ -951,9 +955,13 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
                     pkl_path_file_name = os.path.join(pkl_path_name, pkl_file + ".pkl")
                     with open(pkl_path_file_name, "wb") as f:
                         f.write(os.urandom(1024))
+                    # Store file path  for json-list
+                    json_file_list.append(pkl_path_file_name)
+
                 # Create processing complete file
-                DctMainCtl._set_processing_complete(test_study_data.optimization_directory, pkl_path_name,
-                                                    processing_complete_test_file)
+                processing_complete_path_test_file = os.path.join(test_study_data.optimization_directory, processing_complete_test_file)
+                with open(processing_complete_path_test_file, "w", encoding="utf-8") as file_handle:
+                    json.dump(json_file_list, file_handle, indent=2)
 
             # Set the name of first element
             first_pkl_path_name = test_study_data.optimization_directory
@@ -965,24 +973,23 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
                             f"File {processing_complete_test_file} in path {test_study_data.optimization_directory} does not exists!\n"]
 
         # Perform the test
-        with caplog.at_level(logging.INFO):
-            # Check if sqlite is enabled
-            if is_sqlite_check_enabled:
-                # Check if sqlite test fails
-                if not is_sqlite_stored:
-                    # Perform the test
-                    with pytest.raises(ValueError) as error_message:
-                        is_skippable, issue_report = DctMainCtl._is_skippable(test_study_data, processing_complete_test_file,
-                                                                              is_sqlite_check_enabled, index_list)
-                    assert expected_message[exp_message_id] in str(error_message.value)
-                else:
-                    # Perform the test
-                    is_skippable, issue_report = DctMainCtl._is_skippable(test_study_data,
-                                                                          processing_complete_test_file,
+        # Check if sqlite is enabled
+        if is_sqlite_check_enabled:
+            # Check if sqlite test fails
+            if not is_sqlite_stored:
+                # Perform the test
+                with pytest.raises(ValueError) as error_message:
+                    is_skippable, issue_report = DctMainCtl._is_skippable(test_study_data, processing_complete_test_file,
                                                                           is_sqlite_check_enabled, index_list)
-                    # Verify the result
-                    assert is_skippable == is_processing_complete
-                    assert issue_report == expected_message[exp_message_id]
+                assert expected_message[exp_message_id] in str(error_message.value)
+            else:
+                # Perform the test
+                is_skippable, issue_report = DctMainCtl._is_skippable(test_study_data,
+                                                                      processing_complete_test_file,
+                                                                      is_sqlite_check_enabled, index_list)
+                # Verify the result
+                assert is_skippable == is_processing_complete
+                assert issue_report == expected_message[exp_message_id]
 
 #########################################################################################################
 # _set_processing_complete
@@ -990,6 +997,123 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
 
 # def _set_processing_complete(base_directory: str, subdirectory: str, complete_file_name: str,
 #                              index_list: list[str] | None = None) -> None:
+
+# test parameter list
+@pytest.mark.parametrize("is_json_path_existing, is_pkl_path_existing, is_any_pkl_file_existing, is_list_enabled, exp_message_id", [
+    # -- Parameter set which leads to an error ----
+    (False, False, False, False, 1),
+    (True, False, False, False, 2),
+    (False, False, False, True, 1),
+    (True, False, False, True, 2),
+    # -- Parameter set which does not lead to an error ----
+    (True, True, False, False, 0),
+    (True, True, True, False, 0),
+    (True, True, False, True, 0),
+    (True, True, True, True, 0)
+])
+# Unit test function
+def test__set_processing_complete(is_json_path_existing: bool, is_pkl_path_existing: bool,
+                                  is_any_pkl_file_existing: bool, is_list_enabled: bool, exp_message_id: int) -> None:
+    """Test method def _set_processing_complete(base_directory: str, subdirectory: str...) -> None: according values.
+
+    :param is_json_path_existing: Flag to indicate, if the path for json-file exists
+    :type  is_json_path_existing: bool
+    :param is_pkl_path_existing: Flag to indicate, if the path for pkl-files exist
+    :type  is_pkl_path_existing: bool
+    :param is_any_pkl_file_existing: Flag to indicate, if the any pkl-file is stored in pkl-file path
+    :type  is_any_pkl_file_existing: bool
+    :param is_list_enabled: Flag to indicate, if the list is not empty
+    :type  is_list_enabled: bool
+    :param exp_message_id: List index of the expected message
+    :type  exp_message_id: int
+    """
+    # Variable declaration
+    string_test_values: list[str] = ["A", "c9", "Test123", "x_Y_z890", "6Secure_Pass01", "Alpha_Bravo2024", "z_Z9y_Y8_x_X7", "7Long_String_Test999"]
+    processing_complete_test_file: str = "processing_complete_test_file.json"
+    json_path_name: str = "test_json_path"
+    subdirectory: str = "pkl_subdirectory"
+    index_list: list[str] = []
+    json_file_list_cmp: list[str] = []
+    json_path: str
+    pkl_path_name: str = ""
+
+    # Prepare the setup
+    # Create path
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Assemble json path
+        json_path = os.path.join(tmpdir, json_path_name)
+        # Check if json-file path exists
+        if is_json_path_existing:
+            # Create json path
+            os.makedirs(json_path, exist_ok=True)
+            # Check if pkl-file path exists
+            if is_pkl_path_existing:
+                #  Check if list mode is enabled
+                if is_list_enabled:
+                    # Generate pkl-files according the index list
+                    index_list = string_test_values
+                    # Create pkl-files for each index
+                    for index in index_list:
+                        # Create pkl-folder and add index list
+                        pkl_path_name = os.path.join(json_path, index, subdirectory)
+                        os.makedirs(pkl_path_name, exist_ok=True)
+                        # Check if pkl-files are to create
+                        if is_any_pkl_file_existing:
+                            # Store dummy files
+                            for pkl_file in string_test_values:
+                                pkl_path_file_name = os.path.join(pkl_path_name, pkl_file+".pkl")
+                                with open(pkl_path_file_name, "wb") as f:
+                                    f.write(os.urandom(1024))
+                                # Store file path  for json-list
+                                json_file_list_cmp.append(pkl_path_file_name)
+                else:
+                    # Create pkl-folder
+                    pkl_path_name = os.path.join(json_path, subdirectory)
+                    os.makedirs(pkl_path_name, exist_ok=True)
+                    # Store dummy files
+                    for pkl_file in string_test_values:
+                        pkl_path_file_name = os.path.join(pkl_path_name, pkl_file + ".pkl")
+                        with open(pkl_path_file_name, "wb") as f:
+                            f.write(os.urandom(1024))
+                        # Store file path  for json-list
+                        json_file_list_cmp.append(pkl_path_file_name)
+            else:
+                #  Check if list mode is enabled
+                if is_list_enabled:
+                    # Generate pkl-files according the index list
+                    index_list = string_test_values
+                    # Create pkl-files for each index
+                    for index in index_list:
+                        # Create only index folders without sub-directory
+                        index_folder = os.path.join(json_path, index)
+                        os.makedirs(index_folder, exist_ok=True)
+                    # Assemble pkl-path name for first index
+                    pkl_path_name = os.path.join(json_path, string_test_values[0], subdirectory)
+                else:
+                    # Assemble pkl-path name
+                    pkl_path_name = os.path.join(json_path, subdirectory)
+
+        # Expected messages
+        expected_message = ["",
+                            f"Path {json_path} does not exists!",
+                            f"pkl-file path {pkl_path_name} does not exists!"]
+
+        # Perform the test
+        if not is_json_path_existing or not is_pkl_path_existing:
+            # Perform the test
+            with pytest.raises(ValueError) as error_message:
+                DctMainCtl._set_processing_complete(json_path, subdirectory, processing_complete_test_file, index_list)
+            assert expected_message[exp_message_id] in str(error_message.value)
+        else:
+            # Perform the test
+            DctMainCtl._set_processing_complete(json_path, subdirectory, processing_complete_test_file, index_list)
+            # Load the pkl_file_list from file
+            json_path = os.path.join(tmpdir, json_path_name, processing_complete_test_file)
+            with open(json_path, "r", encoding="utf-8") as file_handle:
+                pkl_file_list = json.load(file_handle)
+            # Verify the result
+            assert sorted(json_file_list_cmp) == sorted(pkl_file_list)
+
 
 #########################################################################################################
 # _is_processing_complete
@@ -1013,12 +1137,10 @@ def test__is_skippable(caplog: LogCaptureFixture, is_sqlite_check_enabled: bool,
     (True, True, False, True, True, 0)]
 )
 # Unit test function
-def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bool, is_file_existing: bool, is_file_empty: bool,
+def test__is_processing_complete(is_path_existing: bool, is_file_existing: bool, is_file_empty: bool,
                                  is_processing_complete: bool, is_list_enabled: bool, exp_message_id: int) -> None:
     """Test method def _set_processing_complete(base_directory: str, subdirectory: str...) -> None: according values.
 
-    :param caplog: class instance for logger data
-    :type  caplog: LogCaptureFixture
     :param is_path_existing: Flag to indicate, if the path for json-file exists
     :type  is_path_existing: bool
     :param is_file_existing: Flag to indicate, if the json-file exists
@@ -1036,9 +1158,9 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
     target_study_name = "test_study_name"
     string_test_values: list[str] = ["A", "c9", "Test123", "x_Y_z890", "6Secure_Pass01", "Alpha_Bravo2024", "z_Z9y_Y8_x_X7", "7Long_String_Test999"]
     processing_complete_test_file: str = "processing_complete_test_file.json"
-    index_list: list[str] | None = None
+    processing_complete_path_test_file: str
     first_pkl_path_file_name: str = ""
-    subdirectory: str = ""
+    json_file_list: list[str] = []
 
     # Prepare the setup
     # Create path
@@ -1055,7 +1177,7 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
             #  Check if list is available
             if is_list_enabled:
                 # Generate pkl-files according the index list
-                index_list = string_test_values
+                index_list: list[str] = string_test_values
                 # Create pkl-files for each index
                 for index in index_list:
                     # Create folder and add index list
@@ -1066,6 +1188,8 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
                         pkl_path_file_name = os.path.join(pkl_path_name, pkl_file+".pkl")
                         with open(pkl_path_file_name, "wb") as f:
                             f.write(os.urandom(1024))
+                        # Store file path  for json-list
+                        json_file_list.append(pkl_path_file_name)
 
                 # Set the name of first element
                 first_pkl_path_file_name = os.path.join(test_study_data.optimization_directory, index_list[0],
@@ -1074,9 +1198,11 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
                 # Check if processing complete file is store
                 if is_file_existing:
                     # Create processing complete file
-                    subdirectory = os.path.join(test_study_data.study_name)
-                    DctMainCtl._set_processing_complete(test_study_data.optimization_directory, subdirectory,
-                                                        processing_complete_test_file, string_test_values)
+                    processing_complete_path_test_file = os.path.join(test_study_data.optimization_directory,
+                                                                      processing_complete_test_file)
+                    with open(processing_complete_path_test_file, "w", encoding="utf-8") as file_handle:
+                        json.dump(json_file_list, file_handle, indent=2)
+
             else:
                 # Create folder and add index list
                 pkl_path_name = os.path.join(test_study_data.optimization_directory, test_study_data.study_name)
@@ -1086,6 +1212,8 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
                     pkl_path_file_name = os.path.join(pkl_path_name, pkl_file + ".pkl")
                     with open(pkl_path_file_name, "wb") as f:
                         f.write(os.urandom(1024))
+                    # Store file path  for json-list
+                    json_file_list.append(pkl_path_file_name)
 
                 # Set the name of first element
                 first_pkl_path_file_name = os.path.join(test_study_data.optimization_directory,
@@ -1094,8 +1222,10 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
                 # Check if processing complete file is store
                 if is_file_existing:
                     # Create processing complete file
-                    DctMainCtl._set_processing_complete(test_study_data.optimization_directory, test_study_data.study_name,
-                                                        processing_complete_test_file)
+                    processing_complete_path_test_file = os.path.join(test_study_data.optimization_directory,
+                                                                      processing_complete_test_file)
+                    with open(processing_complete_path_test_file, "w", encoding="utf-8") as file_handle:
+                        json.dump(json_file_list, file_handle, indent=2)
 
             # Check if is_processing_complete is not fulfilled
             if not is_processing_complete:
@@ -1120,26 +1250,110 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
                             f"File {first_pkl_path_file_name} does not exists!\n"]
 
         # Perform the test
-        with caplog.at_level(logging.INFO):
-            if not is_path_existing:
-                # Perform the test
-                with pytest.raises(ValueError) as error_message:
-                    is_complete_result, issue_report = DctMainCtl._is_processing_complete(test_study_data.optimization_directory,
-                                                                                          processing_complete_test_file)
-                assert expected_message[exp_message_id] in str(error_message.value)
-            else:
-                # Perform the test
-                is_complete_result, issue_report = (DctMainCtl._is_processing_complete(test_study_data.optimization_directory,
-                                                                                       processing_complete_test_file))
-                # Verify the result
-                assert is_complete_result == is_processing_complete
-                assert issue_report == expected_message[exp_message_id]
+        if not is_path_existing:
+            # Perform the test
+            with pytest.raises(ValueError) as error_message:
+                is_complete_result, issue_report = DctMainCtl._is_processing_complete(test_study_data.optimization_directory,
+                                                                                      processing_complete_test_file)
+            assert expected_message[exp_message_id] in str(error_message.value)
+        else:
+            # Perform the test
+            is_complete_result, issue_report = (DctMainCtl._is_processing_complete(test_study_data.optimization_directory,
+                                                                                   processing_complete_test_file))
+            # Verify the result
+            assert is_complete_result == is_processing_complete
+            assert issue_report == expected_message[exp_message_id]
 
 #########################################################################################################
 # _delete_processing_complete
 #########################################################################################################
 
 # def _delete_processing_complete(base_directory: str, act_complete_file_name: str) -> bool:
+
+# test parameter list
+@pytest.mark.parametrize("test_id, is_path_existing, is_file_existing, is_file_protected, exp_message_id", [
+    # --parameter set which leads to an error----
+    (0, False, False, False, 1),
+    # -- Negative result----
+    (1, True, True, True, 2),
+    # -- Positive result----
+    (2, True, True, False, 0),
+    (3, True, False, False, 0)]
+)
+# Unit test function
+def test__delete_processing_complete(caplog: LogCaptureFixture, test_id: int, is_path_existing: bool, is_file_existing: bool,
+                                     is_file_protected: bool, exp_message_id: int) -> None:
+    """Test method def _set_processing_complete(base_directory: str, subdirectory: str...) -> None: according values.
+
+    :param caplog: class instance for logger data
+    :type  caplog: LogCaptureFixture
+    :param test_id: Index of the test to change test file name
+    :type  test_id: int
+    :param is_path_existing: Flag to indicate, if the path exists
+    :type  is_path_existing: bool
+    :param is_file_existing: Flag to indicate, if the file exists
+    :type  is_file_existing: bool
+    :param is_file_protected: Flag to indicate, if the file is 'write protected'
+    :type  is_file_protected: bool
+    :param exp_message_id: List index of the expected message
+    :type  exp_message_id: int
+    """
+    # Variable declaration
+    string_test_values: list[str] = ["A", "c9", "Test123", "x_Y_z890", "6Secure_Pass01", "Alpha_Bravo2024", "z_Z9y_Y8_x_X7", "7Long_String_Test999"]
+    test_folder_name: str = "test_folder"
+    test_file_name: str = ""
+    test_path_file_name: str = ""
+
+    # Prepare the setup
+    # Create path
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Assemble json path
+        test_path = os.path.join(tmpdir, test_folder_name)
+        # Check if json-file path exists
+        if is_path_existing:
+            # Create json path
+            os.makedirs(test_path, exist_ok=True)
+            # Assemble file path name
+            test_file_name = string_test_values[test_id]+".json"
+            test_path_file_name = os.path.join(test_path, test_file_name)
+            # Check if pkl-file path exists
+            if is_file_existing:
+                #  Create file
+                with open(test_path_file_name, "wb") as f:
+                    f.write(os.urandom(1024))
+                #  Check if file is write protected
+                if is_file_protected:
+                    # Generate pkl-files according the index list
+                    os.chmod(test_path, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                    # (stat.S_IWRITE | stat.S_IWGRP | stat.S_IWOTH)
+
+        # Expected messages
+        expected_message = ["",
+                            f"Path {test_path} does not exists!",
+                            f"File {test_path_file_name} is write protected!"]
+
+        # Perform the test
+        with caplog.at_level(logging.INFO):
+            if not is_path_existing:
+                # Perform the test
+                with pytest.raises(ValueError) as error_message:
+                    DctMainCtl._delete_processing_complete(test_path, test_file_name)
+                assert expected_message[exp_message_id] in str(error_message.value)
+            else:
+                # Perform the test
+                is_deleted = DctMainCtl._delete_processing_complete(test_path, test_file_name)
+
+                # Check write protection
+                if is_file_protected:
+                    # Undo write protection
+                    os.chmod(test_path, stat.S_IWRITE | stat.S_IWGRP | stat.S_IWOTH | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+                # Verify the result
+                assert os.path.isfile(test_path_file_name) != is_deleted
+                if len(caplog.records) > 0:
+                    assert caplog.records[0].message.startswith(expected_message[exp_message_id])
+                else:
+                    assert "" == expected_message[exp_message_id]
 
 
 #########################################################################################################
@@ -1148,6 +1362,72 @@ def test__is_processing_complete(caplog: LogCaptureFixture, is_path_existing: bo
 
 # def _update_calculation_mode(circuit_calculation_mode: CalcModeEnum, dependent_study_data: StudyData) -> None:
 # def _get_calculation_mode(calculation_mode_value: str) -> CalcModeEnum:
+
+# test parameter list
+@pytest.mark.parametrize(
+    "mode_value, study_mode, expected_result_get, exp_result_update, is_no_error_raise", [
+        # --invalid entries ----
+        ("x_y_x_d", CalcModeEnum.skip_mode, CalcModeEnum.skip_mode, CalcModeEnum.skip_mode, False),
+        ("", CalcModeEnum.new_mode, CalcModeEnum.skip_mode, CalcModeEnum.skip_mode, False),
+        # --valid entries----
+        ("new", CalcModeEnum.new_mode, CalcModeEnum.new_mode, CalcModeEnum.new_mode, True),
+        ("continue", CalcModeEnum.new_mode, CalcModeEnum.continue_mode, CalcModeEnum.new_mode, True),
+        ("skip", CalcModeEnum.new_mode, CalcModeEnum.skip_mode, CalcModeEnum.new_mode, True),
+        ("new", CalcModeEnum.continue_mode, CalcModeEnum.new_mode, CalcModeEnum.new_mode, True),
+        ("continue", CalcModeEnum.continue_mode, CalcModeEnum.continue_mode, CalcModeEnum.continue_mode, True),
+        ("skip", CalcModeEnum.continue_mode, CalcModeEnum.skip_mode, CalcModeEnum.continue_mode, True),
+        ("new", CalcModeEnum.skip_mode, CalcModeEnum.new_mode, CalcModeEnum.new_mode, True),
+        ("continue", CalcModeEnum.skip_mode, CalcModeEnum.continue_mode, CalcModeEnum.continue_mode, True),
+        ("skip", CalcModeEnum.skip_mode, CalcModeEnum.skip_mode, CalcModeEnum.skip_mode, True)
+    ])
+# Unit test function
+def test__get_calculation_mode_and_update_calculation_mode(mode_value: str, study_mode: CalcModeEnum,
+                                                           expected_result_get: CalcModeEnum,
+                                                           exp_result_update: CalcModeEnum, is_no_error_raise: bool) -> None:
+    """Test method def _get_calculation_mode and _update_calculation_mode.
+
+    :param mode_value: string of mode value
+    :type  mode_value: str
+    :param study_mode: Mode of the study to update
+    :type  study_mode
+    :param expected_result_get: expected result of get calculation mode function
+    :param expected_result_get: CalcModeEnum
+    :param exp_result_update: expected result of update calculation mode function
+    :param exp_result_update: CalcModeEnum
+    :param is_no_error_raise: Indicates if the test is performed without raising error
+    :type  is_no_error_raise: bool
+    """
+    # Variable declaration
+    target_study_name: str = "test_study_name"
+    exp_error_message: str = (f"Enum value {mode_value} is invalid!\n"
+                              f"only {CalcModeEnum.new_mode.value}, {CalcModeEnum.continue_mode.value}, "
+                              f"and {CalcModeEnum.skip_mode.value} are valid!\n")
+
+    # Prepare the setup
+    # Create path
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create the study
+        test_study_data: d_dtos.StudyData = d_dtos.StudyData(
+            study_name=target_study_name,
+            optimization_directory=os.path.join(tmpdir),
+            calculation_mode=study_mode
+        )
+
+        # Check for valid result
+        if is_no_error_raise:
+            # Perform the test of _get_calculation_mode
+            test_result_get = DctMainCtl._get_calculation_mode(mode_value)
+            # Verify the result
+            assert test_result_get == expected_result_get
+            # Perform the test of _update_calculation_mode
+            DctMainCtl._update_calculation_mode(test_result_get, test_study_data)
+            assert test_study_data.calculation_mode == exp_result_update
+
+        else:
+            # Perform the test
+            with pytest.raises(ValueError) as error_message:
+                test_result_get = DctMainCtl._get_calculation_mode(mode_value)
+            assert exp_error_message in str(error_message.value)
 
 #########################################################################################################
 # test of get_initialization_queue_data

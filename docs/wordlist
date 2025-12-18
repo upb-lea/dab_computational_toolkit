@@ -377,3 +377,6 @@ TransformerRequirements
 CapacitorRequirements
 ComponentRequirements
 CalcModeEnum
+IWGRP
+IWOTH
+IWRITE
