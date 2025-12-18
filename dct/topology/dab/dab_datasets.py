@@ -21,7 +21,7 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
-from dct.topology.component_requirements_from_circuit import CapacitorRequirements
+from dct.components.component_requirements import CapacitorRequirements
 
 logger = logging.getLogger(__name__)
 

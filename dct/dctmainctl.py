@@ -1375,7 +1375,7 @@ class DctMainCtl:
             raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_consistent, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
         if not is_consistent:
             raise ValueError("Inductor optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
@@ -1425,7 +1425,7 @@ class DctMainCtl:
             raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
 
         # Verify optimization parameter
-        is_consistent, issue_report = dct.TransformerOptimization.verify_optimization_parameter(toml_transformer)
+        is_consistent, issue_report = TransformerOptimization.verify_optimization_parameter(toml_transformer)
         if not is_consistent:
             raise ValueError("Transformer optimization parameter in file ",
                              f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)

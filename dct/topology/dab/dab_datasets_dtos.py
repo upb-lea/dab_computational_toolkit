@@ -7,8 +7,8 @@ import dataclasses
 import numpy as np
 
 # own libraries
-from dct.capacitor_optimization_dtos import CapacitorResults
-from dct.topology.component_requirements_from_circuit import ComponentRequirements
+from dct.components.capacitor_optimization_dtos import CapacitorResults
+from dct.components.component_requirements import ComponentRequirements
 
 @dataclasses.dataclass
 class TransistorDTO:

@@ -32,7 +32,7 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
-from dct.topology.component_requirements_from_circuit import CapacitorRequirements, ComponentRequirements
+from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements
 
 logger = logging.getLogger(__name__)
 

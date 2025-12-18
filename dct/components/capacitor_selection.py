@@ -14,13 +14,13 @@ import tqdm
 
 # own libraries
 import pecst
-from dct.capacitor_optimization_dtos import CapacitorOptimizationDto
+from dct.components.capacitor_optimization_dtos import CapacitorOptimizationDto
 from dct.toml_checker import TomlCapacitorSelection, Debug
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
-from dct.topology.component_requirements_from_circuit import CapacitorRequirements
-from dct.capacitor_optimization_dtos import CapacitorResults
+from dct.components.component_requirements import CapacitorRequirements
+from dct.components.capacitor_optimization_dtos import CapacitorResults
 from dct.constant_path import CIRCUIT_CAPACITOR_LOSS_FOLDER
 
 logger = logging.getLogger(__name__)

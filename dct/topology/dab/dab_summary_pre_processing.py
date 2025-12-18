@@ -13,8 +13,8 @@ import numpy as np
 # own libraries
 import dct
 from dct import ProgressStatus
-from dct.heat_sink_optimization import ThermalCalcSupport
-from dct.capacitor_optimization_dtos import CapacitorResults
+from dct.components.heat_sink_optimization import ThermalCalcSupport
+from dct.components.capacitor_optimization_dtos import CapacitorResults
 import hct
 import dct.topology.dab.dab_datasets as dab_dset
 from dct.server_ctl_dtos import ProgressData

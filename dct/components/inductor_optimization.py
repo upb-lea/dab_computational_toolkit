@@ -13,8 +13,9 @@ import tqdm
 
 # own libraries
 import femmt as fmt
+import dct
 from dct.boundary_check import CheckCondition as c_flag
-import dct.inductor_optimization_dtos
+from dct.components.inductor_optimization_dtos import InductorOptimizationDto
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
@@ -31,7 +32,7 @@ class InductorOptimization:
     """Optimization of the inductor."""
 
     # Declaration of member types
-    _optimization_config_list: list[dct.inductor_optimization_dtos.InductorOptimizationDto]
+    _optimization_config_list: list[InductorOptimizationDto]
     _i_lock_stat: threading.Lock
     _progress_run_time: RunTime
 
@@ -145,7 +146,7 @@ class InductorOptimization:
         is_list_generation_successful = False
 
         # Verify optimization parameter
-        is_consistent, issue_report = dct.InductorOptimization.verify_optimization_parameter(toml_inductor)
+        is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
         if not is_consistent:
             raise ValueError("Inductor optimization parameter are inconsistent!\n", issue_report)
 
@@ -198,11 +199,11 @@ class InductorOptimization:
                 act_time_current_vec = np.array([time, i_l_1_max_current_waveform])
                 next_io_config.target_inductance = circuit_dto.input_config.Lc1
                 next_io_config.time_current_vec = act_time_current_vec
-                next_io_config.inductor_optimization_directory = os.path.join(
-                    study_data.optimization_directory, circuit_trial_file, study_data.study_name)
-                inductor_dto = dct.inductor_optimization_dtos.InductorOptimizationDto(
-                    circuit_filtered_point_filename=circuit_trial_file, progress_data=copy.deepcopy(stat_data_init),
-                    inductor_optimization_dto=next_io_config)
+                next_io_config.inductor_optimization_directory = os.path.join(study_data.optimization_directory,
+                                                                              circuit_trial_file, study_data.study_name)
+                inductor_dto = InductorOptimizationDto(circuit_filtered_point_filename=circuit_trial_file,
+                                                       progress_data=copy.deepcopy(stat_data_init),
+                                                       inductor_optimization_dto=next_io_config)
                 self._optimization_config_list.append(inductor_dto)
             else:
                 logger.info(f"Wrong path or file {circuit_filepath} does not exists!")

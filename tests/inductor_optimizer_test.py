@@ -9,7 +9,7 @@ from enum import Enum
 import pytest
 
 # own libraries
-import dct.inductor_optimization as test_circuit
+import dct.components.inductor_optimization as test_circuit
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
 import femmt as fmt

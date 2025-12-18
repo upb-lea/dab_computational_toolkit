@@ -1,17 +1,17 @@
 """Init python files as modules."""
 from dct.boundary_check import *
-from dct.heat_sink import *
-from dct.heat_sink_dtos import *
+from dct.components.heat_sink import *
+from dct.components.heat_sink_dtos import *
 from dct.toml_checker import *
 # capacitor selection classes
-from dct.capacitor_selection import *
-from dct.capacitor_optimization_dtos import *
+from dct.components.capacitor_selection import *
+from dct.components.capacitor_optimization_dtos import *
 # optimization classes
-from dct.inductor_optimization import *
-from dct.transformer_optimization import *
-from dct.heat_sink_optimization import *
-from dct.inductor_optimization_dtos import *
-from dct.transformer_optimization_dtos import *
+from dct.components.inductor_optimization import *
+from dct.components.transformer_optimization import *
+from dct.components.heat_sink_optimization import *
+from dct.components.inductor_optimization_dtos import *
+from dct.components.transformer_optimization_dtos import *
 from dct.plot_control import *
 from dct.generalplotsettings import *
 from dct.generate_toml import *
