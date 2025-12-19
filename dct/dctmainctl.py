@@ -1656,8 +1656,15 @@ class DctMainCtl:
 
         # Allocate and initialize inductor configuration
         self._inductor_optimization = InductorOptimization()
+
+        inductor_requirements_list = []
+        for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
+            circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
+            inductor_requirements = self._circuit_optimization.get_inductor_requirements(circuit_filepath)
+            inductor_requirements_list.append(inductor_requirements[0])
+
         self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
-                                                                          self._circuit_optimization.filter_data)
+                                                                          self._circuit_optimization.filter_data, inductor_requirements_list)
 
         # Check, if inductor optimization is not to skip
         if not self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:

@@ -25,6 +25,8 @@ import dct.topology.dab.dab_datasets_dtos as d_dtos
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
 from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
+from dct.components.component_requirements import InductorRequirements
+from dct.toml_checker import TomlInductor
 # configure root logger
 logger = logging.getLogger(__name__)
 
@@ -130,88 +132,69 @@ class InductorOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_inductor_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: StudyData, circuit_filter_data: FilterData) -> bool:
+    def initialize_inductor_optimization_list(self, toml_inductor: TomlInductor, inductor_study_data: StudyData, circuit_filter_data: FilterData,
+                                              inductor_requirements_list: list[InductorRequirements]) -> None:
         """
-        Generate the input geometry/settings list for the FEM simulation.
+        Initialize the inductor optimization.
 
-        :param toml_inductor: toml inductor configuration
-        :type toml_inductor: dct.TomlInductor
-        :param study_data: study data
-        :type study_data: StudyData
-        :param circuit_filter_data: Information about the filtered circuit designs
+        :param toml_inductor: inductor data
+        :type toml_inductor: TomlCapacitorSelection
+        :param inductor_study_data: capacitor study data
+        :type inductor_study_data: StudyData
+        :param circuit_filter_data: filtered circuit data
         :type circuit_filter_data: FilterData
-        :return: True, if the configuration was successful initialized
-        :rtype: bool
+        :param inductor_requirements_list: list with inductor requirements
+        :type inductor_requirements_list: list[InductorRequirements]
         """
-        is_list_generation_successful = False
-
-        # Verify optimization parameter
-        is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
-        if not is_consistent:
-            raise ValueError("Inductor optimization parameter are inconsistent!\n", issue_report)
-
-        # Insulation parameter
-        act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
-                                                    core_bot=toml_inductor.insulations.core_bot,
-                                                    core_top=toml_inductor.insulations.core_top,
-                                                    core_right=toml_inductor.insulations.core_right,
-                                                    core_left=toml_inductor.insulations.core_left)
-
-        # Initialize the material data source
-        act_material_data_sources = fmt.MaterialDataSources(
-            permeability_datasource=toml_inductor.material_data_sources.permeability_datasource,
-            permittivity_datasource=toml_inductor.material_data_sources.permittivity_datasource,
-        )
-
-        # Create fix part of io_config
-        io_config_gen = fmt.InductorOptimizationDTO(
-            inductor_study_name=study_data.study_name,
-            core_name_list=toml_inductor.design_space.core_name_list,
-            material_name_list=toml_inductor.design_space.material_name_list,
-            core_inner_diameter_min_max_list=toml_inductor.design_space.core_inner_diameter_min_max_list,
-            window_h_min_max_list=toml_inductor.design_space.window_h_min_max_list,
-            window_w_min_max_list=toml_inductor.design_space.window_w_min_max_list,
-            litz_wire_name_list=toml_inductor.design_space.litz_wire_name_list,
-            insulations=act_insulations,
-            target_inductance=0.0,
-            temperature=toml_inductor.boundary_conditions.temperature,
-            time_current_vec=[np.array([0]), np.array([0])],
-            inductor_optimization_directory="",
-            material_data_sources=act_material_data_sources)
-
-        # Initialize the statistical data
-        stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
-                                                    progress_status=ProgressStatus.Idle)
-
         # Create the io_config_list for all trials
-        for circuit_trial_file in circuit_filter_data.filtered_list_files:
-            circuit_filepath = os.path.join(circuit_filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-            # Check filename
-            if os.path.isfile(circuit_filepath):
-                # Read results from circuit optimization
-                circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath)
-                # get the peak current waveform
-                sorted_max_angles, i_l_1_max_current_waveform = dab_dset.HandleDabDto.get_max_peak_waveform_inductor(
-                    circuit_dto, False)
-                time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
-                # Generate new io_config
-                next_io_config = copy.deepcopy(io_config_gen)
-                act_time_current_vec = np.array([time, i_l_1_max_current_waveform])
-                next_io_config.target_inductance = circuit_dto.input_config.Lc1
-                next_io_config.time_current_vec = act_time_current_vec
-                next_io_config.inductor_optimization_directory = os.path.join(study_data.optimization_directory,
-                                                                              circuit_trial_file, study_data.study_name)
-                inductor_dto = InductorOptimizationDto(circuit_filtered_point_filename=circuit_trial_file,
-                                                       progress_data=copy.deepcopy(stat_data_init),
-                                                       inductor_optimization_dto=next_io_config)
-                self._optimization_config_list.append(inductor_dto)
-            else:
-                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
+        for count, inductor_requirements in enumerate(inductor_requirements_list):
 
-        if self._optimization_config_list:
-            is_list_generation_successful = True
+            circuit_trial_file = circuit_filter_data.filtered_list_files[count]
+            trial_directory = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file, inductor_study_data.study_name)
 
-        return is_list_generation_successful
+            # catch mypy type issue
+            if not isinstance(inductor_requirements, InductorRequirements):
+                raise TypeError("circuit DTO file is incomplete.")
+
+            # Insulation parameter
+            act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
+                                                        core_bot=toml_inductor.insulations.core_bot,
+                                                        core_top=toml_inductor.insulations.core_top,
+                                                        core_right=toml_inductor.insulations.core_right,
+                                                        core_left=toml_inductor.insulations.core_left)
+
+            # Initialize the material data source
+            act_material_data_sources = fmt.MaterialDataSources(
+                permeability_datasource=toml_inductor.material_data_sources.permeability_datasource,
+                permittivity_datasource=toml_inductor.material_data_sources.permittivity_datasource,
+            )
+
+            # Create fix part of io_config
+            inductor_requirements_dto = fmt.InductorOptimizationDTO(
+                inductor_study_name=inductor_study_data.study_name,
+                core_name_list=toml_inductor.design_space.core_name_list,
+                material_name_list=toml_inductor.design_space.material_name_list,
+                core_inner_diameter_min_max_list=toml_inductor.design_space.core_inner_diameter_min_max_list,
+                window_h_min_max_list=toml_inductor.design_space.window_h_min_max_list,
+                window_w_min_max_list=toml_inductor.design_space.window_w_min_max_list,
+                litz_wire_name_list=toml_inductor.design_space.litz_wire_name_list,
+                insulations=act_insulations,
+                target_inductance=inductor_requirements.target_inductance,
+                temperature=toml_inductor.boundary_conditions.temperature,
+                time_current_vec=[inductor_requirements.time_vec, inductor_requirements.current_vec],
+                inductor_optimization_directory=os.path.join(inductor_study_data.optimization_directory, circuit_trial_file, inductor_study_data.study_name),
+                material_data_sources=act_material_data_sources)
+
+            # Initialize the statistical data
+            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
+                                                        progress_status=ProgressStatus.Idle)
+
+            inductor_optimization_dto = InductorOptimizationDto(
+                circuit_filtered_point_filename=circuit_trial_file,
+                progress_data=copy.deepcopy(stat_data_init),
+                inductor_optimization_dto=inductor_requirements_dto)
+
+            self._optimization_config_list.append(inductor_optimization_dto)
 
     def get_progress_data(self, filtered_list_id: int) -> ProgressData:
         """Provide the progress data of the optimization.

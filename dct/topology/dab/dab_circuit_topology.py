@@ -15,6 +15,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
 import dct.sampling as sampling
+from dct.components.component_requirements import InductorRequirements
 
 # own libraries
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
@@ -1176,6 +1177,26 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             raise TypeError("Loaded capacitor requirements have wrong type.")
 
         return circuit_dto.component_requirements.capacitor_requirements
+
+    @staticmethod
+    def get_inductor_requirements(circuit_filepath: str) -> list[InductorRequirements]:
+        """Get the inductor requirements.
+
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Inductor Requirements
+        :rtype: InductorRequirements
+        """
+        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
+        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded component requirements have wrong type.")
+
+        if not isinstance(circuit_dto.component_requirements.inductor_requirements[0], InductorRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded capacitor requirements have wrong type.")
+
+        return circuit_dto.component_requirements.inductor_requirements
 
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:

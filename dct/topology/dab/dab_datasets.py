@@ -21,7 +21,7 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
-from dct.components.component_requirements import CapacitorRequirements
+from dct.components.component_requirements import CapacitorRequirements, InductorRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -717,6 +717,52 @@ class HandleDabDto:
         return capacitor_2_requirements
 
     @staticmethod
+    def generate_inductor_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> InductorRequirements:
+        """Inductor requirements.
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: Inductor requirements
+        :rtype: InductorRequirements
+        """
+        # get the single maximum operating point
+        sorted_max_rms_angles, i_l_1_max_peak_current_waveform = HandleDabDto.get_max_peak_waveform_inductor(dab_dto, plot=False)
+
+        # get all current waveforms for all operating points
+        i_l_1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        dimension_0 = np.shape(i_l_1_sorted)[0]
+        dimension_1 = np.shape(i_l_1_sorted)[1]
+        dimension_2 = np.shape(i_l_1_sorted)[2]
+        dimension_3 = np.shape(i_l_1_sorted)[3]
+
+        time_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+        current_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            time = full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / dab_dto.input_config.fs
+
+            # needs np.unique( , return_index=True)
+            current = full_current_waveform_from_currents(i_l_1_sorted[vec_vvp])  # [unique_indices]
+
+            time_array[vec_vvp] = time
+            current_array[vec_vvp] = current
+
+        time_array_resorted = np.transpose(time_array, (0, 1, 2, 3))
+        current_array_resorted = np.transpose(current_array, (0, 1, 2, 3))
+
+        inductor_requirements = InductorRequirements(
+            current_vec=i_l_1_max_peak_current_waveform,
+            time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            time_array=time_array_resorted,
+            current_array=current_array_resorted,
+            study_name="",
+            target_inductance=dab_dto.input_config.Lc1
+        )
+        return inductor_requirements
+
+    @staticmethod
     def generate_components_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
         """
         DAB component requirements (capacitors, inductor, transformer).
@@ -728,7 +774,9 @@ class HandleDabDto:
         """
         capacitor_1_requirements = HandleDabDto.generate_capacitor_1_target_requirements(dab_dto)
         capacitor_2_requirements = HandleDabDto.generate_capacitor_2_target_requirements(dab_dto)
+        inductor_requirements = HandleDabDto.generate_inductor_target_requirements(dab_dto)
 
-        dab_dto.component_requirements = d_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements, capacitor_2_requirements])
+        dab_dto.component_requirements = d_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements, capacitor_2_requirements],
+                                                                      inductor_requirements=[inductor_requirements])
 
         return dab_dto
