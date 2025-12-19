@@ -7,6 +7,51 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import qmc
+from dessca import DesscaModel
+
+
+def _normalize_single_point(x: np.ndarray, x_min: float, x_max: float, x_norm_min: float, x_norm_max: float) -> np.ndarray:
+    """
+    Normalize a single point x where x is in between x_min and x_max to a normalized point x_norm where x_norm is between x_norm_min and x_norm_max.
+
+    :param x: point
+    :type x: float
+    :param x_min: minimum value which x can assume
+    :type x_min: float
+    :param x_max: maximum value which x can assume
+    :type x_max: float
+    :param x_norm_min: minimum value of the normalized area
+    :type x_norm_min: float
+    :param x_norm_max: maximum value of the normalized area
+    :type x_norm_max: float
+    :return: normalized point
+    :rtype: float
+    """
+    x_norm_point = (x - x_min) * (x_norm_max - x_norm_min) / (x_max - x_min) + x_norm_min
+    return x_norm_point
+
+
+def _denormalize_single_point(x_norm: float | np.ndarray, x_min: float, x_max: float, x_norm_min: float, x_norm_max: float) \
+        -> float | list[float] | np.ndarray:
+    """
+    Denormalize a single point x_norm where x_norm is in between x_norm_min and x_norm_max to a point x where x is between x_min and x_max.
+
+    :param x_norm: point
+    :type x_norm: float
+    :param x_min: minimum value which x can assume
+    :type x_min: float
+    :param x_max: maximum value which x can assume
+    :type x_max: float
+    :param x_norm_min: minimum value of the normalized area
+    :type x_norm_min: float
+    :param x_norm_max: maximum value of the normalized area
+    :type x_norm_max: float
+    :return: denormalized point
+    :rtype: float
+    """
+    x_denorm = (x_norm - x_norm_min) * (x_max - x_min) / (x_norm_max - x_norm_min) + x_min
+    return x_denorm
+
 
 def check_user_points_in_min_max_region(dim_min_max_list: list[float], dim_points_list: list[float]) -> None:
     """
@@ -75,6 +120,70 @@ def latin_hypercube(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_
     dim_3_all_points = np.array([points[2] for points in scaled_sample])
 
     return dim_1_all_points, dim_2_all_points, dim_3_all_points
+
+
+def dessca(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_max: float, dim_3_min: float, dim_3_max: float, total_number_points: int,
+           dim_1_user_given_points_list: list[float], dim_2_user_given_points_list: list[float], dim_3_user_given_points_list: list[float]) \
+        -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Latin hypercube sampling for a given 3-dimensional user input.
+
+    :param dim_1_min: dimension 1 minimum, e.g. 690
+    :param dim_1_max: dimension 1 maximum, e.g. 710
+    :param dim_2_min: dimension 2 minimum, e.g. 175
+    :param dim_2_max: dimension 2 maximum, e.g. 295
+    :param dim_3_min: dimension 3 minimum, e.g. -2000
+    :param dim_3_max: dimension 3 maximum, e.g. 2000
+    :param total_number_points: point to sample by the sampler
+    :param dim_1_user_given_points_list: user-given points for dimension 1, e.g. [695, 705]
+    :param dim_2_user_given_points_list: user-given points for dimension 2, e.g. [289, 299]
+    :param dim_3_user_given_points_list: user-given points for dimension 3, e.g. [-1300, 1530]
+    :return: dim_1_all_points, dim_2_all_points, dim_3_all_points
+    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray]
+    """
+    # check if user points are within the given limits
+    check_user_points_in_min_max_region([dim_1_min, dim_1_max], dim_1_user_given_points_list)
+    check_user_points_in_min_max_region([dim_2_min, dim_2_max], dim_2_user_given_points_list)
+    check_user_points_in_min_max_region([dim_3_min, dim_3_max], dim_3_user_given_points_list)
+
+    if len(dim_1_user_given_points_list) != len(dim_2_user_given_points_list) or len(dim_1_user_given_points_list) != len(dim_3_user_given_points_list):
+        raise ValueError("User-given points incomplete.")
+
+    dim_1_user_given_points_list_norm = _normalize_single_point(np.array(dim_1_user_given_points_list), dim_1_min, dim_1_max, -1, 1)
+    dim_2_user_given_points_list_norm = _normalize_single_point(np.array(dim_2_user_given_points_list), dim_2_min, dim_2_max, -1, 1)
+    dim_3_user_given_points_list_norm = _normalize_single_point(np.array(dim_3_user_given_points_list), dim_3_min, dim_3_max, -1, 1)
+
+    dessca_instance = DesscaModel(box_constraints=[[-1, 1],
+                                                   [-1, 1],
+                                                   [-1, 1]],
+                                  state_names=["x1", "x2", "x3"],
+                                  bandwidth=0.1)
+
+    # transfer user-given points to the format needed by dessca
+    if np.any(dim_1_user_given_points_list):
+        scaled_points = [[dim_1_user_given_points_list_norm[count], dim_2_user_given_points_list_norm[count], dim_3_user_given_points_list_norm[count]]
+                         for count, _ in enumerate(dim_1_user_given_points_list_norm)]
+
+        dessca_instance.update_coverage_pdf(data=np.transpose(scaled_points))
+    else:
+        next_sample_suggest = dessca_instance.update_and_sample()
+        scaled_points = [next_sample_suggest]
+
+    next_sample_suggest = dessca_instance.update_and_sample()
+    scaled_points = np.append(scaled_points, [next_sample_suggest], axis=0)  # type: ignore
+    for _ in range(total_number_points - len(dim_1_user_given_points_list) - 1):
+        next_sample_suggest = dessca_instance.update_and_sample(np.transpose([next_sample_suggest]))
+        scaled_points = np.append(scaled_points, [next_sample_suggest], axis=0)  # type: ignore
+
+    dim_1_all_points_scaled = np.array([points[0] for points in scaled_points])
+    dim_2_all_points_scaled = np.array([points[1] for points in scaled_points])
+    dim_3_all_points_scaled = np.array([points[2] for points in scaled_points])
+
+    dim_1_all_points = _denormalize_single_point(dim_1_all_points_scaled, dim_1_min, dim_1_max, -1, 1)
+    dim_2_all_points = _denormalize_single_point(dim_2_all_points_scaled, dim_2_min, dim_2_max, -1, 1)
+    dim_3_all_points = _denormalize_single_point(dim_3_all_points_scaled, dim_3_min, dim_3_max, -1, 1)
+
+    return dim_1_all_points, dim_2_all_points, dim_3_all_points  # type: ignore
 
 
 def plot_samples(dim_1_min_max_list: list[float], dim_2_min_max_list: list[float], dim_3_min_max_list: list[float], number_user_points: int,
