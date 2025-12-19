@@ -614,6 +614,16 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 dim_2_user_given_points_list=act_dab_config.sampling.v2_additional_user_point_list,
                 dim_3_user_given_points_list=act_dab_config.sampling.p_additional_user_point_list,
                 sampling_random_seed=act_dab_config.sampling.sampling_random_seed)
+        elif act_dab_config.sampling.sampling_method == SamplingEnum.dessca:
+            v1_operating_points, v2_operating_points, p_operating_points = sampling.dessca(
+                act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1],
+                act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1],
+                act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1],
+                total_number_points=act_dab_config.sampling.sampling_points,
+                dim_1_user_given_points_list=act_dab_config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=act_dab_config.sampling.v2_additional_user_point_list,
+                dim_3_user_given_points_list=act_dab_config.sampling.p_additional_user_point_list)
+
         else:
             raise ValueError(f"sampling_method '{act_dab_config.sampling.sampling_method}' not available.")
 

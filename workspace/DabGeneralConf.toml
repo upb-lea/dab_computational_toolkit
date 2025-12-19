@@ -5,7 +5,7 @@
 
 
 [sampling]
-    sampling_method="latin_hypercube"
+    sampling_method="dessca"
     sampling_points=2
     sampling_random_seed=10
     v1_additional_user_point_list=[]
