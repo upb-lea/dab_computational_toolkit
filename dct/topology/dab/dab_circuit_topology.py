@@ -33,7 +33,7 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
-from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements
+from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements, TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -1207,6 +1207,26 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             raise TypeError("Loaded capacitor requirements have wrong type.")
 
         return circuit_dto.component_requirements.inductor_requirements
+
+    @staticmethod
+    def get_transformer_requirements(circuit_filepath: str) -> list[TransformerRequirements]:
+        """Get the transformer requirements.
+
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Transformer Requirements
+        :rtype: TransformerRequirements
+        """
+        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
+        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded component requirements have wrong type.")
+
+        if not isinstance(circuit_dto.component_requirements.transformer_requirements[0], TransformerRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded capacitor requirements have wrong type.")
+
+        return circuit_dto.component_requirements.transformer_requirements
 
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:

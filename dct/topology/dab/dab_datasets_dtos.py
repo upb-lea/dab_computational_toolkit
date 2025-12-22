@@ -302,16 +302,3 @@ class DabCircuitDTO:
     capacitor_2_results: CapacitorResults | None
     inductor_results: InductorResults | None
     stacked_transformer_results: StackedTransformerResults | None
-
-@dataclasses.dataclass
-class TransformerTargetParameters:
-    """Target transformer parameters for the optimization."""
-
-    l_s12_target: float
-    l_h_target: float
-    n_target: float
-
-    # operating point: current waveforms and temperature
-    time_current_1_vec: np.ndarray
-    time_current_2_vec: np.ndarray
-    temperature: float

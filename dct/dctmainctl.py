@@ -1706,9 +1706,16 @@ class DctMainCtl:
 
         # Allocate and initialize transformer configuration
         self._transformer_optimization = TransformerOptimization()
+
+        transformer_requirements_list = []
+        for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
+            circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
+            transformer_requirements = self._circuit_optimization.get_transformer_requirements(circuit_filepath)
+            transformer_requirements_list.append(transformer_requirements[0])
+
         self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer,
                                                                                 self._transformer_study_data,
-                                                                                self._circuit_optimization.filter_data)
+                                                                                self._circuit_optimization.filter_data, transformer_requirements_list)
 
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
