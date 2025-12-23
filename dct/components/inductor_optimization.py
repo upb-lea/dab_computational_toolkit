@@ -301,7 +301,7 @@ class InductorOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
                 # e.g. winding is not fitting in the winding window
@@ -489,7 +489,7 @@ class InductorOptimization:
                     os.makedirs(new_circuit_dto_directory)
 
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
-                    logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                    logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):

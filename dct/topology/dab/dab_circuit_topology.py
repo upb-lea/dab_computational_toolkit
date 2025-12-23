@@ -1146,7 +1146,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
             dto = d_sets.HandleDabDto.generate_components_target_requirements(dto)
-            d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+            d_sets.HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list
         self.filter_data.filtered_list_files = []

@@ -143,7 +143,7 @@ class HandleDabDto:
             lossfilepath=lossfilepath)
 
         dab_dto = d_dtos.DabCircuitDTO(
-            name=name,
+            circuit_id=name,
             timestamp=None,
             metadata=None,
             input_config=input_configuration,
@@ -641,7 +641,9 @@ class HandleDabDto:
             time_array=time_array_resorted,
             current_array=current_array_resorted,
             v_dc_max=np.max(dab_dto.input_config.mesh_v1),
-            study_name=""
+            study_name="",
+            circuit_id=dab_dto.circuit_id,
+            capacitor_number_in_circuit=0
         )
         return capacitor_1_requirements
 
@@ -687,7 +689,9 @@ class HandleDabDto:
             time_array=time_array_resorted,
             current_array=current_array_resorted,
             v_dc_max=np.max(dab_dto.input_config.mesh_v1),
-            study_name=""
+            study_name="",
+            circuit_id=dab_dto.circuit_id,
+            capacitor_number_in_circuit=1
         )
         return capacitor_2_requirements
 
@@ -733,7 +737,9 @@ class HandleDabDto:
             time_array=time_array_resorted,
             current_array=current_array_resorted,
             study_name="",
-            target_inductance=dab_dto.input_config.Lc1
+            target_inductance=dab_dto.input_config.Lc1,
+            circuit_id=dab_dto.circuit_id,
+            inductor_number_in_circuit=0,
         )
         return inductor_requirements
 
@@ -797,7 +803,9 @@ class HandleDabDto:
             current_1_array=current_1_array_resorted,
             current_2_array=current_2_array_resorted,
 
-            study_name=""
+            study_name="",
+            circuit_id=dab_dto.circuit_id,
+            transformer_number_in_circuit=0,
         )
         return transformer_requirements
 

@@ -287,7 +287,7 @@ class DabCircuitDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.ndarray | None
-    name: str
+    circuit_id: str
     metadata: np.ndarray | None
     input_config: CircuitConfig
     calc_config: CalcFromCircuitConfig

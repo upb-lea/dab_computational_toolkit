@@ -27,7 +27,10 @@ class CapacitorRequirements:
     # maximum dc link voltage
     v_dc_max: float
 
+    # misc
     study_name: str
+    circuit_id: str
+    capacitor_number_in_circuit: int  # e.g. 0 is input capacitor, 1 is output capacitor, ...
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -55,7 +58,10 @@ class InductorRequirements:
     time_array: np.ndarray
     current_array: np.ndarray
 
+    # misc
     study_name: str
+    circuit_id: str
+    inductor_number_in_circuit: int  # e.g. 0 is series inductance, 1 is parallel inductance
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -89,7 +95,10 @@ class TransformerRequirements:
     current_1_array: np.ndarray
     current_2_array: np.ndarray
 
+    # misc
     study_name: str
+    circuit_id: str
+    transformer_number_in_circuit: int  # e.g. 0 is input transformer, 1 is output transformer
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
