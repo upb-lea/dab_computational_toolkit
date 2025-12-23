@@ -78,7 +78,8 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         if self.circuit_study_data is None and self.filter_data is None:
             # The method to initialize study information needs to be called first.
             # This has to be guaranteed by the workflow
-            return False, "Serious programming error 1b. Please write an issue!"
+            return False, ("Serious programming error 'Allocation issue circuit_study_data or filter_data'.\n"
+                           "Please write an issue!")
 
         # Check, if all data are available
         is_skipable, issue_report = self.__class__._is_optimization_skippable(self.circuit_study_data, self.filter_data)

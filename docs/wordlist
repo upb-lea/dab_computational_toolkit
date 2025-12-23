@@ -380,3 +380,6 @@ CalcModeEnum
 IWGRP
 IWOTH
 IWRITE
+sbc
+HandleSbcDto
+TomlSbcCircuitParetoDesign

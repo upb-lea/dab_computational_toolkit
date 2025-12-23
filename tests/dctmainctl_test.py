@@ -57,7 +57,8 @@ class TestCase(Enum):
 
 # FlowControl base parameter set
 test_FlowControl_base: tc.FlowControl = tc.FlowControl(
-    general=tc.General(project_directory="Hallo"),
+    general=tc.General(project_directory="Hallo",
+                       topology="dab"),
     breakpoints=tc.Breakpoints(circuit_pareto="no",
                                circuit_filtered="no",
                                capacitor_1="no",

@@ -44,7 +44,7 @@ from dct.server_ctl import RequestCmd
 from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.circuit_enums import CalcModeEnum
+from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
@@ -1222,8 +1222,13 @@ class DctMainCtl:
         # Select topology
         # --------------------------
 
-        # Allocate and initialize circuit configuration (Currently the only topology). Has to be set later in program flow toml file
-        self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+        # Allocate and initialize circuit configuration
+        if toml_prog_flow.general.topology == TopologyEnum.dab.value:
+            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+        elif toml_prog_flow.general.topology == TopologyEnum.sbc.value:
+            self._circuit_optimization = dct.topology.sbc.SbcCircuitOptimization()
+        else:
+            raise ValueError("Serious programming error in topology selection. Please write an issue!")
 
         # --------------------------
         # General toml control
@@ -1544,7 +1549,7 @@ class DctMainCtl:
             # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
             # Error is to prevent by the workflow
             if self._circuit_optimization is None:
-                raise ValueError("Serious programming error 1a. Please write an issue!")
+                raise ValueError("Serious programming error '_circuit_optimization allocation failure'. Please write an issue!")
 
             # Calculate the filtered results
             is_filter_data_available, issue_report = self._circuit_optimization.filter_study_results()

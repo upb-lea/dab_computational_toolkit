@@ -8,6 +8,14 @@ class SamplingEnum(enum.Enum):
     meshgrid = "meshgrid"
     latin_hypercube = "latin_hypercube"
 
+class TopologyEnum(enum.Enum):
+    """Enum for available topologies."""
+
+    # Dual active bridge
+    dab = "dab"
+    # Synchronous buck converter
+    sbc = "sbc"
+
 
 class CalcModeEnum(enum.Enum):
     """Enum for calculation mode."""
