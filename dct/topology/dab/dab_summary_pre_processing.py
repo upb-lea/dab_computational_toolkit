@@ -291,12 +291,12 @@ class DabSummaryPreProcessing:
                     with open(inductor_filepath_number, 'rb') as pickle_file_data:
                         inductor_dto = pickle.load(pickle_file_data)
 
-                    if inductor_dto.circuit_trial_file != circuit_trial_file:
-                        raise ValueError(f"{inductor_dto.circuit_trial_file=} != {circuit_trial_file}")
-                    if int(inductor_dto.inductor_trial_number) != int(inductor_number):
-                        raise ValueError(f"{inductor_dto.inductor_trial_number=} != {inductor_number}")
+                    if inductor_dto.circuit_id != circuit_trial_file:
+                        raise ValueError(f"{inductor_dto.circuit_id=} != {circuit_trial_file}")
+                    if int(inductor_dto.inductor_id) != int(inductor_number):
+                        raise ValueError(f"{inductor_dto.inductor_id=} != {inductor_number}")
 
-                    inductance_loss_matrix = inductor_dto.p_combined_losses
+                    inductance_loss_matrix = inductor_dto.loss_array
 
                     logger.debug(f"{act_stacked_transformer_study_names=}")
 
@@ -328,12 +328,12 @@ class DabSummaryPreProcessing:
                             with open(stacked_transformer_filepath_number, 'rb') as pickle_file_data:
                                 transformer_dto = pickle.load(pickle_file_data)
 
-                            if transformer_dto.circuit_trial_file != circuit_trial_file:
-                                raise ValueError(f"{transformer_dto.circuit_trial_file=} != {circuit_trial_file}")
-                            if int(transformer_dto.stacked_transformer_trial_number) != int(stacked_transformer_number):
-                                raise ValueError(f"{transformer_dto.stacked_transformer_trial_number=} != {stacked_transformer_number}")
+                            if transformer_dto.circuit_id != circuit_trial_file:
+                                raise ValueError(f"{transformer_dto.circuit_id=} != {circuit_trial_file}")
+                            if int(transformer_dto.transformer_id) != int(stacked_transformer_number):
+                                raise ValueError(f"{transformer_dto.transformer_id=} != {stacked_transformer_number}")
 
-                            transformer_loss_matrix = transformer_dto.p_combined_losses
+                            transformer_loss_matrix = transformer_dto.loss_array
 
                             # Calculate losses of circuit1 and 2
                             max_loss_circuit_1_index = np.unravel_index(b1_transistor_cond_loss_matrix.argmax(),
@@ -387,10 +387,10 @@ class DabSummaryPreProcessing:
                                     with open(capacitor_1_filepath_number, 'rb') as pickle_file_data:
                                         capacitor_1_dto: CapacitorResults = pickle.load(pickle_file_data)
 
-                                    if capacitor_1_dto.circuit_trial_file != circuit_trial_file:
-                                        raise ValueError(f"{capacitor_1_dto.circuit_trial_file=} != {circuit_trial_file}")
-                                    if capacitor_1_dto.capacitor_order_number != capacitor_1_number:
-                                        raise ValueError(f"{capacitor_1_dto.capacitor_order_number=} != {capacitor_1_number}")
+                                    if capacitor_1_dto.circuit_id != circuit_trial_file:
+                                        raise ValueError(f"{capacitor_1_dto.circuit_id=} != {circuit_trial_file}")
+                                    if capacitor_1_dto.capacitor_id != capacitor_1_number:
+                                        raise ValueError(f"{capacitor_1_dto.capacitor_id=} != {capacitor_1_number}")
                                     logger.debug(f"{act_capacitor_2_study_names=}")
                                     for capacitor_2_study_name in act_capacitor_2_study_names:
                                         # Assemble directory name for capacitor 1 results
@@ -417,13 +417,13 @@ class DabSummaryPreProcessing:
                                             with open(capacitor_2_filepath_number, 'rb') as pickle_file_data:
                                                 capacitor_2_dto = pickle.load(pickle_file_data)
 
-                                            if capacitor_2_dto.circuit_trial_file != circuit_trial_file:
-                                                raise ValueError(f"{capacitor_2_dto.circuit_trial_file=} != {circuit_trial_file}")
-                                            if capacitor_2_dto.capacitor_order_number != capacitor_2_number:
-                                                raise ValueError(f"{capacitor_2_dto.capacitor_order_number=} != {capacitor_2_number}")
+                                            if capacitor_2_dto.circuit_id != circuit_trial_file:
+                                                raise ValueError(f"{capacitor_2_dto.circuit_id=} != {circuit_trial_file}")
+                                            if capacitor_2_dto.capacitor_id != capacitor_2_number:
+                                                raise ValueError(f"{capacitor_2_dto.capacitor_id=} != {capacitor_2_number}")
 
-                                            total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix + \
-                                                                 transformer_dto.p_combined_losses + capacitor_1_dto.loss_total_array + \
+                                            total_loss_matrix = (inductor_dto.loss_array + total_transistor_cond_loss_matrix + \
+                                                                 transformer_dto.loss_array + capacitor_1_dto.loss_total_array + \
                                                                  capacitor_2_dto.loss_total_array)
                                             # maximum loss indices
                                             max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
@@ -433,7 +433,7 @@ class DabSummaryPreProcessing:
                                             r_th_target = r_th_heat_sink_target_matrix.min()
                                             data = {
                                                 # circuit
-                                                "circuit_trial_file": circuit_trial_file,
+                                                "circuit_id": circuit_trial_file,
                                                 "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
                                                 "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
                                                 "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],
@@ -464,7 +464,7 @@ class DabSummaryPreProcessing:
                                                 "transformer_study_name": stacked_transformer_study_name,
                                                 "transformer_number": stacked_transformer_number,
                                                 "transformer_volume": transformer_dto.volume,
-                                                "transformer_mean_loss": np.mean(transformer_dto.p_combined_losses),
+                                                "transformer_mean_loss": np.mean(transformer_dto.loss_array),
                                                 "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
                                                 "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
                                                 "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],

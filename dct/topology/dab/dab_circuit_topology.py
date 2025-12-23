@@ -15,6 +15,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
 import dct.sampling as sampling
+from dct.components.component_requirements import InductorRequirements
 
 # own libraries
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
@@ -32,7 +33,7 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
-from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements
+from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements, TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -1145,7 +1146,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
             dto = d_sets.HandleDabDto.generate_components_target_requirements(dto)
-            d_sets.HandleDabDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+            d_sets.HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list
         self.filter_data.filtered_list_files = []
@@ -1186,6 +1187,46 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             raise TypeError("Loaded capacitor requirements have wrong type.")
 
         return circuit_dto.component_requirements.capacitor_requirements
+
+    @staticmethod
+    def get_inductor_requirements(circuit_filepath: str) -> list[InductorRequirements]:
+        """Get the inductor requirements.
+
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Inductor Requirements
+        :rtype: InductorRequirements
+        """
+        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
+        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded component requirements have wrong type.")
+
+        if not isinstance(circuit_dto.component_requirements.inductor_requirements[0], InductorRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded capacitor requirements have wrong type.")
+
+        return circuit_dto.component_requirements.inductor_requirements
+
+    @staticmethod
+    def get_transformer_requirements(circuit_filepath: str) -> list[TransformerRequirements]:
+        """Get the transformer requirements.
+
+        :param circuit_filepath: circuit filepath
+        :type circuit_filepath: str
+        :return: Transformer Requirements
+        :rtype: TransformerRequirements
+        """
+        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
+        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded component requirements have wrong type.")
+
+        if not isinstance(circuit_dto.component_requirements.transformer_requirements[0], TransformerRequirements):
+            # due to mypy checker
+            raise TypeError("Loaded capacitor requirements have wrong type.")
+
+        return circuit_dto.component_requirements.transformer_requirements
 
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:

@@ -278,12 +278,12 @@ class DabSummaryProcessing:
                     with open(inductor_filepath_number, 'rb') as pickle_file_data:
                         inductor_dto = pickle.load(pickle_file_data)
 
-                    if inductor_dto.circuit_trial_file != circuit_trial_file:
-                        raise ValueError(f"{inductor_dto.circuit_trial_file=} != {circuit_trial_file}")
-                    if int(inductor_dto.inductor_trial_number) != int(inductor_number):
-                        raise ValueError(f"{inductor_dto.inductor_trial_number=} != {inductor_number}")
+                    if inductor_dto.circuit_id != circuit_trial_file:
+                        raise ValueError(f"{inductor_dto.circuit_id=} != {circuit_trial_file}")
+                    if int(inductor_dto.inductor_id) != int(inductor_number):
+                        raise ValueError(f"{inductor_dto.inductor_id=} != {inductor_number}")
 
-                    inductance_loss_matrix = inductor_dto.p_combined_losses
+                    inductance_loss_matrix = inductor_dto.loss_array
 
                     # iterate transformer study
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
@@ -310,15 +310,15 @@ class DabSummaryProcessing:
                             with open(stacked_transformer_filepath_number, 'rb') as pickle_file_data:
                                 transformer_dto = pickle.load(pickle_file_data)
 
-                            if transformer_dto.circuit_trial_file != circuit_trial_file:
-                                raise ValueError(f"{transformer_dto.circuit_trial_file=} != {circuit_trial_file}")
-                            if int(transformer_dto.stacked_transformer_trial_number) != int(stacked_transformer_number):
-                                raise ValueError(f"{transformer_dto.stacked_transformer_trial_number=} != {stacked_transformer_number}")
+                            if transformer_dto.circuit_id != circuit_trial_file:
+                                raise ValueError(f"{transformer_dto.circuit_id=} != {circuit_trial_file}")
+                            if int(transformer_dto.transformer_id) != int(stacked_transformer_number):
+                                raise ValueError(f"{transformer_dto.transformer_id=} != {stacked_transformer_number}")
 
-                            transformer_loss_matrix = transformer_dto.p_combined_losses
+                            transformer_loss_matrix = transformer_dto.loss_array
 
-                            total_loss_matrix = (inductor_dto.p_combined_losses + total_transistor_cond_loss_matrix + \
-                                                 transformer_dto.p_combined_losses)
+                            total_loss_matrix = (inductor_dto.loss_array + total_transistor_cond_loss_matrix + \
+                                                 transformer_dto.loss_array)
 
                             # maximum loss indices
                             max_loss_all_index = np.unravel_index(total_loss_matrix.argmax(), np.shape(total_loss_matrix))
@@ -353,7 +353,7 @@ class DabSummaryProcessing:
 
                             data = {
                                 # circuit
-                                "circuit_trial_file": circuit_trial_file,
+                                "circuit_id": circuit_trial_file,
                                 "circuit_mean_loss": np.mean(total_transistor_cond_loss_matrix),
                                 "circuit_max_all_loss": total_transistor_cond_loss_matrix[max_loss_all_index],
                                 "circuit_max_circuit_ib_loss": total_transistor_cond_loss_matrix[max_loss_circuit_1_index],
@@ -384,7 +384,7 @@ class DabSummaryProcessing:
                                 "transformer_study_name": stacked_transformer_study_name,
                                 "transformer_number": stacked_transformer_number,
                                 "transformer_volume": transformer_dto.volume,
-                                "transformer_mean_loss": np.mean(transformer_dto.p_combined_losses),
+                                "transformer_mean_loss": np.mean(transformer_dto.loss_array),
                                 "transformer_max_all_loss": transformer_loss_matrix[max_loss_all_index],
                                 "transformer_max_circuit_ib_loss": transformer_loss_matrix[max_loss_circuit_1_index],
                                 "transformer_max_circuit_ob_loss": transformer_loss_matrix[max_loss_circuit_2_index],

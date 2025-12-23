@@ -21,7 +21,7 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
-from dct.components.component_requirements import CapacitorRequirements
+from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ class HandleDabDto:
             lossfilepath=lossfilepath)
 
         dab_dto = d_dtos.DabCircuitDTO(
-            name=name,
+            circuit_id=name,
             timestamp=None,
             metadata=None,
             input_config=input_configuration,
@@ -522,31 +522,6 @@ class HandleDabDto:
         return sorted_max_rms_angles, i_c2_max_rms_current_waveform
 
     @staticmethod
-    def export_transformer_target_parameters_dto(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.TransformerTargetParameters:
-        """
-        Export the optimization parameters for the transformer optimization (inside FEMMT).
-
-        Note: the current counting system is adapted to FEMMT! The secondary current is counted negative!
-
-        :param dab_dto: DAB DTO
-        :type dab_dto: d_dtos.DabCircuitDTO
-        :return: DTO for the transformer optimization using FEMMT
-        :rtype: TransformerTargetParameters
-        """
-        # calculate the full 2pi waveform from the four given DAB currents
-        sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = HandleDabDto.get_max_peak_waveform_transformer(dab_dto, plot=False)
-        # transfer 2pi periodic time_vec into a real time_vec
-        time = sorted_max_angles / 2 / np.pi / dab_dto.input_config.fs
-
-        return d_dtos.TransformerTargetParameters(
-            l_s12_target=dab_dto.input_config.Ls,
-            l_h_target=dab_dto.input_config.Lc2 * dab_dto.input_config.n ** 2,
-            n_target=dab_dto.input_config.n,
-            time_current_1_vec=np.array([time, i_l_s_max_current_waveform]),
-            time_current_2_vec=np.array([time, -i_hf_2_max_current_waveform]),
-            temperature=100)
-
-    @staticmethod
     def add_inductor_results(dab_dto: d_dtos.DabCircuitDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.DabCircuitDTO:
         """Add inductor results to the DabCircuitDTO.
 
@@ -666,7 +641,9 @@ class HandleDabDto:
             time_array=time_array_resorted,
             current_array=current_array_resorted,
             v_dc_max=np.max(dab_dto.input_config.mesh_v1),
-            study_name=""
+            study_name="",
+            circuit_id=dab_dto.circuit_id,
+            capacitor_number_in_circuit=0
         )
         return capacitor_1_requirements
 
@@ -712,9 +689,125 @@ class HandleDabDto:
             time_array=time_array_resorted,
             current_array=current_array_resorted,
             v_dc_max=np.max(dab_dto.input_config.mesh_v1),
-            study_name=""
+            study_name="",
+            circuit_id=dab_dto.circuit_id,
+            capacitor_number_in_circuit=1
         )
         return capacitor_2_requirements
+
+    @staticmethod
+    def generate_inductor_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> InductorRequirements:
+        """Inductor requirements.
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: Inductor requirements
+        :rtype: InductorRequirements
+        """
+        # get the single maximum operating point
+        sorted_max_rms_angles, i_l_1_max_peak_current_waveform = HandleDabDto.get_max_peak_waveform_inductor(dab_dto, plot=False)
+
+        # get all current waveforms for all operating points
+        i_l_1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        dimension_0 = np.shape(i_l_1_sorted)[0]
+        dimension_1 = np.shape(i_l_1_sorted)[1]
+        dimension_2 = np.shape(i_l_1_sorted)[2]
+        dimension_3 = np.shape(i_l_1_sorted)[3]
+
+        time_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+        current_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            time = full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / dab_dto.input_config.fs
+
+            # needs np.unique( , return_index=True)
+            current = full_current_waveform_from_currents(i_l_1_sorted[vec_vvp])  # [unique_indices]
+
+            time_array[vec_vvp] = time
+            current_array[vec_vvp] = current
+
+        time_array_resorted = np.transpose(time_array, (0, 1, 2, 3))
+        current_array_resorted = np.transpose(current_array, (0, 1, 2, 3))
+
+        inductor_requirements = InductorRequirements(
+            current_vec=i_l_1_max_peak_current_waveform,
+            time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            time_array=time_array_resorted,
+            current_array=current_array_resorted,
+            study_name="",
+            target_inductance=dab_dto.input_config.Lc1,
+            circuit_id=dab_dto.circuit_id,
+            inductor_number_in_circuit=0,
+        )
+        return inductor_requirements
+
+    @staticmethod
+    def generate_transformer_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> TransformerRequirements:
+        """Generate transformer requirements.
+
+        Note: the current counting system is adapted to FEMMT! The secondary current is counted negative!
+
+        :param dab_dto: DAB circuit DTO
+        :type dab_dto: d_dtos.DabCircuitDTO
+        :return: Transformer requirements
+        :rtype: TransformerRequirements
+        """
+        # get the single maximum operating point
+        sorted_max_rms_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = HandleDabDto.get_max_peak_waveform_transformer(dab_dto, plot=False)
+
+        # get all current waveforms for all operating points
+        i_l_s_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))
+        i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))
+        angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
+
+        dimension_0 = np.shape(i_l_s_sorted)[0]
+        dimension_1 = np.shape(i_l_s_sorted)[1]
+        dimension_2 = np.shape(i_l_s_sorted)[2]
+        dimension_3 = np.shape(i_l_s_sorted)[3]
+
+        time_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+        current_1_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+        current_2_array = np.full((dimension_0, dimension_1, dimension_2, dimension_3 + 5), np.nan)
+
+        for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
+            time = full_angle_waveform_from_angles(angles_rad_sorted[vec_vvp]) / 2 / np.pi / dab_dto.input_config.fs
+
+            # needs np.unique( , return_index=True)
+            current_1 = full_current_waveform_from_currents(i_l_s_sorted[vec_vvp])  # [unique_indices]
+            current_2 = full_current_waveform_from_currents(i_hf_2_sorted[vec_vvp])  # [unique_indices]
+
+            time_array[vec_vvp] = time
+            current_1_array[vec_vvp] = current_1
+            current_2_array[vec_vvp] = -current_2
+
+        time_array_resorted = np.transpose(time_array, (0, 1, 2, 3))
+        current_1_array_resorted = np.transpose(current_1_array, (0, 1, 2, 3))
+        current_2_array_resorted = np.transpose(current_2_array, (0, 1, 2, 3))
+
+        transformer_requirements = TransformerRequirements(
+
+            l_s12_target=dab_dto.input_config.Ls,
+            l_h_target=dab_dto.calc_config.Lc2_,
+            n_target=dab_dto.input_config.n,
+            temperature=100,
+
+            # exact a single current waveform to optimize the transformer
+            time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            current_1_vec=i_l_s_max_current_waveform,
+            current_2_vec=-i_hf_2_max_current_waveform,
+
+            # all current waveforms for calculation the transformer loss for a single (optimized) transformer
+            time_array=time_array_resorted,
+            current_1_array=current_1_array_resorted,
+            current_2_array=current_2_array_resorted,
+
+            study_name="",
+            circuit_id=dab_dto.circuit_id,
+            transformer_number_in_circuit=0,
+        )
+        return transformer_requirements
 
     @staticmethod
     def generate_components_target_requirements(dab_dto: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
@@ -728,7 +821,11 @@ class HandleDabDto:
         """
         capacitor_1_requirements = HandleDabDto.generate_capacitor_1_target_requirements(dab_dto)
         capacitor_2_requirements = HandleDabDto.generate_capacitor_2_target_requirements(dab_dto)
+        inductor_requirements = HandleDabDto.generate_inductor_target_requirements(dab_dto)
+        transformer_requirements = HandleDabDto.generate_transformer_target_requirements(dab_dto)
 
-        dab_dto.component_requirements = d_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements, capacitor_2_requirements])
+        dab_dto.component_requirements = d_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements, capacitor_2_requirements],
+                                                                      inductor_requirements=[inductor_requirements],
+                                                                      transformer_requirements=[transformer_requirements])
 
         return dab_dto

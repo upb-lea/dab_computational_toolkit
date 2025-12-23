@@ -180,11 +180,14 @@ class CalcLosses:
 class InductorResults:
     """DTO contains the inductor losses."""
 
-    p_combined_losses: np.ndarray
+    # identification
+    circuit_id: str
+    inductor_id: int
+
+    # pareto
+    loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
-    circuit_trial_file: str
-    inductor_trial_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -196,11 +199,14 @@ class InductorResults:
 class StackedTransformerResults:
     """DTO contains the stacked transformer losses."""
 
-    p_combined_losses: np.ndarray
+    # identification
+    circuit_id: str
+    transformer_id: int
+
+    # pareto
+    loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
-    circuit_trial_file: str
-    stacked_transformer_trial_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -287,7 +293,7 @@ class DabCircuitDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.ndarray | None
-    name: str
+    circuit_id: str
     metadata: np.ndarray | None
     input_config: CircuitConfig
     calc_config: CalcFromCircuitConfig
@@ -302,16 +308,3 @@ class DabCircuitDTO:
     capacitor_2_results: CapacitorResults | None
     inductor_results: InductorResults | None
     stacked_transformer_results: StackedTransformerResults | None
-
-@dataclasses.dataclass
-class TransformerTargetParameters:
-    """Target transformer parameters for the optimization."""
-
-    l_s12_target: float
-    l_h_target: float
-    n_target: float
-
-    # operating point: current waveforms and temperature
-    time_current_1_vec: np.ndarray
-    time_current_2_vec: np.ndarray
-    temperature: float
