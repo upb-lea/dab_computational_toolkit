@@ -50,8 +50,8 @@ class TransformerOptimization:
     def verify_optimization_parameter(toml_transformer: dct.TomlTransformer) -> tuple[bool, str]:
         """Verify the input parameter ranges.
 
-        :param toml_transformer: toml inductor configuration
-        :type toml_transformer: dct.TomlInductor
+        :param toml_transformer: toml transformer configuration
+        :type toml_transformer: dct.TomlTransformer
         :return: True, if the configuration was consistent
         :rtype: bool
         """

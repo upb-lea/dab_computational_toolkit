@@ -138,8 +138,8 @@ class InductorOptimization:
         Initialize the inductor optimization.
 
         :param toml_inductor: inductor data
-        :type toml_inductor: TomlCapacitorSelection
-        :param inductor_study_data: capacitor study data
+        :type toml_inductor: TomlInductor
+        :param inductor_study_data: inductor study data
         :type inductor_study_data: StudyData
         :param circuit_filter_data: filtered circuit data
         :type circuit_filter_data: FilterData
