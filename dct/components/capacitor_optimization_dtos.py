@@ -14,9 +14,10 @@ from dct.server_ctl_dtos import ProgressData
 class CapacitorOptimizationDto:
     """DTO for the inductor optimization."""
 
-    circuit_filtered_point_filename: str
+    circuit_id: str
     progress_data: ProgressData
     capacitor_optimization_dto: pecst.CapacitorRequirements
+    capacitor_number_in_circuit: int
 
 @dataclasses.dataclass(init=False)
 class CapacitorResults:
@@ -25,6 +26,7 @@ class CapacitorResults:
     # identification
     circuit_id: str
     capacitor_id: str
+    capacitor_number_in_circuit: int
 
     # pareto
     loss_total_array: np.ndarray

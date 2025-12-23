@@ -95,9 +95,10 @@ class CapacitorSelection:
                                                         progress_status=ProgressStatus.Idle)
 
             capacitor_optimization_dto = CapacitorOptimizationDto(
-                circuit_filtered_point_filename=circuit_trial_file,
+                circuit_id=circuit_trial_file,
                 progress_data=copy.deepcopy(stat_data_init),
-                capacitor_optimization_dto=capacitor_requirements_dto)
+                capacitor_optimization_dto=capacitor_requirements_dto,
+                capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit)
 
             self._optimization_config_list.append(capacitor_optimization_dto)
 
@@ -177,7 +178,8 @@ class CapacitorSelection:
                     circuit_trial_file=circuit_filtered_point_file,
                     capacitor_order_number=df_geometry_re_simulation_number['ordering code'].values[0],
                     n_series=n_series,
-                    n_parallel=n_parallel
+                    n_parallel=n_parallel,
+                    capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
@@ -212,7 +214,7 @@ class CapacitorSelection:
                 capacitor_requirements = capacitor_requirements_list[count]
 
                 parameters.append((
-                    act_optimization_configuration.circuit_filtered_point_filename,
+                    act_optimization_configuration.circuit_id,
                     act_optimization_configuration.capacitor_optimization_dto,
                     filter_data,
                     capacitor_requirements,
