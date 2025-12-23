@@ -22,11 +22,14 @@ class CapacitorOptimizationDto:
 class CapacitorResults:
     """DTO contains the inductor losses."""
 
+    # identification
+    circuit_id: str
+    capacitor_id: str
+
+    # pareto
     loss_total_array: np.ndarray
     volume_total: float
     area_total: float
-    circuit_trial_file: str
-    capacitor_order_number: str
     n_parallel: int
     n_series: int
 

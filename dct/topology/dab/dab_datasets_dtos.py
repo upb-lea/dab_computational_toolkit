@@ -180,11 +180,14 @@ class CalcLosses:
 class InductorResults:
     """DTO contains the inductor losses."""
 
-    p_combined_losses: np.ndarray
+    # identification
+    circuit_id: str
+    inductor_id: int
+
+    # pareto
+    loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
-    circuit_trial_file: str
-    inductor_trial_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -196,11 +199,14 @@ class InductorResults:
 class StackedTransformerResults:
     """DTO contains the stacked transformer losses."""
 
-    p_combined_losses: np.ndarray
+    # identification
+    circuit_id: str
+    transformer_id: int
+
+    # pareto
+    loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
-    circuit_trial_file: str
-    stacked_transformer_trial_number: int
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
