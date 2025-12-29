@@ -132,7 +132,7 @@ class InductorOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_inductor_optimization_list(self, toml_inductor: TomlInductor, inductor_study_data: StudyData, circuit_filter_data: FilterData,
+    def initialize_inductor_optimization_list(self, toml_inductor: TomlInductor, inductor_study_data: StudyData,
                                               inductor_requirements_list: list[InductorRequirements]) -> None:
         """
         Initialize the inductor optimization.
@@ -141,16 +141,13 @@ class InductorOptimization:
         :type toml_inductor: TomlInductor
         :param inductor_study_data: inductor study data
         :type inductor_study_data: StudyData
-        :param circuit_filter_data: filtered circuit data
-        :type circuit_filter_data: FilterData
         :param inductor_requirements_list: list with inductor requirements
         :type inductor_requirements_list: list[InductorRequirements]
         """
         # Create the io_config_list for all trials
         for count, inductor_requirements in enumerate(inductor_requirements_list):
-
-            circuit_trial_file = circuit_filter_data.filtered_list_files[count]
-            trial_directory = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file, inductor_study_data.study_name)
+            circuit_id = inductor_requirements.circuit_id
+            trial_directory = os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name)
 
             # catch mypy type issue
             if not isinstance(inductor_requirements, InductorRequirements):
@@ -182,7 +179,7 @@ class InductorOptimization:
                 target_inductance=inductor_requirements.target_inductance,
                 temperature=toml_inductor.boundary_conditions.temperature,
                 time_current_vec=[inductor_requirements.time_vec, inductor_requirements.current_vec],
-                inductor_optimization_directory=os.path.join(inductor_study_data.optimization_directory, circuit_trial_file, inductor_study_data.study_name),
+                inductor_optimization_directory=os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name),
                 material_data_sources=act_material_data_sources)
 
             # Initialize the statistical data
@@ -190,7 +187,7 @@ class InductorOptimization:
                                                         progress_status=ProgressStatus.Idle)
 
             inductor_optimization_dto = InductorOptimizationDto(
-                circuit_filtered_point_filename=circuit_trial_file,
+                circuit_filtered_point_filename=circuit_id,
                 progress_data=copy.deepcopy(stat_data_init),
                 inductor_optimization_dto=inductor_requirements_dto)
 

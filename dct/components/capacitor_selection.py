@@ -51,7 +51,6 @@ class CapacitorSelection:
         return True, ""
 
     def initialize_capacitor_selection(self, toml_capacitor_list: list[TomlCapacitorSelection], capacitor_study_data: StudyData,
-                                       circuit_filter_data: FilterData,
                                        capacitor_requirements_list: list[CapacitorRequirements]) -> None:
         """
         Initialize the capacitor selection.
@@ -60,8 +59,6 @@ class CapacitorSelection:
         :type toml_capacitor_list: list[TomlCapacitorSelection]
         :param capacitor_study_data: capacitor study data
         :type capacitor_study_data: StudyData
-        :param circuit_filter_data: filtered circuit data
-        :type circuit_filter_data: FilterData
         :param capacitor_requirements_list: list with capacitor requirements
         :type capacitor_requirements_list: list[CapacitorRequirements]
         """

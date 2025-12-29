@@ -191,7 +191,7 @@ class TransformerOptimization:
         return is_consistent, inconsistency_report
 
     def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, transformer_study_data: StudyData,
-                                                 circuit_filter_data: FilterData, transformer_requirements_list: list[TransformerRequirements]) -> None:
+                                                 transformer_requirements_list: list[TransformerRequirements]) -> None:
         """
         Initialize the transformer optimization.
 
@@ -199,8 +199,6 @@ class TransformerOptimization:
         :type toml_transformer: dct.TomlTransformer
         :param transformer_study_data: Study data
         :type transformer_study_data: StudyData
-        :param circuit_filter_data: Information about the filtered circuit designs
-        :type circuit_filter_data: FilterData
         :param transformer_requirements_list: list with transformer requirements
         :type transformer_requirements_list: list[TransformerRequirements]
         """
@@ -266,9 +264,8 @@ class TransformerOptimization:
 
         # Create the io_config_list for all trials
         for count, transformer_requirements in enumerate(transformer_requirements_list):
-
-            circuit_trial_file = circuit_filter_data.filtered_list_files[count]
-            trial_directory = os.path.join(transformer_study_data.optimization_directory, circuit_trial_file, transformer_study_data.study_name)
+            circuit_id = transformer_requirements.circuit_id
+            trial_directory = os.path.join(transformer_study_data.optimization_directory, circuit_id, transformer_study_data.study_name)
 
             # catch mypy type issue
             if not isinstance(transformer_requirements, TransformerRequirements):
@@ -288,7 +285,7 @@ class TransformerOptimization:
             next_io_config.time_current_2_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_2_vec])
             # misc
             next_io_config.stacked_transformer_optimization_directory = trial_directory
-            transformer_dto = TransformerOptimizationDto(circuit_filtered_point_filename=circuit_trial_file,
+            transformer_dto = TransformerOptimizationDto(circuit_filtered_point_filename=circuit_id,
                                                          progress_data=copy.deepcopy(stat_data_init),
                                                          transformer_optimization_dto=next_io_config)
 

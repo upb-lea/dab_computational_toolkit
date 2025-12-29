@@ -1586,7 +1586,6 @@ class DctMainCtl:
 
             self._capacitor_selection.initialize_capacitor_selection([toml_capacitor_1, toml_capacitor_2],
                                                                      capacitor_study_data=self._capacitor_selection_data,
-                                                                     circuit_filter_data=self._circuit_optimization.filter_data,
                                                                      capacitor_requirements_list=capacitor_requirements_list)
 
             # Check, if old study is to delete, if available
@@ -1628,8 +1627,7 @@ class DctMainCtl:
             inductor_requirements = self._circuit_optimization.get_inductor_requirements(circuit_id_filepath)
             inductor_requirements_list.append(inductor_requirements[0])
 
-        self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
-                                                                          self._circuit_optimization.filter_data, inductor_requirements_list)
+        self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data, inductor_requirements_list)
 
         # Check, if inductor optimization is not to skip
         if not self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
@@ -1678,9 +1676,7 @@ class DctMainCtl:
             transformer_requirements = self._circuit_optimization.get_transformer_requirements(circuit_id_filepath)
             transformer_requirements_list.append(transformer_requirements[0])
 
-        self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer,
-                                                                                self._transformer_study_data,
-                                                                                self._circuit_optimization.filter_data, transformer_requirements_list)
+        self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data, transformer_requirements_list)
 
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
