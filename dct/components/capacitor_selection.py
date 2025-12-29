@@ -50,13 +50,14 @@ class CapacitorSelection:
             pass
         return True, ""
 
-    def initialize_capacitor_selection(self, toml_capacitor: TomlCapacitorSelection, capacitor_study_data: StudyData, circuit_filter_data: FilterData,
+    def initialize_capacitor_selection(self, toml_capacitor_list: list[TomlCapacitorSelection], capacitor_study_data: StudyData,
+                                       circuit_filter_data: FilterData,
                                        capacitor_requirements_list: list[CapacitorRequirements]) -> None:
         """
         Initialize the capacitor selection.
 
-        :param toml_capacitor: capacitor data
-        :type toml_capacitor: TomlCapacitorSelection
+        :param toml_capacitor_list: capacitor data in a list
+        :type toml_capacitor_list: list[TomlCapacitorSelection]
         :param capacitor_study_data: capacitor study data
         :type capacitor_study_data: StudyData
         :param circuit_filter_data: filtered circuit data
@@ -67,10 +68,10 @@ class CapacitorSelection:
         pecst.download_esr_csv_files()
 
         # Create the io_config_list for all trials
-        for count, capacitor_requirements in enumerate(capacitor_requirements_list):
+        for capacitor_requirements in capacitor_requirements_list:
 
-            circuit_trial_file = circuit_filter_data.filtered_list_files[count]
-            trial_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_trial_file, capacitor_study_data.study_name)
+            circuit_id = capacitor_requirements.circuit_id
+            trial_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_id, capacitor_study_data.study_name)
 
             # catch mypy type issue
             if not isinstance(capacitor_requirements, CapacitorRequirements):
@@ -78,16 +79,16 @@ class CapacitorSelection:
 
             # generate capacitor requirements from circuit simulation data
             capacitor_requirements_dto = pecst.CapacitorRequirements(
-                maximum_peak_to_peak_voltage_ripple=toml_capacitor.maximum_peak_to_peak_voltage_ripple,
+                maximum_peak_to_peak_voltage_ripple=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].maximum_peak_to_peak_voltage_ripple,
                 current_waveform_for_op_max_current=np.array([capacitor_requirements.time_vec,
                                                               capacitor_requirements.current_vec]),
                 v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
-                temperature_ambient=toml_capacitor.temperature_ambient,
-                voltage_safety_margin_percentage=toml_capacitor.voltage_safety_margin_percentage,
+                temperature_ambient=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].temperature_ambient,
+                voltage_safety_margin_percentage=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].voltage_safety_margin_percentage,
                 capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
-                maximum_number_series_capacitors=toml_capacitor.maximum_number_series_capacitors,
+                maximum_number_series_capacitors=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].maximum_number_series_capacitors,
                 capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
-                lifetime_h=toml_capacitor.lifetime_h,
+                lifetime_h=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].lifetime_h,
                 results_directory=trial_directory)
 
             # Initialize the statistical data
@@ -95,7 +96,7 @@ class CapacitorSelection:
                                                         progress_status=ProgressStatus.Idle)
 
             capacitor_optimization_dto = CapacitorOptimizationDto(
-                circuit_id=circuit_trial_file,
+                circuit_id=circuit_id,
                 progress_data=copy.deepcopy(stat_data_init),
                 capacitor_optimization_dto=capacitor_requirements_dto,
                 capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit)
@@ -103,7 +104,7 @@ class CapacitorSelection:
             self._optimization_config_list.append(capacitor_optimization_dto)
 
     @staticmethod
-    def _start_optimization(circuit_filtered_point_file: str, act_cst_config: pecst.CapacitorRequirements, filter_data: FilterData,
+    def _start_optimization(circuit_id: str, act_cst_config: pecst.CapacitorRequirements, filter_data: FilterData,
                             capacitor_requirements: CapacitorRequirements, debug: Debug) -> int:
         # capacitor requirements
         _, c_db_df_list = pecst.select_capacitors(act_cst_config)
@@ -161,7 +162,7 @@ class CapacitorSelection:
                     logger.debug(f"{current_waveform=}")
                     logger.debug("All operating point simulation of:")
                     logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                    logger.debug(f"   * Circuit trial: {circuit_id}")
                     logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
 
                     [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='fft input current')
@@ -175,8 +176,8 @@ class CapacitorSelection:
                     loss_total_array=loss_total_array,
                     volume_total=volume_total,
                     area_total=area_total,
-                    circuit_trial_file=circuit_filtered_point_file,
-                    capacitor_order_number=df_geometry_re_simulation_number['ordering code'].values[0],
+                    circuit_id=circuit_id,
+                    capacitor_id=df_geometry_re_simulation_number['ordering code'].values[0],
                     n_series=n_series,
                     n_parallel=n_parallel,
                     capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit

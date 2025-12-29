@@ -419,11 +419,11 @@ class TransformerOptimization:
                     result_array[vec_vvp] = combined_losses
 
                 results_dto = d_dtos.StackedTransformerResults(
-                    p_combined_losses=result_array,
+                    loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
-                    circuit_trial_file=circuit_filtered_point_file,
-                    stacked_transformer_trial_number=single_geometry_number
+                    circuit_id=circuit_filtered_point_file,
+                    transformer_id=single_geometry_number
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
@@ -517,13 +517,13 @@ class TransformerOptimization:
             pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameters)
 
     @staticmethod
-    def _fem_simulation(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
+    def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
-        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
-        :type  circuit_filtered_point_file: str
+        :param circuit_id: Filename of the filtered optimal electrical circuit
+        :type  circuit_id: str
         :param act_sto_config: stacked transformer configuration for the optimization
         :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
@@ -539,7 +539,7 @@ class TransformerOptimization:
         process_number = current_process().name
 
         # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
 
         # Filter study. Use same filter as in the reluctance model
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
@@ -562,9 +562,9 @@ class TransformerOptimization:
         # Overtake the filtered operation points
         number_of_filtered_points = len(re_simulate_numbers)
 
-        for re_simulate_number in re_simulate_numbers:
-            logger.info(f"{re_simulate_number=}")
-            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == re_simulate_number]
+        for transformer_id in re_simulate_numbers:
+            logger.info(f"{transformer_id=}")
+            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == transformer_id]
 
             result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
@@ -573,7 +573,7 @@ class TransformerOptimization:
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
-            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
@@ -592,9 +592,9 @@ class TransformerOptimization:
                         logger.debug("----------------------")
                         logger.debug("Re-simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
-                        logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                        logger.debug(f"   * Transformer ID: {transformer_id}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
@@ -603,15 +603,15 @@ class TransformerOptimization:
                         result_array[vec_vvp] = combined_losses
 
                     results_dto = d_dtos.StackedTransformerResults(
-                        p_combined_losses=result_array,
+                        loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        stacked_transformer_trial_number=re_simulate_number
+                        circuit_id=circuit_id,
+                        transformer_id=transformer_id
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
                 except:
-                    logger.info(f"Re-simulation of transformer geometry {re_simulate_number} not possible due to non-possible geometry.")
+                    logger.info(f"Re-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")

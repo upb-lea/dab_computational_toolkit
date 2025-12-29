@@ -325,11 +325,11 @@ class InductorOptimization:
                         combined_loss_array[vec_vvp] = combined_losses
 
                     inductor_losses = d_dtos.InductorResults(
-                        p_combined_losses=combined_loss_array,
+                        loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        inductor_trial_number=single_geometry_number,
+                        circuit_id=circuit_filtered_point_file,
+                        inductor_id=single_geometry_number
                     )
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
@@ -429,13 +429,13 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _fem_simulation(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+    def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
-        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
-        :type  circuit_filtered_point_file: str
+        :param circuit_id: Filename of the filtered optimal electrical circuit
+        :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
@@ -450,7 +450,7 @@ class InductorOptimization:
         process_number = current_process().name
 
         # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
 
         df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
         df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
@@ -473,10 +473,10 @@ class InductorOptimization:
         logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
 
         # simulate all operating points
-        for single_geometry_number in tqdm.tqdm(all_operation_point_geometry_numbers_list):
+        for inductor_id in tqdm.tqdm(all_operation_point_geometry_numbers_list):
             try:
                 # generate a new df with only a single entry (with the geometry data)
-                df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(single_geometry_number)]
+                df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(inductor_id)]
 
                 logger.debug(f"single_geometry_number: \n"
                              f"    {df_geometry_re_simulation_number.head()}")
@@ -488,7 +488,7 @@ class InductorOptimization:
                 if not os.path.exists(new_circuit_dto_directory):
                     os.makedirs(new_circuit_dto_directory)
 
-                if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
+                if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
                     logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
@@ -501,9 +501,9 @@ class InductorOptimization:
                         logger.debug(f"{current_waveform=}")
                         logger.debug("All operating point simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                        logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
+                        logger.debug(f"   * Inductor ID: {inductor_id}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform=current_waveform,
@@ -511,15 +511,15 @@ class InductorOptimization:
                         combined_loss_array[vec_vvp] = combined_losses
 
                     inductor_losses = d_dtos.InductorResults(
-                        p_combined_losses=combined_loss_array,
+                        loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        inductor_trial_number=single_geometry_number,
+                        circuit_id=circuit_id,
+                        inductor_id=inductor_id
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
             except:
-                logger.warning(f"for number {single_geometry_number} an operation point exceeds the boundary!")
+                logger.warning(f"for number {inductor_id} an operation point exceeds the boundary!")

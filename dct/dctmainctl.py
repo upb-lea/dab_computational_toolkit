@@ -74,7 +74,7 @@ class DctMainCtl:
         # circuit_optimization is missing due to static class. Needs to be changed to instance class too.
         self._filtered_list_files: list[str] = []
         self._circuit_optimization: CircuitOptimizationBase | None = None
-        self._capacitor_1_selection: CapacitorSelection | None = None
+        self._capacitor_selection: CapacitorSelection | None = None
         self._capacitor_2_selection: CapacitorSelection | None = None
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
@@ -1174,7 +1174,7 @@ class DctMainCtl:
 
         project_directory = os.path.abspath(toml_prog_flow.general.project_directory)
 
-        self._capacitor_1_selection_data = StudyData(
+        self._capacitor_selection_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.capacitor_1_configuration_file.replace(".toml", ""),
             optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor_1.subdirectory,
                                                 toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", "")),
@@ -1282,7 +1282,7 @@ class DctMainCtl:
         else:
             circuit_calculation_mode = self._circuit_optimization.circuit_study_data.calculation_mode
             # If circuit calculation mode is not skipped, all further calculation modes are impacted
-            DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._capacitor_1_selection_data)
+            DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._capacitor_selection_data)
             DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._capacitor_2_selection_data)
             DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._inductor_study_data)
             DctMainCtl._update_calculation_mode(circuit_calculation_mode, self._transformer_study_data)
@@ -1314,19 +1314,19 @@ class DctMainCtl:
                              f"{toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} are inconsistent!\n", issue_report)
 
         # Check, if capacitor1 selection is to skip
-        if self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.skip_mode:
+        if self._capacitor_selection_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check if capacitor1 selection is skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_1_selection_data,
+            is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_selection_data,
                                                                   PROCESSING_COMPLETE_FILE)
             # Evaluate the result of circuit check
             if not is_skippable:
                 logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
-                self._capacitor_1_selection_data.calculation_mode = CalcModeEnum.continue_mode
+                self._capacitor_selection_data.calculation_mode = CalcModeEnum.continue_mode
 
         # In case of CalcModeEnum.new_mode the old study is to delete
-        if self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.new_mode:
+        if self._capacitor_selection_data.calculation_mode == CalcModeEnum.new_mode:
             # delete old circuit study data
-            self.delete_study_content(self._capacitor_1_selection_data.optimization_directory, self._capacitor_1_selection_data.study_name)
+            self.delete_study_content(self._capacitor_selection_data.optimization_directory, self._capacitor_selection_data.study_name)
 
         # --------------------------
         # Capacitor 2 flow control
@@ -1393,7 +1393,7 @@ class DctMainCtl:
             if not is_skippable:
                 self._inductor_study_data.calculation_mode = CalcModeEnum.new_mode
                 inductor_sim_calculation_mode = CalcModeEnum.continue_mode
-                self._capacitor_1_selection_data.calculation_mode = CalcModeEnum.continue_mode
+                self._capacitor_selection_data.calculation_mode = CalcModeEnum.continue_mode
                 logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
                                f"{issue_report}")
             else:
@@ -1573,78 +1573,43 @@ class DctMainCtl:
         logger.info("Start capacitor 1 selection")
 
         # Check, if capacitor optimization is not to skip
-        if not self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.skip_mode:
+        if not self._capacitor_selection_data.calculation_mode == CalcModeEnum.skip_mode:
             # Allocate and initialize circuit configuration
-            self._capacitor_1_selection = CapacitorSelection()
+            self._capacitor_selection = CapacitorSelection()
 
-            capacitor_1_requirements_list = []
-            for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
-                circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-                capacitor_requirements = self._circuit_optimization.get_capacitor_requirements(circuit_filepath)
-                capacitor_1_requirements_list.append(capacitor_requirements[0])
+            capacitor_requirements_list = []
+            for circuit_id_file in self._circuit_optimization.filter_data.filtered_list_files:
+                circuit_id_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+                capacitor_requirements = self._circuit_optimization.get_capacitor_requirements(circuit_id_filepath)
+                capacitor_requirements_list.append(capacitor_requirements[0])
+                capacitor_requirements_list.append(capacitor_requirements[1])
 
-            self._capacitor_1_selection.initialize_capacitor_selection(toml_capacitor_1, capacitor_study_data=self._capacitor_1_selection_data,
-                                                                       circuit_filter_data=self._circuit_optimization.filter_data,
-                                                                       capacitor_requirements_list=capacitor_1_requirements_list)
+            self._capacitor_selection.initialize_capacitor_selection([toml_capacitor_1, toml_capacitor_2],
+                                                                     capacitor_study_data=self._capacitor_selection_data,
+                                                                     circuit_filter_data=self._circuit_optimization.filter_data,
+                                                                     capacitor_requirements_list=capacitor_requirements_list)
 
             # Check, if old study is to delete, if available
-            if self._capacitor_1_selection_data.calculation_mode == CalcModeEnum.new_mode:
+            if self._capacitor_selection_data.calculation_mode == CalcModeEnum.new_mode:
                 # delete old circuit study data
-                self.delete_study_content(self._capacitor_1_selection_data.optimization_directory, self._capacitor_1_selection_data.study_name)
+                self.delete_study_content(self._capacitor_selection_data.optimization_directory, self._capacitor_selection_data.study_name)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._capacitor_1_selection_data.optimization_directory,
+            DctMainCtl._delete_processing_complete(self._capacitor_selection_data.optimization_directory,
                                                    PROCESSING_COMPLETE_FILE)
             # Perform circuit optimization
-            self._capacitor_1_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
-                                                             capacitor_requirements_list=capacitor_1_requirements_list,
-                                                             debug=toml_debug)
+            self._capacitor_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
+                                                           capacitor_requirements_list=capacitor_requirements_list,
+                                                           debug=toml_debug)
             # Set processing complete indicator
-            design_directory = os.path.join(self._capacitor_1_selection_data.study_name,
+            design_directory = os.path.join(self._capacitor_selection_data.study_name,
                                             CIRCUIT_CAPACITOR_LOSS_FOLDER)
-            DctMainCtl._set_processing_complete(self._capacitor_1_selection_data.optimization_directory,
+            DctMainCtl._set_processing_complete(self._capacitor_selection_data.optimization_directory,
                                                 design_directory, PROCESSING_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
-
-        # --------------------------
-        # Capacitor 2 selection
-        # --------------------------
-        logger.info("Start capacitor 2 selection")
-
-        # Check, if electrical optimization is not to skip
-        if not self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.skip_mode:
-
-            # Allocate and initialize circuit configuration
-            self._capacitor_2_selection = CapacitorSelection()
-
-            capacitor_2_requirements_list = []
-            for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
-                circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-                capacitor_requirements = self._circuit_optimization.get_capacitor_requirements(circuit_filepath)
-                capacitor_2_requirements_list.append(capacitor_requirements[1])
-
-            self._capacitor_2_selection.initialize_capacitor_selection(toml_capacitor_2, capacitor_study_data=self._capacitor_2_selection_data,
-                                                                       circuit_filter_data=self._circuit_optimization.filter_data,
-                                                                       capacitor_requirements_list=capacitor_2_requirements_list)
-
-            # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._capacitor_2_selection_data.optimization_directory,
-                                                   PROCESSING_COMPLETE_FILE)
-            # Perform circuit optimization
-            self._capacitor_2_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
-                                                             capacitor_requirements_list=capacitor_2_requirements_list,
-                                                             debug=toml_debug)
-            # Set processing complete indicator
-            design_directory = os.path.join(self._capacitor_2_selection_data.study_name,
-                                            CIRCUIT_CAPACITOR_LOSS_FOLDER)
-            DctMainCtl._set_processing_complete(self._capacitor_2_selection_data.optimization_directory,
-                                                design_directory, PROCESSING_COMPLETE_FILE,
-                                                self._circuit_optimization.filter_data.filtered_list_files)
-        # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_2, "Capacitor 2 Pareto front calculated")
 
         # --------------------------
         # Inductor reluctance model optimization
@@ -1658,9 +1623,9 @@ class DctMainCtl:
         self._inductor_optimization = InductorOptimization()
 
         inductor_requirements_list = []
-        for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
-            circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-            inductor_requirements = self._circuit_optimization.get_inductor_requirements(circuit_filepath)
+        for circuit_id_file in self._circuit_optimization.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            inductor_requirements = self._circuit_optimization.get_inductor_requirements(circuit_id_filepath)
             inductor_requirements_list.append(inductor_requirements[0])
 
         self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data,
@@ -1708,9 +1673,9 @@ class DctMainCtl:
         self._transformer_optimization = TransformerOptimization()
 
         transformer_requirements_list = []
-        for circuit_trial_file in self._circuit_optimization.filter_data.filtered_list_files:
-            circuit_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-            transformer_requirements = self._circuit_optimization.get_transformer_requirements(circuit_filepath)
+        for circuit_id_file in self._circuit_optimization.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            transformer_requirements = self._circuit_optimization.get_transformer_requirements(circuit_id_filepath)
             transformer_requirements_list.append(transformer_requirements[0])
 
         self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer,
@@ -1782,13 +1747,13 @@ class DctMainCtl:
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
         stacked_transformer_study_names = [self._transformer_study_data.study_name]
-        capacitor_1_study_names = [self._capacitor_1_selection_data.study_name]
+        capacitor_1_study_names = [self._capacitor_selection_data.study_name]
         capacitor_2_study_names = [self._capacitor_2_selection_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_pre_processing.generate_result_database(
             self._inductor_study_data, self._transformer_study_data, pre_summary_data,
             inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
-            self._capacitor_1_selection_data, self._capacitor_2_selection_data,
+            self._capacitor_selection_data, self._capacitor_2_selection_data,
             capacitor_1_study_names, capacitor_2_study_names
         )
         #  Select the needed heat sink configuration
