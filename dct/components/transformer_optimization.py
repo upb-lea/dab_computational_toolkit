@@ -27,6 +27,7 @@ from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER
+from dct.components.component_requirements import TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,8 @@ class TransformerOptimization:
     def verify_optimization_parameter(toml_transformer: dct.TomlTransformer) -> tuple[bool, str]:
         """Verify the input parameter ranges.
 
-        :param toml_transformer: toml inductor configuration
-        :type toml_transformer: dct.TomlInductor
+        :param toml_transformer: toml transformer configuration
+        :type toml_transformer: dct.TomlTransformer
         :return: True, if the configuration was consistent
         :rtype: bool
         """
@@ -189,28 +190,19 @@ class TransformerOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, study_data: StudyData, filter_data: FilterData) -> bool:
+    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, transformer_study_data: StudyData,
+                                                 transformer_requirements_list: list[TransformerRequirements]) -> None:
         """
-        Initialize the configuration.
+        Initialize the transformer optimization.
 
         :param toml_transformer: transformer toml file
         :type toml_transformer: dct.TomlTransformer
-        :param study_data: Study data
-        :type study_data: StudyData
-        :param filter_data: Information about the filtered circuit designs
-        :type filter_data: FilterData
-        :return: True, if the configuration was successful initialized
-        :rtype: bool
+        :param transformer_study_data: Study data
+        :type transformer_study_data: StudyData
+        :param transformer_requirements_list: list with transformer requirements
+        :type transformer_requirements_list: list[TransformerRequirements]
         """
-        is_list_generation_successful = False
-
-        # Verify optimization parameter
-        is_consistent, issue_report = TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if not is_consistent:
-            raise ValueError(
-                "Transformer optimization parameter are inconsistent!\n",
-                issue_report)
-
+        # common parameters for all types of transformers
         act_insulation = fmt.StoInsulation(
             # insulation for top core window
             iso_window_top_core_top=toml_transformer.insulation.iso_window_top_core_top,
@@ -236,7 +228,7 @@ class TransformerOptimization:
 
         # Create fix part of io_config
         sto_config = fmt.StoSingleInputConfig(
-            stacked_transformer_study_name=study_data.study_name,
+            stacked_transformer_study_name=transformer_study_data.study_name,
             # target parameters  initialized with default values
             l_s12_target=0,
             l_h_target=0,
@@ -270,48 +262,34 @@ class TransformerOptimization:
             material_data_sources=material_data_sources
         )
 
-        # Initialize the statistical data
-        stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
+        # Create the io_config_list for all trials
+        for transformer_requirements in transformer_requirements_list:
+            circuit_id = transformer_requirements.circuit_id
+            trial_directory = os.path.join(transformer_study_data.optimization_directory, circuit_id, transformer_study_data.study_name)
 
-        # Create the sto_config_list for all filtered circuit trials
-        for circuit_trial_file in filter_data.filtered_list_files:
-            circuit_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
+            # catch mypy type issue
+            if not isinstance(transformer_requirements, TransformerRequirements):
+                raise TypeError("circuit DTO file is incomplete.")
 
-            # Check filename
-            if os.path.isfile(circuit_filepath):
-                # Read results from circuit optimization
-                circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath)
-                # get the peak current waveform
-                sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = dab_dset.HandleDabDto.get_max_peak_waveform_transformer(
-                    circuit_dto, False)
-                time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
-                transformer_target_params = dab_dset.HandleDabDto.export_transformer_target_parameters_dto(
-                    dab_dto=circuit_dto)
+            # Initialize the statistical data
+            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
-                # Generate new sto_config
-                next_io_config = copy.deepcopy(sto_config)
-                # target parameters
-                next_io_config.l_s12_target = float(transformer_target_params.l_s12_target)
-                next_io_config.l_h_target = float(transformer_target_params.l_h_target)
-                next_io_config.n_target = float(transformer_target_params.n_target)
-                # operating point: current waveforms and temperature initialized with default values
-                next_io_config.time_current_1_vec = transformer_target_params.time_current_1_vec
-                next_io_config.time_current_2_vec = transformer_target_params.time_current_2_vec
-                # misc
-                next_io_config.stacked_transformer_optimization_directory\
-                    = os.path.join(study_data.optimization_directory, str(circuit_trial_file), sto_config.stacked_transformer_study_name)
-                transformer_dto = TransformerOptimizationDto(circuit_filtered_point_filename=circuit_trial_file,
-                                                             progress_data=copy.deepcopy(stat_data_init),
-                                                             transformer_optimization_dto=next_io_config)
+            # Generate new sto_config
+            next_io_config = copy.deepcopy(sto_config)
+            # target parameters
+            next_io_config.l_s12_target = float(transformer_requirements.l_s12_target)
+            next_io_config.l_h_target = float(transformer_requirements.l_h_target)
+            next_io_config.n_target = float(transformer_requirements.n_target)
+            # operating point: current waveforms and temperature initialized with default values
+            next_io_config.time_current_1_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_1_vec])
+            next_io_config.time_current_2_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_2_vec])
+            # misc
+            next_io_config.stacked_transformer_optimization_directory = trial_directory
+            transformer_dto = TransformerOptimizationDto(circuit_filtered_point_filename=circuit_id,
+                                                         progress_data=copy.deepcopy(stat_data_init),
+                                                         transformer_optimization_dto=next_io_config)
 
-                self._optimization_config_list.append(transformer_dto)
-            else:
-                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
-
-        if self._optimization_config_list:
-            is_list_generation_successful = True
-
-        return is_list_generation_successful
+            self._optimization_config_list.append(transformer_dto)
 
     def get_progress_data(self, filtered_list_id: int) -> ProgressData:
         """Provide the progress data of the optimization.
@@ -415,7 +393,7 @@ class TransformerOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
 
@@ -438,11 +416,11 @@ class TransformerOptimization:
                     result_array[vec_vvp] = combined_losses
 
                 results_dto = d_dtos.StackedTransformerResults(
-                    p_combined_losses=result_array,
+                    loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
-                    circuit_trial_file=circuit_filtered_point_file,
-                    stacked_transformer_trial_number=single_geometry_number
+                    circuit_id=circuit_filtered_point_file,
+                    transformer_id=single_geometry_number
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
@@ -536,13 +514,13 @@ class TransformerOptimization:
             pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameters)
 
     @staticmethod
-    def _fem_simulation(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
+    def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
-        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
-        :type  circuit_filtered_point_file: str
+        :param circuit_id: Filename of the filtered optimal electrical circuit
+        :type  circuit_id: str
         :param act_sto_config: stacked transformer configuration for the optimization
         :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
@@ -558,7 +536,7 @@ class TransformerOptimization:
         process_number = current_process().name
 
         # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
 
         # Filter study. Use same filter as in the reluctance model
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
@@ -581,9 +559,9 @@ class TransformerOptimization:
         # Overtake the filtered operation points
         number_of_filtered_points = len(re_simulate_numbers)
 
-        for re_simulate_number in re_simulate_numbers:
-            logger.info(f"{re_simulate_number=}")
-            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == re_simulate_number]
+        for transformer_id in re_simulate_numbers:
+            logger.info(f"{transformer_id=}")
+            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == transformer_id]
 
             result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
@@ -592,8 +570,8 @@ class TransformerOptimization:
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
-            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{re_simulate_number}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
+                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
                 # e.g. winding is not fitting in the winding window
@@ -611,9 +589,9 @@ class TransformerOptimization:
                         logger.debug("----------------------")
                         logger.debug("Re-simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
-                        logger.debug(f"   * Transformer re-simulation trial: {re_simulate_number}")
+                        logger.debug(f"   * Transformer ID: {transformer_id}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
@@ -622,15 +600,15 @@ class TransformerOptimization:
                         result_array[vec_vvp] = combined_losses
 
                     results_dto = d_dtos.StackedTransformerResults(
-                        p_combined_losses=result_array,
+                        loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        stacked_transformer_trial_number=re_simulate_number
+                        circuit_id=circuit_id,
+                        transformer_id=transformer_id
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(re_simulate_number)}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
                 except:
-                    logger.info(f"Re-simulation of transformer geometry {re_simulate_number} not possible due to non-possible geometry.")
+                    logger.info(f"Re-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")
