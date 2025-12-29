@@ -263,7 +263,7 @@ class TransformerOptimization:
         )
 
         # Create the io_config_list for all trials
-        for count, transformer_requirements in enumerate(transformer_requirements_list):
+        for transformer_requirements in transformer_requirements_list:
             circuit_id = transformer_requirements.circuit_id
             trial_directory = os.path.join(transformer_study_data.optimization_directory, circuit_id, transformer_study_data.study_name)
 

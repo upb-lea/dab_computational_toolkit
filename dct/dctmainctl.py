@@ -49,6 +49,7 @@ from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUI
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
                                SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
+from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -1577,12 +1578,11 @@ class DctMainCtl:
             # Allocate and initialize circuit configuration
             self._capacitor_selection = CapacitorSelection()
 
-            capacitor_requirements_list = []
+            capacitor_requirements_list: list[CapacitorRequirements] = []
             for circuit_id_file in self._circuit_optimization.filter_data.filtered_list_files:
                 circuit_id_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
                 capacitor_requirements = self._circuit_optimization.get_capacitor_requirements(circuit_id_filepath)
-                capacitor_requirements_list.append(capacitor_requirements[0])
-                capacitor_requirements_list.append(capacitor_requirements[1])
+                capacitor_requirements_list = capacitor_requirements_list + capacitor_requirements
 
             self._capacitor_selection.initialize_capacitor_selection([toml_capacitor_1, toml_capacitor_2],
                                                                      capacitor_study_data=self._capacitor_selection_data,
@@ -1621,11 +1621,11 @@ class DctMainCtl:
         # Allocate and initialize inductor configuration
         self._inductor_optimization = InductorOptimization()
 
-        inductor_requirements_list = []
+        inductor_requirements_list: list[InductorRequirements] = []
         for circuit_id_file in self._circuit_optimization.filter_data.filtered_list_files:
             circuit_id_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
             inductor_requirements = self._circuit_optimization.get_inductor_requirements(circuit_id_filepath)
-            inductor_requirements_list.append(inductor_requirements[0])
+            inductor_requirements_list = inductor_requirements_list + inductor_requirements
 
         self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data, inductor_requirements_list)
 
@@ -1670,11 +1670,11 @@ class DctMainCtl:
         # Allocate and initialize transformer configuration
         self._transformer_optimization = TransformerOptimization()
 
-        transformer_requirements_list = []
+        transformer_requirements_list: list[TransformerRequirements] = []
         for circuit_id_file in self._circuit_optimization.filter_data.filtered_list_files:
             circuit_id_filepath = os.path.join(self._circuit_optimization.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
             transformer_requirements = self._circuit_optimization.get_transformer_requirements(circuit_id_filepath)
-            transformer_requirements_list.append(transformer_requirements[0])
+            transformer_requirements_list = transformer_requirements_list + transformer_requirements
 
         self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data, transformer_requirements_list)
 

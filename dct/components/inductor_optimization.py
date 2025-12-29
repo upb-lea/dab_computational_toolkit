@@ -145,7 +145,7 @@ class InductorOptimization:
         :type inductor_requirements_list: list[InductorRequirements]
         """
         # Create the io_config_list for all trials
-        for count, inductor_requirements in enumerate(inductor_requirements_list):
+        for inductor_requirements in inductor_requirements_list:
             circuit_id = inductor_requirements.circuit_id
             trial_directory = os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name)
 
