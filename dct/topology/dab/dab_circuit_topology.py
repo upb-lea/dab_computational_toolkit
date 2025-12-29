@@ -1168,65 +1168,70 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         return is_filter_available, issue_report
 
-    @staticmethod
-    def get_capacitor_requirements(circuit_filepath: str) -> list[CapacitorRequirements]:
+    def get_capacitor_requirements(self) -> list[CapacitorRequirements]:
         """Get the capacitor requirements.
 
-        :param circuit_filepath: circuit filepath
-        :type circuit_filepath: str
         :return: Capacitor Requirements
         :rtype: CapacitorRequirements
         """
-        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
-        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded component requirements have wrong type.")
+        capacitor_requirements_list: list[CapacitorRequirements] = []
+        for circuit_id_file in self.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_id_filepath)
+            if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded component requirements have wrong type.")
 
-        if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded capacitor requirements have wrong type.")
+            if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded capacitor requirements have wrong type.")
 
-        return circuit_dto.component_requirements.capacitor_requirements
+            capacitor_requirements_list = capacitor_requirements_list + circuit_dto.component_requirements.capacitor_requirements
 
-    @staticmethod
-    def get_inductor_requirements(circuit_filepath: str) -> list[InductorRequirements]:
+        return capacitor_requirements_list
+
+    def get_inductor_requirements(self) -> list[InductorRequirements]:
         """Get the inductor requirements.
 
-        :param circuit_filepath: circuit filepath
-        :type circuit_filepath: str
         :return: Inductor Requirements
         :rtype: InductorRequirements
         """
-        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
-        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded component requirements have wrong type.")
+        inductor_requirements_list: list[InductorRequirements] = []
+        for circuit_id_file in self.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_id_filepath)
+            if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded component requirements have wrong type.")
 
-        if not isinstance(circuit_dto.component_requirements.inductor_requirements[0], InductorRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded capacitor requirements have wrong type.")
+            if not isinstance(circuit_dto.component_requirements.inductor_requirements[0], InductorRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded capacitor requirements have wrong type.")
 
-        return circuit_dto.component_requirements.inductor_requirements
+            inductor_requirements_list = inductor_requirements_list + circuit_dto.component_requirements.inductor_requirements
 
-    @staticmethod
-    def get_transformer_requirements(circuit_filepath: str) -> list[TransformerRequirements]:
+        return inductor_requirements_list
+
+    def get_transformer_requirements(self) -> list[TransformerRequirements]:
         """Get the transformer requirements.
 
-        :param circuit_filepath: circuit filepath
-        :type circuit_filepath: str
         :return: Transformer Requirements
         :rtype: TransformerRequirements
         """
-        circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_filepath)
-        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded component requirements have wrong type.")
+        transformer_requirements_list: list[TransformerRequirements] = []
+        for circuit_id_file in self.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_id_filepath)
+            if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded component requirements have wrong type.")
 
-        if not isinstance(circuit_dto.component_requirements.transformer_requirements[0], TransformerRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded capacitor requirements have wrong type.")
+            if not isinstance(circuit_dto.component_requirements.transformer_requirements[0], TransformerRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded capacitor requirements have wrong type.")
+            transformer_requirements_list = transformer_requirements_list + circuit_dto.component_requirements.transformer_requirements
 
-        return circuit_dto.component_requirements.transformer_requirements
+        return transformer_requirements_list
 
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:
