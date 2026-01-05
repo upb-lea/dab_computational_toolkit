@@ -380,6 +380,9 @@ CalcModeEnum
 IWGRP
 IWOTH
 IWRITE
+dessca
+Denormalize
+denormalized
 sbc
 HandleSbcDto
 TomlSbcCircuitParetoDesign

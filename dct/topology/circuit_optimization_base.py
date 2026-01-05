@@ -14,7 +14,7 @@ import numpy as np
 # Own libraries
 from dct.datasets_dtos import StudyData, FilterData, PlotData
 from dct.server_ctl_dtos import ProgressData
-from dct.components.component_requirements import CapacitorRequirements
+from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
 
@@ -303,14 +303,29 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         """
         pass
 
-    @staticmethod
     @abstractmethod
-    def get_capacitor_requirements(circuit_filepath: str) -> list[CapacitorRequirements]:
+    def get_capacitor_requirements(self) -> list[CapacitorRequirements]:
         """Get the capacitor requirements.
 
-        :param circuit_filepath: circuit filepath
-        :type circuit_filepath: str
         :return: Capacitor requirements
         :rtype: CapacitorRequirements
+        """
+        pass
+
+    @abstractmethod
+    def get_inductor_requirements(self) -> list[InductorRequirements]:
+        """Get the inductor requirements.
+
+        :return: Inductor requirements
+        :rtype: InductorRequirements
+        """
+        pass
+
+    @abstractmethod
+    def get_transformer_requirements(self) -> list[TransformerRequirements]:
+        """Get the transformer requirements.
+
+        :return: Transformer requirements
+        :rtype: TransformerRequirements
         """
         pass

@@ -25,6 +25,8 @@ import dct.topology.dab.dab_datasets_dtos as d_dtos
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
 from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
+from dct.components.component_requirements import InductorRequirements
+from dct.toml_checker import TomlInductor
 # configure root logger
 logger = logging.getLogger(__name__)
 
@@ -130,88 +132,66 @@ class InductorOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_inductor_optimization_list(self, toml_inductor: dct.TomlInductor, study_data: StudyData, circuit_filter_data: FilterData) -> bool:
+    def initialize_inductor_optimization_list(self, toml_inductor: TomlInductor, inductor_study_data: StudyData,
+                                              inductor_requirements_list: list[InductorRequirements]) -> None:
         """
-        Generate the input geometry/settings list for the FEM simulation.
+        Initialize the inductor optimization.
 
-        :param toml_inductor: toml inductor configuration
-        :type toml_inductor: dct.TomlInductor
-        :param study_data: study data
-        :type study_data: StudyData
-        :param circuit_filter_data: Information about the filtered circuit designs
-        :type circuit_filter_data: FilterData
-        :return: True, if the configuration was successful initialized
-        :rtype: bool
+        :param toml_inductor: inductor data
+        :type toml_inductor: TomlInductor
+        :param inductor_study_data: inductor study data
+        :type inductor_study_data: StudyData
+        :param inductor_requirements_list: list with inductor requirements
+        :type inductor_requirements_list: list[InductorRequirements]
         """
-        is_list_generation_successful = False
-
-        # Verify optimization parameter
-        is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
-        if not is_consistent:
-            raise ValueError("Inductor optimization parameter are inconsistent!\n", issue_report)
-
-        # Insulation parameter
-        act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
-                                                    core_bot=toml_inductor.insulations.core_bot,
-                                                    core_top=toml_inductor.insulations.core_top,
-                                                    core_right=toml_inductor.insulations.core_right,
-                                                    core_left=toml_inductor.insulations.core_left)
-
-        # Initialize the material data source
-        act_material_data_sources = fmt.MaterialDataSources(
-            permeability_datasource=toml_inductor.material_data_sources.permeability_datasource,
-            permittivity_datasource=toml_inductor.material_data_sources.permittivity_datasource,
-        )
-
-        # Create fix part of io_config
-        io_config_gen = fmt.InductorOptimizationDTO(
-            inductor_study_name=study_data.study_name,
-            core_name_list=toml_inductor.design_space.core_name_list,
-            material_name_list=toml_inductor.design_space.material_name_list,
-            core_inner_diameter_min_max_list=toml_inductor.design_space.core_inner_diameter_min_max_list,
-            window_h_min_max_list=toml_inductor.design_space.window_h_min_max_list,
-            window_w_min_max_list=toml_inductor.design_space.window_w_min_max_list,
-            litz_wire_name_list=toml_inductor.design_space.litz_wire_name_list,
-            insulations=act_insulations,
-            target_inductance=0.0,
-            temperature=toml_inductor.boundary_conditions.temperature,
-            time_current_vec=[np.array([0]), np.array([0])],
-            inductor_optimization_directory="",
-            material_data_sources=act_material_data_sources)
-
-        # Initialize the statistical data
-        stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
-                                                    progress_status=ProgressStatus.Idle)
-
         # Create the io_config_list for all trials
-        for circuit_trial_file in circuit_filter_data.filtered_list_files:
-            circuit_filepath = os.path.join(circuit_filter_data.filtered_list_pathname, f"{circuit_trial_file}.pkl")
-            # Check filename
-            if os.path.isfile(circuit_filepath):
-                # Read results from circuit optimization
-                circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_filepath)
-                # get the peak current waveform
-                sorted_max_angles, i_l_1_max_current_waveform = dab_dset.HandleDabDto.get_max_peak_waveform_inductor(
-                    circuit_dto, False)
-                time = sorted_max_angles / 2 / np.pi / circuit_dto.input_config.fs
-                # Generate new io_config
-                next_io_config = copy.deepcopy(io_config_gen)
-                act_time_current_vec = np.array([time, i_l_1_max_current_waveform])
-                next_io_config.target_inductance = circuit_dto.input_config.Lc1
-                next_io_config.time_current_vec = act_time_current_vec
-                next_io_config.inductor_optimization_directory = os.path.join(study_data.optimization_directory,
-                                                                              circuit_trial_file, study_data.study_name)
-                inductor_dto = InductorOptimizationDto(circuit_filtered_point_filename=circuit_trial_file,
-                                                       progress_data=copy.deepcopy(stat_data_init),
-                                                       inductor_optimization_dto=next_io_config)
-                self._optimization_config_list.append(inductor_dto)
-            else:
-                logger.info(f"Wrong path or file {circuit_filepath} does not exists!")
+        for inductor_requirements in inductor_requirements_list:
+            circuit_id = inductor_requirements.circuit_id
+            trial_directory = os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name)
 
-        if self._optimization_config_list:
-            is_list_generation_successful = True
+            # catch mypy type issue
+            if not isinstance(inductor_requirements, InductorRequirements):
+                raise TypeError("circuit DTO file is incomplete.")
 
-        return is_list_generation_successful
+            # Insulation parameter
+            act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
+                                                        core_bot=toml_inductor.insulations.core_bot,
+                                                        core_top=toml_inductor.insulations.core_top,
+                                                        core_right=toml_inductor.insulations.core_right,
+                                                        core_left=toml_inductor.insulations.core_left)
+
+            # Initialize the material data source
+            act_material_data_sources = fmt.MaterialDataSources(
+                permeability_datasource=toml_inductor.material_data_sources.permeability_datasource,
+                permittivity_datasource=toml_inductor.material_data_sources.permittivity_datasource,
+            )
+
+            # Create fix part of io_config
+            inductor_requirements_dto = fmt.InductorOptimizationDTO(
+                inductor_study_name=inductor_study_data.study_name,
+                core_name_list=toml_inductor.design_space.core_name_list,
+                material_name_list=toml_inductor.design_space.material_name_list,
+                core_inner_diameter_min_max_list=toml_inductor.design_space.core_inner_diameter_min_max_list,
+                window_h_min_max_list=toml_inductor.design_space.window_h_min_max_list,
+                window_w_min_max_list=toml_inductor.design_space.window_w_min_max_list,
+                litz_wire_name_list=toml_inductor.design_space.litz_wire_name_list,
+                insulations=act_insulations,
+                target_inductance=inductor_requirements.target_inductance,
+                temperature=toml_inductor.boundary_conditions.temperature,
+                time_current_vec=[inductor_requirements.time_vec, inductor_requirements.current_vec],
+                inductor_optimization_directory=os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name),
+                material_data_sources=act_material_data_sources)
+
+            # Initialize the statistical data
+            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
+                                                        progress_status=ProgressStatus.Idle)
+
+            inductor_optimization_dto = InductorOptimizationDto(
+                circuit_filtered_point_filename=circuit_id,
+                progress_data=copy.deepcopy(stat_data_init),
+                inductor_optimization_dto=inductor_requirements_dto)
+
+            self._optimization_config_list.append(inductor_optimization_dto)
 
     def get_progress_data(self, filtered_list_id: int) -> ProgressData:
         """Provide the progress data of the optimization.
@@ -318,7 +298,7 @@ class InductorOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
                 # e.g. winding is not fitting in the winding window
@@ -342,11 +322,11 @@ class InductorOptimization:
                         combined_loss_array[vec_vvp] = combined_losses
 
                     inductor_losses = d_dtos.InductorResults(
-                        p_combined_losses=combined_loss_array,
+                        loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        inductor_trial_number=single_geometry_number,
+                        circuit_id=circuit_filtered_point_file,
+                        inductor_id=single_geometry_number
                     )
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
@@ -446,13 +426,13 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _fem_simulation(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+    def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
-        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
-        :type  circuit_filtered_point_file: str
+        :param circuit_id: Filename of the filtered optimal electrical circuit
+        :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
@@ -467,7 +447,7 @@ class InductorOptimization:
         process_number = current_process().name
 
         # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
 
         df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
         df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
@@ -490,10 +470,10 @@ class InductorOptimization:
         logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
 
         # simulate all operating points
-        for single_geometry_number in tqdm.tqdm(all_operation_point_geometry_numbers_list):
+        for inductor_id in tqdm.tqdm(all_operation_point_geometry_numbers_list):
             try:
                 # generate a new df with only a single entry (with the geometry data)
-                df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(single_geometry_number)]
+                df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(inductor_id)]
 
                 logger.debug(f"single_geometry_number: \n"
                              f"    {df_geometry_re_simulation_number.head()}")
@@ -505,8 +485,8 @@ class InductorOptimization:
                 if not os.path.exists(new_circuit_dto_directory):
                     os.makedirs(new_circuit_dto_directory)
 
-                if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
-                    logger.info(f"Re-simulation of {circuit_dto.name} already exists. Skip.")
+                if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
+                    logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
@@ -518,9 +498,9 @@ class InductorOptimization:
                         logger.debug(f"{current_waveform=}")
                         logger.debug("All operating point simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                        logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
+                        logger.debug(f"   * Inductor ID: {inductor_id}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
                             df_geometry_re_simulation_number, current_waveform=current_waveform,
@@ -528,15 +508,15 @@ class InductorOptimization:
                         combined_loss_array[vec_vvp] = combined_losses
 
                     inductor_losses = d_dtos.InductorResults(
-                        p_combined_losses=combined_loss_array,
+                        loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_trial_file=circuit_filtered_point_file,
-                        inductor_trial_number=single_geometry_number,
+                        circuit_id=circuit_id,
+                        inductor_id=inductor_id
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
             except:
-                logger.warning(f"for number {single_geometry_number} an operation point exceeds the boundary!")
+                logger.warning(f"for number {inductor_id} an operation point exceeds the boundary!")
