@@ -583,8 +583,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             # i_loss_cost_value = 30+f_s_suggest/100000
             i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_losses.p_sbc_total
 
-        # return volume_inductor_cost_value, i_loss_cost_value
-        # debug
         return i_ripple_or_volume_cost_value, i_loss_cost_value
 
     @staticmethod

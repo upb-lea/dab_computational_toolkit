@@ -90,11 +90,11 @@ class HandleSbcDto:
         p_ls_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
                                                                  input_configuration.transistor_dto_2, input_configuration.fs)
 
-        p_loss = d_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond,
-                                      'p_ls_conduction': p_ls_cond,
-                                      'p_hs_switch': p_hs_switch,
-                                      'p_ls_switch': p_ls_switch,
-                                      'p_sbc_total': p_hs_cond + p_ls_cond + p_hs_switch + p_ls_switch})
+        p_loss = d_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond.ravel(),
+                                      'p_ls_conduction': p_ls_cond.ravel(),
+                                      'p_hs_switch': p_hs_switch.ravel(),
+                                      'p_ls_switch': p_ls_switch.ravel(),
+                                      'p_sbc_total': p_hs_cond.ravel() + p_ls_cond.ravel() + p_hs_switch.ravel() + p_ls_switch.ravel()})
 
         sbc_dto = d_dtos.SbcCircuitDTO(
             name=name,
@@ -333,6 +333,9 @@ class HandleTransistorDto:
         switch_e_off_data = HandleTransistorDto.calculate_2D_grid(transistor.switch.e_off)
         if switch_e_off_data.current_data.size == 0:
             raise ValueError(f"For transistor {transistor_name} e_off-switch loss data curve is not available!")
+
+        # Calculate r_channel-resistance
+        transistor.quickstart_wp()
 
         transistor_dto = d_dtos.TransistorDTO(
             name=transistor.name,
