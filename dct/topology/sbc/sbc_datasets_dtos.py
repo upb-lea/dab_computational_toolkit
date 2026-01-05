@@ -5,7 +5,23 @@ import dataclasses
 
 # 3rd party libraries
 import numpy as np
+
+# own libraries
 from dct.components.component_requirements import ComponentRequirements
+
+@dataclasses.dataclass
+class LossDataGrid:
+    """Contains data to compute the loss of a specific operation point.
+
+    voltage_parameter: Source-drain voltage
+    current_data: Current through the transistor (x-axis value)
+    loss_data: Loss value (y-axis value)
+    """
+
+    voltage_parameter: np.ndarray
+    current_data: np.ndarray
+    loss_data: np.ndarray
+
 
 @dataclasses.dataclass
 class TransistorDTO:
@@ -15,6 +31,8 @@ class TransistorDTO:
     t_j_max_op: np.ndarray
     c_oss: np.ndarray
     q_oss: np.ndarray
+    switch_e_on_data: LossDataGrid
+    switch_e_off_data: LossDataGrid
     housing_area: np.float64
     cooling_area: np.float64
     r_th_jc: np.ndarray

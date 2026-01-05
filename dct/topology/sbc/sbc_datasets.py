@@ -10,6 +10,7 @@ import pickle
 import numpy as np
 import transistordatabase as tdb
 from matplotlib import pyplot as plt
+from scipy.interpolate import interp1d
 
 # own libraries
 import dct.topology.sbc.sbc_datasets_dtos as d_dtos
@@ -321,14 +322,22 @@ class HandleTransistorDto:
         # export c_oss files for GeckoCIRCUITS
         # if not os.path.exists(os.path.join(HandleSbcDto.c_oss_storage_directory, f"{transistor.name}_c_oss.nlc")):
         # transistor.export_geckocircuits_coss(filepath=HandleSbcDto.c_oss_storage_directory, margin_factor=c_oss_margin_factor)
-
-        transistor.quickstart_wp()
+        # Merge all e_on switch loss data
+        switch_e_on_data = HandleTransistorDto.calculate_2D_grid(transistor.switch.e_on)
+        if switch_e_on_data.current_data.size == 0:
+            raise ValueError(f"For transistor {transistor_name} e_on-switch loss data curve is not available!")
+        # Merge all e_off switch loss data
+        switch_e_off_data = HandleTransistorDto.calculate_2D_grid(transistor.switch.e_off)
+        if switch_e_off_data.current_data.size == 0:
+            raise ValueError(f"For transistor {transistor_name} e_off-switch loss data curve is not available!")
 
         transistor_dto = d_dtos.TransistorDTO(
             name=transistor.name,
             t_j_max_op=t_j_recommended,
             c_oss=c_oss,
             q_oss=q_oss,
+            switch_e_on_data=switch_e_on_data,
+            switch_e_off_data=switch_e_off_data,
             r_th_jc=transistor.switch.thermal_foster.r_th_total,
             cooling_area=transistor.cooling_area,
             housing_area=transistor.housing_area,
@@ -336,3 +345,72 @@ class HandleTransistorDto:
         )
 
         return transistor_dto
+
+    @staticmethod
+    def calculate_2D_grid(switch_energy_data_list: list[tdb.SwitchEnergyData]) -> d_dtos.LossDataGrid:
+        """
+        Calculate a 2D-grid with common distances by interpolation of actual transistor data.
+
+        :param switch_energy_data_list: List of parameters and curves of the switch energy loss
+        :type switch_energy_data_list: list[tdb.SwitchEnergyData]
+        :return: cal2d-Array of the switch loss energy on a homogenous grid
+        :rtype: d_dtos.LossDataGrid
+        """
+        # Variable declaration
+        is_data_available: bool = False
+        # x-grid list
+        unsorted_grid: list = []
+        # Common list of losses
+        common_losses: list[np.ndarray] = []
+        # Switch voltage list
+        switch_voltage_list: list[float] = []
+        # Curve array
+        curve_2D_array: list[tuple[float, np.ndarray]] = []
+        # Result data
+        result_data: d_dtos.LossDataGrid
+
+        # Overtake cures and collect all x-points
+        for entry in switch_energy_data_list:
+            # Check if type is correct and graph_i_e is valid
+            if entry.dataset_type == "graph_i_e" and entry.graph_i_e is not None:
+                # Check if graph_i_e is valid
+                if entry.graph_i_e is not None:
+                    # Extend the curve by 0,0
+                    extend_entry = np.hstack([np.array([[0], [0]]), entry.graph_i_e])
+                    # Overtake curve
+                    curve_2D_array.append((entry.v_supply, extend_entry))
+                    # Add x-axis values
+                    unsorted_grid.extend(extend_entry[0])
+
+        # Check, if minimum one curve is available
+        if unsorted_grid:
+
+            # Create common current grid based on all curves (merge all x-axis values)
+            common_current_grid = np.sort(np.unique(unsorted_grid))
+
+            # As low boundary create a curve with switch voltage = 0V
+            currents_0V = np.array([common_current_grid, np.zeros_like(common_current_grid)])
+            # curve_2D_array.insert(0, (0, currents_0V))
+            curve_2D_array.append((0, currents_0V))
+            # Sort the list according
+            curve_2D_array = sorted(curve_2D_array, key=lambda x: x[0])
+
+            # Generate the interpolation object for each curve
+            for entry in curve_2D_array:
+                # Overtake values (entry[0]=switch voltage, entry[1]=graph conists of entry[1][0]=current value, entry[1][1]=loss value
+                act_interpole_obj = interp1d(entry[1][0], entry[1][1], kind='linear', bounds_error=False, fill_value='extrapolate')
+                common_losses.append(act_interpole_obj(common_current_grid))
+                switch_voltage_list.append(entry[0])
+
+            # Assemble result and return variable
+            losses_on_common_grid = np.vstack(common_losses)
+            switch_voltage_array = np.array(switch_voltage_list)
+            result_data = d_dtos.LossDataGrid(voltage_parameter=switch_voltage_array,
+                                              loss_data=losses_on_common_grid,
+                                              current_data=common_current_grid)
+        else:
+            result_data = d_dtos.LossDataGrid(voltage_parameter=np.array([]),
+                                              loss_data=np.array([]),
+                                              current_data=np.array([]))
+
+        return result_data

@@ -2,6 +2,7 @@
 
 # 3rd party libraries
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator as RGI
 from numpy.typing import NDArray
 
 # own modules
@@ -21,7 +22,7 @@ def transistor_conduction_loss(transistor_ms_current: NDArray[np.float64], trans
     return transistor_dto.r_channel * transistor_ms_current
 
 
-def transistor_switch_loss(mesh_v1: np.ndarray, i_rms: np.ndarray, transistor_dto: dtos.TransistorDTO, fs: float) -> np.ndarray:
+def transistor_switch_loss(mesh_v1: np.ndarray, i_rms: np.ndarray, tr_data_dto: dtos.TransistorDTO, fs: float) -> np.ndarray:
     """
     Calculate the transistor conduction losses.
 
@@ -29,29 +30,32 @@ def transistor_switch_loss(mesh_v1: np.ndarray, i_rms: np.ndarray, transistor_dt
     :type  mesh_v1:  np.ndarray[np.float64]
     :param i_rms: current mean root square in A
     :type  i_rms:  np.ndarray[np.float64]
-    :param transistor_dto: transistor DTO (Data transfer object) containing selected transistors
-    :type  transistor_dto:  dtos.TransistorDTO
+    :param tr_data_dto: transistor DTO (Data transfer object) containing selected transistors
+    :type  tr_data_dto:  dtos.TransistorDTO
     :param fs: Switching frequency
     :type  fs: float
     :return: transistor conduction loss in W
     :rtype:  np.ndarray
     """
-    # Variable declaration later to read from transistor database
-    # R-gate from schematic
-    r_gate_dummy: float = 10.0
-    # c_i_s_s from transistor database: CREE_C3M0065100J.json no high dependency on voltage
-    # c_i_s_s_dummy: float =  7.7833e-10
-    # Debug value for impact to Pareto front
-    c_iss_dummy: float = 7.7833e-10
-    # c_o_s_s from transistor database: CREE_C3M0065100J.json at 31.575V
-    c_oss_dummy: float = 3.3366e-10
+    # Transform the mesh to mesh-points
+    mesh_points = np.vstack((mesh_v1, i_rms)).T
 
-    # Switch time depends on gate capacity: t_sw = r_gate * c_i_s_s
-    t_sw_dummy = r_gate_dummy * c_iss_dummy
-    # p_overlap = fs * 1 / 2 * U_DS * I peak * t_switch
-    p_overlap = fs * 0.5 * mesh_v1 * i_rms * t_sw_dummy
-    # p_cross = 1 / 2 * U_DS * Qoss = U_DS²*C_oss
-    p_cross = fs * 0.5 * (mesh_v1 ** 2) * c_oss_dummy
+    # Initialize interpolation object for e-on
+    e_on_losses_obj = RGI((tr_data_dto.switch_e_on_data.voltage_parameter, tr_data_dto.switch_e_on_data.current_data),
+                          tr_data_dto.switch_e_on_data.loss_data)
+
+    # Calculate the loss results for switch on
+    e_on_losses = e_on_losses_obj(mesh_points)
+
+    # Initialize interpolation object for e-off
+    e_off_losses_obj = RGI((tr_data_dto.switch_e_off_data.voltage_parameter, tr_data_dto.switch_e_off_data.current_data),
+                           tr_data_dto.switch_e_off_data.loss_data)
+
+    # Calculate the loss results for switch on
+    e_off_losses = e_off_losses_obj(mesh_points)
+
+    # Add both energies and calculate the power loss
+    p_switch_loss = (e_on_losses + e_off_losses) * fs
 
     # Calculate the sum of transistor switching losses
-    return np.array(p_overlap + p_cross)
+    return p_switch_loss
