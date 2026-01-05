@@ -8,14 +8,16 @@ import pickle
 
 # 3rd party libraries
 import numpy as np
+from numpy.typing import NDArray
 import transistordatabase as tdb
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
+from scipy.interpolate import RegularGridInterpolator as RGI
+
 
 # own libraries
 import dct.topology.sbc.sbc_datasets_dtos as d_dtos
 import dct.topology.sbc.sbc_currents as dct_currents
-import dct.topology.sbc.sbc_losses as dct_loss
 from dct.topology.sbc.sbc_circuit_topology_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
@@ -80,12 +82,13 @@ class HandleSbcDto:
         calc_currents = d_dtos.CalcCurrents(i_rms=i_rms, i_ms=i_ms, i_ripple=i_ripple)
 
         # Calculate the transistor conduction losses p_hs_cond = (I_out²+I_Ripple²/12)*R_D_S_on
-        p_hs_cond = dct_loss.transistor_conduction_loss(i_ms * input_configuration.mesh_duty_cycle, transistor_dto_1)
-        p_ls_cond = dct_loss.transistor_conduction_loss(i_ms * (1 - input_configuration.mesh_duty_cycle), transistor_dto_1)
-        p_hs_switch = dct_loss.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
-                                                      input_configuration.transistor_dto_1, input_configuration.fs)
-        p_ls_switch = dct_loss.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
-                                                      input_configuration.transistor_dto_2, input_configuration.fs)
+        p_hs_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * input_configuration.mesh_duty_cycle, transistor_dto_1)
+        p_ls_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * (1 - input_configuration.mesh_duty_cycle),
+                                                                   transistor_dto_1)
+        p_hs_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
+                                                                 input_configuration.transistor_dto_1, input_configuration.fs)
+        p_ls_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
+                                                                 input_configuration.transistor_dto_2, input_configuration.fs)
 
         p_loss = d_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond,
                                       'p_ls_conduction': p_ls_cond,
@@ -345,6 +348,63 @@ class HandleTransistorDto:
         )
 
         return transistor_dto
+
+    @staticmethod
+    def transistor_conduction_loss(transistor_ms_current: NDArray[np.float64],
+                                   transistor_dto: d_dtos.TransistorDTO) -> np.ndarray:
+        """
+        Calculate the transistor conduction losses.
+
+        :param transistor_ms_current: transistor mean square current in A²
+        :type transistor_ms_current: np.ndarray
+        :param transistor_dto: transistor DTO (Data transfer object)
+        :type transistor_dto: dct.TransistorDTO
+        :return: transistor conduction loss in W
+        :rtype: np.ndarray[np.float64]
+        """
+        return transistor_dto.r_channel * transistor_ms_current
+
+    @staticmethod
+    def transistor_switch_loss(mesh_v1: np.ndarray, i_rms: np.ndarray, tr_data_dto: d_dtos.TransistorDTO,
+                               fs: float) -> np.ndarray:
+        """
+        Calculate the transistor conduction losses.
+
+        :param mesh_v1: transistor drain-source voltage in V
+        :type  mesh_v1:  np.ndarray[np.float64]
+        :param i_rms: current mean root square in A
+        :type  i_rms:  np.ndarray[np.float64]
+        :param tr_data_dto: transistor DTO (Data transfer object) containing selected transistors
+        :type  tr_data_dto:  dtos.TransistorDTO
+        :param fs: Switching frequency
+        :type  fs: float
+        :return: transistor conduction loss in W
+        :rtype:  np.ndarray
+        """
+        # Transform the mesh to mesh-points
+        mesh_points = np.vstack((mesh_v1, i_rms)).T
+
+        # Initialize interpolation object for e-on
+        e_on_losses_obj = RGI(
+            (tr_data_dto.switch_e_on_data.voltage_parameter, tr_data_dto.switch_e_on_data.current_data),
+            tr_data_dto.switch_e_on_data.loss_data)
+
+        # Calculate the loss results for switch on
+        e_on_losses = e_on_losses_obj(mesh_points)
+
+        # Initialize interpolation object for e-off
+        e_off_losses_obj = RGI(
+            (tr_data_dto.switch_e_off_data.voltage_parameter, tr_data_dto.switch_e_off_data.current_data),
+            tr_data_dto.switch_e_off_data.loss_data)
+
+        # Calculate the loss results for switch on
+        e_off_losses = e_off_losses_obj(mesh_points)
+
+        # Add both energies and calculate the power loss
+        p_switch_loss: NDArray = (e_on_losses + e_off_losses) * fs
+
+        # Calculate the sum of transistor switching losses
+        return p_switch_loss
 
     @staticmethod
     def calculate_2D_grid(switch_energy_data_list: list[tdb.SwitchEnergyData]) -> d_dtos.LossDataGrid:

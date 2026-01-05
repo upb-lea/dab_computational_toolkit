@@ -383,3 +383,6 @@ IWRITE
 sbc
 HandleSbcDto
 TomlSbcCircuitParetoDesign
+HandleTransistorDto
+LossDataGrid
+init

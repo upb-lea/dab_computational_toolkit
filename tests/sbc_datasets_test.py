@@ -47,7 +47,7 @@ class TestCase(Enum):
     "transistor_name, expected_exception, expected_message_id",
     [
         # Invalid transistor names
-        ("invalid_transitor_name", AttributeError, 1),
+        ("invalid_transistor_name", AttributeError, 1),
         # Valid transistor names
         ("CREE_C3M0065100J", None, 0),
     ]
@@ -99,7 +99,7 @@ def test_tdb_to_transistor_dto(transistor_name: str, expected_exception: type,
     "expected_exception, expected_message_id",
     [   # Invalid values
         # Valid values
-        (None,  0),
+        (None, 0),
     ]
 )
 def test_calculate_2D_grid(expected_exception: type, expected_message_id: int) -> None:
@@ -112,10 +112,10 @@ def test_calculate_2D_grid(expected_exception: type, expected_message_id: int) -
     :type  expected_message_id: int
     """
     # Create curves
-    curve1=np.array([[1, 5], [2, 10]])
+    curve1 = np.array([[1, 5], [2, 10]])
     curve2 = np.array([[2, 3], [16, 36]])
 
-    set1_arg = {"dataset_type": "graph_i_e", "t_j": 25, "v_supply": 20, "v_g": 15, "graph_i_e":curve1}
+    set1_arg = {"dataset_type": "graph_i_e", "t_j": 25, "v_supply": 20, "v_g": 15, "graph_i_e": curve1}
     set2_arg = {"dataset_type": "graph_i_e", "t_j": 25, "v_supply": 40, "v_g": 15, "graph_i_e": curve2}
 
     switch_set1: tdb.SwitchEnergyData = tdb.SwitchEnergyData(set1_arg)
@@ -126,8 +126,7 @@ def test_calculate_2D_grid(expected_exception: type, expected_message_id: int) -
                                                           loss_data=np.array([[0, 0, 0, 0, 0],
                                                                               [0, 2, 4, 6, 10],
                                                                               [0, 8, 16, 36, 76]]),
-                                                          current_data=np.array([0, 1, 2, 3, 5])
-                                                         )
+                                                          current_data=np.array([0, 1, 2, 3, 5]))
     # Create loss list from valid sets
     switch_loss_list: list[tdb.SwitchEnergyData] = [switch_set1, switch_set2]
 
@@ -146,6 +145,15 @@ def test_calculate_2D_grid(expected_exception: type, expected_message_id: int) -
         assert np.array_equal(result_loss_data.voltage_parameter, exp_result.voltage_parameter)
         assert np.array_equal(result_loss_data.loss_data, exp_result.loss_data)
         assert np.array_equal(result_loss_data.current_data, exp_result.current_data)
+
+
+#########################################################################################################
+# test of class HandleTransistorDto: transistor_conduction_loss
+#########################################################################################################
+
+#########################################################################################################
+# test of class HandleTransistorDto: transistor_switch_loss
+#########################################################################################################
 
 #########################################################################################################
 # test of class HandleSbcDto: init_config
