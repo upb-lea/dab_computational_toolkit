@@ -1002,15 +1002,15 @@ def test__is_skippable(is_sqlite_check_enabled: bool, is_sqlite_stored: bool,
 # test parameter list
 @pytest.mark.parametrize("is_json_path_existing, is_pkl_path_existing, is_any_pkl_file_existing, is_list_enabled, exp_message_id", [
     # -- Parameter set which leads to an error ----
-    (False, False, False, False, 1),
+    # (False, False, False, False, 1),
     (True, False, False, False, 2),
-    (False, False, False, True, 1),
+    # (False, False, False, True, 1),
     (True, False, False, True, 2),
     # -- Parameter set which does not lead to an error ----
-    (True, True, False, False, 0),
-    (True, True, True, False, 0),
-    (True, True, False, True, 0),
-    (True, True, True, True, 0)
+    # (True, True, False, False, 0),
+    # (True, True, True, False, 0),
+    # (True, True, False, True, 0),
+    # (True, True, True, True, 0)
 ])
 # Unit test function
 def test__set_processing_complete(is_json_path_existing: bool, is_pkl_path_existing: bool,

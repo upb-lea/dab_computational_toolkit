@@ -329,3 +329,33 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :rtype: TransformerRequirements
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    def get_number_of_required_capacitors() -> int:
+        """Get the number of  required capacitors.
+
+        :return: Number of capacitors required by the actual topology
+        :rtype: int
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_number_of_required_inductors() -> int:
+        """Get the number of  required inductors.
+
+        :return: Number of inductors required by the actual topology
+        :rtype: int
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_number_of_required_transformers() -> int:
+        """Get the number of  required transformers.
+
+        :return: Number of transformers required by the actual topology
+        :rtype: int
+        """
+        pass

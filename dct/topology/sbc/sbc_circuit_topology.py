@@ -35,12 +35,19 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
-from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements
+from dct.components.component_requirements import ComponentRequirements
+from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
 class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_tc.TomlSbcCircuitParetoDesign]):
     """Optimize the SBC converter regarding maximum ZVS coverage and minimum conduction losses."""
+
+    # Definition of constant values
+    # Topological resource constants
+    _number_of_required_capacitors: int = 0
+    _number_of_required_inductors: int = 1
+    _number_of_required_transformers: int = 0
 
     # Declaration of member types
     _c_lock_stat: threading.Lock
@@ -1327,9 +1334,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         os.makedirs(dto_directory, exist_ok=True)
         for dto in selected_dto_list:
             # Calculate component requirement
-            SbcCircuitOptimization.calculate_component_requirements(dto)
+            dto = d_sets.HandleSbcDto.generate_components_target_requirements(dto, self.circuit_study_data.study_name)
             # dto = dct.HandleSbcDto.add_gecko_simulation_results(dto, get_waveforms=True)
-            d_sets.HandleSbcDto.save(dto, dto.name, directory=dto_directory, timestamp=False)
+            d_sets.HandleSbcDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list
         self.filter_data.filtered_list_files = []
@@ -1351,47 +1358,63 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         return is_filter_available, issue_report
 
-    @staticmethod
-    def calculate_component_requirements(act_dto: s_dtos.SbcCircuitDTO) -> None:
-        """Calculate the component requirements for the actual design.
-
-        :param act_dto: Actual design
-        :type  act_dto: s_dtos.SbcCircuitDTO
-        """
-        # Capacitor requirement
-        act_dto.component_requirements = ComponentRequirements(
-            capacitor_requirements=[])
-        act_dto.component_requirements.capacitor_requirements.append(
-            CapacitorRequirements(
-                current_vec=np.array([1, 2, 3, 1]),
-                time_vec=np.array([0, 1e-4, 2e-4, 3e-4]),
-                time_array=np.array([0, 1e-4, 2e-4, 3e-4]),
-                current_array=np.array([1, 2, 3, 1]),
-                v_dc_max=10.0,
-                study_name=""
-            ))
-        # Inductor requirement
-        # Transformer requirement (No transformer is needed)
-
-    @staticmethod
-    def get_capacitor_requirements(circuit_filepath: str) -> list[CapacitorRequirements]:
+    def get_capacitor_requirements(self) -> list[CapacitorRequirements]:
         """Get the capacitor requirements.
 
-        :param circuit_filepath: circuit filepath
-        :type circuit_filepath: str
         :return: Capacitor Requirements
         :rtype: CapacitorRequirements
         """
-        circuit_dto = d_sets.HandleSbcDto.load_from_file(circuit_filepath)
-        if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded component requirements have wrong type.")
+        # Variable declaration
+        capacitor_requirements_list: list[CapacitorRequirements]
 
-        if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
-            # due to mypy checker
-            raise TypeError("Loaded capacitor requirements have wrong type.")
+        # Dummy access with self to satisfy ruff
+        if self._sbc_config is None:
+            capacitor_requirements_list = []
+        else:
+            capacitor_requirements_list = []
 
-        return circuit_dto.component_requirements.capacitor_requirements
+        # Capacitor requirements still not generated
+        return capacitor_requirements_list
+
+    def get_inductor_requirements(self) -> list[InductorRequirements]:
+        """Get the inductor requirements.
+
+        :return: Inductor Requirements
+        :rtype: InductorRequirements
+        """
+        inductor_requirements_list: list[InductorRequirements] = []
+        for circuit_id_file in self.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            circuit_dto = d_sets.HandleSbcDto.load_from_file(circuit_id_filepath)
+            if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded component requirements have wrong type.")
+
+            if not isinstance(circuit_dto.component_requirements.inductor_requirements[0], InductorRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded capacitor requirements have wrong type.")
+
+            # Add inductor requirements to the list
+            inductor_requirements_list = inductor_requirements_list + circuit_dto.component_requirements.inductor_requirements
+
+        return inductor_requirements_list
+
+    def get_transformer_requirements(self) -> list[TransformerRequirements]:
+        """Get the transformer requirements.
+
+        :return: Transformer Requirements
+        :rtype: TransformerRequirements
+        """
+        # Variable declaration
+        transformer_requirements_list: list[TransformerRequirements]
+
+        # Dummy access with self to satisfy ruff
+        if self._sbc_config is None:
+            transformer_requirements_list = []
+        else:
+            transformer_requirements_list = []
+
+        return transformer_requirements_list
 
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:
@@ -1417,3 +1440,30 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                      label_list=[None], fig_name_path=act_study_data.study_name))
 
         return circuit_plot_data
+
+    @staticmethod
+    def get_number_of_required_capacitors() -> int:
+        """Get the number of  required capacitors.
+
+        :return: Number of capacitors required by the actual topology
+        :rtype: int
+        """
+        return SbcCircuitOptimization._number_of_required_capacitors
+
+    @staticmethod
+    def get_number_of_required_inductors() -> int:
+        """Get the number of  required inductors.
+
+        :return: Number of inductors required by the actual topology
+        :rtype: int
+        """
+        return SbcCircuitOptimization._number_of_required_inductors
+
+    @staticmethod
+    def get_number_of_required_transformers() -> int:
+        """Get the number of  required transformers.
+
+        :return: Number of transformers required by the actual topology
+        :rtype: int
+        """
+        return SbcCircuitOptimization._number_of_required_transformers

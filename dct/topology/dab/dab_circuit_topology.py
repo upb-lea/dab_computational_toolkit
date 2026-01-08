@@ -40,6 +40,12 @@ logger = logging.getLogger(__name__)
 class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_tc.TomlDabCircuitParetoDesign]):
     """Optimize the DAB converter regarding maximum ZVS coverage and minimum conduction losses."""
 
+    # Definition of constant values
+    # Topological resource constants
+    _number_of_required_capacitors: int = 2
+    _number_of_required_inductors: int = 1
+    _number_of_required_transformers: int = 1
+
     # Declaration of member types
     _c_lock_stat: threading.Lock
     _progress_data: ProgressData
@@ -1258,3 +1264,30 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                      label_list=[None], fig_name_path=act_study_data.study_name))
 
         return circuit_plot_data
+
+    @staticmethod
+    def get_number_of_required_capacitors() -> int:
+        """Get the number of  required capacitors.
+
+        :return: Number of capacitors required by the actual topology
+        :rtype: int
+        """
+        return DabCircuitOptimization._number_of_required_capacitors
+
+    @staticmethod
+    def get_number_of_required_inductors() -> int:
+        """Get the number of  required inductors.
+
+        :return: Number of inductors required by the actual topology
+        :rtype: int
+        """
+        return DabCircuitOptimization._number_of_required_inductors
+
+    @staticmethod
+    def get_number_of_required_transformers() -> int:
+        """Get the number of  required transformers.
+
+        :return: Number of transformers required by the actual topology
+        :rtype: int
+        """
+        return DabCircuitOptimization._number_of_required_transformers

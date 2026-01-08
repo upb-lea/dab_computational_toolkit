@@ -147,13 +147,12 @@ class SbcCircuitDTO:
     """Main SbcDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.ndarray | None
-    name: str
+    circuit_id: str
     metadata: np.ndarray | None
     input_config: CircuitConfig
     calc_config: CalcFromCircuitConfig | None
     calc_volume_inductor_proxy: np.ndarray
     calc_currents: CalcCurrents
-    # calc_losses: CalcLosses | None
     calc_losses: CalcLosses
     component_requirements: ComponentRequirements | None
     inductor_results: InductorResults | None
