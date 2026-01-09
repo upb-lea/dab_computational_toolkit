@@ -1,7 +1,7 @@
 # Path configuration
 [general]
-    project_directory = "2025-12-18_example"
-    topology = "sbc"
+    project_directory = "2026-01-09_example"
+    topology = "dab"
 
 [breakpoints]
     # possible values: no/pause/stop
@@ -65,11 +65,11 @@
     inductor_configuration_file = "DabInductorConf.toml"
     transformer_configuration_file = "DabTransformerConf.toml"
     heat_sink_configuration_file = "DabHeatSinkConf.toml"
-    # general_configuration_file = "SbcGeneralConf.toml"
-    # circuit_configuration_file = "SbcCircuitConf.toml"
-    # capacitor_1_configuration_file = "SbcCapacitor1Conf.toml"
-    # capacitor_2_configuration_file = "SbcCapacitor2Conf.toml"
-    # inductor_configuration_file = "SbcInductorConf.toml"
-    # transformer_configuration_file = "SbcTransformerConf.toml"
-    # heat_sink_configuration_file = "SbcHeatSinkConf.toml"
+    #    general_configuration_file = "SbcGeneralConf.toml"
+    #    circuit_configuration_file = "SbcCircuitConf.toml"
+    #    capacitor_1_configuration_file = ""
+    #    capacitor_2_configuration_file = ""
+    #    inductor_configuration_file = "SbcInductorConf.toml"
+    #    transformer_configuration_file = ""
+    #    heat_sink_configuration_file = "SbcHeatSinkConf.toml"
 

@@ -390,4 +390,10 @@ HandleTransistorDto
 LossDataGrid
 init
 inductors
+DabCapacitor
+SamplingEnum
+SbcCircuitConf
+SbcGeneralConf
+SbcHeatSinkConf
+SbcInductorConf
 

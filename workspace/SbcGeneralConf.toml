@@ -1,14 +1,13 @@
-[output_range]
-    v1_min_max_list=[47, 48]
+[parameter_range]
+    v_input_min_max_list=[47, 48]
     duty_cycle_min_max_list=[0.499, 0.5]
-    i_min_max_list=[15.9, 16]
-
+    i_output_min_max_list=[15.9, 16]
 
 [sampling]
     sampling_method="latin_hypercube"
     sampling_points=8
     sampling_random_seed=10
-    v1_additional_user_point_list=[]
+    v_additional_user_point_list=[]
     duty_cycle_additional_user_point_list=[]
     i_additional_user_point_list=[]
     additional_user_weighting_point_list=[]

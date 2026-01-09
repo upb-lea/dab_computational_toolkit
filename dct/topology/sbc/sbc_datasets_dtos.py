@@ -7,7 +7,7 @@ import dataclasses
 import numpy as np
 
 # own libraries
-from dct.components.component_requirements import ComponentRequirements
+from dct.components.component_dtos import ComponentRequirements, InductorResults
 
 @dataclasses.dataclass
 class LossDataGrid:
@@ -44,7 +44,7 @@ class FixedParameters:
 
     transistor_1_dto_list: list[TransistorDTO]
     transistor_2_dto_list: list[TransistorDTO]
-    mesh_v1: np.ndarray
+    mesh_v: np.ndarray
     mesh_duty_cycle: np.ndarray
     mesh_i: np.ndarray
     mesh_weights: np.ndarray
@@ -55,7 +55,7 @@ class Sampling:
 
     sampling_method: str
     sampling_points: int
-    v1_additional_user_point_list: list[float]
+    v_additional_user_point_list: list[float]
     duty_cycle_additional_user_point_list: list[float]
     i_additional_user_point_list: list[float]
     additional_user_weighting_point_list: list[float]
@@ -64,7 +64,7 @@ class Sampling:
 class CircuitConfig:
     """Input configuration DTO for the SBC converter."""
 
-    mesh_v1: np.ndarray
+    mesh_v: np.ndarray
     mesh_duty_cycle: np.ndarray
     mesh_i: np.ndarray
     sampling: Sampling
@@ -72,26 +72,6 @@ class CircuitConfig:
     fs: np.float64
     transistor_dto_1: TransistorDTO
     transistor_dto_2: TransistorDTO
-
-    def __init__(self, **kwargs):
-        names = set([f.name for f in dataclasses.fields(self)])
-        for k, v in kwargs.items():
-            if k in names:
-                setattr(self, k, v)
-
-@dataclasses.dataclass(init=False)
-class CalcFromCircuitConfig:
-    """DTO calculates parameters for the next simulations, which can be derived from the input values."""
-
-    Lc2_: np.ndarray
-    t_j_1: np.float64
-    t_j_2: np.float64
-    c_oss_par_1: np.ndarray
-    c_oss_par_2: np.ndarray
-    c_oss_1: np.ndarray
-    c_oss_2: np.ndarray
-    q_oss_1: np.ndarray
-    q_oss_2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -126,22 +106,6 @@ class CalcLosses:
             if k in names:
                 setattr(self, k, v)
 
-@dataclasses.dataclass(init=False)
-class InductorResults:
-    """DTO contains the inductor losses."""
-
-    p_combined_losses: np.ndarray
-    volume: float
-    area_to_heat_sink: float
-    circuit_trial_file: str
-    inductor_trial_number: int
-
-    def __init__(self, **kwargs):
-        names = set([f.name for f in dataclasses.fields(self)])
-        for k, v in kwargs.items():
-            if k in names:
-                setattr(self, k, v)
-
 @dataclasses.dataclass
 class SbcCircuitDTO:
     """Main SbcDTO containing all input parameters, calculations and simulation results."""
@@ -150,7 +114,6 @@ class SbcCircuitDTO:
     circuit_id: str
     metadata: np.ndarray | None
     input_config: CircuitConfig
-    calc_config: CalcFromCircuitConfig | None
     calc_volume_inductor_proxy: np.ndarray
     calc_currents: CalcCurrents
     calc_losses: CalcLosses

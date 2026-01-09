@@ -120,3 +120,42 @@ class ComponentRequirements:
         for k, v in kwargs.items():
             if k in names:
                 setattr(self, k, v)
+
+
+@dataclasses.dataclass(init=False)
+class InductorResults:
+    """DTO contains the inductor losses."""
+
+    # identification
+    circuit_id: str
+    inductor_id: int
+
+    # pareto
+    loss_array: np.ndarray
+    volume: float
+    area_to_heat_sink: float
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+@dataclasses.dataclass(init=False)
+class StackedTransformerResults:
+    """DTO contains the stacked transformer losses."""
+
+    # identification
+    circuit_id: str
+    transformer_id: int
+
+    # pareto
+    loss_array: np.ndarray
+    volume: float
+    area_to_heat_sink: float
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)

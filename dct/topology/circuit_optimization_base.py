@@ -14,7 +14,7 @@ import numpy as np
 # Own libraries
 from dct.datasets_dtos import StudyData, FilterData, PlotData
 from dct.server_ctl_dtos import ProgressData
-from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
+from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
 
@@ -357,5 +357,25 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :return: Number of transformers required by the actual topology
         :rtype: int
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_general_toml(file_path: str) -> None:
+        """Generate the default general configuration file.
+
+        :param file_path: filename including absolute path
+        :type  file_path: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_circuit_toml(file_path: str) -> None:
+        """Generate the default circuit configuration file.
+
+        :param file_path: filename including absolute path
+        :type  file_path: str
         """
         pass

@@ -21,7 +21,8 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
-from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
+from dct.components.component_dtos import (CapacitorRequirements, InductorRequirements, TransformerRequirements,
+                                           InductorResults, StackedTransformerResults)
 
 logger = logging.getLogger(__name__)
 
@@ -522,7 +523,7 @@ class HandleDabDto:
         return sorted_max_rms_angles, i_c2_max_rms_current_waveform
 
     @staticmethod
-    def add_inductor_results(dab_dto: d_dtos.DabCircuitDTO, inductor_results: d_dtos.InductorResults) -> d_dtos.DabCircuitDTO:
+    def add_inductor_results(dab_dto: d_dtos.DabCircuitDTO, inductor_results: InductorResults) -> d_dtos.DabCircuitDTO:
         """Add inductor results to the DabCircuitDTO.
 
         :param dab_dto: Dual-active bridge DTO
@@ -537,7 +538,7 @@ class HandleDabDto:
         return dab_dto
 
     @staticmethod
-    def add_stacked_transformer_results(dab_dto: d_dtos.DabCircuitDTO, transformer_results: d_dtos.StackedTransformerResults) -> d_dtos.DabCircuitDTO:
+    def add_stacked_transformer_results(dab_dto: d_dtos.DabCircuitDTO, transformer_results: StackedTransformerResults) -> d_dtos.DabCircuitDTO:
         """Add stacked transformer results to the DabCircuitDTO.
 
         :param dab_dto: Dual-active bridge DTO

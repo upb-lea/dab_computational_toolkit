@@ -35,6 +35,7 @@ from dct import TransformerOptimization
 from dct import HeatSinkOptimization
 from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
+import dct.generate_toml as toml_gen
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
 from dct.topology.dab.dab_summary_pre_processing import DabSummaryPreProcessing
@@ -1123,6 +1124,9 @@ class DctMainCtl:
         except PermissionError as exc:
             raise ValueError("Error: No permission to change the folder!") from exc
 
+        # Create absolute path
+        workspace_path = os.path.abspath(workspace_path)
+
         # --------------------------
         # Logging
         # --------------------------
@@ -1154,14 +1158,28 @@ class DctMainCtl:
         # --------------------------
         logger.debug("Read flow control file")
         # Load the configuration for program flow and check the validity
-        flow_control_loaded, dict_prog_flow = self.load_toml_file("progFlow.toml")
-        toml_prog_flow = tc.FlowControl(**dict_prog_flow)
+        file_path = os.path.join(workspace_path, "progFlow.toml")
+        flow_control_loaded, dict_prog_flow = self.load_toml_file(file_path)
 
         if not flow_control_loaded:
-            raise ValueError("Program flow toml file does not exist.")
+            # Set default topology
+            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+            # Generate topology dependent default files
+            toml_gen.generate_default_flow_control_toml(workspace_path)
+            file_path = os.path.join(workspace_path, "DabGeneralConf.toml")
+            self._circuit_optimization.generate_general_toml(file_path)
+            file_path = os.path.join(workspace_path, "DabCircuitConf.toml")
+            self._circuit_optimization.generate_circuit_toml(file_path)
+            # Generate missing component default files
+            toml_gen.generate_missing_toml_files(workspace_path)
+            raise ValueError(f"Program flow toml file does not exist in path {workspace_path}.\n"
+                             "A default program flow toml file and corresponding default configuration files are generated.\n"
+                             "All generated default files needs to be updated before using.")
+
+        # Verify toml data and transfer to class
+        toml_prog_flow = tc.FlowControl(**dict_prog_flow)
 
         # Add absolute path to project data path
-        workspace_path = os.path.abspath(workspace_path)
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 
         self.set_up_folder_structure(toml_prog_flow)
@@ -1239,7 +1257,10 @@ class DctMainCtl:
         is_general_toml_loaded, dict_general_toml = self.load_toml_file(toml_prog_flow.configuration_data_files.general_configuration_file)
 
         if not is_general_toml_loaded:
-            raise ValueError(f"General toml configuration file: {toml_prog_flow.configuration_data_files.general_configuration_file} does not exist.")
+            file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.general_configuration_file)
+            self._circuit_optimization.generate_general_toml(file_path)
+            raise ValueError(f"General toml configuration file: {file_path} does not exist.\n"
+                             f"A default file is generated and needs to be updated!")
 
         is_general_toml_consistent, general_issue_report = self._circuit_optimization.load_and_verify_general_parameters(dict_general_toml)
 
@@ -1262,7 +1283,10 @@ class DctMainCtl:
         is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
 
         if not is_circuit_loaded:
-            raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
+            file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.circuit_configuration_file)
+            self._circuit_optimization.generate_general_toml(file_path)
+            raise ValueError(f"Circuit configuration file: {file_path} does not exist.\n"
+                             f"A default file is generated and needs to be updated!")
 
         is_consistent, issue_report = self._circuit_optimization.load_and_verify_circuit_parameters(dict_circuit)
 
@@ -1309,9 +1333,32 @@ class DctMainCtl:
         if self._circuit_optimization.get_number_of_required_capacitors() > 0:
             # Init capacitor configuration
             is_capacitor_1_loaded, dict_capacitor_1 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
-            toml_capacitor_1 = tc.TomlCapacitorSelection(**dict_capacitor_1)
 
             if not is_capacitor_1_loaded:
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
+                toml_gen.generate_default_capacitor_toml(file_path)
+                raise ValueError(f"General toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
+
+            # Verify toml data and transfer to class
+            toml_capacitor_1 = tc.TomlCapacitorSelection(**dict_capacitor_1)
+
+            if not is_general_toml_loaded:
+                file_path = os.path.join(workspace_path,
+                                         toml_prog_flow.configuration_data_files.general_configuration_file)
+                self._circuit_optimization.generate_general_toml(file_path)
+                raise ValueError(f"General toml configuration file: {file_path} does not exist.")
+
+            is_general_toml_consistent, general_issue_report = self._circuit_optimization.load_and_verify_general_parameters(
+                dict_general_toml)
+
+            if not is_general_toml_consistent:
+                raise ValueError("General parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.general_configuration_file} are inconsistent!\n",
+                                 general_issue_report)
+
+            if not is_capacitor_1_loaded:
+
                 raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
 
             # Verify capacitor parameters
@@ -1347,10 +1394,15 @@ class DctMainCtl:
         if self._circuit_optimization.get_number_of_required_capacitors() > 0:
             # Init circuit configuration
             is_capacitor_2_loaded, dict_capacitor_2 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_2_configuration_file)
-            toml_capacitor_2 = tc.TomlCapacitorSelection(**dict_capacitor_2)
 
             if not is_capacitor_2_loaded:
-                raise ValueError(f"Capacitor 2 configuration file: {toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} does not exist.")
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.capacitor_2_configuration_file)
+                toml_gen.generate_default_capacitor_toml(file_path)
+                raise ValueError(f"General toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
+
+            # Verify toml data and transfer to class
+            toml_capacitor_2 = tc.TomlCapacitorSelection(**dict_capacitor_2)
 
             # Verify capacitor parameters
             is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_2)
@@ -1386,10 +1438,15 @@ class DctMainCtl:
             # Load the inductor-configuration parameter
             inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
             is_inductor_loaded, inductor_dict = self.load_toml_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
-            toml_inductor = dct.TomlInductor(**inductor_dict)
 
             if not is_inductor_loaded:
-                raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.inductor_configuration_file)
+                toml_gen.generate_default_inductor_toml(file_path)
+                raise ValueError(f"Inductor toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
+
+            # Verify toml data and transfer to class
+            toml_inductor = dct.TomlInductor(**inductor_dict)
 
             # Verify optimization parameter
             is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
@@ -1444,7 +1501,10 @@ class DctMainCtl:
             toml_transformer = dct.TomlTransformer(**transformer_dict)
 
             if not is_transformer_loaded:
-                raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.transformer_configuration_file)
+                toml_gen.generate_default_transformer_toml(file_path)
+                raise ValueError(f"Transformer toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
 
             # Verify optimization parameter
             is_consistent, issue_report = TransformerOptimization.verify_optimization_parameter(toml_transformer)
@@ -1494,8 +1554,10 @@ class DctMainCtl:
         is_heat_sink_loaded, heat_sink_dict = self.load_toml_file(heat_sink_toml_filepath)
         toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
         if not is_heat_sink_loaded:
-            raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
-
+            file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
+            toml_gen.generate_default_heat_sink_toml(file_path)
+            raise ValueError(f"Transformer toml configuration file: {file_path} does not exist.\n"
+                             f"A default file is generated and needs to be updated!")
         # Verify optimization parameter
         is_consistent, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
         if not is_consistent:

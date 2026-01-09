@@ -17,7 +17,7 @@ from scipy.interpolate import RegularGridInterpolator as RGI
 
 # own libraries
 import dct.topology.sbc.sbc_datasets_dtos as s_dtos
-import dct.components.component_requirements as c_req
+import dct.components.component_dtos as c_dtos
 import dct.topology.sbc.sbc_currents as dct_currents
 from dct.topology.sbc.sbc_circuit_topology_dtos import CircuitSampling
 
@@ -27,7 +27,7 @@ class HandleSbcDto:
     """Class to handle the SbcDTO, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, mesh_v1: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i: np.ndarray,
+    def init_config(name: str, mesh_v: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i: np.ndarray,
                     sampling: CircuitSampling, ls: float, fs: float,
                     transistor_dto_1: s_dtos.TransistorDTO, transistor_dto_2: s_dtos.TransistorDTO) -> s_dtos.SbcCircuitDTO:
         """
@@ -35,8 +35,8 @@ class HandleSbcDto:
 
         :param name: name of the simulation
         :type  name: str
-        :param mesh_v1: mesh or hypercube sampling for v1
-        :type  mesh_v1: np.ndarray
+        :param mesh_v: mesh or hypercube sampling for v1
+        :type  mesh_v: np.ndarray
         :param mesh_duty_cycle: mesh or hypercube sampling for duty cycle
         :type  mesh_duty_cycle: np.ndarray
         :param mesh_i: mesh or hypercube sampling for current
@@ -53,7 +53,7 @@ class HandleSbcDto:
         :type  transistor_dto_2: TransistorDTO
         :return:
         """
-        input_configuration = s_dtos.CircuitConfig(mesh_v1=mesh_v1,
+        input_configuration = s_dtos.CircuitConfig(mesh_v=mesh_v,
                                                    mesh_duty_cycle=mesh_duty_cycle,
                                                    mesh_i=mesh_i,
                                                    sampling=sampling,
@@ -61,8 +61,6 @@ class HandleSbcDto:
                                                    fs=np.array(fs),
                                                    transistor_dto_1=transistor_dto_1,
                                                    transistor_dto_2=transistor_dto_2)
-
-        # ASA Remove calc_config calculation
 
         # Design space:
         # fs, L M (HS and LS same type, later to replace by variable)
@@ -86,9 +84,9 @@ class HandleSbcDto:
         p_hs_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * input_configuration.mesh_duty_cycle, transistor_dto_1)
         p_ls_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * (1 - input_configuration.mesh_duty_cycle),
                                                                    transistor_dto_1)
-        p_hs_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
+        p_hs_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v, i_rms,
                                                                  input_configuration.transistor_dto_1, input_configuration.fs)
-        p_ls_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
+        p_ls_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v, i_rms,
                                                                  input_configuration.transistor_dto_2, input_configuration.fs)
 
         p_loss = s_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond.ravel(),
@@ -102,9 +100,6 @@ class HandleSbcDto:
             circuit_id=name,
             metadata=None,
             input_config=input_configuration,
-            # Later to remove
-            calc_config=None,
-            # End Later to remove
             calc_currents=calc_currents,
             calc_losses=p_loss,
             component_requirements=None,
@@ -324,7 +319,7 @@ class HandleSbcDto:
         :return: updated SBC circuit DTO
         :rtype: s_dtos.SbcCircuitDTO
         """
-        # capacitor_requirements = HandleDabDto.generate_capacitor_1_target_requirements(sbc_dto) to add later
+        # capacitor_requirements = HandleSbcDto.generate_capacitor_1_target_requirements(sbc_dto) to add later
         inductor_requirements = HandleSbcDto.generate_inductor_target_requirements(sbc_dto, act_study_name)
 
         sbc_dto.component_requirements = s_dtos.ComponentRequirements(capacitor_requirements=[],
@@ -334,23 +329,22 @@ class HandleSbcDto:
         return sbc_dto
 
     @staticmethod
-    def generate_inductor_target_requirements(sbc_dto: s_dtos.SbcCircuitDTO, act_study_name: str) -> c_req.InductorRequirements:
+    def generate_inductor_target_requirements(sbc_dto: s_dtos.SbcCircuitDTO, act_study_name: str) -> c_dtos.InductorRequirements:
         """Inductor requirements.
 
         :param act_study_name: Name of the optuna study
         :type  act_study_name: str
         :param sbc_dto: SBC circuit DTO
-        :type sbc_dto: s_dtos.DabCircuitDTO
+        :type sbc_dto: s_dtos.SbcCircuitDTO
         :return: Inductor requirements
         :rtype: InductorRequirements
         """
         # Get the single maximum operating point
         time_vec, i_rms_current_vec = HandleSbcDto.get_max_peak_waveform_inductor(sbc_dto, plot=False)
-        nix = sbc_dto
         # Get the data of all operating points
         time_array, i_rms_current_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
 
-        inductor_requirements: c_req.InductorRequirements = c_req.InductorRequirements(
+        inductor_requirements: c_dtos.InductorRequirements = c_dtos.InductorRequirements(
             current_vec=i_rms_current_vec,
             time_vec=time_array,
             time_array=time_array,
@@ -363,13 +357,13 @@ class HandleSbcDto:
         return inductor_requirements
 
     @staticmethod
-    def add_inductor_results(sbc_dto: s_dtos.SbcCircuitDTO, inductor_results: s_dtos.InductorResults) -> s_dtos.SbcCircuitDTO:
+    def add_inductor_results(sbc_dto: s_dtos.SbcCircuitDTO, inductor_results: c_dtos.InductorResults) -> s_dtos.SbcCircuitDTO:
         """Add inductor results to the CircuitSbcDTO.
 
         :param sbc_dto: Dual-active bridge DTO
         :type sbc_dto: d_dtos.SbcCircuitDTO
         :param inductor_results: inductor losses
-        :type inductor_results: InductorResults
+        :type inductor_results: c_dtos.InductorResults
         :return: Dual-active bridge DTO including the inductor losses
         :rtype: d_dtos.SbcCircuitDTO
         """
@@ -405,9 +399,6 @@ class HandleTransistorDto:
 
         c_oss, q_oss = HandleSbcDto.get_c_oss_from_tdb(transistor, margin_factor=c_oss_margin_factor)
 
-        # export c_oss files for GeckoCIRCUITS
-        # if not os.path.exists(os.path.join(HandleSbcDto.c_oss_storage_directory, f"{transistor.name}_c_oss.nlc")):
-        # transistor.export_geckocircuits_coss(filepath=HandleSbcDto.c_oss_storage_directory, margin_factor=c_oss_margin_factor)
         # Merge all e_on switch loss data
         switch_e_on_data = HandleTransistorDto.calculate_2D_grid(transistor.switch.e_on)
         if switch_e_on_data.current_data.size == 0:

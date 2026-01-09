@@ -16,16 +16,16 @@ import femmt as fmt
 import dct
 from dct.boundary_check import CheckCondition as c_flag
 from dct.components.inductor_optimization_dtos import InductorOptimizationDto
+from dct.components.component_dtos import InductorResults
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
-import dct.topology.dab.dab_datasets_dtos as d_dtos
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
 from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
-from dct.components.component_requirements import InductorRequirements
+from dct.components.component_dtos import InductorRequirements
 from dct.toml_checker import TomlInductor
 # configure root logger
 logger = logging.getLogger(__name__)
@@ -321,7 +321,7 @@ class InductorOptimization:
                             inductor_config_filepath=config_filepath)
                         combined_loss_array[vec_vvp] = combined_losses
 
-                    inductor_losses = d_dtos.InductorResults(
+                    inductor_losses = InductorResults(
                         loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
@@ -507,7 +507,7 @@ class InductorOptimization:
                             inductor_config_filepath=config_filepath, process_number=process_number, print_derivations=False)
                         combined_loss_array[vec_vvp] = combined_losses
 
-                    inductor_losses = d_dtos.InductorResults(
+                    inductor_losses = InductorResults(
                         loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,

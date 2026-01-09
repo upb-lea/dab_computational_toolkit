@@ -25,7 +25,7 @@ def calc_rms_currents(config: CircuitConfig) -> tuple:
     duty_cycle_term = config.mesh_duty_cycle * (1 - config.mesh_duty_cycle)
 
     # Calculate the ripple current and rms current
-    i_ripple = config.mesh_v1 * duty_cycle_term / (config.Ls * config.fs)
+    i_ripple = config.mesh_v * duty_cycle_term / (config.Ls * config.fs)
 
     # Calculate the current mean square
     i_ms = config.mesh_i ** 2 + (i_ripple / 12) ** 2

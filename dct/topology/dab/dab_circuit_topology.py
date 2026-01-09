@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
 import dct.sampling as sampling
-from dct.components.component_requirements import InductorRequirements
+from dct.components.component_dtos import InductorRequirements
 
 # own libraries
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
@@ -33,7 +33,7 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
-from dct.components.component_requirements import CapacitorRequirements, ComponentRequirements, TransformerRequirements
+from dct.components.component_dtos import CapacitorRequirements, ComponentRequirements, TransformerRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -1291,3 +1291,75 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         :rtype: int
         """
         return DabCircuitOptimization._number_of_required_transformers
+
+    @staticmethod
+    def generate_general_toml(file_path: str) -> None:
+        """Generate the default DabCircuitConf.toml file.
+
+        :param file_path: filename including absolute path
+        :type file_path: str
+        """
+        toml_data = '''
+        [default_data] # After update this configuration file according your project delete this line to validate it
+        [output_range]
+            v1_min_max_list=[690, 710]
+            v2_min_max_list=[175, 295]
+            p_min_max_list=[-2000, 2200]
+
+
+        [sampling]
+            sampling_method="dessca"
+            sampling_points=2
+            sampling_random_seed=10
+            v1_additional_user_point_list=[]
+            v2_additional_user_point_list=[]
+            p_additional_user_point_list=[]
+            additional_user_weighting_point_list=[]
+
+        [misc]
+            min_efficiency_percent=80
+            control_board_volume=10e-6
+        '''
+        with open(file_path, 'w') as output:
+            output.write(toml_data)
+
+    @staticmethod
+    def generate_circuit_toml(file_path: str) -> None:
+        """
+        Generate the default DabCircuitConf.toml file.
+
+        :param file_path: filename including absolute path
+        :type file_path: str
+        """
+        toml_data = '''
+        [default_data] # After update this configuration file according your project delete this line to validate it
+        [design_space]
+            f_s_min_max_list=[50e3, 300e3]
+            l_s_min_max_list=[20e-6, 900e-6]
+            l_1_min_max_list=[10e-6, 10e-3]
+            l_2__min_max_list=[10e-6, 1e-3]
+            n_min_max_list=[3, 7]
+            transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J']
+            transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J']
+            c_par_1=16e-12
+            c_par_2=16e-12
+
+        [output_range]
+            v1_min_max_list=[690, 710]
+            v2_min_max_list=[175, 295]
+            p_min_max_list=[-2000, 2200]
+
+        [sampling]
+            sampling_method="latin_hypercube"
+            sampling_points=4
+            sampling_random_seed=10
+            v1_additional_user_point_list=[700]
+            v2_additional_user_point_list=[180]
+            p_additional_user_point_list=[2000]
+
+        [filter_distance]
+            number_filtered_designs = 1
+            difference_percentage = 5
+        '''
+        with open(file_path, 'w') as output:
+            output.write(toml_data)
