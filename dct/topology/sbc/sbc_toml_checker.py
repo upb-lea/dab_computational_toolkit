@@ -14,9 +14,9 @@ from dct.circuit_enums import SamplingEnum
 class TomlSbcParameterRange(TomlGData):
     """Definition of the SBC operating area."""
 
-    v_input_min_max_list: list[float]
-    duty_cycle_min_max_list: list[float]
-    i_output_min_max_list: list[float]
+    v1_min_max_list: list[float]
+    v2_min_max_list: list[float]
+    i2_min_max_list: list[float]
 
 class TomlSbcSampling(TomlGData):
     """Definition of the sampling method."""
@@ -24,9 +24,9 @@ class TomlSbcSampling(TomlGData):
     sampling_method: SamplingEnum
     sampling_points: int
     sampling_random_seed: int | Literal["random"]
-    v_additional_user_point_list: list[float]
-    duty_cycle_additional_user_point_list: list[float]
-    i_additional_user_point_list: list[float]
+    v1_additional_user_point_list: list[float]
+    v2_additional_user_point_list: list[float]
+    i2_additional_user_point_list: list[float]
     additional_user_weighting_point_list: list[float]
 
 class TomlSbcGeneral(TomlGData):

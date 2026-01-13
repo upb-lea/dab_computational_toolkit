@@ -131,71 +131,96 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         # Init is_user_point_list_consistent-flag
         is_user_point_list_consistent = False
         # Evaluate list length
-        len_additional_user_v = len(toml_general.sampling.v_additional_user_point_list)
-        len_additional_user_duty_cycle = len(toml_general.sampling.duty_cycle_additional_user_point_list)
-        len_additional_user_i = len(toml_general.sampling.i_additional_user_point_list)
+        len_additional_user_v1 = len(toml_general.sampling.v1_additional_user_point_list)
+        len_additional_user_v2 = len(toml_general.sampling.v2_additional_user_point_list)
+        len_additional_user_i2 = len(toml_general.sampling.i2_additional_user_point_list)
         len_additional_user_w = len(toml_general.sampling.additional_user_weighting_point_list)
-        len_check1 = len_additional_user_v == len_additional_user_duty_cycle and len_additional_user_i == len_additional_user_w
-        len_check2 = len_additional_user_i == len_additional_user_w
+        len_check1 = len_additional_user_v1 == len_additional_user_v2 and len_additional_user_i2 == len_additional_user_w
+        len_check2 = len_additional_user_i2 == len_additional_user_w
         # Check if the additional user point lists are consistent
         if len_check1 and len_check2:
             is_user_point_list_consistent = True
         else:
-            act_report = f"    The number of list entries in v_additional_user_point_list ({len_additional_user_v}), "
-            act_report = act_report + f"duty_cycle_additional_user_point_list ({len_additional_user_duty_cycle}),\n"
-            act_report = act_report + f"    i_additional_user_point_list ({len_additional_user_i}) and "
+            act_report = f"    The number of list entries in v1_additional_user_point_list ({len_additional_user_v1}), "
+            act_report = act_report + f"v2_additional_user_point_list ({len_additional_user_v2}),\n"
+            act_report = act_report + f"    i2_additional_user_point_list ({len_additional_user_i2}) and "
             act_report = act_report + f"additional_user_weighting_point_list ({len_additional_user_w} "
             act_report = act_report + "needs to be the same!\n)"
             inconsistency_report = (inconsistency_report + act_report)
             is_consistent = False
 
-        # Perform the boundary check of v_input_min_max_list
+        # Perform the boundary check of v1_min_max_list
         is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
-            0, 1000, toml_general.parameter_range.v_input_min_max_list, "parameter_range: v_input_min_max_list", c_flag.check_inclusive,
+            0, 1000, toml_general.parameter_range.v1_min_max_list, "parameter_range: v1_min_max_list", c_flag.check_inclusive,
             c_flag.check_inclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         elif is_user_point_list_consistent:
-            for power_value in toml_general.sampling.v_additional_user_point_list:
+            for power_value in toml_general.sampling.v1_additional_user_point_list:
                 is_check_passed, issue_report = BoundaryCheck.check_float_value(
-                    toml_general.parameter_range.v_input_min_max_list[0], toml_general.parameter_range.v_input_min_max_list[1],
+                    toml_general.parameter_range.v1_min_max_list[0], toml_general.parameter_range.v1_min_max_list[1],
                     power_value,
-                    "sampling: v_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                    "sampling: v1_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
                 if not is_check_passed:
                     inconsistency_report = inconsistency_report + issue_report
                     is_consistent = False
 
-        # Perform the boundary check  of duty_cycle_min_max_list
+        # Perform the boundary check  of v2_min_max_list
         is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
-            0, 1, toml_general.parameter_range.duty_cycle_min_max_list, "parameter_range: duty_cycle_min_max_list",
-            c_flag.check_inclusive, c_flag.check_inclusive)
+            0, 1000, toml_general.parameter_range.v2_min_max_list, "parameter_range: v2_min_max_list", c_flag.check_inclusive,
+            c_flag.check_inclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
-        elif is_user_point_list_consistent:
-            for power_value in toml_general.sampling.duty_cycle_additional_user_point_list:
-                is_check_passed, issue_report = BoundaryCheck.check_float_value(
-                    toml_general.parameter_range.duty_cycle_min_max_list[0],
-                    toml_general.parameter_range.duty_cycle_min_max_list[1], power_value,
-                    "sampling: duty_cycle_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
-                if not is_check_passed:
-                    inconsistency_report = inconsistency_report + issue_report
-                    is_consistent = False
+        else:
+            # Check lower boundary with respect to v1_min_max_list if v2_min_max_list is consistent
+            if toml_general.parameter_range.v1_min_max_list[0] <= toml_general.parameter_range.v2_min_max_list[0]:
+                issue_report = (f"Inconsistency in v2_min_max_list: Minimum of v1="
+                                f"{toml_general.parameter_range.v1_min_max_list[0]} is less equal minimum "
+                                f"of v2={toml_general.parameter_range.v1_min_max_list[0]}.")
+                inconsistency_report = inconsistency_report + issue_report
+                is_check_passed = False
+            else:
+                is_check_passed = True
+            # Check upper boundary with respect to v1_min_max_list
+            if toml_general.parameter_range.v1_min_max_list[1] <= toml_general.parameter_range.v2_min_max_list[1]:
+                issue_report = (f"Inconsistency in v2_min_max_list: Maximum of v1="
+                                f"{toml_general.parameter_range.v1_min_max_list[1]} is less equal maximum "
+                                f"of v2={toml_general.parameter_range.v1_min_max_list[1]}.")
+                inconsistency_report = inconsistency_report + issue_report
+                is_check_passed = False
+            if not is_check_passed:
+                is_consistent = False
+            elif is_user_point_list_consistent:
+                for index, voltage_value in enumerate(toml_general.sampling.v2_additional_user_point_list):
+                    is_check_passed, issue_report = BoundaryCheck.check_float_value(
+                        toml_general.parameter_range.v2_min_max_list[0],
+                        toml_general.parameter_range.v2_min_max_list[1], voltage_value,
+                        "sampling: v2_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                    if not is_check_passed:
+                        inconsistency_report = inconsistency_report + issue_report
+                        is_consistent = False
+                    if voltage_value >= toml_general.sampling.v1_additional_user_point_list[index]:
+                        issue_report = (f"Inconsistency in additional point list at index {index}."
+                                        f"v1={toml_general.sampling.v2_additional_user_point_list[index]} "
+                                        f"is less equal v2={voltage_value}.")
+                        inconsistency_report = inconsistency_report + issue_report
+                        is_consistent = False
 
-        # Perform the boundary check  of i_output_min_max_list
+        # Perform the boundary check  of i2_min_max_list
         is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
-            -300, 300, toml_general.parameter_range.i_output_min_max_list, "parameter_range: i_output_min_max_list", c_flag.check_inclusive,
+            -300, 300, toml_general.parameter_range.i2_min_max_list, "parameter_range: i2_min_max_list", c_flag.check_inclusive,
             c_flag.check_inclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         elif is_user_point_list_consistent:
-            for power_value in toml_general.sampling.i_additional_user_point_list:
+            for power_value in toml_general.sampling.i2_additional_user_point_list:
                 is_check_passed, issue_report = BoundaryCheck.check_float_value(
-                    toml_general.parameter_range.i_output_min_max_list[0], toml_general.parameter_range.i_output_min_max_list[1],
+                    toml_general.parameter_range.i2_min_max_list[0], toml_general.parameter_range.i2_min_max_list[1],
                     power_value,
-                    "sampling: i_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
+                    "sampling: i2_additional_user_point_list", c_flag.check_inclusive, c_flag.check_inclusive)
                 if not is_check_passed:
                     inconsistency_report = inconsistency_report + issue_report
                     is_consistent = False
@@ -413,9 +438,10 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         )
 
         parameter_range = circuit_dtos.CircuitParameterRange(
-            v_input_min_max_list=self._toml_general.parameter_range.v_input_min_max_list,
-            duty_cycle_min_max_list=self._toml_general.parameter_range.duty_cycle_min_max_list,
-            i_output_min_max_list=self._toml_general.parameter_range.i_output_min_max_list)
+            v1_min_max_list=self._toml_general.parameter_range.v1_min_max_list,
+            duty_cycle_min_max_list=SbcCircuitOptimization.calculate_voltage_to_duty_cycle_min_max_list(
+                self._toml_general.parameter_range),
+            i2_min_max_list=self._toml_general.parameter_range.i2_min_max_list)
 
         filter = circuit_dtos.CircuitFilter(
             number_filtered_designs=self._toml_circuit.filter_distance.number_filtered_designs,
@@ -432,9 +458,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             sampling_method=self._toml_general.sampling.sampling_method,
             sampling_points=self._toml_general.sampling.sampling_points,
             sampling_random_seed=local_sampling_random_seed,
-            v_additional_user_point_list=self._toml_general.sampling.v_additional_user_point_list,
-            duty_cycle_additional_user_point_list=self._toml_general.sampling.duty_cycle_additional_user_point_list,
-            i_additional_user_point_list=self._toml_general.sampling.i_additional_user_point_list,
+            v1_additional_user_point_list=self._toml_general.sampling.v1_additional_user_point_list,
+            duty_cycle_additional_user_point_list=self._toml_general.sampling.v2_additional_user_point_list,
+            i2_additional_user_point_list=self._toml_general.sampling.i2_additional_user_point_list,
             additional_user_weighting_point_list=self._toml_general.sampling.additional_user_weighting_point_list
         )
 
@@ -447,6 +473,28 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             filter=filter)
 
         return True
+
+    @staticmethod
+    def calculate_voltage_to_duty_cycle_min_max_list(act_parameter_range: sbc_tc.TomlSbcParameterRange) -> list[float]:
+        """Calculate the duty cycle list based on v1 and v2 lists.
+
+        :param act_parameter_range: Parameter range of voltages and current
+        :type  act_parameter_range: sbc_tc.TomlSbcParameterRange
+        :return: Duty cycle minimum-maximum list
+        :rtype:  list[float]
+        """
+        # Variable declaration
+        duty_cycle_min_max_list: list[float] = []
+        # Minimum value calculated from maximum v1-voltage and minimum v2-voltage
+        duty_cycle_min_max_list.append(act_parameter_range.v2_min_max_list[0] / act_parameter_range.v1_min_max_list[1])
+        # Maximum value calculated from minimum v1-voltage and maximum v2-voltage
+        duty_cycle_min_max_list.append(act_parameter_range.v2_min_max_list[1] / act_parameter_range.v1_min_max_list[0])
+
+        duty_cycle_min_max_list.sort()
+        if duty_cycle_min_max_list[1] >= 0.999:
+            duty_cycle_min_max_list[1] = 0.999
+
+        return duty_cycle_min_max_list
 
     def get_config(self) -> circuit_dtos.CircuitParetoSbcDesign | None:
         """
@@ -617,22 +665,22 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             logger.info(f"Number of sampling points has been updated from {act_sbc_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
             v_operating_points, duty_cylce_operating_points, i_operating_points = np.meshgrid(
-                np.linspace(act_sbc_config.parameter_range.v_input_min_max_list[0], act_sbc_config.parameter_range.v_input_min_max_list[1],
+                np.linspace(act_sbc_config.parameter_range.v1_min_max_list[0], act_sbc_config.parameter_range.v1_min_max_list[1],
                             steps_per_dimension),
                 np.linspace(act_sbc_config.parameter_range.duty_cycle_min_max_list[0],
                             act_sbc_config.parameter_range.duty_cycle_min_max_list[1], steps_per_dimension),
-                np.linspace(act_sbc_config.parameter_range.i_output_min_max_list[0], act_sbc_config.parameter_range.i_output_min_max_list[1],
+                np.linspace(act_sbc_config.parameter_range.i2_min_max_list[0], act_sbc_config.parameter_range.i2_min_max_list[1],
                             steps_per_dimension),
                 sparse=False)
         elif act_sbc_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
             v_operating_points, duty_cylce_operating_points, i_operating_points = sampling.latin_hypercube(
-                act_sbc_config.parameter_range.v_input_min_max_list[0], act_sbc_config.parameter_range.v_input_min_max_list[1],
+                act_sbc_config.parameter_range.v1_min_max_list[0], act_sbc_config.parameter_range.v1_min_max_list[1],
                 act_sbc_config.parameter_range.duty_cycle_min_max_list[0], act_sbc_config.parameter_range.duty_cycle_min_max_list[1],
-                act_sbc_config.parameter_range.i_output_min_max_list[0], act_sbc_config.parameter_range.i_output_min_max_list[1],
+                act_sbc_config.parameter_range.i2_min_max_list[0], act_sbc_config.parameter_range.i2_min_max_list[1],
                 total_number_points=act_sbc_config.sampling.sampling_points,
-                dim_1_user_given_points_list=act_sbc_config.sampling.v_additional_user_point_list,
+                dim_1_user_given_points_list=act_sbc_config.sampling.v1_additional_user_point_list,
                 dim_2_user_given_points_list=act_sbc_config.sampling.duty_cycle_additional_user_point_list,
-                dim_3_user_given_points_list=act_sbc_config.sampling.i_additional_user_point_list,
+                dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list,
                 sampling_random_seed=act_sbc_config.sampling.sampling_random_seed)
         else:
             raise ValueError(f"sampling_method '{act_sbc_config.sampling.sampling_method}' not available.")
@@ -647,7 +695,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         else:
             weight_sum = np.sum(act_sbc_config.sampling.additional_user_weighting_point_list)
             logger.debug(f"{weight_sum=}")
-            given_user_points = len(act_sbc_config.sampling.v_additional_user_point_list)
+            given_user_points = len(act_sbc_config.sampling.v1_additional_user_point_list)
         logger.debug(f"{given_user_points=}")
         logger.debug(f"{v_operating_points.size=}")
 
@@ -1489,17 +1537,17 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         toml_data = '''
         [default_data] # After update this configuration file according your project delete this line to validate it
         [parameter_range]
-            v_input_min_max_list=[47, 48]
-            duty_cycle_min_max_list=[0.499, 0.5]
-            i_output_min_max_list=[15.9, 16]
+            v1_min_max_list=[47, 48]
+            v2_min_max_list=[20, 24]
+            i2_min_max_list=[15.9, 16]
         
         [sampling]
             sampling_method="latin_hypercube"
             sampling_points=8
             sampling_random_seed=10
-            v_additional_user_point_list=[]
-            duty_cycle_additional_user_point_list=[]
-            i_additional_user_point_list=[]
+            v1_additional_user_point_list=[]
+            v2_additional_user_point_list=[]
+            i2_additional_user_point_list=[]
             additional_user_weighting_point_list=[]
         
         [misc]

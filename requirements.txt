@@ -16,5 +16,6 @@ transistordatabase
 femmt
 hct
 pecst
+scipy
 scikit-learn
 dessca

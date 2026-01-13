@@ -55,9 +55,9 @@ class Sampling:
 
     sampling_method: str
     sampling_points: int
-    v_additional_user_point_list: list[float]
+    v1_additional_user_point_list: list[float]
     duty_cycle_additional_user_point_list: list[float]
-    i_additional_user_point_list: list[float]
+    i2_additional_user_point_list: list[float]
     additional_user_weighting_point_list: list[float]
 
 @dataclasses.dataclass(init=False)

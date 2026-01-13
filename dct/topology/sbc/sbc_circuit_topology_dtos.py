@@ -23,9 +23,9 @@ class CircuitParetoDesignSpace:
 class CircuitParameterRange:
     """Definition of the SBC operating area."""
 
-    v_input_min_max_list: list
+    v1_min_max_list: list
     duty_cycle_min_max_list: list
-    i_output_min_max_list: list
+    i2_min_max_list: list
 
 @dataclasses.dataclass
 class CircuitSampling:
@@ -34,9 +34,9 @@ class CircuitSampling:
     sampling_method: SamplingEnum
     sampling_points: int
     sampling_random_seed: int | None
-    v_additional_user_point_list: list[float]
+    v1_additional_user_point_list: list[float]
     duty_cycle_additional_user_point_list: list[float]
-    i_additional_user_point_list: list[float]
+    i2_additional_user_point_list: list[float]
     additional_user_weighting_point_list: list[float]
 
 @dataclasses.dataclass

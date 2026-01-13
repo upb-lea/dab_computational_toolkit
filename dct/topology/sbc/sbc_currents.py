@@ -34,18 +34,6 @@ def calc_rms_currents(config: CircuitConfig) -> tuple:
 
     return i_ripple, i_ms, i_rms
 
-def calc_transistor_rms_currents(i_hf_rms: float) -> float:
-    """
-    Calculate the transistor RMS currents from the i_HF currents (bridge 1 or bridge 2).
-
-    :param i_hf_rms: bridge 1 or bridge 2 RMS current
-    :type  i_hf_rms: float
-    :return: bridge 1 or bridge 2 transistor RMS current
-    :rtype: float
-    """
-    return i_hf_rms / np.sqrt(2)  # type: ignore
-
-
 def calc_volume_inductor_proxy(config: CircuitConfig, i_ripple: np.ndarray, i_rms: np.ndarray) -> np.ndarray:
     """
     Calculate volume inductor proxy based on current and inductance.

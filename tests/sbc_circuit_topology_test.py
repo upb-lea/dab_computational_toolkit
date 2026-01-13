@@ -130,8 +130,8 @@ def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
 #########################################################################################################
 
 @pytest.mark.parametrize(
-    "sampling_method, v_additional_user_point_list, duty_cycle_additional_user_point_list, i_additional_user_point_list, additional_user_weighting_point_list," 
-    "expected_exception, result_weighting, expected_message_id_list",
+    "sampling_method, v1_additional_user_point_list, duty_cycle_user_point_list, i2_additional_user_point_list, "
+    "additional_user_weighting_point_list,expected_exception, result_weighting, expected_message_id_list",
     [
         # user-given operating points
         (SamplingEnum.latin_hypercube, [700], [0.64], [21.43], [0.5], None, [[[0.1], [0.1], [0.1], [0.1], [0.1], [0.5]]], [2]),
@@ -146,8 +146,8 @@ def generate_weighting_point_list(number_of_points: int) -> list[list[float]]:
     ]
 )
 def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: SamplingEnum,
-                                  v_additional_user_point_list: list[float], duty_cycle_additional_user_point_list: list[float],
-                                  i_additional_user_point_list: list[float], additional_user_weighting_point_list: list[float],
+                                  v1_additional_user_point_list: list[float], duty_cycle_user_point_list: list[float],
+                                  i2_additional_user_point_list: list[float], additional_user_weighting_point_list: list[float],
                                   expected_exception: type, result_weighting: list[float], expected_message_id_list: dict) -> None:
     """
     Unit test to check the fix parameters, especially the sampling.
@@ -156,12 +156,12 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
     :type  caplog: LogCaptureFixture
     :param sampling_method: sampling method
     :type  sampling_method: SamplingEnum
-    :param v_additional_user_point_list: user-given operating points for input voltage
-    :type  v_additional_user_point_list: list[float]
-    :param duty_cycle_additional_user_point_list: user-given operating points for duty_cycle
-    :type  duty_cycle_additional_user_point_list: list[float]
-    :param i_additional_user_point_list: user-given operating points for current
-    :type  i_additional_user_point_list: list[float]
+    :param v1_additional_user_point_list: user-given operating points for input voltage
+    :type  v1_additional_user_point_list: list[float]
+    :param duty_cycle_user_point_list: user-given operating points for duty_cycle
+    :type  duty_cycle_user_point_list: list[float]
+    :param i2_additional_user_point_list: user-given operating points for current
+    :type  i2_additional_user_point_list: list[float]
     :param additional_user_weighting_point_list: user-given operating point weighting
     :type  additional_user_weighting_point_list:
     :param expected_exception: expected exception
@@ -187,9 +187,9 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
         c_par_2=1e-12)
 
     parameter_range = d_dtos.CircuitParameterRange(
-        v_input_min_max_list=[690, 710],
+        v1_min_max_list=[690, 710],
         duty_cycle_min_max_list=[0.1, 0.999],
-        i_output_min_max_list=[0, 30])
+        i2_min_max_list=[0, 30])
 
     filter = d_dtos.CircuitFilter(
         number_filtered_designs=1,
@@ -206,9 +206,9 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
         sampling_method=sampling_method,
         sampling_points=5,
         sampling_random_seed=1,
-        v_additional_user_point_list=v_additional_user_point_list,
-        duty_cycle_additional_user_point_list=duty_cycle_additional_user_point_list,
-        i_additional_user_point_list=i_additional_user_point_list,
+        v1_additional_user_point_list=v1_additional_user_point_list,
+        duty_cycle_additional_user_point_list=duty_cycle_user_point_list,
+        i2_additional_user_point_list=i2_additional_user_point_list,
         additional_user_weighting_point_list=additional_user_weighting_point_list
     )
 
@@ -272,11 +272,11 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
     # Additional user points: Test value in between
     (2, TestCase.InBetween, 2, TestCase.InBetween),
     # Failure test case
-    # Additional user points: Test when inconsistent number of user points in v
+    # Additional user points: Test when inconsistent number of user points in v1
     (2, TestCase.InBetween, 3, TestCase.BoundaryInconsistent),
-    # Additional user points: Test when inconsistent number of user points in duty cycle
+    # Additional user points: Test when inconsistent number of user points in v2
     (2, TestCase.InBetween, 4, TestCase.BoundaryInconsistent),
-    # Additional user points: Test when inconsistent number of user points in i
+    # Additional user points: Test when inconsistent number of user points in i2
     (2, TestCase.InBetween, 5, TestCase.BoundaryInconsistent),
     # Additional user points: Test when the lower limit is exceeded
     (2, TestCase.InBetween, 6, TestCase.ExceedLowerLimit),
@@ -304,10 +304,10 @@ def test_load_and_verify_general_parameters(test_index: int, test_type: TestCase
     # List entries for values and list (exception *in between for values):
     # at lower boundary | at upper boundary | in between | minimum > maximum* | too few entries*
     # too many entries* | exceed the lower limit | exceed the upper limit
-    float_min_max_list_configuration_gt0_lt1000: list[list[float]] = (
-        [[1e-18, 1e-18], [999.9, 999.9], [300, 900], [900, 300], [500], [600, 800, 990], [-10, 120], [40.5, 1150]])
-    float_min_max_list_configuration_ge0_le1: list[list[float]] = (
-        [[0, 0], [1, 1], [0.21, 0.313], [0.54, 0.32], [0.45], [0.22, 0.333, 0.93], [-1e-18, 0.12], [0.78, 1.0001]])
+    float_min_max_list_configuration_ge1_le1000: list[list[float]] = (
+        [[1, 1], [1000, 1000], [300, 900], [900, 300], [500], [600, 800, 990], [-10, 120], [40.5, 1150]])
+    float_min_max_list_configuration_gt0_lt999: list[list[float]] = (
+        [[1e-19, 1e-19], [999, 999], [200, 700], [200, 100], [400], [300, 700, 900], [-11, 110], [40, 1101]])
     float_min_max_list_configuration_gem300_le300: list[list[float]] = (
         [[-300, 300], [299, 300], [120, 154], [230, 120], [220], [220, 250, 290], [-300.1, 21], [120, 430]])
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
@@ -316,16 +316,16 @@ def test_load_and_verify_general_parameters(test_index: int, test_type: TestCase
     # Initialize the general parameters
     test_general_parameter: sbc_tc.TomlSbcGeneral = sbc_tc.TomlSbcGeneral(
         parameter_range=sbc_tc.TomlSbcParameterRange(
-            v_input_min_max_list=float_min_max_list_configuration_gt0_lt1000[test_index],
-            duty_cycle_min_max_list=float_min_max_list_configuration_ge0_le1[test_index],
-            i_output_min_max_list=float_min_max_list_configuration_gem300_le300[test_index]),
+            v1_min_max_list=float_min_max_list_configuration_ge1_le1000[test_index],
+            v2_min_max_list=float_min_max_list_configuration_gt0_lt999[test_index],
+            i2_min_max_list=float_min_max_list_configuration_gem300_le300[test_index]),
         sampling=sbc_tc.TomlSbcSampling(
             sampling_method=SamplingEnum.meshgrid,
             sampling_points=int_value_gt0[test_index],
             sampling_random_seed=int_value_ge0[test_index],
-            v_additional_user_point_list=[],
-            duty_cycle_additional_user_point_list=[],
-            i_additional_user_point_list=[],
+            v1_additional_user_point_list=[],
+            v2_additional_user_point_list=[],
+            i2_additional_user_point_list=[],
             additional_user_weighting_point_list=[]),
     )
 
@@ -333,29 +333,29 @@ def test_load_and_verify_general_parameters(test_index: int, test_type: TestCase
     if u_points_test_index >= 0:
         # at lower boundary | at upper boundary | in between | inconsistent number of entries v | inconsistent number of entries duty cycle
         # inconsistent number of entries i | exceed the lower limit | exceed the upper limit
-        v_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.parameter_range.v_input_min_max_list)
-        duty_cycle_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.parameter_range.duty_cycle_min_max_list)
-        i_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.parameter_range.i_output_min_max_list)
+        v1_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.parameter_range.v1_min_max_list)
+        v2_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.parameter_range.v2_min_max_list)
+        i2_additional_point_list: list[list[float]] = generate_additional_point_list(3, test_general_parameter.parameter_range.i2_min_max_list)
         w_point_list: list[list[float]] = generate_weighting_point_list(3)
         # Manipulate list for inconsistency by deleting one value
-        del v_additional_point_list[3][0]
-        del duty_cycle_additional_point_list[4][0]
-        del i_additional_point_list[5][0]
+        del v1_additional_point_list[3][0]
+        del v2_additional_point_list[4][0]
+        del i2_additional_point_list[5][0]
         # Set additional user point parameters
-        test_general_parameter.sampling.v_additional_user_point_list = v_additional_point_list[u_points_test_index]
-        test_general_parameter.sampling.duty_cycle_additional_user_point_list = duty_cycle_additional_point_list[u_points_test_index]
-        test_general_parameter.sampling.i_additional_user_point_list = i_additional_point_list[u_points_test_index]
+        test_general_parameter.sampling.v1_additional_user_point_list = v1_additional_point_list[u_points_test_index]
+        test_general_parameter.sampling.v2_additional_user_point_list = v2_additional_point_list[u_points_test_index]
+        test_general_parameter.sampling.i2_additional_user_point_list = i2_additional_point_list[u_points_test_index]
         test_general_parameter.sampling.additional_user_weighting_point_list = w_point_list[u_points_test_index]
         # In case of additional user point test, the test type for remaining parameter must be in_between
         assert test_type == TestCase.InBetween
 
     # Perform the test for the general parameters
     # Create boundary list from minimum-maximum list with assigned parameters
-    min_max_list_name_list_general: list[str] = ["v_input_min_max_list", "duty_cycle_min_max_list", "i_output_min_max_list"]
+    min_max_list_name_list_general: list[str] = ["v1_min_max_list", "v2_min_max_list", "i2_min_max_list"]
     value_name_list_general: list[str] = []
     value_name_low_limit_list_general: list[str] = ["sampling_points", "sampling_random_seed"]
-    u_point_name_list: list[str] = (["v_additional_user_point_list", "duty_cycle_additional_user_point_list",
-                                     "i_additional_user_point_list", "additional_user_weighting_point_list"])
+    u_point_name_list: list[str] = (["v1_additional_user_point_list", "v2_additional_user_point_list",
+                                     "i2_additional_user_point_list", "additional_user_weighting_point_list"])
 
     # Convert general parameter class to a dict
     test_general_parameter_dict = test_general_parameter.model_dump()
@@ -512,16 +512,16 @@ transistor_2_name_list: list[str] -> All entries are key names of the transistor
 c_par_1: float -> 0<value<1e-3
 c_par_2: float -> 0<value<1e-3
 [parameter_range]
-v_input_min_max_list: list[float] -> 0<range<1000
-duty_cycle_min_max_list: list[float] -> 0<range<1
-i_output_min_max_list: list[float] -> -300Ampere<range<300Ampere
+v1_min_max_list: list[float] -> 0<range<1000
+v2_min_max_list: list[float] -> 0<range<999
+i2_min_max_list: list[float] -> -300Ampere<range<300Ampere
 [sampling]
 sampling_method is checked by toml checker)
 sampling_points: int -> 0<value
 sampling_random_seed: int | Literal["random"] -> All values allowed (Type is checked by toml checker)
-v_additional_user_point_list: list[float] -> Boundary according configuration of v_input_min_max_list
-duty_cycle_additional_user_point_list: list[float] -> -> Boundary according configuration of duty_cycle_min_max_list
-i_additional_user_point_list: list[float] -> -> Boundary according configuration of i_min_max_list
+v1_additional_user_point_list: list[float] -> Boundary according configuration of v1_min_max_list
+v2_additional_user_point_list: list[float] -> -> Boundary according configuration of v2_min_max_list
+i2_additional_user_point_list: list[float] -> -> Boundary according configuration of i2_min_max_list
 additional_user_weighting_point_list: list[float] -> 0=<val and sum<=1
 [filter_distance]
 number_filtered_designs: int -> value >= 1
@@ -777,10 +777,10 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
         [[1001, 2001], [399999, 999999], [2000, 500000], [10, 3222]])
     float_min_max_list_configuration_gt0_lt1: list[list[float]] = (
         [[1e-17, 8.1e-17], [0.1991, 0.9991], [0.34, 0.77], [-0.1, 0.88]])
-    float_min_max_list_configuration_gt0_lt100: list[list[float]] = (
-        [[1e-18, 7e-18], [69.8, 99.8], [34, 77], [0, 88]])
     float_min_max_list_configuration_gt0_lt1500: list[list[float]] = (
-        [[1e-18, 2.2e-18], [10, 1499.9], [1000, 1300], [-10, 1200]])
+        [[1, 2], [10, 1499.9], [1000, 1499], [-10, 1200]])
+    float_min_max_list_configuration_gt0_lt1499: list[list[float]] = (
+        [[1e-18, 1.5], [5, 1309], [999, 1498], [-10, 1200]])
     float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
         [[-9.9999, 0], [22, 9.9999e4], [2000, 5e4], [-1.01e5, 3222]])
     float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, -1e-3]
@@ -791,18 +791,29 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     # Initialize the general parameters
     test_general_parameter: sbc_tc.TomlSbcGeneral = sbc_tc.TomlSbcGeneral(
         parameter_range=sbc_tc.TomlSbcParameterRange(
-            v_input_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
-            duty_cycle_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
-            i_output_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
+            v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
+            v2_min_max_list=float_min_max_list_configuration_gt0_lt1499[test_index],
+            i2_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
         sampling=sbc_tc.TomlSbcSampling(
             sampling_method=SamplingEnum.meshgrid,
             sampling_points=int_value_gt0[test_index],
             sampling_random_seed=int_value_ge0[test_index],
-            v_additional_user_point_list=[],
-            duty_cycle_additional_user_point_list=[],
-            i_additional_user_point_list=[],
+            v1_additional_user_point_list=[],
+            v2_additional_user_point_list=[],
+            i2_additional_user_point_list=[],
             additional_user_weighting_point_list=[])
     )
+
+    # Calculate value to list
+    calculated_duty_cycle_list: list[float] = []
+    calculated_duty_cycle_list.append(
+        test_general_parameter.parameter_range.v2_min_max_list[1] / test_general_parameter.parameter_range.v1_min_max_list[0])
+
+    calculated_duty_cycle_list.append(
+        test_general_parameter.parameter_range.v2_min_max_list[0] / test_general_parameter.parameter_range.v1_min_max_list[1])
+    calculated_duty_cycle_list.sort()
+    if calculated_duty_cycle_list[1] >= 0.999:
+        calculated_duty_cycle_list[1] = 0.999
 
     # Initialize the circuit parameters
     test_circuit_parameter: sbc_tc.TomlSbcCircuitParetoDesign = sbc_tc.TomlSbcCircuitParetoDesign(
@@ -819,14 +830,14 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     )
 
     # at lower boundary | at upper boundary | in between | exceed the upper limit
-    v1_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_general_parameter.parameter_range.v_input_min_max_list)
-    duty_cycle_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_general_parameter.parameter_range.duty_cycle_min_max_list)
-    i_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_general_parameter.parameter_range.i_output_min_max_list)
+    v1_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_general_parameter.parameter_range.v1_min_max_list)
+    duty_cycle_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_general_parameter.parameter_range.v2_min_max_list)
+    i_additional_point_list: list[list[float]] = generate_additional_point_list(5, test_general_parameter.parameter_range.i2_min_max_list)
     w_point_list: list[list[float]] = generate_weighting_point_list(5)
     # Set additional user point parameters
-    test_general_parameter.sampling.v_additional_user_point_list = v1_additional_point_list[test_index]
-    test_general_parameter.sampling.duty_cycle_additional_user_point_list = duty_cycle_additional_point_list[test_index]
-    test_general_parameter.sampling.i_additional_user_point_list = i_additional_point_list[test_index]
+    test_general_parameter.sampling.v1_additional_user_point_list = v1_additional_point_list[test_index]
+    test_general_parameter.sampling.v2_additional_user_point_list = duty_cycle_additional_point_list[test_index]
+    test_general_parameter.sampling.i2_additional_user_point_list = i_additional_point_list[test_index]
     test_general_parameter.sampling.additional_user_weighting_point_list = w_point_list[test_index]
 
     string_test_values: list[str] = ["A", "b9", "Test123", "x_Y_z890"]
@@ -869,15 +880,15 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             assert test_object._sbc_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
             assert test_object._sbc_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
             assert test_object._sbc_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
-            assert test_object._sbc_config.parameter_range.v_input_min_max_list == test_general_parameter.parameter_range.v_input_min_max_list
-            assert test_object._sbc_config.parameter_range.duty_cycle_min_max_list == test_general_parameter.parameter_range.duty_cycle_min_max_list
-            assert test_object._sbc_config.parameter_range.i_output_min_max_list == test_general_parameter.parameter_range.i_output_min_max_list
+            assert test_object._sbc_config.parameter_range.v1_min_max_list == test_general_parameter.parameter_range.v1_min_max_list
+            assert test_object._sbc_config.parameter_range.duty_cycle_min_max_list == calculated_duty_cycle_list
+            assert test_object._sbc_config.parameter_range.i2_min_max_list == test_general_parameter.parameter_range.i2_min_max_list
             assert test_object._sbc_config.sampling.sampling_method == test_general_parameter.sampling.sampling_method
             assert test_object._sbc_config.sampling.sampling_points == test_general_parameter.sampling.sampling_points
-            assert test_object._sbc_config.sampling.v_additional_user_point_list == test_general_parameter.sampling.v_additional_user_point_list
+            assert test_object._sbc_config.sampling.v1_additional_user_point_list == test_general_parameter.sampling.v1_additional_user_point_list
             act_duty_cycle_add_user_point_list = test_object._sbc_config.sampling.duty_cycle_additional_user_point_list
-            assert act_duty_cycle_add_user_point_list == test_general_parameter.sampling.duty_cycle_additional_user_point_list
-            assert test_object._sbc_config.sampling.i_additional_user_point_list == test_general_parameter.sampling.i_additional_user_point_list
+            assert act_duty_cycle_add_user_point_list == test_general_parameter.sampling.v2_additional_user_point_list
+            assert test_object._sbc_config.sampling.i2_additional_user_point_list == test_general_parameter.sampling.i2_additional_user_point_list
             assert test_object._sbc_config.filter.number_filtered_designs == test_circuit_parameter.filter_distance.number_filtered_designs
             assert test_object._sbc_config.filter.difference_percentage == test_circuit_parameter.filter_distance.difference_percentage
             assert test_object._sbc_config.project_directory == project_directory
