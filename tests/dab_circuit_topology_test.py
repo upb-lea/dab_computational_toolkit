@@ -893,4 +893,4 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             with pytest.raises(ValueError) as error_message:
                 # Perform the test
                 is_initialized = test_object.initialize_circuit_optimization()
-            assert "Serious programming error 1c. Please write an issue!" in str(error_message.value)
+            assert "Serious programming error 'multiple allocation failure'. Please write an issue!" in str(error_message.value)

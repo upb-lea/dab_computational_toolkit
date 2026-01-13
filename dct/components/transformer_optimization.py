@@ -19,7 +19,6 @@ from dct.components.transformer_optimization_dtos import TransformerOptimization
 import femmt as fmt
 import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
-import dct.topology.dab.dab_datasets_dtos as d_dtos
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
 from dct.boundary_check import CheckCondition as c_flag
@@ -27,7 +26,7 @@ from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER
-from dct.components.component_requirements import TransformerRequirements
+from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults
 
 logger = logging.getLogger(__name__)
 
@@ -415,7 +414,7 @@ class TransformerOptimization:
                         df_geometry_re_simulation_number, current_waveform, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
-                results_dto = d_dtos.StackedTransformerResults(
+                results_dto = StackedTransformerResults(
                     loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
@@ -599,7 +598,7 @@ class TransformerOptimization:
 
                         result_array[vec_vvp] = combined_losses
 
-                    results_dto = d_dtos.StackedTransformerResults(
+                    results_dto = StackedTransformerResults(
                         loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,

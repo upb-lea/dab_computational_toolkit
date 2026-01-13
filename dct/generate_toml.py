@@ -2,141 +2,135 @@
 # python libraries
 import os
 
-def check_for_missing_toml_files(working_directory: str) -> None:
+def generate_missing_toml_files(working_directory: str) -> None:
     """
     Check for missing toml default files. Generate them, if missing.
 
     :param working_directory: working directory
     :type working_directory: str
     """
-    if not os.path.exists(working_directory):
-        os.makedirs(working_directory)
-    # check for all the toml files
-    if not os.path.isfile(os.path.join(working_directory, "progFlow.toml")):
-        generate_flow_control_toml(working_directory)
-    if not os.path.isfile(os.path.join(working_directory, "DabCircuitConf.toml")):
-        generate_circuit_toml(working_directory)
+    # check for missing component configuration files
     if not os.path.isfile(os.path.join(working_directory, "DabInductorConf.toml")):
-        generate_inductor_toml(working_directory)
+        generate_default_inductor_toml(working_directory)
     if not os.path.isfile(os.path.join(working_directory, "DabTransformerConf.toml")):
-        generate_transformer_toml(working_directory)
+        generate_default_transformer_toml(working_directory)
     if not os.path.isfile(os.path.join(working_directory, "DabHeatSinkConf.toml")):
-        generate_heat_sink_toml(working_directory)
+        generate_default_heat_sink_toml(working_directory)
 
-
-def generate_flow_control_toml(working_directory: str) -> None:
+def generate_default_flow_control_toml(working_directory: str) -> None:
     """
     Generate the default progFlow.toml file.
 
     :param working_directory: working directory
     :type working_directory: str
     """
-    toml_data = f'''
-    # Path configuration 
+    toml_data = '''
+    [default data] # After update this configuration file according your project delete this line to validate it
+    # Path configuration
     [general]
-        project_directory = "{working_directory}"
+        project_directory = "2025-12-18_example"
+        topology = "dab"
     
     [breakpoints]
         # possible values: no/pause/stop
-        circuit_pareto = "no"    # After Electrical Pareto front calculation
+        circuit_pareto = "no"  # After Electrical Pareto front calculation
         circuit_filtered = "no"  # After Electrical filtered result calculation
-        inductor = "no"          # After inductor Pareto front calculations of for all correspondent electrical points
-        transformer = "no"       # After transformer Pareto front calculations of for all correspondent electrical points
-        heat_sink = "no"         # After heat sink Pareto front calculation
-        pre_summary = "no"       # After pre-summary
-        summary = "no"           # After summary
+        capacitor_1 = "no"
+        capacitor_2 = "no"
+        inductor = "no"    # After inductor Pareto front calculations of for all correspondent electrical points
+        transformer = "no" # After transformer Pareto front calculations of for all correspondent electrical points
+        heat_sink = "no"    # After heat sink P front calculation
+        pre_summary = "no"    # After pre-summary calculation
+        summary = "no"    # After summary calculation
     
     [conditional_breakpoints] # conditional breakpoints in case of bad definition array (only for experts and currently not implemented)
-        circuit = 1000           # Number of trials with ZVS less than 70%
-        inductor = 1000          # Number of trials which exceed a limit value?
-        transformer = 1000       # Number of trials which exceed a limit value?
+        circuit = 1000        # Number of trials with ZVS less than 70%
+        inductor = 1000       # Number of trials which exceed a limit value?
+        transformer = 1000      # Number of trials which exceed a limit value?
         heat_sink = 1000         # Number of trials which exceed a limit value?
     
     [circuit]
         number_of_trials = 100
-        calculation_mode = "skip" # (new,continue,skip)
+        calculation_mode = "new" # (new,continue,skip)
         subdirectory = "01_circuit"
     
+    [capacitor_1]
+        calculation_mode = "new" # (new,skip)
+        subdirectory = "02_capacitor_1"
+    
+    [capacitor_2]
+        calculation_mode = "new" # (new,skip)
+        subdirectory = "03_capacitor_2"
+    
     [inductor]
-        number_of_trials = 100
-        calculation_mode = "skip" # (new,continue,skip)
-        subdirectory = "02_inductor"
+        number_of_trials = 200
+        calculation_mode = "new" # (new,continue,skip)
+        subdirectory = "04_inductor"
     
     [transformer]
-        number_of_trials = 100
-        calculation_mode = "skip" # (new,continue,skip)
-        subdirectory = "03_transformer"
+        number_of_trials = 400
+        calculation_mode = "new" # (new,continue,skip)
+        subdirectory = "05_transformer"
     
     [heat_sink]
-        number_of_trials = 100
-        calculation_mode = "skip" # (new,continue,skip)
-        subdirectory = "04_heat_sink"
+        number_of_trials = 500
+        calculation_mode = "new" # (new,continue,skip)
+        subdirectory = "06_heat_sink"
     
     [pre_summary]
-        calculation_mode = "skip" # (new,skip)
-        subdirectory = "05_pre_summary"
+        calculation_mode = "new" # (new,skip)
+        subdirectory = "07_pre_summary"
     
     [summary]
         calculation_mode = "skip" # (new,skip)
-        subdirectory = "06_summary"
+        subdirectory = "08_summary"
     
     [configuration_data_files]
         general_configuration_file = "DabGeneralConf.toml"
         circuit_configuration_file = "DabCircuitConf.toml"
+        capacitor_1_configuration_file = "DabCapacitor1Conf.toml"
+        capacitor_2_configuration_file = "DabCapacitor2Conf.toml"
         inductor_configuration_file = "DabInductorConf.toml"
         transformer_configuration_file = "DabTransformerConf.toml"
         heat_sink_configuration_file = "DabHeatSinkConf.toml"
+        # general_configuration_file = "SbcGeneralConf.toml"
+        # circuit_configuration_file = "SbcCircuitConf.toml"
+        # capacitor_1_configuration_file = ""
+        # capacitor_2_configuration_file = ""
+        # inductor_configuration_file = "SbcInductorConf.toml"
+        # transformer_configuration_file = ""
+        # heat_sink_configuration_file = "SbcHeatSinkConf.toml"
     '''
     with open(f"{working_directory}/progFlow.toml", 'w') as output:
         output.write(toml_data)
 
-def generate_circuit_toml(working_directory: str) -> None:
+def generate_default_capacitor_toml(file_path: str) -> None:
     """
-    Generate the default DabCircuitConf.toml file.
+    Generate the default capacitor selection toml file.
 
-    :param working_directory: working directory
-    :type working_directory: str
+    :param file_path: filename including absolute path
+    :type file_path: str
     """
     toml_data = '''
-    [design_space]
-        f_s_min_max_list=[50e3, 300e3]
-        l_s_min_max_list=[20e-6, 900e-6]
-        l_1_min_max_list=[10e-6, 10e-3]
-        l_2__min_max_list=[10e-6, 1e-3]
-        n_min_max_list=[3, 7]
-        transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J']
-        transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J']
-        c_par_1=16e-12
-        c_par_2=16e-12
-    
-    [output_range]
-        v1_min_max_list=[690, 710]
-        v2_min_max_list=[175, 295]
-        p_min_max_list=[-2000, 2200]
-        
-    [sampling]
-        sampling_method="latin_hypercube"
-        sampling_points=4
-        sampling_random_seed=10
-        v1_additional_user_point_list=[700]
-        v2_additional_user_point_list=[180]
-        p_additional_user_point_list=[2000]
-    
-    [filter_distance]
-        number_filtered_designs = 1
-        difference_percentage = 5
+    [default_data] # After update this configuration file according your project delete this line to validate it
+    maximum_peak_to_peak_voltage_ripple = 1
+    temperature_ambient = 90
+    voltage_safety_margin_percentage = 10
+    maximum_number_series_capacitors = 2
+    lifetime_h = 30_000
     '''
-    with open(f"{working_directory}/DabCircuitConf.toml", 'w') as output:
+    with open(file_path, 'w') as output:
         output.write(toml_data)
 
-def generate_inductor_toml(working_directory: str) -> None:
+def generate_default_inductor_toml(file_path: str) -> None:
     """
-    Generate the default DabInductorConf.toml file.
+    Generate the default inductor  configuration toml file.
 
-    :param working_directory: working directory
-    :type working_directory: str
+    :param file_path: working directory
+    :type file_path: str
     """
     toml_data = '''
+    [default_data] # After update this configuration file according your project delete this line to validate it
     [design_space]
         core_name_list=["PQ 50/50", "PQ 50/40", "PQ 40/40", "PQ 40/30", "PQ 35/35", "PQ 32/30", "PQ 32/20", "PQ 26/25", "PQ 26/20", "PQ 20/20", "PQ 20/16"]
         material_name_list=["N49"]
@@ -162,17 +156,18 @@ def generate_inductor_toml(working_directory: str) -> None:
     [filter_distance]
         factor_dc_losses_min_max_list=[0.01, 100]
     '''
-    with open(f"{working_directory}/DabInductorConf.toml", 'w') as output:
+    with open(file_path, 'w') as output:
         output.write(toml_data)
 
-def generate_transformer_toml(working_directory: str) -> None:
+def generate_default_transformer_toml(file_path: str) -> None:
     """
-    Generate the default DabTransformerConf.toml file.
+    Generate the default transformer configuration toml file.
 
-    :param working_directory: working directory
-    :type working_directory: str
+    :param file_path: filename including absolute path
+    :type file_path: str
     """
     toml_data = '''
+    [default_data] # After update this configuration file according your project delete this line to validate it
     [design_space]
         material_name_list=['N49']
         core_name_list=["PQ 40/40", "PQ 40/30", "PQ 35/35", "PQ 32/30", "PQ 32/20", "PQ 26/25", "PQ 26/20", "PQ 20/20", "PQ 20/16"]
@@ -218,17 +213,18 @@ def generate_transformer_toml(working_directory: str) -> None:
     [filter_distance]
         factor_dc_losses_min_max_list=[0.01, 100]
     '''
-    with open(f"{working_directory}/DabTransformerConf.toml", 'w') as output:
+    with open(file_path, 'w') as output:
         output.write(toml_data)
 
-def generate_heat_sink_toml(working_directory: str) -> None:
+def generate_default_heat_sink_toml(file_path: str) -> None:
     """
-    Generate the default DabHeatSinkConf.toml file.
+    Generate the default heat sink configuration toml file.
 
-    :param working_directory: working directory
-    :type working_directory: str
+    :param file_path: filename including absolute path
+    :type file_path: str
     """
     toml_data = '''
+    [default_data] # After update this configuration file according your project delete this line to validate it
     [design_space]
         height_c_min_max_list=[0.02, 0.08]
         width_b_min_max_list=[0.02, 0.08]
@@ -257,7 +253,7 @@ def generate_heat_sink_toml(working_directory: str) -> None:
         transformer_cooling = [1e-3,12.0]
 
     '''
-    with open(f"{working_directory}/DabHeatSinkConf.toml", 'w') as output:
+    with open(file_path, 'w') as output:
         output.write(toml_data)
 
 

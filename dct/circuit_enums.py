@@ -9,6 +9,14 @@ class SamplingEnum(enum.Enum):
     latin_hypercube = "latin_hypercube"
     dessca = "dessca"
 
+class TopologyEnum(enum.Enum):
+    """Enum for available topologies."""
+
+    # Dual active bridge
+    dab = "dab"
+    # Synchronous buck converter
+    sbc = "sbc"
+
 
 class CalcModeEnum(enum.Enum):
     """Enum for calculation mode."""

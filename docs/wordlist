@@ -383,3 +383,17 @@ IWRITE
 dessca
 Denormalize
 denormalized
+sbc
+HandleSbcDto
+TomlSbcCircuitParetoDesign
+HandleTransistorDto
+LossDataGrid
+init
+inductors
+DabCapacitor
+SamplingEnum
+SbcCircuitConf
+SbcGeneralConf
+SbcHeatSinkConf
+SbcInductorConf
+

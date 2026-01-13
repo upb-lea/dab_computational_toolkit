@@ -14,7 +14,7 @@ import numpy as np
 # Own libraries
 from dct.datasets_dtos import StudyData, FilterData, PlotData
 from dct.server_ctl_dtos import ProgressData
-from dct.components.component_requirements import CapacitorRequirements, InductorRequirements, TransformerRequirements
+from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
 
@@ -78,7 +78,8 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         if self.circuit_study_data is None and self.filter_data is None:
             # The method to initialize study information needs to be called first.
             # This has to be guaranteed by the workflow
-            return False, "Serious programming error 1b. Please write an issue!"
+            return False, ("Serious programming error 'Allocation issue circuit_study_data or filter_data'.\n"
+                           "Please write an issue!")
 
         # Check, if all data are available
         is_skipable, issue_report = self.__class__._is_optimization_skippable(self.circuit_study_data, self.filter_data)
@@ -326,5 +327,55 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :return: Transformer requirements
         :rtype: TransformerRequirements
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_number_of_required_capacitors() -> int:
+        """Get the number of  required capacitors.
+
+        :return: Number of capacitors required by the actual topology
+        :rtype: int
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_number_of_required_inductors() -> int:
+        """Get the number of  required inductors.
+
+        :return: Number of inductors required by the actual topology
+        :rtype: int
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_number_of_required_transformers() -> int:
+        """Get the number of  required transformers.
+
+        :return: Number of transformers required by the actual topology
+        :rtype: int
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_general_toml(file_path: str) -> None:
+        """Generate the default general configuration file.
+
+        :param file_path: filename including absolute path
+        :type  file_path: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_circuit_toml(file_path: str) -> None:
+        """Generate the default circuit configuration file.
+
+        :param file_path: filename including absolute path
+        :type  file_path: str
         """
         pass

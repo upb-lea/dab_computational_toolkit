@@ -35,6 +35,7 @@ from dct import TransformerOptimization
 from dct import HeatSinkOptimization
 from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
+import dct.generate_toml as toml_gen
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
 from dct.topology.dab.dab_summary_pre_processing import DabSummaryPreProcessing
@@ -44,7 +45,7 @@ from dct.server_ctl import RequestCmd
 from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.circuit_enums import CalcModeEnum
+from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
@@ -1123,6 +1124,9 @@ class DctMainCtl:
         except PermissionError as exc:
             raise ValueError("Error: No permission to change the folder!") from exc
 
+        # Create absolute path
+        workspace_path = os.path.abspath(workspace_path)
+
         # --------------------------
         # Logging
         # --------------------------
@@ -1154,14 +1158,28 @@ class DctMainCtl:
         # --------------------------
         logger.debug("Read flow control file")
         # Load the configuration for program flow and check the validity
-        flow_control_loaded, dict_prog_flow = self.load_toml_file("progFlow.toml")
-        toml_prog_flow = tc.FlowControl(**dict_prog_flow)
+        file_path = os.path.join(workspace_path, "progFlow.toml")
+        flow_control_loaded, dict_prog_flow = self.load_toml_file(file_path)
 
         if not flow_control_loaded:
-            raise ValueError("Program flow toml file does not exist.")
+            # Set default topology
+            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+            # Generate topology dependent default files
+            toml_gen.generate_default_flow_control_toml(workspace_path)
+            file_path = os.path.join(workspace_path, "DabGeneralConf.toml")
+            self._circuit_optimization.generate_general_toml(file_path)
+            file_path = os.path.join(workspace_path, "DabCircuitConf.toml")
+            self._circuit_optimization.generate_circuit_toml(file_path)
+            # Generate missing component default files
+            toml_gen.generate_missing_toml_files(workspace_path)
+            raise ValueError(f"Program flow toml file does not exist in path {workspace_path}.\n"
+                             "A default program flow toml file and corresponding default configuration files are generated.\n"
+                             "All generated default files needs to be updated before using.")
+
+        # Verify toml data and transfer to class
+        toml_prog_flow = tc.FlowControl(**dict_prog_flow)
 
         # Add absolute path to project data path
-        workspace_path = os.path.abspath(workspace_path)
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 
         self.set_up_folder_structure(toml_prog_flow)
@@ -1222,8 +1240,13 @@ class DctMainCtl:
         # Select topology
         # --------------------------
 
-        # Allocate and initialize circuit configuration (Currently the only topology). Has to be set later in program flow toml file
-        self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+        # Allocate and initialize circuit configuration
+        if toml_prog_flow.general.topology == TopologyEnum.dab.value:
+            self._circuit_optimization = dct.topology.dab.DabCircuitOptimization()
+        elif toml_prog_flow.general.topology == TopologyEnum.sbc.value:
+            self._circuit_optimization = dct.topology.sbc.SbcCircuitOptimization()
+        else:
+            raise ValueError("Serious programming error in topology selection. Please write an issue!")
 
         # --------------------------
         # General toml control
@@ -1234,7 +1257,10 @@ class DctMainCtl:
         is_general_toml_loaded, dict_general_toml = self.load_toml_file(toml_prog_flow.configuration_data_files.general_configuration_file)
 
         if not is_general_toml_loaded:
-            raise ValueError(f"General toml configuration file: {toml_prog_flow.configuration_data_files.general_configuration_file} does not exist.")
+            file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.general_configuration_file)
+            self._circuit_optimization.generate_general_toml(file_path)
+            raise ValueError(f"General toml configuration file: {file_path} does not exist.\n"
+                             f"A default file is generated and needs to be updated!")
 
         is_general_toml_consistent, general_issue_report = self._circuit_optimization.load_and_verify_general_parameters(dict_general_toml)
 
@@ -1257,7 +1283,10 @@ class DctMainCtl:
         is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(toml_prog_flow.configuration_data_files.circuit_configuration_file)
 
         if not is_circuit_loaded:
-            raise ValueError(f"Circuit configuration file: {toml_prog_flow.configuration_data_files.circuit_configuration_file} does not exist.")
+            file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.circuit_configuration_file)
+            self._circuit_optimization.generate_general_toml(file_path)
+            raise ValueError(f"Circuit configuration file: {file_path} does not exist.\n"
+                             f"A default file is generated and needs to be updated!")
 
         is_consistent, issue_report = self._circuit_optimization.load_and_verify_circuit_parameters(dict_circuit)
 
@@ -1300,168 +1329,223 @@ class DctMainCtl:
         # --------------------------
         logger.debug("Read capacitor 1 flow control")
 
-        # Init capacitor configuration
-        is_capacitor_1_loaded, dict_capacitor_1 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
-        toml_capacitor_1 = tc.TomlCapacitorSelection(**dict_capacitor_1)
+        # Check if capacitor components are required
+        if self._circuit_optimization.get_number_of_required_capacitors() > 0:
+            # Init capacitor configuration
+            is_capacitor_1_loaded, dict_capacitor_1 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
 
-        if not is_capacitor_1_loaded:
-            raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
+            if not is_capacitor_1_loaded:
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.capacitor_1_configuration_file)
+                toml_gen.generate_default_capacitor_toml(file_path)
+                raise ValueError(f"General toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
 
-        # Verify capacitor parameters
-        is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_1)
-        if not is_consistent:
-            raise ValueError("Capacitor optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} are inconsistent!\n", issue_report)
+            # Verify toml data and transfer to class
+            toml_capacitor_1 = tc.TomlCapacitorSelection(**dict_capacitor_1)
 
-        # Check, if capacitor1 selection is to skip
-        if self._capacitor_selection_data.calculation_mode == CalcModeEnum.skip_mode:
-            # Check if capacitor1 selection is skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_selection_data,
-                                                                  PROCESSING_COMPLETE_FILE)
-            # Evaluate the result of circuit check
-            if not is_skippable:
-                logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
-                self._capacitor_selection_data.calculation_mode = CalcModeEnum.continue_mode
+            if not is_general_toml_loaded:
+                file_path = os.path.join(workspace_path,
+                                         toml_prog_flow.configuration_data_files.general_configuration_file)
+                self._circuit_optimization.generate_general_toml(file_path)
+                raise ValueError(f"General toml configuration file: {file_path} does not exist.")
 
-        # In case of CalcModeEnum.new_mode the old study is to delete
-        if self._capacitor_selection_data.calculation_mode == CalcModeEnum.new_mode:
-            # delete old circuit study data
-            self.delete_study_content(self._capacitor_selection_data.optimization_directory, self._capacitor_selection_data.study_name)
+            is_general_toml_consistent, general_issue_report = self._circuit_optimization.load_and_verify_general_parameters(
+                dict_general_toml)
+
+            if not is_general_toml_consistent:
+                raise ValueError("General parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.general_configuration_file} are inconsistent!\n",
+                                 general_issue_report)
+
+            if not is_capacitor_1_loaded:
+
+                raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
+
+            # Verify capacitor parameters
+            is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_1)
+            if not is_consistent:
+                raise ValueError("Capacitor optimization parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} are inconsistent!\n", issue_report)
+
+            # Check, if capacitor1 selection is to skip
+            if self._capacitor_selection_data.calculation_mode == CalcModeEnum.skip_mode:
+                # Check if capacitor1 selection is skippable
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_selection_data,
+                                                                      PROCESSING_COMPLETE_FILE)
+                # Evaluate the result of circuit check
+                if not is_skippable:
+                    logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
+                    self._capacitor_selection_data.calculation_mode = CalcModeEnum.continue_mode
+
+            # In case of CalcModeEnum.new_mode the old study is to delete
+            if self._capacitor_selection_data.calculation_mode == CalcModeEnum.new_mode:
+                # delete old circuit study data
+                self.delete_study_content(self._capacitor_selection_data.optimization_directory, self._capacitor_selection_data.study_name)
+        else:
+            # Skip capacitor optimization
+            self._capacitor_selection_data.calculation_mode = CalcModeEnum.skip_mode
 
         # --------------------------
         # Capacitor 2 flow control
         # --------------------------
         logger.debug("Read capacitor 2 flow control")
 
-        # Init circuit configuration
-        is_capacitor_2_loaded, dict_capacitor_2 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_2_configuration_file)
-        toml_capacitor_2 = tc.TomlCapacitorSelection(**dict_capacitor_2)
+        # Check if capacitor components are required
+        if self._circuit_optimization.get_number_of_required_capacitors() > 0:
+            # Init circuit configuration
+            is_capacitor_2_loaded, dict_capacitor_2 = self.load_toml_file(toml_prog_flow.configuration_data_files.capacitor_2_configuration_file)
 
-        if not is_capacitor_2_loaded:
-            raise ValueError(f"Capacitor 2 configuration file: {toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} does not exist.")
+            if not is_capacitor_2_loaded:
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.capacitor_2_configuration_file)
+                toml_gen.generate_default_capacitor_toml(file_path)
+                raise ValueError(f"General toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
 
-        # Verify capacitor parameters
-        is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_2)
-        if not is_consistent:
-            raise ValueError("Capacitor optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} are inconsistent!\n", issue_report)
+            # Verify toml data and transfer to class
+            toml_capacitor_2 = tc.TomlCapacitorSelection(**dict_capacitor_2)
 
-        # Check, if capacitor2 selection is to skip
-        if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.skip_mode:
-            # Check if capacitor1 selection is skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_2_selection_data,
-                                                                  PROCESSING_COMPLETE_FILE)
-            # Evaluate the result of circuit check
-            if not is_skippable:
-                logger.warning("Capacitor 2 selection is not skippable:\n" + f"{issue_report}")
-                self._capacitor_2_selection_data.calculation_mode = CalcModeEnum.continue_mode
+            # Verify capacitor parameters
+            is_consistent, issue_report = dct.CapacitorSelection.verify_optimization_parameter(toml_capacitor_2)
+            if not is_consistent:
+                raise ValueError("Capacitor optimization parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.capacitor_2_configuration_file} are inconsistent!\n", issue_report)
 
-        # In case of CalcModeEnum.new_mode the old study is to delete
-        if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.new_mode:
-            # delete old circuit study data
-            self.delete_study_content(self._capacitor_2_selection_data.optimization_directory, self._capacitor_2_selection_data.study_name)
+            # Check, if capacitor2 selection is to skip
+            if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.skip_mode:
+                # Check if capacitor1 selection is skippable
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_2_selection_data,
+                                                                      PROCESSING_COMPLETE_FILE)
+                # Evaluate the result of circuit check
+                if not is_skippable:
+                    logger.warning("Capacitor 2 selection is not skippable:\n" + f"{issue_report}")
+                    self._capacitor_2_selection_data.calculation_mode = CalcModeEnum.continue_mode
+
+            # In case of CalcModeEnum.new_mode the old study is to delete
+            if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.new_mode:
+                # delete old circuit study data
+                self.delete_study_content(self._capacitor_2_selection_data.optimization_directory, self._capacitor_2_selection_data.study_name)
+        else:
+            # Skip capacitor optimization
+            self._capacitor_2_selection_data.calculation_mode = CalcModeEnum.skip_mode
 
         # --------------------------
         # Inductor flow control
         # --------------------------
         logger.debug("Read inductor flow control")
 
-        # Load the inductor-configuration parameter
-        inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
-        is_inductor_loaded, inductor_dict = self.load_toml_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
-        toml_inductor = dct.TomlInductor(**inductor_dict)
+        # Check if inductor components are required
+        if self._circuit_optimization.get_number_of_required_inductors() > 0:
+            # Load the inductor-configuration parameter
+            inductor_toml_filepath = toml_prog_flow.configuration_data_files.inductor_configuration_file
+            is_inductor_loaded, inductor_dict = self.load_toml_file(toml_prog_flow.configuration_data_files.inductor_configuration_file)
 
-        if not is_inductor_loaded:
-            raise ValueError(f"Inductor configuration file: {inductor_toml_filepath} does not exist.")
+            if not is_inductor_loaded:
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.inductor_configuration_file)
+                toml_gen.generate_default_inductor_toml(file_path)
+                raise ValueError(f"Inductor toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
 
-        # Verify optimization parameter
-        is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
-        if not is_consistent:
-            raise ValueError("Inductor optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
+            # Verify toml data and transfer to class
+            toml_inductor = dct.TomlInductor(**inductor_dict)
 
-        # Overtake the calculation mode
-        inductor_sim_calculation_mode: CalcModeEnum = self._inductor_study_data.calculation_mode
-        # Check, if inductor optimization is to skip
-        if self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
-            # Initialize _inductor_number_filtered_points_skip_list
-            self._inductor_number_filtered_analytic_points_skip_list = []
-            # Check if the optimization is skippable for analytic calculation
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._inductor_study_data, RELUCTANCE_COMPLETE_FILE, True,
-                                                                  self._circuit_optimization.filter_data.filtered_list_files)
-            # Evaluate if the optimization is skippable for analytic calculation
-            if not is_skippable:
-                self._inductor_study_data.calculation_mode = CalcModeEnum.new_mode
-                inductor_sim_calculation_mode = CalcModeEnum.continue_mode
-                self._capacitor_selection_data.calculation_mode = CalcModeEnum.continue_mode
-                logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
-                               f"{issue_report}")
-            else:
-                # Check if the optimization is skippable for simulation calculation
-                is_skippable, issue_report = DctMainCtl._is_skippable(self._inductor_study_data, SIMULATION_COMPLETE_FILE, True,
+            # Verify optimization parameter
+            is_consistent, issue_report = InductorOptimization.verify_optimization_parameter(toml_inductor)
+            if not is_consistent:
+                raise ValueError("Inductor optimization parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.inductor_configuration_file} are inconsistent!\n", issue_report)
+
+            # Overtake the calculation mode
+            inductor_sim_calculation_mode: CalcModeEnum = self._inductor_study_data.calculation_mode
+            # Check, if inductor optimization is to skip
+            if self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
+                # Initialize _inductor_number_filtered_points_skip_list
+                self._inductor_number_filtered_analytic_points_skip_list = []
+                # Check if the optimization is skippable for analytic calculation
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._inductor_study_data, RELUCTANCE_COMPLETE_FILE, True,
                                                                       self._circuit_optimization.filter_data.filtered_list_files)
-                # Evaluate if the optimization is skippable for simulation calculation
+                # Evaluate if the optimization is skippable for analytic calculation
                 if not is_skippable:
-                    logger.warning("Inductor optimization (simulation part) is not skippable:\n"
-                                   f"{issue_report}")
+                    self._inductor_study_data.calculation_mode = CalcModeEnum.new_mode
                     inductor_sim_calculation_mode = CalcModeEnum.continue_mode
+                    self._capacitor_selection_data.calculation_mode = CalcModeEnum.continue_mode
+                    logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
+                                   f"{issue_report}")
+                else:
+                    # Check if the optimization is skippable for simulation calculation
+                    is_skippable, issue_report = DctMainCtl._is_skippable(self._inductor_study_data, SIMULATION_COMPLETE_FILE, True,
+                                                                          self._circuit_optimization.filter_data.filtered_list_files)
+                    # Evaluate if the optimization is skippable for simulation calculation
+                    if not is_skippable:
+                        logger.warning("Inductor optimization (simulation part) is not skippable:\n"
+                                       f"{issue_report}")
+                        inductor_sim_calculation_mode = CalcModeEnum.continue_mode
 
-        # In case of CalcModeEnum.new_mode the old study is to delete
-        if self._inductor_study_data.calculation_mode == CalcModeEnum.new_mode:
-            # Delete old inductor study
-            self.delete_study_content(self._inductor_study_data.optimization_directory)
+            # In case of CalcModeEnum.new_mode the old study is to delete
+            if self._inductor_study_data.calculation_mode == CalcModeEnum.new_mode:
+                # Delete old inductor study
+                self.delete_study_content(self._inductor_study_data.optimization_directory)
+        else:
+            # Skip inductor optimization
+            self._inductor_study_data.calculation_mode = CalcModeEnum.skip_mode
 
         # --------------------------
         # Transformer flow control
         # --------------------------
         logger.debug("Read transformer flow control")
 
-        # Load the transformer-configuration parameter
-        transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
-        is_transformer_loaded, transformer_dict = self.load_toml_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
-        toml_transformer = dct.TomlTransformer(**transformer_dict)
+        # Check if transformer components are required
+        if self._circuit_optimization.get_number_of_required_transformers() > 0:
+            # Load the transformer-configuration parameter
+            transformer_toml_filepath = toml_prog_flow.configuration_data_files.transformer_configuration_file
+            is_transformer_loaded, transformer_dict = self.load_toml_file(toml_prog_flow.configuration_data_files.transformer_configuration_file)
+            toml_transformer = dct.TomlTransformer(**transformer_dict)
 
-        if not is_transformer_loaded:
-            raise ValueError(f"Transformer configuration file: {transformer_toml_filepath} does not exist.")
+            if not is_transformer_loaded:
+                file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.transformer_configuration_file)
+                toml_gen.generate_default_transformer_toml(file_path)
+                raise ValueError(f"Transformer toml configuration file: {file_path} does not exist.\n"
+                                 f"A default file is generated and needs to be updated!")
 
-        # Verify optimization parameter
-        is_consistent, issue_report = TransformerOptimization.verify_optimization_parameter(toml_transformer)
-        if not is_consistent:
-            raise ValueError("Transformer optimization parameter in file ",
-                             f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
+            # Verify optimization parameter
+            is_consistent, issue_report = TransformerOptimization.verify_optimization_parameter(toml_transformer)
+            if not is_consistent:
+                raise ValueError("Transformer optimization parameter in file ",
+                                 f"{toml_prog_flow.configuration_data_files.transformer_configuration_file} are inconsistent!\n", issue_report)
 
-        # Overtake the calculation mode
-        transformer_sim_calculation_mode: CalcModeEnum = self._transformer_study_data.calculation_mode
-        # Check, if transformer optimization is to skip
-        if self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
-            # Initialize _transformer_number_filtered_points_skip_list
-            self._transformer_number_filtered_analytic_points_skip_list = []
+            # Overtake the calculation mode
+            transformer_sim_calculation_mode: CalcModeEnum = self._transformer_study_data.calculation_mode
+            # Check, if transformer optimization is to skip
+            if self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
+                # Initialize _transformer_number_filtered_points_skip_list
+                self._transformer_number_filtered_analytic_points_skip_list = []
 
-            # Check if the optimization is skippable for simulation calculation
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._transformer_study_data, RELUCTANCE_COMPLETE_FILE, True,
-                                                                  self._circuit_optimization.filter_data.filtered_list_files)
-            # Evaluate if the optimization is skippable for analytic calculation
-            if not is_skippable:
-                self._transformer_study_data.calculation_mode = CalcModeEnum.new_mode
-                transformer_sim_calculation_mode = CalcModeEnum.continue_mode
-                logger.warning("Transformer optimization (analytic and simulation part) are not skippable:\n"
-                               f"{issue_report}")
-            else:
                 # Check if the optimization is skippable for simulation calculation
-                is_skippable, issue_report = DctMainCtl._is_skippable(self._transformer_study_data, SIMULATION_COMPLETE_FILE,
-                                                                      True,
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._transformer_study_data, RELUCTANCE_COMPLETE_FILE, True,
                                                                       self._circuit_optimization.filter_data.filtered_list_files)
-                # Evaluate if the optimization is skippable for simulation calculation
+                # Evaluate if the optimization is skippable for analytic calculation
                 if not is_skippable:
+                    self._transformer_study_data.calculation_mode = CalcModeEnum.new_mode
                     transformer_sim_calculation_mode = CalcModeEnum.continue_mode
-                    logger.warning("Transformer optimization (simulation part) is not skippable:\n"
+                    logger.warning("Transformer optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
+                else:
+                    # Check if the optimization is skippable for simulation calculation
+                    is_skippable, issue_report = DctMainCtl._is_skippable(self._transformer_study_data, SIMULATION_COMPLETE_FILE,
+                                                                          True,
+                                                                          self._circuit_optimization.filter_data.filtered_list_files)
+                    # Evaluate if the optimization is skippable for simulation calculation
+                    if not is_skippable:
+                        transformer_sim_calculation_mode = CalcModeEnum.continue_mode
+                        logger.warning("Transformer optimization (simulation part) is not skippable:\n"
+                                       f"{issue_report}")
 
-        # In case of CalcModeEnum.new_mode the old study is to delete
-        if self._transformer_study_data.calculation_mode == CalcModeEnum.new_mode:
-            # Delete old transformer study
-            self.delete_study_content(self._transformer_study_data.optimization_directory)
-
+            # In case of CalcModeEnum.new_mode the old study is to delete
+            if self._transformer_study_data.calculation_mode == CalcModeEnum.new_mode:
+                # Delete old transformer study
+                self.delete_study_content(self._transformer_study_data.optimization_directory)
+        else:
+            # Skip transformer optimization
+            self._transformer_study_data.calculation_mode = CalcModeEnum.skip_mode
         # --------------------------
         # Heat sink flow control
         # --------------------------
@@ -1470,8 +1554,10 @@ class DctMainCtl:
         is_heat_sink_loaded, heat_sink_dict = self.load_toml_file(heat_sink_toml_filepath)
         toml_heat_sink = dct.TomlHeatSink(**heat_sink_dict)
         if not is_heat_sink_loaded:
-            raise ValueError(f"Heat sink configuration file: {heat_sink_toml_filepath} does not exist.")
-
+            file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.heat_sink_configuration_file)
+            toml_gen.generate_default_heat_sink_toml(file_path)
+            raise ValueError(f"Transformer toml configuration file: {file_path} does not exist.\n"
+                             f"A default file is generated and needs to be updated!")
         # Verify optimization parameter
         is_consistent, issue_report = dct.HeatSinkOptimization.verify_optimization_parameter(toml_heat_sink)
         if not is_consistent:
@@ -1544,7 +1630,7 @@ class DctMainCtl:
             # Check if _circuit_optimization is not allocated, what corresponds to a serious programming error
             # Error is to prevent by the workflow
             if self._circuit_optimization is None:
-                raise ValueError("Serious programming error 1a. Please write an issue!")
+                raise ValueError("Serious programming error '_circuit_optimization allocation failure'. Please write an issue!")
 
             # Calculate the filtered results
             is_filter_data_available, issue_report = self._circuit_optimization.filter_study_results()
@@ -1616,12 +1702,12 @@ class DctMainCtl:
         # Allocate and initialize inductor configuration
         self._inductor_optimization = InductorOptimization()
 
-        inductor_requirements_list = self._circuit_optimization.get_inductor_requirements()
-
-        self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data, inductor_requirements_list)
-
         # Check, if inductor optimization is not to skip
         if not self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Read requirement list and initialize inductor optimization
+            inductor_requirements_list = self._circuit_optimization.get_inductor_requirements()
+            self._inductor_optimization.initialize_inductor_optimization_list(toml_inductor, self._inductor_study_data, inductor_requirements_list)
+
             # Set the status to InProgress
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
 
@@ -1644,8 +1730,8 @@ class DctMainCtl:
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
 
-        # Stop the inductor processing time measurement
-        self._inductor_progress_time[0].stop_trigger()
+            # Stop the inductor processing time measurement
+            self._inductor_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.inductor, "Inductor reluctance model Pareto front calculated")
@@ -1661,12 +1747,13 @@ class DctMainCtl:
         # Allocate and initialize transformer configuration
         self._transformer_optimization = TransformerOptimization()
 
-        transformer_requirements_list = self._circuit_optimization.get_transformer_requirements()
-
-        self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data, transformer_requirements_list)
-
         # Check, if transformer optimization is not to skip (cannot be skipped if circuit calculation mode is new)
         if not self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Read requirement list and initialize inductor optimization
+            transformer_requirements_list = self._circuit_optimization.get_transformer_requirements()
+            self._transformer_optimization.initialize_transformer_optimization_list(toml_transformer, self._transformer_study_data,
+                                                                                    transformer_requirements_list)
+
             # Set the status to InProgress
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
 
@@ -1688,8 +1775,8 @@ class DctMainCtl:
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
 
-        # Stop the transformer processing time measurement
-        self._transformer_progress_time[0].stop_trigger()
+            # Stop the transformer processing time measurement
+            self._transformer_progress_time[0].stop_trigger()
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.transformer, "Transformer reluctance model Pareto front calculated")
