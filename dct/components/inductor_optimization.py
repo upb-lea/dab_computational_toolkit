@@ -16,17 +16,15 @@ import femmt as fmt
 import dct
 from dct.boundary_check import CheckCondition as c_flag
 from dct.components.inductor_optimization_dtos import InductorOptimizationDto
-from dct.components.component_dtos import InductorResults
-from dct.server_ctl_dtos import ProgressData
-from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
-import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
 from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
-from dct.components.component_dtos import InductorRequirements
+from dct.components.component_dtos import InductorRequirements, InductorResults
 from dct.toml_checker import TomlInductor
+
 # configure root logger
 logger = logging.getLogger(__name__)
 
@@ -188,7 +186,8 @@ class InductorOptimization:
             inductor_optimization_dto = InductorOptimizationDto(
                 circuit_id=circuit_id,
                 progress_data=copy.deepcopy(stat_data_init),
-                inductor_optimization_dto=inductor_optimization_dto)
+                inductor_optimization_dto=inductor_optimization_dto,
+                inductor_requirements=inductor_requirements)
 
             self._optimization_config_list.append(inductor_optimization_dto)
 
@@ -233,6 +232,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _optimize_reluctance_model(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+                                   inductor_requirements: InductorRequirements,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
@@ -302,9 +302,8 @@ class InductorOptimization:
                 # e.g. winding is not fitting in the winding window
                 try:
                     for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-                        time, unique_indices = np.unique(dabwav.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-                        current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                        time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                        current = inductor_requirements.current_array[vec_vvp][unique_indicies]
 
                         current_waveform = np.array([time, current])
                         logger.debug(f"{current_waveform=}")
@@ -374,6 +373,7 @@ class InductorOptimization:
                     act_optimization_configuration.circuit_id,
                     act_optimization_configuration.inductor_optimization_dto,
                     filter_data,
+                    act_optimization_configuration.inductor_requirements,
                     target_number_trials,
                     factor_dc_losses_min_max_list,
                     debug
@@ -417,6 +417,7 @@ class InductorOptimization:
                 parameters.append((act_optimization_configuration.circuit_id,
                                    act_optimization_configuration.inductor_optimization_dto,
                                    filter_data,
+                                   act_optimization_configuration.inductor_requirements,
                                    factor_dc_losses_min_max_list,
                                    debug))
 
@@ -425,6 +426,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+                        inductor_requirements: InductorRequirements,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
@@ -483,9 +485,8 @@ class InductorOptimization:
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
-                        time, unique_indices = np.unique(dabwav.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-                        current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                        time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                        current = inductor_requirements.current_array[vec_vvp][unique_indicies]
 
                         current_waveform = np.array([time, current])
                         logger.debug(f"{current_waveform=}")
