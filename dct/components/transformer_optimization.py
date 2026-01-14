@@ -17,7 +17,6 @@ import tqdm
 import dct
 from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
 import femmt as fmt
-import dct.topology.dab.dab_functions_waveforms as dabwav
 import dct.topology.dab.dab_datasets as dab_dset
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
@@ -286,7 +285,8 @@ class TransformerOptimization:
             next_io_config.stacked_transformer_optimization_directory = trial_directory
             transformer_dto = TransformerOptimizationDto(circuit_id=circuit_id,
                                                          progress_data=copy.deepcopy(stat_data_init),
-                                                         transformer_optimization_dto=next_io_config)
+                                                         transformer_optimization_dto=next_io_config,
+                                                         transformer_requirements=transformer_requirements)
 
             self._optimization_config_list.append(transformer_dto)
 
@@ -328,6 +328,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _optimize_reluctance_model(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
+                                   transformer_requirements: TransformerRequirements,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
@@ -370,10 +371,6 @@ class TransformerOptimization:
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                        f"{act_sto_config.stacked_transformer_study_name}.pkl")
 
-        # sweep through all current waveforms
-        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
-
         transformer_id_list_pareto = df_transformer_pareto["number"].to_numpy()
 
         # Overtake the filtered operation points
@@ -395,14 +392,14 @@ class TransformerOptimization:
                 logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                    time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
+                    current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
+                    current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
 
-                    time = dabwav.full_angle_waveform_from_angles(
-                        angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                    current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                    current_waveform_1 = np.array([time, current_1])
+                    current_waveform_2 = np.array([time, current_2])
 
-                    current_waveform = np.array([time, current])
-
-                    logger.debug(f"{current_waveform=}")
+                    logger.debug(f"{current_waveform_1=}")
                     logger.debug("----------------------")
                     logger.debug("Re-simulation of:")
                     logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
@@ -411,7 +408,7 @@ class TransformerOptimization:
                     logger.debug(f"   * Transformer ID: {transformer_id}")
 
                     volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.ReluctanceModel.full_simulation(
-                        df_transformer_id, current_waveform, config_filepath)
+                        df_transformer_id, current_waveform_1, current_waveform_2, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
                 results_dto = StackedTransformerResults(
@@ -466,7 +463,9 @@ class TransformerOptimization:
                 parameters.append((
                     act_optimization_configuration.circuit_id,
                     act_optimization_configuration.transformer_optimization_dto,
-                    filter_data, target_number_trials, factor_dc_losses_min_max_list,
+                    filter_data,
+                    act_optimization_configuration.transformer_requirements,
+                    target_number_trials, factor_dc_losses_min_max_list,
                     debug))
 
                 # # Update statistical data
@@ -507,6 +506,7 @@ class TransformerOptimization:
                 parameters.append((act_optimization_configuration.circuit_id,
                                    act_optimization_configuration.transformer_optimization_dto,
                                    filter_data,
+                                   act_optimization_configuration.transformer_requirements,
                                    factor_dc_losses_min_max_list,
                                    debug))
 
@@ -514,6 +514,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
+                        transformer_requirements: TransformerRequirements,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
@@ -549,10 +550,6 @@ class TransformerOptimization:
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                        f"{act_sto_config.stacked_transformer_study_name}.pkl")
 
-        # sweep through all current waveforms
-        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
-
         re_simulate_numbers = df_filtered["number"].to_numpy()
 
         # Overtake the filtered operation points
@@ -577,10 +574,8 @@ class TransformerOptimization:
                 try:
                     for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
                                              total=len(circuit_dto.calc_modulation.phi.flatten())):
-
-                        time = dabwav.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs
-                        current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])
+                        time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
+                        current = transformer_requirements.current_array[vec_vvp][unique_indicies]
 
                         current_waveform = np.array([time, current])
 
