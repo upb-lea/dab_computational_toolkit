@@ -981,8 +981,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 lossfilepath=self._fixed_parameters.transistorlosses_filepath
             )
 
-            dab_dto = d_sets.HandleDabDto.generate_components_target_requirements(dab_dto)
-
             dab_dto_list.append(dab_dto)
 
         return dab_dto_list
