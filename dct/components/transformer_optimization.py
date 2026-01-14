@@ -17,12 +17,9 @@ import tqdm
 import dct
 from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
 import femmt as fmt
-import dct.topology.dab.dab_datasets as dab_dset
-from dct.datasets_dtos import StudyData
-from dct.datasets_dtos import FilterData
+from dct.datasets_dtos import StudyData, FilterData
 from dct.boundary_check import CheckCondition as c_flag
-from dct.server_ctl_dtos import ProgressData
-from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import ProgressStatus, ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER
 from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults
@@ -349,8 +346,6 @@ class TransformerOptimization:
         # Number of filtered operating points
         quantity_transformer_id_pareto = 0
 
-        # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(
@@ -381,7 +376,7 @@ class TransformerOptimization:
         for transformer_id in tqdm.tqdm(transformer_id_list_pareto):
             df_transformer_id = df_transformer_pareto[df_transformer_pareto["number"] == transformer_id]
 
-            result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+            result_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                                      CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
@@ -389,9 +384,9 @@ class TransformerOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
+                logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
-                for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
+                for vec_vvp in tqdm.tqdm(np.ndindex(result_array.shape), total=len(transformer_requirements.time_array[..., 0].flatten())):
                     time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
                     current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
                     current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
@@ -535,9 +530,6 @@ class TransformerOptimization:
 
         process_number = current_process().name
 
-        # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
-
         # Filter study. Use same filter as in the reluctance model
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
         df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
@@ -559,7 +551,7 @@ class TransformerOptimization:
             logger.info(f"{transformer_id=}")
             df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == transformer_id]
 
-            result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+            result_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                                      CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
@@ -567,19 +559,21 @@ class TransformerOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
+                logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
                 # e.g. winding is not fitting in the winding window
                 try:
-                    for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                             total=len(circuit_dto.calc_modulation.phi.flatten())):
+                    for vec_vvp in tqdm.tqdm(np.ndindex(transformer_requirements.time_array[..., 0].shape),
+                                             total=len(transformer_requirements.time_array[..., 0].flatten())):
                         time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
-                        current = transformer_requirements.current_array[vec_vvp][unique_indicies]
+                        current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
+                        current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
 
-                        current_waveform = np.array([time, current])
+                        current_1_waveform = np.array([time, current_1])
+                        current_2_waveform = np.array([time, current_2])
 
-                        logger.debug(f"{current_waveform=}")
+                        logger.debug(f"{current_1_waveform=}")
                         logger.debug("----------------------")
                         logger.debug("Re-simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
@@ -588,7 +582,7 @@ class TransformerOptimization:
                         logger.debug(f"   * Transformer ID: {transformer_id}")
 
                         volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
-                            df_geometry_re_simulation_number, current_waveform, config_filepath, show_visual_outputs=False,
+                            df_geometry_re_simulation_number, current_1_waveform, current_2_waveform, config_filepath, show_visual_outputs=False,
                             process_number=process_number)
 
                         result_array[vec_vvp] = combined_losses

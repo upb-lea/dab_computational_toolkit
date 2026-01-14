@@ -292,39 +292,35 @@ class InductorOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
                 logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
-                # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
-                # e.g. winding is not fitting in the winding window
-                try:
-                    for vec_vvp in np.ndindex(inductor_requirements.time_array[..., 0]):
-                        time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
-                        current = inductor_requirements.current_array[vec_vvp][unique_indicies]
+                for vec_vvp in tqdm.tqdm(np.ndindex(inductor_requirements.time_array[..., 0].shape),
+                                         total=len(inductor_requirements.time_array[..., 0].flatten())):
+                    time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                    current = inductor_requirements.current_array[vec_vvp][unique_indicies]
 
-                        current_waveform = np.array([time, current])
-                        logger.debug(f"{current_waveform=}")
-                        logger.debug("All operating point simulation of:")
-                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit ID: {circuit_id}")
-                        logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                        logger.debug(f"   * Inductor ID: {inductor_id}")
+                    current_waveform = np.array([time, current])
+                    logger.debug(f"{current_waveform=}")
+                    logger.debug("All operating point simulation of:")
+                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit ID: {circuit_id}")
+                    logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
+                    logger.debug(f"   * Inductor ID: {inductor_id}")
 
-                        inductor_volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
-                            df_inductor_id, current_waveform=current_waveform,
-                            inductor_config_filepath=config_filepath)
-                        combined_loss_array[vec_vvp] = combined_losses
+                    inductor_volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
+                        df_inductor_id, current_waveform=current_waveform,
+                        inductor_config_filepath=config_filepath)
+                    combined_loss_array[vec_vvp] = combined_losses
 
-                    inductor_losses = InductorResults(
-                        loss_array=combined_loss_array,
-                        volume=inductor_volume,
-                        area_to_heat_sink=area_to_heat_sink,
-                        circuit_id=circuit_id,
-                        inductor_id=inductor_id
-                    )
+                inductor_losses = InductorResults(
+                    loss_array=combined_loss_array,
+                    volume=inductor_volume,
+                    area_to_heat_sink=area_to_heat_sink,
+                    circuit_id=circuit_id,
+                    inductor_id=inductor_id
+                )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
-                    with open(pickle_file, 'wb') as output:
-                        pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
-                except:
-                    logger.info(f"Re-simulation of inductor geometry {inductor_id} not possible due to non-possible geometry.")
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
+                with open(pickle_file, 'wb') as output:
+                    pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return quantity_of_inductor_id_pareto
@@ -470,7 +466,7 @@ class InductorOptimization:
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
                     logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
                 else:
-                    for vec_vvp in tqdm.tqdm(np.ndindex(inductor_requirements.time_array[..., 0]),
+                    for vec_vvp in tqdm.tqdm(np.ndindex(combined_loss_array.shape),
                                              total=len(inductor_requirements.time_array[..., 0].flatten())):
                         time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
                         current = inductor_requirements.current_array[vec_vvp][unique_indicies]
