@@ -14,6 +14,6 @@ from dct.server_ctl_dtos import ProgressData
 class TransformerOptimizationDto:
     """DTO for the transformer optimization."""
 
-    circuit_filtered_point_filename: str
+    circuit_id: str
     progress_data: ProgressData
     transformer_optimization_dto: fmt.fmt.StoSingleInputConfig

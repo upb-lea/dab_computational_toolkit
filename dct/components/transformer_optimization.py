@@ -284,7 +284,7 @@ class TransformerOptimization:
             next_io_config.time_current_2_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_2_vec])
             # misc
             next_io_config.stacked_transformer_optimization_directory = trial_directory
-            transformer_dto = TransformerOptimizationDto(circuit_filtered_point_filename=circuit_id,
+            transformer_dto = TransformerOptimizationDto(circuit_id=circuit_id,
                                                          progress_data=copy.deepcopy(stat_data_init),
                                                          transformer_optimization_dto=next_io_config)
 
@@ -327,44 +327,44 @@ class TransformerOptimization:
         return self._number_performed_calculations
 
     @staticmethod
-    def _optimize_reluctance_model(circuit_filtered_point_file: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
-                                   act_target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
+    def _optimize_reluctance_model(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
+                                   target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
 
-        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
-        :type circuit_filtered_point_file: str
-        :param act_sto_config: Process number (in case of parallel computing)
-        :type act_sto_config: int
+        :param circuit_id: Filename of the filtered optimal electrical circuit
+        :type circuit_id: str
+        :param act_sto_config: stracked transformer optimization configuration
+        :type act_sto_config: fmt.StoSingleInputConfig
         :param filter_data: Information about the filtered circuit designs
         :type filter_data: FilterData
-        :param act_target_number_trials: Number of trials for the reluctance model optimization
-        :type act_target_number_trials: int
+        :param target_number_trials: Number of trials for the reluctance model optimization
+        :type target_number_trials: int
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
         :type factor_dc_losses_min_max_list: float
         :param debug: Debug DTO
         :type debug: dct.Debug
         """
         # Number of filtered operating points
-        number_of_filtered_points = 0
+        quantity_transformer_id_pareto = 0
 
         # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
         # Check number of trials
-        if act_target_number_trials > 0:
+        if target_number_trials > 0:
             fmt.optimization.StackedTransformerOptimization.ReluctanceModel.start_proceed_study(
-                act_sto_config, target_number_trials=act_target_number_trials)
+                act_sto_config, target_number_trials=target_number_trials)
         else:
-            logger.info(f"Target number of trials = {act_target_number_trials} which are less equal 0!. No simulation is performed")
+            logger.info(f"Target number of trials = {target_number_trials} which are less equal 0!. No simulation is performed")
             return 0
 
         # Filter reluctance model results
-        df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
-        df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
-            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        df_transformer = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
+        df_transformer_pareto = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
+            df_transformer, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
-            df_filtered = df_filtered.iloc[:debug.transformer.number_reluctance_working_point_max]
+            df_transformer_pareto = df_transformer_pareto.iloc[:debug.transformer.number_reluctance_working_point_max]
 
         # Assemble configuration path
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
@@ -374,15 +374,15 @@ class TransformerOptimization:
         i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-        all_operation_point_geometry_numbers_list = df_filtered["number"].to_numpy()
+        transformer_id_list_pareto = df_transformer_pareto["number"].to_numpy()
 
         # Overtake the filtered operation points
-        number_of_filtered_points = len(all_operation_point_geometry_numbers_list)
+        quantity_transformer_id_pareto = len(transformer_id_list_pareto)
 
-        logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
+        logger.info(f"Full-operating point simulation list: {transformer_id_list_pareto}")
 
-        for single_geometry_number in tqdm.tqdm(all_operation_point_geometry_numbers_list):
-            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == single_geometry_number]
+        for transformer_id in tqdm.tqdm(transformer_id_list_pareto):
+            df_transformer_id = df_transformer_pareto[df_transformer_pareto["number"] == transformer_id]
 
             result_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
@@ -391,7 +391,7 @@ class TransformerOptimization:
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
-            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
@@ -406,28 +406,28 @@ class TransformerOptimization:
                     logger.debug("----------------------")
                     logger.debug("Re-simulation of:")
                     logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                    logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                    logger.debug(f"   * Circuit ID: {circuit_id}")
                     logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
-                    logger.debug(f"   * Transformer re-simulation trial: {single_geometry_number}")
+                    logger.debug(f"   * Transformer ID: {transformer_id}")
 
                     volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.ReluctanceModel.full_simulation(
-                        df_geometry_re_simulation_number, current_waveform, config_filepath)
+                        df_transformer_id, current_waveform, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
                 results_dto = StackedTransformerResults(
                     loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
-                    circuit_id=circuit_filtered_point_file,
-                    transformer_id=single_geometry_number
+                    circuit_id=circuit_id,
+                    transformer_id=transformer_id
                 )
 
-                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                 with open(pickle_file, 'wb') as output:
                     pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
-        return number_of_filtered_points
+        return quantity_transformer_id_pareto
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     def optimization_handler_reluctance_model(self, filter_data: FilterData, target_number_trials: int,
@@ -464,7 +464,7 @@ class TransformerOptimization:
                 #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
                 parameters.append((
-                    act_optimization_configuration.circuit_filtered_point_filename,
+                    act_optimization_configuration.circuit_id,
                     act_optimization_configuration.transformer_optimization_dto,
                     filter_data, target_number_trials, factor_dc_losses_min_max_list,
                     debug))
@@ -504,7 +504,7 @@ class TransformerOptimization:
                     if count == number_cpus:
                         break
 
-                parameters.append((act_optimization_configuration.circuit_filtered_point_filename,
+                parameters.append((act_optimization_configuration.circuit_id,
                                    act_optimization_configuration.transformer_optimization_dto,
                                    filter_data,
                                    factor_dc_losses_min_max_list,

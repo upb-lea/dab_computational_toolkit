@@ -147,7 +147,6 @@ class InductorOptimization:
         # Create the io_config_list for all trials
         for inductor_requirements in inductor_requirements_list:
             circuit_id = inductor_requirements.circuit_id
-            trial_directory = os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name)
 
             # catch mypy type issue
             if not isinstance(inductor_requirements, InductorRequirements):
@@ -167,7 +166,7 @@ class InductorOptimization:
             )
 
             # Create fix part of io_config
-            inductor_requirements_dto = fmt.InductorOptimizationDTO(
+            inductor_optimization_dto = fmt.InductorOptimizationDTO(
                 inductor_study_name=inductor_study_data.study_name,
                 core_name_list=toml_inductor.design_space.core_name_list,
                 material_name_list=toml_inductor.design_space.material_name_list,
@@ -187,9 +186,9 @@ class InductorOptimization:
                                                         progress_status=ProgressStatus.Idle)
 
             inductor_optimization_dto = InductorOptimizationDto(
-                circuit_filtered_point_filename=circuit_id,
+                circuit_id=circuit_id,
                 progress_data=copy.deepcopy(stat_data_init),
-                inductor_optimization_dto=inductor_requirements_dto)
+                inductor_optimization_dto=inductor_optimization_dto)
 
             self._optimization_config_list.append(inductor_optimization_dto)
 
@@ -233,13 +232,13 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _optimize_reluctance_model(circuit_filtered_point_file: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+    def _optimize_reluctance_model(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
 
-        :param circuit_filtered_point_file: Filename of the filtered optimal electrical circuit
-        :type  circuit_filtered_point_file: str
+        :param circuit_id: Filename of the filtered optimal electrical circuit
+        :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
         :param filter_data: Contains information about filtered circuit designs
@@ -251,10 +250,10 @@ class InductorOptimization:
         :param debug: Debug mode flag
         :type debug: bool
         """
-        number_of_filtered_points = 0
+        quantity_of_inductor_id_pareto = 0
 
         # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_filtered_point_file}.pkl"))
+        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -263,12 +262,12 @@ class InductorOptimization:
             return 0
 
         # filter the reluctance model data Pareto front
-        df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-        df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        df_inductor = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
+        df_inductor_pareto = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
+            df_inductor, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
-            df_filtered = df_filtered.iloc[:debug.inductor.number_reluctance_working_point_max]
+            df_inductor_pareto = df_inductor_pareto.iloc[:debug.inductor.number_reluctance_working_point_max]
 
         config_filepath = os.path.join(act_io_config.inductor_optimization_directory, f"{act_io_config.inductor_study_name}.pkl")
 
@@ -276,28 +275,27 @@ class InductorOptimization:
         i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-        all_operation_point_geometry_numbers_list = df_filtered["number"].to_numpy()
+        inductor_id_list_pareto = df_inductor_pareto["number"].to_numpy()
 
         # Overtake the filtered operation points
-        number_of_filtered_points = len(all_operation_point_geometry_numbers_list)
+        quantity_of_inductor_id_pareto = len(inductor_id_list_pareto)
 
-        logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
+        logger.info(f"Full-operating point simulation list: {inductor_id_list_pareto}")
 
         # simulate all operating points
-        for single_geometry_number in tqdm.tqdm(all_operation_point_geometry_numbers_list):
-            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(single_geometry_number)]
+        for inductor_id in tqdm.tqdm(inductor_id_list_pareto):
+            df_inductor_id = df_inductor_pareto[df_inductor_pareto["number"] == float(inductor_id)]
 
             logger.debug(f"single_geometry_number: \n"
-                         f"    {df_geometry_re_simulation_number.head()}")
+                         f"    {df_inductor_id.head()}")
 
             combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
 
-            new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
-                                                     CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
+            new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory, CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
-            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{single_geometry_number}.pkl")):
+            if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
                 logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
             else:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
@@ -312,31 +310,31 @@ class InductorOptimization:
                         logger.debug(f"{current_waveform=}")
                         logger.debug("All operating point simulation of:")
                         logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit trial: {circuit_filtered_point_file}")
+                        logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                        logger.debug(f"   * Inductor re-simulation trial: {single_geometry_number}")
+                        logger.debug(f"   * Inductor ID: {inductor_id}")
 
-                        volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
-                            df_geometry_re_simulation_number, current_waveform=current_waveform,
+                        inductor_volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
+                            df_inductor_id, current_waveform=current_waveform,
                             inductor_config_filepath=config_filepath)
                         combined_loss_array[vec_vvp] = combined_losses
 
                     inductor_losses = InductorResults(
                         loss_array=combined_loss_array,
-                        volume=volume,
+                        volume=inductor_volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        circuit_id=circuit_filtered_point_file,
-                        inductor_id=single_geometry_number
+                        circuit_id=circuit_id,
+                        inductor_id=inductor_id
                     )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(single_geometry_number)}.pkl")
+                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
                 except:
-                    logger.info(f"Re-simulation of inductor geometry {single_geometry_number} not possible due to non-possible geometry.")
+                    logger.info(f"Re-simulation of inductor geometry {inductor_id} not possible due to non-possible geometry.")
 
         # returns the number of filtered results
-        return number_of_filtered_points
+        return quantity_of_inductor_id_pareto
 
     def optimization_handler_reluctance_model(self, filter_data: FilterData, target_number_trials: int,
                                               factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
@@ -373,7 +371,7 @@ class InductorOptimization:
                 #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
 
                 parameters.append((
-                    act_optimization_configuration.circuit_filtered_point_filename,
+                    act_optimization_configuration.circuit_id,
                     act_optimization_configuration.inductor_optimization_dto,
                     filter_data,
                     target_number_trials,
@@ -416,7 +414,7 @@ class InductorOptimization:
                     if count == number_cpus:
                         break
 
-                parameters.append((act_optimization_configuration.circuit_filtered_point_filename,
+                parameters.append((act_optimization_configuration.circuit_id,
                                    act_optimization_configuration.inductor_optimization_dto,
                                    filter_data,
                                    factor_dc_losses_min_max_list,
@@ -442,19 +440,17 @@ class InductorOptimization:
         :param debug: Debug DTO
         :type debug: dct.Debug
         """
-        number_of_filtered_points = 0
-
         process_number = current_process().name
 
         # Load configuration
         circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
 
-        df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
-        df_filtered = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
-            df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
+        df_inductor = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
+        df_inductor_pareto = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
+            df_inductor, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
         if debug.general.is_debug:
             # reduce dataset to the fist given number from the debug configuration file
-            df_filtered = df_filtered.iloc[:debug.inductor.number_fem_working_point_max]
+            df_inductor_pareto = df_inductor_pareto.iloc[:debug.inductor.number_fem_working_point_max]
 
         config_filepath = os.path.join(act_io_config.inductor_optimization_directory, f"{act_io_config.inductor_study_name}.pkl")
 
@@ -462,18 +458,15 @@ class InductorOptimization:
         i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
-        all_operation_point_geometry_numbers_list = df_filtered["number"].to_numpy()
+        inductor_id_list_pareto = df_inductor_pareto["number"].to_numpy()
 
-        # Overtake the filtered operation points
-        number_of_filtered_points = len(all_operation_point_geometry_numbers_list)
-
-        logger.info(f"Full-operating point simulation list: {all_operation_point_geometry_numbers_list}")
+        logger.info(f"Full-operating point simulation list: {inductor_id_list_pareto}")
 
         # simulate all operating points
-        for inductor_id in tqdm.tqdm(all_operation_point_geometry_numbers_list):
+        for inductor_id in tqdm.tqdm(inductor_id_list_pareto):
             try:
                 # generate a new df with only a single entry (with the geometry data)
-                df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == float(inductor_id)]
+                df_geometry_re_simulation_number = df_inductor_pareto[df_inductor_pareto["number"] == float(inductor_id)]
 
                 logger.debug(f"single_geometry_number: \n"
                              f"    {df_geometry_re_simulation_number.head()}")
