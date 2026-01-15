@@ -1358,7 +1358,6 @@ class DctMainCtl:
                                  general_issue_report)
 
             if not is_capacitor_1_loaded:
-
                 raise ValueError(f"Capacitor 1 configuration file: {toml_prog_flow.configuration_data_files.capacitor_1_configuration_file} does not exist.")
 
             # Verify capacitor parameters
@@ -1370,8 +1369,7 @@ class DctMainCtl:
             # Check, if capacitor1 selection is to skip
             if self._capacitor_selection_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Check if capacitor1 selection is skippable
-                is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_selection_data,
-                                                                      PROCESSING_COMPLETE_FILE)
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_selection_data, PROCESSING_COMPLETE_FILE)
                 # Evaluate the result of circuit check
                 if not is_skippable:
                     logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
@@ -1413,8 +1411,7 @@ class DctMainCtl:
             # Check, if capacitor2 selection is to skip
             if self._capacitor_2_selection_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Check if capacitor1 selection is skippable
-                is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_2_selection_data,
-                                                                      PROCESSING_COMPLETE_FILE)
+                is_skippable, issue_report = DctMainCtl._is_skippable(self._capacitor_2_selection_data, PROCESSING_COMPLETE_FILE)
                 # Evaluate the result of circuit check
                 if not is_skippable:
                     logger.warning("Capacitor 2 selection is not skippable:\n" + f"{issue_report}")
@@ -1675,15 +1672,13 @@ class DctMainCtl:
                 self.delete_study_content(self._capacitor_selection_data.optimization_directory, self._capacitor_selection_data.study_name)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._capacitor_selection_data.optimization_directory,
-                                                   PROCESSING_COMPLETE_FILE)
+            DctMainCtl._delete_processing_complete(self._capacitor_selection_data.optimization_directory, PROCESSING_COMPLETE_FILE)
             # Perform circuit optimization
             self._capacitor_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
                                                            capacitor_requirements_list=capacitor_requirements_list,
                                                            debug=toml_debug)
             # Set processing complete indicator
-            design_directory = os.path.join(self._capacitor_selection_data.study_name,
-                                            CIRCUIT_CAPACITOR_LOSS_FOLDER)
+            design_directory = os.path.join(self._capacitor_selection_data.study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
             DctMainCtl._set_processing_complete(self._capacitor_selection_data.optimization_directory,
                                                 design_directory, PROCESSING_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
@@ -1714,15 +1709,13 @@ class DctMainCtl:
             # Check, if inductor optimization is not to skip (cannot be skipped if circuit calculation mode is new)
             if not self._inductor_study_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._inductor_study_data.optimization_directory,
-                                                       RELUCTANCE_COMPLETE_FILE)
+                DctMainCtl._delete_processing_complete(self._inductor_study_data.optimization_directory, RELUCTANCE_COMPLETE_FILE)
                 # Perform inductor optimization
                 self._inductor_optimization.optimization_handler_reluctance_model(
                     self._circuit_optimization.filter_data, toml_prog_flow.inductor.number_of_trials,
                     toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
                 # Set processing complete indicator
-                design_directory = os.path.join(self._inductor_study_data.study_name,
-                                                CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
+                design_directory = os.path.join(self._inductor_study_data.study_name, CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
                 DctMainCtl._set_processing_complete(self._inductor_study_data.optimization_directory,
                                                     design_directory, RELUCTANCE_COMPLETE_FILE,
                                                     self._circuit_optimization.filter_data.filtered_list_files)
@@ -1759,15 +1752,13 @@ class DctMainCtl:
 
             if not self._transformer_study_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._transformer_study_data.optimization_directory,
-                                                       RELUCTANCE_COMPLETE_FILE)
+                DctMainCtl._delete_processing_complete(self._transformer_study_data.optimization_directory, RELUCTANCE_COMPLETE_FILE)
                 # Perform transformer optimization
                 self._transformer_optimization.optimization_handler_reluctance_model(
                     self._circuit_optimization.filter_data, toml_prog_flow.transformer.number_of_trials,
                     toml_transformer.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
                 # Set processing complete indicator
-                design_directory = os.path.join(self._transformer_study_data.study_name,
-                                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
+                design_directory = os.path.join(self._transformer_study_data.study_name, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
                 DctMainCtl._set_processing_complete(self._transformer_study_data.optimization_directory,
                                                     design_directory, RELUCTANCE_COMPLETE_FILE,
                                                     self._circuit_optimization.filter_data.filtered_list_files)
@@ -1793,8 +1784,7 @@ class DctMainCtl:
             self._heat_sink_optimization.initialize_heat_sink_optimization(toml_heat_sink, toml_prog_flow)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._heat_sink_study_data.optimization_directory,
-                                                   PROCESSING_COMPLETE_FILE)
+            DctMainCtl._delete_processing_complete(self._heat_sink_study_data.optimization_directory, PROCESSING_COMPLETE_FILE)
             # Perform heat sink optimization
             self._heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
             # Set processing complete indicator
@@ -1833,16 +1823,12 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
-        ParetoPlots.plot_circuit_results(self._circuit_optimization,
-                                         pre_summary_data.optimization_directory)
-        ParetoPlots.plot_inductor_results(self._inductor_study_data,
-                                          self._circuit_optimization.filter_data.filtered_list_files,
+        ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
+        ParetoPlots.plot_inductor_results(self._inductor_study_data, self._circuit_optimization.filter_data.filtered_list_files,
                                           pre_summary_data.optimization_directory)
-        ParetoPlots.plot_transformer_results(self._transformer_study_data,
-                                             self._circuit_optimization.filter_data.filtered_list_files,
+        ParetoPlots.plot_transformer_results(self._transformer_study_data, self._circuit_optimization.filter_data.filtered_list_files,
                                              pre_summary_data.optimization_directory)
-        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data,
-                                           pre_summary_data.optimization_directory)
+        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
         ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
 
         # --------------------------
@@ -1853,16 +1839,14 @@ class DctMainCtl:
         # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
         if not inductor_sim_calculation_mode == CalcModeEnum.skip_mode:
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._inductor_study_data.optimization_directory,
-                                                   SIMULATION_COMPLETE_FILE)
+            DctMainCtl._delete_processing_complete(self._inductor_study_data.optimization_directory, SIMULATION_COMPLETE_FILE)
             # Perform inductor FEM simulation
             self._inductor_optimization.fem_simulation_handler(
                 self._circuit_optimization.filter_data,
                 toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
             # Set processing complete indicator
-            design_directory = os.path.join(self._inductor_study_data.study_name,
-                                            CIRCUIT_INDUCTOR_LOSSES_FOLDER)
+            design_directory = os.path.join(self._inductor_study_data.study_name, CIRCUIT_INDUCTOR_LOSSES_FOLDER)
             DctMainCtl._set_processing_complete(self._inductor_study_data.optimization_directory,
                                                 design_directory, SIMULATION_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
@@ -1875,15 +1859,13 @@ class DctMainCtl:
         # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
         if not transformer_sim_calculation_mode == CalcModeEnum.skip_mode:
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._transformer_study_data.optimization_directory,
-                                                   SIMULATION_COMPLETE_FILE)
+            DctMainCtl._delete_processing_complete(self._transformer_study_data.optimization_directory, SIMULATION_COMPLETE_FILE)
             # Perform transformer FEM simulation
             self._transformer_optimization.fem_simulation_handler(
                 self._circuit_optimization.filter_data,
                 toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
             # Set processing complete indicator
-            design_directory = os.path.join(self._transformer_study_data.study_name,
-                                            CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+            design_directory = os.path.join(self._transformer_study_data.study_name, CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
             DctMainCtl._set_processing_complete(self._transformer_study_data.optimization_directory,
                                                 design_directory, SIMULATION_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
@@ -1913,16 +1895,12 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         self.generate_zip_archive(toml_prog_flow)
 
-        ParetoPlots.plot_circuit_results(self._circuit_optimization,
-                                         summary_data.optimization_directory)
-        ParetoPlots.plot_inductor_results(self._inductor_study_data,
-                                          self._circuit_optimization.filter_data.filtered_list_files,
+        ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
+        ParetoPlots.plot_inductor_results(self._inductor_study_data, self._circuit_optimization.filter_data.filtered_list_files,
                                           summary_data.optimization_directory)
-        ParetoPlots.plot_transformer_results(self._transformer_study_data,
-                                             self._circuit_optimization.filter_data.filtered_list_files,
+        ParetoPlots.plot_transformer_results(self._transformer_study_data, self._circuit_optimization.filter_data.filtered_list_files,
                                              summary_data.optimization_directory)
-        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data,
-                                           summary_data.optimization_directory)
+        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)

@@ -8,6 +8,7 @@ import femmt as fmt
 
 # own libraries
 from dct.server_ctl_dtos import ProgressData
+from dct.components.component_dtos import TransformerRequirements
 
 
 @dataclasses.dataclass
@@ -17,3 +18,4 @@ class TransformerOptimizationDto:
     circuit_id: str
     progress_data: ProgressData
     transformer_optimization_dto: fmt.fmt.StoSingleInputConfig
+    transformer_requirements: TransformerRequirements

@@ -16,17 +16,14 @@ import femmt as fmt
 import dct
 from dct.boundary_check import CheckCondition as c_flag
 from dct.components.inductor_optimization_dtos import InductorOptimizationDto
-from dct.components.component_dtos import InductorResults
-from dct.server_ctl_dtos import ProgressData
-from dct.server_ctl_dtos import ProgressStatus
+from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
-import dct.topology.dab.dab_functions_waveforms as dabwav
-import dct.topology.dab.dab_datasets as dab_dset
 from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
-from dct.components.component_dtos import InductorRequirements
+from dct.components.component_dtos import InductorRequirements, InductorResults
 from dct.toml_checker import TomlInductor
+
 # configure root logger
 logger = logging.getLogger(__name__)
 
@@ -188,7 +185,8 @@ class InductorOptimization:
             inductor_optimization_dto = InductorOptimizationDto(
                 circuit_id=circuit_id,
                 progress_data=copy.deepcopy(stat_data_init),
-                inductor_optimization_dto=inductor_optimization_dto)
+                inductor_optimization_dto=inductor_optimization_dto,
+                inductor_requirements=inductor_requirements)
 
             self._optimization_config_list.append(inductor_optimization_dto)
 
@@ -233,6 +231,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _optimize_reluctance_model(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+                                   inductor_requirements: InductorRequirements,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
@@ -252,8 +251,6 @@ class InductorOptimization:
         """
         quantity_of_inductor_id_pareto = 0
 
-        # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
         # Check number of trials
         if target_number_trials > 0:
             fmt.optimization.InductorOptimization.ReluctanceModel.start_proceed_study(act_io_config, target_number_trials=target_number_trials)
@@ -271,10 +268,6 @@ class InductorOptimization:
 
         config_filepath = os.path.join(act_io_config.inductor_optimization_directory, f"{act_io_config.inductor_study_name}.pkl")
 
-        # sweep through all current waveforms
-        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
-
         inductor_id_list_pareto = df_inductor_pareto["number"].to_numpy()
 
         # Overtake the filtered operation points
@@ -289,49 +282,45 @@ class InductorOptimization:
             logger.debug(f"single_geometry_number: \n"
                          f"    {df_inductor_id.head()}")
 
-            combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+            # Fill dimensional matrix and remove last dimension (which is the exact time/current value)
+            combined_loss_array = np.full_like(inductor_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory, CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
-                logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
+                logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
-                # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
-                # e.g. winding is not fitting in the winding window
-                try:
-                    for vec_vvp in np.ndindex(circuit_dto.calc_modulation.phi.shape):
-                        time, unique_indices = np.unique(dabwav.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-                        current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                for vec_vvp in tqdm.tqdm(np.ndindex(inductor_requirements.time_array[..., 0].shape),
+                                         total=len(inductor_requirements.time_array[..., 0].flatten())):
+                    time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                    current = inductor_requirements.current_array[vec_vvp][unique_indicies]
 
-                        current_waveform = np.array([time, current])
-                        logger.debug(f"{current_waveform=}")
-                        logger.debug("All operating point simulation of:")
-                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                        logger.debug(f"   * Circuit ID: {circuit_id}")
-                        logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
-                        logger.debug(f"   * Inductor ID: {inductor_id}")
+                    current_waveform = np.array([time, current])
+                    logger.debug(f"{current_waveform=}")
+                    logger.debug("All operating point simulation of:")
+                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit ID: {circuit_id}")
+                    logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
+                    logger.debug(f"   * Inductor ID: {inductor_id}")
 
-                        inductor_volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
-                            df_inductor_id, current_waveform=current_waveform,
-                            inductor_config_filepath=config_filepath)
-                        combined_loss_array[vec_vvp] = combined_losses
+                    inductor_volume, combined_losses, area_to_heat_sink = fmt.InductorOptimization.ReluctanceModel.full_simulation(
+                        df_inductor_id, current_waveform=current_waveform,
+                        inductor_config_filepath=config_filepath)
+                    combined_loss_array[vec_vvp] = combined_losses
 
-                    inductor_losses = InductorResults(
-                        loss_array=combined_loss_array,
-                        volume=inductor_volume,
-                        area_to_heat_sink=area_to_heat_sink,
-                        circuit_id=circuit_id,
-                        inductor_id=inductor_id
-                    )
+                inductor_losses = InductorResults(
+                    loss_array=combined_loss_array,
+                    volume=inductor_volume,
+                    area_to_heat_sink=area_to_heat_sink,
+                    circuit_id=circuit_id,
+                    inductor_id=inductor_id
+                )
 
-                    pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
-                    with open(pickle_file, 'wb') as output:
-                        pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
-                except:
-                    logger.info(f"Re-simulation of inductor geometry {inductor_id} not possible due to non-possible geometry.")
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
+                with open(pickle_file, 'wb') as output:
+                    pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return quantity_of_inductor_id_pareto
@@ -374,6 +363,7 @@ class InductorOptimization:
                     act_optimization_configuration.circuit_id,
                     act_optimization_configuration.inductor_optimization_dto,
                     filter_data,
+                    act_optimization_configuration.inductor_requirements,
                     target_number_trials,
                     factor_dc_losses_min_max_list,
                     debug
@@ -417,6 +407,7 @@ class InductorOptimization:
                 parameters.append((act_optimization_configuration.circuit_id,
                                    act_optimization_configuration.inductor_optimization_dto,
                                    filter_data,
+                                   act_optimization_configuration.inductor_requirements,
                                    factor_dc_losses_min_max_list,
                                    debug))
 
@@ -425,6 +416,7 @@ class InductorOptimization:
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
     def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
+                        inductor_requirements: InductorRequirements,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
@@ -442,9 +434,6 @@ class InductorOptimization:
         """
         process_number = current_process().name
 
-        # Load configuration
-        circuit_dto = dab_dset.HandleDabDto.load_from_file(os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl"))
-
         df_inductor = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(act_io_config)
         df_inductor_pareto = fmt.optimization.InductorOptimization.ReluctanceModel.filter_loss_list_df(
             df_inductor, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
@@ -453,10 +442,6 @@ class InductorOptimization:
             df_inductor_pareto = df_inductor_pareto.iloc[:debug.inductor.number_fem_working_point_max]
 
         config_filepath = os.path.join(act_io_config.inductor_optimization_directory, f"{act_io_config.inductor_study_name}.pkl")
-
-        # sweep through all current waveforms
-        i_l1_sorted = np.transpose(circuit_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
-        angles_rad_sorted = np.transpose(circuit_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
 
         inductor_id_list_pareto = df_inductor_pareto["number"].to_numpy()
 
@@ -471,7 +456,7 @@ class InductorOptimization:
                 logger.debug(f"single_geometry_number: \n"
                              f"    {df_geometry_re_simulation_number.head()}")
 
-                combined_loss_array = np.full_like(circuit_dto.calc_modulation.phi, np.nan)
+                combined_loss_array = np.full_like(inductor_requirements.time_array[..., 0], np.nan)
 
                 new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
                                                          CIRCUIT_INDUCTOR_LOSSES_FOLDER)
@@ -479,13 +464,12 @@ class InductorOptimization:
                     os.makedirs(new_circuit_dto_directory)
 
                 if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
-                    logger.info(f"Re-simulation of {circuit_dto.circuit_id} already exists. Skip.")
+                    logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
                 else:
-                    for vec_vvp in tqdm.tqdm(np.ndindex(circuit_dto.calc_modulation.phi.shape),
-                                             total=len(circuit_dto.calc_modulation.phi.flatten())):
-                        time, unique_indices = np.unique(dabwav.full_angle_waveform_from_angles(
-                            angles_rad_sorted[vec_vvp]) / 2 / np.pi / circuit_dto.input_config.fs, return_index=True)
-                        current = dabwav.full_current_waveform_from_currents(i_l1_sorted[vec_vvp])[unique_indices]
+                    for vec_vvp in tqdm.tqdm(np.ndindex(combined_loss_array.shape),
+                                             total=len(inductor_requirements.time_array[..., 0].flatten())):
+                        time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                        current = inductor_requirements.current_array[vec_vvp][unique_indicies]
 
                         current_waveform = np.array([time, current])
                         logger.debug(f"{current_waveform=}")
