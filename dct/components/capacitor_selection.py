@@ -77,8 +77,7 @@ class CapacitorSelection:
             # generate capacitor requirements from circuit simulation data
             capacitor_requirements_dto = pecst.CapacitorRequirements(
                 maximum_peak_to_peak_voltage_ripple=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].maximum_peak_to_peak_voltage_ripple,
-                current_waveform_for_op_max_current=np.array([capacitor_requirements.time_vec,
-                                                              capacitor_requirements.current_vec]),
+                current_waveform_for_op_max_current=np.array([capacitor_requirements.time_vec, capacitor_requirements.current_vec]),
                 v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
                 temperature_ambient=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].temperature_ambient,
                 voltage_safety_margin_percentage=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].voltage_safety_margin_percentage,
@@ -89,8 +88,7 @@ class CapacitorSelection:
                 results_directory=trial_directory)
 
             # Initialize the statistical data
-            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
-                                                        progress_status=ProgressStatus.Idle)
+            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
             capacitor_optimization_dto = CapacitorOptimizationDto(
                 circuit_id=circuit_id,
