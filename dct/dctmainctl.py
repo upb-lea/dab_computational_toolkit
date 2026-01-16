@@ -37,7 +37,7 @@ from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
 import dct.generate_toml as toml_gen
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
-from dct.topology.dab.dab_summary_pre_processing import DabSummaryPreProcessing
+from dct.topology.dab.dab_summary_pre_processing import DabSummaryProcessing
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
@@ -79,8 +79,8 @@ class DctMainCtl:
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
-        self._summary_pre_processing: DabSummaryPreProcessing | None = None
-        self._summary_processing: DabSummaryPreProcessing | None = None
+        self._summary_pre_processing: DabSummaryProcessing | None = None
+        self._summary_processing: DabSummaryProcessing | None = None
 
         # Filtered point results in case of skip
         self._inductor_number_filtered_analytic_points_skip_list: list[int] = []
@@ -1798,7 +1798,7 @@ class DctMainCtl:
         logger.info("Start pre-summary.")
 
         # Allocate summary data object
-        self._summary_pre_processing = DabSummaryPreProcessing()
+        self._summary_pre_processing = DabSummaryProcessing()
 
         # Initialization thermal data
         if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
@@ -1875,7 +1875,7 @@ class DctMainCtl:
         logger.info("Start final summary.")
 
         # Allocate summary data object
-        self._summary_processing = DabSummaryPreProcessing()
+        self._summary_processing = DabSummaryProcessing()
 
         # Initialization thermal data
         if not self._summary_processing.init_thermal_configuration(toml_heat_sink):

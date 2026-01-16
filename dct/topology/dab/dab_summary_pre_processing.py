@@ -25,7 +25,7 @@ from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUI
 
 logger = logging.getLogger(__name__)
 
-class DabSummaryPreProcessing:
+class DabSummaryProcessing:
     """Perform the summary calculation based on optimization results."""
 
     _s_lock_stat: threading.Lock
@@ -304,7 +304,7 @@ class DabSummaryPreProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
-                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
+                    DabSummaryProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
 
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
@@ -354,7 +354,7 @@ class DabSummaryPreProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
-                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
+                    DabSummaryProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
 
                 if not is_transformer_list_generated:
                     logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
@@ -405,7 +405,7 @@ class DabSummaryPreProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_1_list_generated, capacitor_1_id_list = (
-                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
+                    DabSummaryProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
                 if not is_capacitor_1_list_generated:
                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -451,7 +451,7 @@ class DabSummaryPreProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_2_list_generated, capacitor_2_id_list = (
-                    DabSummaryPreProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
+                    DabSummaryProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
                 if not is_capacitor_2_list_generated:
                     logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
