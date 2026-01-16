@@ -37,7 +37,7 @@ from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
 import dct.generate_toml as toml_gen
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
-from dct.topology.dab.dab_summary_pre_processing import DabSummaryProcessing
+from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
