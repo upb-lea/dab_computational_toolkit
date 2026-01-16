@@ -488,7 +488,7 @@ class DabSummaryProcessing:
 
             logger.info(f"{df_capacitor_2=}")
 
-            # merge df's by creating a common key
+            # merge different df by creating a common key
             df_circuit_local['key'] = 0
             df_inductor['key'] = 0
             df_transformer['key'] = 0

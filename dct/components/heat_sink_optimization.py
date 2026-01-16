@@ -79,7 +79,8 @@ class HeatSinkOptimization:
             toml_heat_sink.design_space.number_cooling_channels_n_min_max_list)
         # Perform the boundary check for number_fins_n_min_max_list
         is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-            3, 100, float_number_cooling_channels_n_min_max_list, f"{group_name}: number_fins_n_min_max_list", c_flag.check_inclusive, c_flag.check_exclusive)
+            3, 100, float_number_cooling_channels_n_min_max_list, f"{group_name}: number_cooling_channels_n_min_max_list",
+            c_flag.check_inclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
