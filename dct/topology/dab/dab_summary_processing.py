@@ -19,7 +19,7 @@ import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 import dct.topology.dab.dab_datasets as dab_dset
-from dct.constant_path import CIRCUIT_INDUCTOR_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER
+from dct.constant_path import CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
 
 
 logger = logging.getLogger(__name__)
@@ -155,7 +155,7 @@ class DabSummaryProcessing:
         magnetic_result_numbers: list[str] = []
         is_magnetic_list_generated = False
 
-        # Check if target folder CIRCUIT_INDUCTOR_LOSSES_FOLDER is created
+        # Check if target folder CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER is created
         if os.path.exists(act_dir_name):
             # Create list of filepaths
             file_list = os.listdir(act_dir_name)
@@ -257,10 +257,10 @@ class DabSummaryProcessing:
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
 
-                # Assemble directory name for inductor results:.../CIRCUIT_INDUCTOR_LOSSES_FOLDER
+                # Assemble directory name for inductor results:.../CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
                 inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_trial_file,
                                                          inductor_study_name,
-                                                         CIRCUIT_INDUCTOR_LOSSES_FOLDER)
+                                                         CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_full_operating_range_list = (
@@ -288,11 +288,11 @@ class DabSummaryProcessing:
                     # iterate transformer study
                     for stacked_transformer_study_name in act_stacked_transformer_study_names:
 
-                        # Assemble directory name for transformer  results:.../CIRCUIT_TRANSFORMER_LOSSES_FOLDER
+                        # Assemble directory name for transformer  results:.../CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
                         stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
                                                                             circuit_trial_file,
                                                                             stacked_transformer_study_name,
-                                                                            CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+                                                                            CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
 
                         # Check, if stacked transformer number list cannot be generated
                         is_transformer_list_generated, stacked_transformer_full_operating_range_list = (

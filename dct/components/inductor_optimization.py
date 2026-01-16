@@ -20,7 +20,7 @@ from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
-from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
+from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
 from dct.components.component_dtos import InductorRequirements, InductorResults
 from dct.toml_checker import TomlInductor
 
@@ -459,7 +459,7 @@ class InductorOptimization:
                 combined_loss_array = np.full_like(inductor_requirements.time_array[..., 0], np.nan)
 
                 new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
-                                                         CIRCUIT_INDUCTOR_LOSSES_FOLDER)
+                                                         CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
                 if not os.path.exists(new_circuit_dto_directory):
                     os.makedirs(new_circuit_dto_directory)
 

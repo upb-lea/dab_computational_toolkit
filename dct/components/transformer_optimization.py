@@ -21,7 +21,7 @@ from dct.datasets_dtos import StudyData, FilterData
 from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressStatus, ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER
+from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
 from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults
 
 logger = logging.getLogger(__name__)
@@ -554,7 +554,7 @@ class TransformerOptimization:
             result_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
-                                                     CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+                                                     CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 

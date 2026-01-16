@@ -9,7 +9,6 @@ import copy
 # 3rd party libraries
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
 
 # own libraries
 import dct
@@ -21,6 +20,7 @@ import dct.topology.dab.dab_datasets as dab_dset
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
 logger = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class DabSummaryPreProcessing:
                                  summary_data: dct.StudyData, act_inductor_study_names: list[str],
                                  act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData,
                                  capacitor_1_study_data: dct.StudyData, capacitor_2_study_data: dct.StudyData,
-                                 act_capacitor_1_study_names: list[str], act_capacitor_2_study_names: list[str]) -> pd.DataFrame:
+                                 act_capacitor_1_study_names: list[str], act_capacitor_2_study_names: list[str], is_pre_summary: bool) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
@@ -210,10 +210,19 @@ class DabSummaryPreProcessing:
         :type  act_stacked_transformer_study_names: list[str]
         :param filter_data: filtered result lists
         :type filter_data: dct.FilterData
+        :param is_pre_summary: True for pre-summary, False for summary
+        :type is_pre_summary: bool
         :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
         """
         # Variable declaration
+
+        if is_pre_summary:
+            inductor_result_directory = CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER
+            transformer_result_directory = CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER
+        else:
+            inductor_result_directory = CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
+            transformer_result_directory = CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
 
         # Start the progress time measurement
         with self._s_lock_stat:
@@ -289,11 +298,9 @@ class DabSummaryPreProcessing:
 
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
-
-                # Assemble directory name for inductor results:.../CIRCUIT_INDUCTOR_LOSSES_FOLDER
                 inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_id,
                                                          inductor_study_name,
-                                                         CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
+                                                         inductor_result_directory)
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
@@ -340,12 +347,10 @@ class DabSummaryPreProcessing:
 
             # iterate transformer study
             for stacked_transformer_study_name in act_stacked_transformer_study_names:
-
-                # Assemble directory name for transformer  results:.../CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER
                 stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
                                                                     circuit_id,
                                                                     stacked_transformer_study_name,
-                                                                    CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
+                                                                    transformer_result_directory)
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
@@ -483,8 +488,7 @@ class DabSummaryPreProcessing:
 
             logger.info(f"{df_capacitor_2=}")
 
-            # merge the dataframes
-            # create common key
+            # merge df's by creating a common key
             df_circuit_local['key'] = 0
             df_inductor['key'] = 0
             df_transformer['key'] = 0
@@ -529,7 +533,6 @@ class DabSummaryPreProcessing:
         df["r_th_xfmr_heat_sink"] = self.r_th_per_unit_area_xfmr_heat_sink / df["transformer_area"]
         df["temperature_xfmr_heat_sink_max_array"] = 125 - df["r_th_xfmr_heat_sink"] * df["transformer_loss_array"]
 
-        print(df.columns.tolist())
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["circuit_heat_sink_max_1_array"], x["circuit_heat_sink_max_2_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_inductor_heat_sink_max_array"]), axis=1)
@@ -545,9 +548,6 @@ class DabSummaryPreProcessing:
 
         # Save results to file (ASA : later to store only on demand)
         df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
-
-        plt.scatter(df["volume_wo_heat_sink"], df["total_mean_loss"])
-        plt.show()
 
         # Start the progress time measurement
         with self._s_lock_stat:
