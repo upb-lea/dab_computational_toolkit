@@ -305,7 +305,7 @@ class TomlHeatSinkDesignSpace(BaseModel):
     width_b_min_max_list: list[float]
     length_l_min_max_list: list[float]
     height_d_min_max_list: list[float]
-    number_fins_n_min_max_list: list[int]
+    number_cooling_channels_n_min_max_list: list[int]
     thickness_fin_t_min_max_list: list[float]
 
 class TomlHeatSinkThermalResistanceData(BaseModel):

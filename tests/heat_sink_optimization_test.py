@@ -48,7 +48,7 @@ Implemented boundary
     width_b_min_max_list: list[float]         -> 0<value<5
     length_l_min_max_list: list[float]        -> 0<value<5
     height_d_min_max_list: list[float]        -> 0<value<5
-    number_fins_n_min_max_list: list[int]     -> 3<=value<=100
+    number_cooling_channels_n_min_max_list: list[int]     -> 3<=value<=100
     thickness_fin_t_min_max_list: list[float] -> 0<value<0.1
 [settings]
     number_directions: int -> 2<=value<=3
@@ -124,7 +124,7 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
             width_b_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
             length_l_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
             height_d_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
-            number_fins_n_min_max_list=int_min_max_list_configuration_ge3_lt100[test_index],
+            number_cooling_channels_n_min_max_list=int_min_max_list_configuration_ge3_lt100[test_index],
             thickness_fin_t_min_max_list=float_min_max_list_configuration_gt0_lt1em1[test_index]),
         settings=dct.TomlHeatSinkSettings(
             number_directions=int_value_list_configuration_ge2_le3[test_index],
@@ -144,7 +144,7 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
 
     # Create boundary list from minimum-maximum list with assigned parameters
     min_max_list_name_list: list[str] = ["height_c_min_max_list", "width_b_min_max_list", "length_l_min_max_list",
-                                         "height_d_min_max_list", "number_fins_n_min_max_list", "thickness_fin_t_min_max_list",
+                                         "height_d_min_max_list", "number_cooling_channels_n_min_max_list", "thickness_fin_t_min_max_list",
                                          "transistor_b1_cooling", "transistor_b2_cooling",
                                          "inductor_cooling", "transformer_cooling"]
     value_name_list: list[str] = (["number_directions", "factor_pcb_area_copper_coin", "factor_bottom_area_copper_coin",
