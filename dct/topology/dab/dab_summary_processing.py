@@ -15,8 +15,8 @@ import dct
 from dct import ProgressStatus
 from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.components.capacitor_optimization_dtos import CapacitorResults
-import hct
 import dct.topology.dab.dab_datasets as dab_dset
+import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
@@ -247,15 +247,9 @@ class DabSummaryProcessing:
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
                 raise ValueError("Incomplete loss calculation.")
 
-            # Begin: ASA: No influence by inductor or transformer ################################
-            # get transistor results
-            total_transistor_cond_loss_matrix \
-                = 4 * (circuit_dto.calc_losses.p_m1_conduction + circuit_dto.calc_losses.p_m2_conduction)
-
             b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
             b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
-            # End: ASA: No influence by inductor or transformer ################################
-            # Begin: ASA: No influence by inductor or transformer ################################
+
             # get all the losses in a matrix
             r_th_copper_coin_1, copper_coin_area_1 = self.thr_sup.calculate_r_th_copper_coin(
                 circuit_dto.input_config.transistor_dto_1.cooling_area)
@@ -277,16 +271,12 @@ class DabSummaryProcessing:
             logger.debug(f"{act_inductor_study_names=}")
 
             circuit_data = {
-                # circuit
                 "circuit_id": circuit_id,
-                "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
-                "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
-                "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
-                "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
-                "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
-                "circuit_loss_array": total_transistor_cond_loss_matrix,
-                "circuit_temperature_heat_sink_max_1_array": circuit_heat_sink_max_1_matrix,
-                "circuit_temperature_heat_sink_max_2_array": circuit_heat_sink_max_2_matrix,
+                "circuit_t_j_max": [circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
+                "circuit_r_th_ib_jhs": [circuit_r_th_1_jhs, circuit_r_th_2_jhs],
+                "circuit_area": [4 * copper_coin_area_1, 4 * copper_coin_area_2],
+                "circuit_loss_array": [4 * circuit_dto.calc_losses.p_m1_conduction, 4 * circuit_dto.calc_losses.p_m2_conduction],
+                "circuit_temperature_heat_sink_max_array": [circuit_heat_sink_max_1_matrix, circuit_heat_sink_max_2_matrix]
             }
             df_circuit_local = pd.DataFrame([circuit_data])
 
@@ -499,10 +489,11 @@ class DabSummaryProcessing:
 
         # Calculate the total area as sum of circuit,  inductor and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
         # heat sink area, capacitors do not need heat sink area
-        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
+        df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
 
         # TODO: Fix needed as capacitor 2 is not considered currently
-        df["total_mean_loss"] = (df["circuit_loss_array"].apply(np.mean) + df["inductor_loss_array"].apply(np.mean) + \
+        df["total_mean_loss"] = (df["circuit_loss_array"].apply(lambda x: np.sum([np.mean(y) for y in x], axis=0)) + \
+                                 df["inductor_loss_array"].apply(np.mean) + \
                                  df["transformer_loss_array"].apply(np.mean) + \
                                  df["capacitor_1_loss_array"].apply(np.mean)  # + np.mean(df["capacitor_2_loss_array"])
                                  )
@@ -522,8 +513,7 @@ class DabSummaryProcessing:
         df["temperature_xfmr_heat_sink_max_array"] = 125 - df["r_th_xfmr_heat_sink"] * df["transformer_loss_array"]
 
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
-        df["t_min_array"] = df.apply(lambda x: np.minimum(x["circuit_temperature_heat_sink_max_1_array"], x["circuit_temperature_heat_sink_max_2_array"]),
-                                     axis=1)
+        df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda x: np.minimum(*x))
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_inductor_heat_sink_max_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_xfmr_heat_sink_max_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], self.heat_sink_boundary_conditions.t_hs_max), axis=1)
