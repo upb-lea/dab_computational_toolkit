@@ -294,8 +294,8 @@ class InductorOptimization:
             else:
                 for vec_vvp in tqdm.tqdm(np.ndindex(inductor_requirements.time_array[..., 0].shape),
                                          total=len(inductor_requirements.time_array[..., 0].flatten())):
-                    time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
-                    current = inductor_requirements.current_array[vec_vvp][unique_indicies]
+                    time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                    current = inductor_requirements.current_array[vec_vvp][unique_indices]
 
                     current_waveform = np.array([time, current])
                     logger.debug(f"{current_waveform=}")
@@ -468,8 +468,8 @@ class InductorOptimization:
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(combined_loss_array.shape),
                                              total=len(inductor_requirements.time_array[..., 0].flatten())):
-                        time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
-                        current = inductor_requirements.current_array[vec_vvp][unique_indicies]
+                        time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                        current = inductor_requirements.current_array[vec_vvp][unique_indices]
 
                         current_waveform = np.array([time, current])
                         logger.debug(f"{current_waveform=}")

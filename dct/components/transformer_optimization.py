@@ -387,9 +387,9 @@ class TransformerOptimization:
                 logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
                 for vec_vvp in tqdm.tqdm(np.ndindex(result_array.shape), total=len(transformer_requirements.time_array[..., 0].flatten())):
-                    time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
-                    current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
-                    current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
+                    time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
+                    current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indices]
+                    current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indices]
 
                     current_waveform_1 = np.array([time, current_1])
                     current_waveform_2 = np.array([time, current_2])
@@ -566,9 +566,9 @@ class TransformerOptimization:
                 try:
                     for vec_vvp in tqdm.tqdm(np.ndindex(transformer_requirements.time_array[..., 0].shape),
                                              total=len(transformer_requirements.time_array[..., 0].flatten())):
-                        time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
-                        current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
-                        current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
+                        time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
+                        current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indices]
+                        current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indices]
 
                         current_1_waveform = np.array([time, current_1])
                         current_2_waveform = np.array([time, current_2])
