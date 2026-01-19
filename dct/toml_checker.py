@@ -59,8 +59,7 @@ class Breakpoints(BaseModel):
 
     circuit_pareto: Literal['no', 'pause', 'stop']
     circuit_filtered: Literal['no', 'pause', 'stop']
-    capacitor_1: Literal['no', 'pause', 'stop']
-    capacitor_2: Literal['no', 'pause', 'stop']
+    capacitor: Literal['no', 'pause', 'stop']
     inductor: Literal['no', 'pause', 'stop']
     transformer: Literal['no', 'pause', 'stop']
     heat_sink: Literal['no', 'pause', 'stop']
@@ -82,30 +81,24 @@ class Circuit(BaseModel):
     calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
-class Capacitor1(BaseModel):
+class Capacitor(BaseModel):
     """Flow control for the capacitor 1."""
 
-    calculation_mode: Literal['new', 'skip']
-    subdirectory: str
-
-class Capacitor2(BaseModel):
-    """Flow control for the capacitor 2."""
-
-    calculation_mode: Literal['new', 'skip']
+    calculation_modes: list[Literal['new', 'skip']]
     subdirectory: str
 
 class Inductor(BaseModel):
     """Flow control for the inductor."""
 
-    number_of_trials: int
-    calculation_mode: Literal['new', 'continue', 'skip']
+    numbers_of_trials: list[int]
+    calculation_modes: list[Literal['new', 'continue', 'skip']]
     subdirectory: str
 
 class Transformer(BaseModel):
     """Flow control for the transformer."""
 
-    number_of_trials: int
-    calculation_mode: Literal['new', 'continue', 'skip']
+    numbers_of_trials: list[int]
+    calculation_modes: list[Literal['new', 'continue', 'skip']]
     subdirectory: str
 
 class HeatSink(BaseModel):
@@ -124,18 +117,15 @@ class PreSummary(BaseModel):
 class Summary(BaseModel):
     """Flow control for the summary."""
 
-    calculation_mode: Literal['new', 'skip']
     subdirectory: str
 
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
 
-    general_configuration_file: str
-    circuit_configuration_file: str
-    capacitor_1_configuration_file: str
-    capacitor_2_configuration_file: str
-    inductor_configuration_file: str
-    transformer_configuration_file: str
+    topology_files: list[str]
+    capacitor_configuration_files: list[str]
+    inductor_configuration_files: list[str]
+    transformer_configuration_files: list[str]
     heat_sink_configuration_file: str
 
 class FlowControl(BaseModel):
@@ -145,8 +135,7 @@ class FlowControl(BaseModel):
     breakpoints: Breakpoints
     conditional_breakpoints: CondBreakpoints
     circuit: Circuit
-    capacitor_1: Capacitor1
-    capacitor_2: Capacitor2
+    capacitor: Capacitor
     inductor: Inductor
     transformer: Transformer
     heat_sink: HeatSink
@@ -156,7 +145,7 @@ class FlowControl(BaseModel):
 
 
 # ######################################################
-# capacitor 1 and capacitor 2
+# capacitor
 # ######################################################
 
 class TomlCapacitorSelection(BaseModel):
