@@ -38,7 +38,6 @@ from dct import generate_logging_config
 import dct.generate_toml as toml_gen
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
-from dct.topology.dab.dab_summary_pre_processing import DabSummaryPreProcessing
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
@@ -46,8 +45,8 @@ from dct.server_ctl import ParetoFrontSource
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import CalcModeEnum, TopologyEnum
-from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER,
-                               CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER,
+from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
+                               CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
                                SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
 
@@ -80,7 +79,7 @@ class DctMainCtl:
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
-        self._summary_pre_processing: DabSummaryPreProcessing | None = None
+        self._summary_pre_processing: DabSummaryProcessing | None = None
         self._summary_processing: DabSummaryProcessing | None = None
 
         # Filtered point results in case of skip
@@ -603,8 +602,8 @@ class DctMainCtl:
         :param dependent_study_data: Dependent study data
         :type  dependent_study_data: StudyData
         """
-        # Check depending study mode
-        # new_mode of depending study is kept independent from circuit study calculation mode
+        # Check depending on study mode
+        # new_mode of depending on study is kept independent of circuit study calculation mode
         if dependent_study_data.calculation_mode != CalcModeEnum.new_mode:
             # Circuit calculation mode new_mode forces new_mode for dependent study
             if circuit_calculation_mode == CalcModeEnum.new_mode:
@@ -1799,7 +1798,7 @@ class DctMainCtl:
         logger.info("Start pre-summary.")
 
         # Allocate summary data object
-        self._summary_pre_processing = DabSummaryPreProcessing()
+        self._summary_pre_processing = DabSummaryProcessing()
 
         # Initialization thermal data
         if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
@@ -1814,7 +1813,7 @@ class DctMainCtl:
             self._inductor_study_data, self._transformer_study_data, pre_summary_data,
             inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
             self._capacitor_selection_data, self._capacitor_2_selection_data,
-            capacitor_1_study_names, capacitor_2_study_names
+            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=True
         )
         #  Select the needed heat sink configuration
         self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
@@ -1846,7 +1845,7 @@ class DctMainCtl:
                 toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
 
             # Set processing complete indicator
-            design_directory = os.path.join(self._inductor_study_data.study_name, CIRCUIT_INDUCTOR_LOSSES_FOLDER)
+            design_directory = os.path.join(self._inductor_study_data.study_name, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
             DctMainCtl._set_processing_complete(self._inductor_study_data.optimization_directory,
                                                 design_directory, SIMULATION_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
@@ -1865,7 +1864,7 @@ class DctMainCtl:
                 self._circuit_optimization.filter_data,
                 toml_inductor.filter_distance.factor_dc_losses_min_max_list, debug=toml_debug)
             # Set processing complete indicator
-            design_directory = os.path.join(self._transformer_study_data.study_name, CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+            design_directory = os.path.join(self._transformer_study_data.study_name, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
             DctMainCtl._set_processing_complete(self._transformer_study_data.optimization_directory,
                                                 design_directory, SIMULATION_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
@@ -1887,7 +1886,10 @@ class DctMainCtl:
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_processing.generate_result_database(
             self._inductor_study_data, self._transformer_study_data, summary_data,
-            inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data)
+            inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
+            self._capacitor_selection_data, self._capacitor_2_selection_data,
+            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False
+        )
         #  Select the needed heat sink configuration
         self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 

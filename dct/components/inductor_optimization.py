@@ -20,7 +20,7 @@ from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.datasets_dtos import StudyData
 from dct.datasets_dtos import FilterData
-from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_LOSSES_FOLDER
+from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
 from dct.components.component_dtos import InductorRequirements, InductorResults
 from dct.toml_checker import TomlInductor
 
@@ -294,8 +294,8 @@ class InductorOptimization:
             else:
                 for vec_vvp in tqdm.tqdm(np.ndindex(inductor_requirements.time_array[..., 0].shape),
                                          total=len(inductor_requirements.time_array[..., 0].flatten())):
-                    time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
-                    current = inductor_requirements.current_array[vec_vvp][unique_indicies]
+                    time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                    current = inductor_requirements.current_array[vec_vvp][unique_indices]
 
                     current_waveform = np.array([time, current])
                     logger.debug(f"{current_waveform=}")
@@ -459,7 +459,7 @@ class InductorOptimization:
                 combined_loss_array = np.full_like(inductor_requirements.time_array[..., 0], np.nan)
 
                 new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
-                                                         CIRCUIT_INDUCTOR_LOSSES_FOLDER)
+                                                         CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
                 if not os.path.exists(new_circuit_dto_directory):
                     os.makedirs(new_circuit_dto_directory)
 
@@ -468,8 +468,8 @@ class InductorOptimization:
                 else:
                     for vec_vvp in tqdm.tqdm(np.ndindex(combined_loss_array.shape),
                                              total=len(inductor_requirements.time_array[..., 0].flatten())):
-                        time, unique_indicies = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
-                        current = inductor_requirements.current_array[vec_vvp][unique_indicies]
+                        time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
+                        current = inductor_requirements.current_array[vec_vvp][unique_indices]
 
                         current_waveform = np.array([time, current])
                         logger.debug(f"{current_waveform=}")
