@@ -232,10 +232,10 @@ class DabSummaryProcessing:
         # iterate circuit numbers
         for circuit_id in filter_data.filtered_list_files:
 
-            df_inductor = pd.DataFrame()
-            df_transformer = pd.DataFrame()
-            df_capacitor_1 = pd.DataFrame()
-            df_capacitor_2 = pd.DataFrame()
+            df_inductors = pd.DataFrame()
+            df_transformers = pd.DataFrame()
+            df_capacitors_1 = pd.DataFrame()
+            df_capacitors_2 = pd.DataFrame()
 
             # Assemble pkl-filename
             circuit_id_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
@@ -332,11 +332,11 @@ class DabSummaryProcessing:
                         "inductor_t_max": 0,
                         "inductor_area": inductor_dto.area_to_heat_sink,
                     }
-                    local_df_inductor = pd.DataFrame([inductor_data])
+                    df_single_inductor = pd.DataFrame([inductor_data])
 
-                    df_inductor = pd.concat([df_inductor, local_df_inductor], axis=0)
+                    df_inductors = pd.concat([df_inductors, df_single_inductor], axis=0)
 
-            logger.info(f"{df_inductor=}")
+            logger.info(f"{df_inductors=}")
 
             # iterate transformer study
             for stacked_transformer_study_name in act_stacked_transformer_study_names:
@@ -381,10 +381,10 @@ class DabSummaryProcessing:
                         "transformer_area": transformer_dto.area_to_heat_sink,
                     }
 
-                    local_df_transformer = pd.DataFrame([transformer_data])
-                    df_transformer = pd.concat([df_transformer, local_df_transformer], axis=0)
+                    df_single_transformer = pd.DataFrame([transformer_data])
+                    df_transformers = pd.concat([df_transformers, df_single_transformer], axis=0)
 
-                logger.info(f"{df_transformer=}")
+                logger.info(f"{df_transformers=}")
 
             for capacitor_1_study_name in act_capacitor_1_study_names:
                 # Assemble directory name for capacitor 1 results
@@ -425,10 +425,10 @@ class DabSummaryProcessing:
                         "capacitor_1_n_parallel": capacitor_1_dto.n_parallel,
                         "capacitor_1_n_series": capacitor_1_dto.n_series,
                     }
-                    local_df_capacitor_1 = pd.DataFrame([capacitor_1_data])
-                    df_capacitor_1 = pd.concat([df_capacitor_1, local_df_capacitor_1], axis=0)
+                    df_single_capacitor_1 = pd.DataFrame([capacitor_1_data])
+                    df_capacitors_1 = pd.concat([df_capacitors_1, df_single_capacitor_1], axis=0)
 
-                logger.info(f"{df_capacitor_1=}")
+                logger.info(f"{df_capacitors_1=}")
 
             logger.debug(f"{act_capacitor_2_study_names=}")
             for capacitor_2_study_name in act_capacitor_2_study_names:
@@ -471,22 +471,22 @@ class DabSummaryProcessing:
                         "capacitor_2_n_parallel": capacitor_2_dto.n_parallel,
                         "capacitor_2_n_series": capacitor_2_dto.n_series,
                     }
-                    local_df_capacitor_2 = pd.DataFrame([capacitor_2_data])
-                    df_capacitor_2 = pd.concat([df_capacitor_2, local_df_capacitor_2], axis=0)
+                    df_single_capacitor_2 = pd.DataFrame([capacitor_2_data])
+                    df_capacitors_2 = pd.concat([df_capacitors_2, df_single_capacitor_2], axis=0)
 
-            logger.info(f"{df_capacitor_2=}")
+            logger.info(f"{df_capacitors_2=}")
 
             # merge different df by creating a common key
             df_circuit_local['key'] = 0
-            df_inductor['key'] = 0
-            df_transformer['key'] = 0
-            df_capacitor_1['key'] = 0
-            df_capacitor_2['key'] = 0
+            df_inductors['key'] = 0
+            df_transformers['key'] = 0
+            df_capacitors_1['key'] = 0
+            df_capacitors_2['key'] = 0
 
             # perform cross join
-            df_intermediate_1 = df_circuit_local.merge(df_inductor, on='key', how='outer')
-            df_intermediate_2 = df_intermediate_1.merge(df_transformer, on='key', how='outer')
-            df_intermediate_3 = df_intermediate_2.merge(df_capacitor_1, on='key', how='outer')
+            df_intermediate_1 = df_circuit_local.merge(df_inductors, on='key', how='outer')
+            df_intermediate_2 = df_intermediate_1.merge(df_transformers, on='key', how='outer')
+            df_intermediate_3 = df_intermediate_2.merge(df_capacitors_1, on='key', how='outer')
             # TODO: Needs fix, as data for capacitor 2 is currently missing
             # fix df_intermediate_3 to df_intermediate_4 in the following
             # df_intermediate_4 = df_intermediate_3.merge(df_capacitor_2, on='key', how='outer')
