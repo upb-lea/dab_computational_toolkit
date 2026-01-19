@@ -20,6 +20,7 @@ from importlib.metadata import version
 # 3rd party libraries
 import json
 
+from pandas import lreshape
 
 # own libraries
 import dct
@@ -321,43 +322,6 @@ class DctMainCtl:
         return return_value
 
     @staticmethod
-    def delete_selected_study_content(folder_name: str, study_file_name: str = "") -> None:
-        """
-        Delete the study files and the femmt folders.
-
-        If a new study is to generate the old obsolete files and folders needs to be deleted.
-
-        :param folder_name : Location of the study files
-        :type  folder_name : str
-        :param study_file_name : Name of the study files (without extension)
-        :type  study_file_name : str
-        """
-        # Variable declaration
-        is_study_found: bool = False
-
-        # Check if folder exists
-        if os.path.exists(folder_name):
-            # Delete all content of the folder
-            for item in os.listdir(folder_name):
-                # Create the full pathname
-                full_path = os.path.join(folder_name, item)
-                # Check if it is a folder
-                if os.path.isdir(full_path):
-                    # Delete the folder
-                    shutil.rmtree(full_path)
-                # Check if it is the target file name
-                elif os.path.isfile(full_path) and os.path.splitext(item)[0] == study_file_name:
-                    # Delete this file
-                    os.remove(full_path)
-                    # Set the flag that study is found and deleted
-                    is_study_found = True
-            # Check, if the study is not found
-            if not is_study_found:
-                logger.info(f"File of study {study_file_name} does not exists in {folder_name}!")
-        else:
-            logger.info(f"Path {folder_name} does not exists!")
-
-    @staticmethod
     def delete_study_content(folder_name: str, study_file_name: str = "") -> None:
         """
         Delete the study files and the femmt folders.
@@ -582,25 +546,26 @@ class DctMainCtl:
 
         :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
         :type  base_directory: str
-        :param subdirectory: (relative) subdirectory path to pkl-files
-        :type  subdirectory: str
+        :param subdirectory_list: List of the (relative) subdirectory path to pkl-files
+        :type  subdirectory_list: list[str]
+        :param complete_file_name: List of the complete file names
+        :type  complete_file_name: list[str]
         :param circuit_filtered_index_list: List with the name of filtered results
-        :type  circuit_filtered_index_list: str
-        :param complete_file_name: List with the name of filtered results
-        :type  complete_file_name: str
+        :type  circuit_filtered_index_list: list[str]
         :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
         :rtype: bool
         """
         # Variable declaration and initialization
         path_list: list[str] = []
         pkl_file_list: list[str] = []
-        processing_complete_file = os.path.join(base_directory, complete_file_name)
 
         # Check if file exists
         # Check path
         if not (os.path.exists(base_directory) or base_directory == ""):
             raise ValueError(f"Path {base_directory} does not exists!")
 
+        # Set file path
+        processing_complete_file = os.path.join(base_directory, complete_file_name)
         # Create path list
         if circuit_filtered_index_list:
             for entry in circuit_filtered_index_list:
@@ -671,7 +636,7 @@ class DctMainCtl:
         return is_processing_complete, issue_report
 
     @staticmethod
-    def _delete_processing_complete(base_directory: str, act_complete_file_name: str) -> bool:
+    def _delete_processing_complete(base_directory: str, complete_file_name: str) -> bool:
         """Delete the 'processing_complete.json' file.
 
         Remark: An exception occurs, if base_directory does not exist.
@@ -682,11 +647,12 @@ class DctMainCtl:
         :rtype: bool
         """
         # Variable declaration and initialization
-        processing_complete_file = os.path.join(base_directory, act_complete_file_name)
         is_file_removed: bool = False
 
         # Check path
         if os.path.exists(base_directory) or base_directory == "":
+            # Set processing_complete_file name
+            processing_complete_file = os.path.join(base_directory, complete_file_name)
             # Check if file exists
             if os.path.isfile(processing_complete_file):
                 # Delete the file
@@ -1211,6 +1177,10 @@ class DctMainCtl:
         srv_response_queue: Queue = Queue()
         # Flag to control the svr_response_thread
         srv_response_stop_flag = True
+        # lists to control the processing completeness
+        _capacitor_group_list: list[str] = []
+        _inductor_group_list: list[str] = []
+        _transformer_group_list: list[str] = []
 
         # Initialize start time
         self._total_time = RunTime()
@@ -1478,22 +1448,27 @@ class DctMainCtl:
             DctMainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
                                                 capacitor_selection_configuration_list[index].study_data)
 
+            # Create processing complete indicator file name
+            processing_complete_file_name = f"device_{index}_" + PROCESSING_COMPLETE_FILE
             # Check, if capacitor selection is to skip
             if capacitor_selection_configuration_list[index].study_data.calculation_mode == CalcModeEnum.skip_mode:
-                # Check if capacitor1 selection is skippable
+                # Check if capacitor selection is skippable
                 is_skippable, issue_report = DctMainCtl._is_skippable(
-                    capacitor_selection_configuration_list[index].study_data, PROCESSING_COMPLETE_FILE)
+                    capacitor_selection_configuration_list[index].study_data, processing_complete_file_name)
                 # Evaluate the result of circuit check
                 if not is_skippable:
                     logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
                     capacitor_selection_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
+            else:
+                # Add file name to group list
+                _capacitor_group_list.append(processing_complete_file_name)
 
             # In case of CalcModeEnum.new_mode the old study is to delete
             if capacitor_selection_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
                 # delete old circuit study data
-                self.delete_selected_study_content(
+                self.delete_study_content(
                     capacitor_selection_configuration_list[index].study_data.optimization_directory,
-                    capacitor_selection_configuration_list[index].study_data.study_name)
+                    processing_complete_file_name)
 
         # --------------------------
         # Inductor flow control
@@ -1531,6 +1506,8 @@ class DctMainCtl:
             DctMainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
                                                 inductor_study_configuration_list[index].study_data)
 
+            # Create processing complete indicator file name
+            processing_complete_file_name = f"device_{index}_" + PROCESSING_COMPLETE_FILE
             # Overtake the calculation mode
             inductor_sim_calculation_mode_list.append(inductor_study_configuration_list[index].study_data.calculation_mode)
             # Check, if inductor optimization is to skip
@@ -1546,6 +1523,8 @@ class DctMainCtl:
                     inductor_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.new_mode
                     inductor_sim_calculation_mode_list[index] = CalcModeEnum.continue_mode
                     inductor_selection_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
+                    # Add file name to group list
+                    _inductor_group_list.append(processing_complete_file_name)
                     logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
                 else:
@@ -1562,7 +1541,7 @@ class DctMainCtl:
             # In case of CalcModeEnum.new_mode the old study is to delete
             if inductor_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
                 # Delete old inductor study
-                self.delete_selected_study_content(inductor_study_configuration_list[index].study_data.optimization_directory)
+                self.delete_study_content(inductor_study_configuration_list[index].study_data.optimization_directory)
 
         # --------------------------
         # Transformer flow control
@@ -1600,6 +1579,8 @@ class DctMainCtl:
             DctMainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
                                                 transformer_study_configuration_list[index].study_data)
 
+            # Create processing complete indicator file name
+            processing_complete_file_name = f"device_{index}_" + PROCESSING_COMPLETE_FILE
             # Overtake the calculation mode
             transformer_sim_calculation_mode_list.append(transformer_study_configuration_list[index].study_data.calculation_mode)
             # Check, if transformer optimization is to skip
@@ -1615,6 +1596,8 @@ class DctMainCtl:
                     transformer_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.new_mode
                     transformer_sim_calculation_mode_list[index] = CalcModeEnum.continue_mode
                     transformer_selection_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
+                    # Add file name to group list
+                    _transformer_group_list.append(processing_complete_file_name)
                     logger.warning("transformer optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
                 else:
@@ -1631,7 +1614,7 @@ class DctMainCtl:
             # In case of CalcModeEnum.new_mode the old study is to delete
             if transformer_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
                 # Delete old transformer study
-                self.delete_selected_study_content(transformer_study_configuration_list[index].study_data.optimization_directory)
+                self.delete_study_content(transformer_study_configuration_list[index].study_data.optimization_directory)
 
         # --------------------------
         # Heat sink flow control
@@ -1726,7 +1709,7 @@ class DctMainCtl:
             if not is_filter_data_available:
                 raise ValueError("Filtered data error:"+issue_report)
 
-            # Set processing complete indicator
+            # Set processing complete indicator ASA: Later to do within optimization handler by lambda function
             DctMainCtl._set_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
                                                 FILTERED_RESULTS_PATH, PROCESSING_COMPLETE_FILE)
 
@@ -1748,41 +1731,37 @@ class DctMainCtl:
         # Get the capacitor requirements
         capacitor_requirements_list = self._circuit_optimization.get_capacitor_requirements()
 
-        # Loop over required capacitors
-        for index, capacitor_configuration_data in enumerate(capacitor_selection_configuration_list):
+        # Create instance of CapacitorSelection
+        capacitor_selection: CapacitorSelection = CapacitorSelection()
+        # Initialize capacitor selection
+        capacitor_selection.initialize_capacitor_selection( configuration_data_list=capacitor_selection_configuration_list,
+                                                            capacitor_requirements_list=capacitor_requirements_list)
 
-            # Check, if capacitor optimization is not to skip
-            if not capacitor_configuration_data.study_data.calculation_mode == CalcModeEnum.skip_mode:
-                # Allocate and initialize circuit configuration
-                capacitor_selection: CapacitorSelection = CapacitorSelection()
-                # Get the requirement from the list
-                capacitor_requirements = capacitor_requirements_list[index]
+        # Optimize capacitors by number in circuit
+        number_of_capacitors=1
+        for index in range(len(capacitor_selection_configuration_list)):
 
-                capacitor_selection.initialize_capacitor_selection( toml_capacitor=capacitor_configuration_data.capacitor_toml_data,
-                                                                    capacitor_study_data=capacitor_configuration_data.study_data,
-                                                                    capacitor_requirements=capacitor_requirements)
+            # Check, if capacitor selection of this component optimization is not to skip
+            if not capacitor_selection_configuration_list[index].study_data.calculation_mode == CalcModeEnum.skip_mode:
 
-                # Create processing complete indicator file name
-                processing_complete_file_name= f"device_{index}_" + PROCESSING_COMPLETE_FILE
-
+                # Assemble processing complete file name
+                processing_complete_file = f"cap{index}" + PROCESSING_COMPLETE_FILE
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(capacitor_configuration_data.study_data.optimization_directory, processing_complete_file_name)
+                DctMainCtl._delete_processing_complete(capacitor_selection_configuration_list[index].study_data.optimization_directory,
+                                                       processing_complete_file)
                 # Perform capacitor optimization
                 capacitor_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
-                                                         capacitor_requirements=capacitor_requirements,
+                                                         capacitor_in_circuit=index,
                                                          debug=toml_debug)
                 # Set processing complete indicator
-                design_directory = os.path.join(capacitor_configuration_data.study_data.study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
-                DctMainCtl._set_processing_complete(capacitor_configuration_data.study_data.optimization_directory,
-                                                    design_directory, processing_complete_file_name,
+                design_directory = os.path.join(capacitor_selection_configuration_list[index].study_data.study_name,
+                                                CIRCUIT_CAPACITOR_LOSS_FOLDER)
+                DctMainCtl._set_processing_complete(capacitor_selection_configuration_list[index].study_data.optimization_directory,
+                                                    design_directory, processing_complete_file,
                                                     self._circuit_optimization.filter_data.filtered_list_files)
 
-                # Add result to the list
-                self._capacitor_selection_list.append(capacitor_selection)
-
-
         # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.capacitor_1, "Capacitor 1 Pareto front calculated")
+        self.check_breakpoint(toml_prog_flow.breakpoints.capacitor, "Capacitor 1 Pareto front calculated")
 
         # --------------------------
         # Inductor reluctance model optimization
