@@ -81,7 +81,7 @@ class DabSummaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-        transformer_cooling: dct.MagneticElementCooling
+
         # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
         self.transistor_b1_cooling = dct.TransistorCooling(
             tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
@@ -109,10 +109,6 @@ class DabSummaryProcessing:
         transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
         transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
 
-        transformer_cooling = dct.MagneticElementCooling(
-            tim_thickness=transformer_tim_thickness,
-            tim_conductivity=transformer_tim_conductivity
-        )
         # Check on zero ( ASA: Maybe in general all configuration files are to check for validity in advanced. In this case the check can be removed.)
         if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
@@ -143,8 +139,8 @@ class DabSummaryProcessing:
         return copy.deepcopy(self._progress_data)
 
     @staticmethod
-    def _generate_number_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
-        """Generate a list of the numbers from pickle filenames.
+    def _generate_component_id_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
+        """Generate a list of the IDs from pickle filenames (inductor, transformer, capacitor).
 
         :param act_dir_name : Name of the directory containing the files
         :type  act_dir_name : str
@@ -153,8 +149,8 @@ class DabSummaryProcessing:
         :rtype: tuple
         """
         # Variable declaration
-        result_numbers: list[str] = []
-        is_list_generated = False
+        component_id_list: list[str] = []
+        is_component_id_list_generated = False
 
         # Check if target folder exists
         if os.path.exists(act_dir_name):
@@ -166,22 +162,22 @@ class DabSummaryProcessing:
                 file_path = os.path.join(act_dir_name, file_name)
                 # Check if it is a file
                 if os.path.isfile(file_path):
-                    device_number = os.path.splitext(os.path.basename(file_name))[0]
+                    component_id = os.path.splitext(os.path.basename(file_name))[0]
                     # Check file type
-                    extension = os.path.splitext(os.path.basename(file_name))[1]
-                    if extension == '.pkl':
-                        result_numbers.append(device_number)
+                    file_extension = os.path.splitext(os.path.basename(file_name))[1]
+                    if file_extension == '.pkl':
+                        component_id_list.append(component_id)
                     else:
-                        logger.info(f"File {device_number}{extension} has no extension '.pkl'!")
+                        logger.info(f"File {component_id}{file_extension} has no extension '.pkl'!")
                 else:
                     logger.info(f"File'{file_path}' does not exists!")
         else:
             logger.info(f"Path {act_dir_name} does not exists!")
 
-        if result_numbers:
-            is_list_generated = True
+        if component_id_list:
+            is_component_id_list_generated = True
 
-        return is_list_generated, result_numbers
+        return is_component_id_list_generated, component_id_list
 
     def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
                                  summary_data: dct.StudyData, act_inductor_study_names: list[str],
@@ -236,7 +232,6 @@ class DabSummaryProcessing:
         # iterate circuit numbers
         for circuit_id in filter_data.filtered_list_files:
 
-            df_circuit = pd.DataFrame()
             df_inductor = pd.DataFrame()
             df_transformer = pd.DataFrame()
             df_capacitor_1 = pd.DataFrame()
@@ -290,9 +285,8 @@ class DabSummaryProcessing:
                 "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
                 "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
                 "circuit_loss_array": total_transistor_cond_loss_matrix,
-                "circuit_loss_mean": np.mean(total_transistor_cond_loss_matrix),
-                "circuit_heat_sink_max_1_array": circuit_heat_sink_max_1_matrix,
-                "circuit_heat_sink_max_2_array": circuit_heat_sink_max_2_matrix,
+                "circuit_temperature_heat_sink_max_1_array": circuit_heat_sink_max_1_matrix,
+                "circuit_temperature_heat_sink_max_2_array": circuit_heat_sink_max_2_matrix,
             }
             df_circuit_local = pd.DataFrame([circuit_data])
 
@@ -304,7 +298,7 @@ class DabSummaryProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
-                    DabSummaryProcessing._generate_number_list_from_pkl_files(inductor_filepath_results))
+                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(inductor_filepath_results))
 
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
@@ -335,7 +329,6 @@ class DabSummaryProcessing:
                         "inductor_id": inductor_id,
                         "inductor_volume": inductor_dto.volume,
                         "inductor_loss_array": inductance_loss_matrix,
-                        "inductor_loss_mean": np.mean(inductance_loss_matrix),
                         "inductor_t_max": 0,
                         "inductor_area": inductor_dto.area_to_heat_sink,
                     }
@@ -354,7 +347,7 @@ class DabSummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
-                    DabSummaryProcessing._generate_number_list_from_pkl_files(stacked_transformer_filepath_results))
+                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(stacked_transformer_filepath_results))
 
                 if not is_transformer_list_generated:
                     logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
@@ -376,8 +369,6 @@ class DabSummaryProcessing:
                     if int(transformer_dto.transformer_id) != int(transformer_id):
                         raise ValueError(f"{transformer_dto.transformer_id=} != {transformer_id}")
 
-                    transformer_loss_matrix = transformer_dto.loss_array
-
                     logger.debug(f"{act_capacitor_1_study_names=}")
 
                     transformer_data = {
@@ -386,7 +377,6 @@ class DabSummaryProcessing:
                         "transformer_id": transformer_id,
                         "transformer_volume": transformer_dto.volume,
                         "transformer_loss_array": transformer_dto.loss_array,
-                        "transformer_loss_mean": np.mean(transformer_dto.loss_array),
                         "transformer_t_max": 0,
                         "transformer_area": transformer_dto.area_to_heat_sink,
                     }
@@ -405,7 +395,7 @@ class DabSummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_1_list_generated, capacitor_1_id_list = (
-                    DabSummaryProcessing._generate_number_list_from_pkl_files(capacitor_1_filepath_results))
+                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
                 if not is_capacitor_1_list_generated:
                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -431,7 +421,6 @@ class DabSummaryProcessing:
                         "capacitor_1_id": capacitor_1_id,
                         "capacitor_1_volume": capacitor_1_dto.volume_total,
                         "capacitor_1_loss_array": capacitor_1_dto.loss_total_array,
-                        "capacitor_1_loss_mean": np.mean(capacitor_1_dto.loss_total_array),
                         "capacitor_1_area": capacitor_1_dto.area_total,
                         "capacitor_1_n_parallel": capacitor_1_dto.n_parallel,
                         "capacitor_1_n_series": capacitor_1_dto.n_series,
@@ -451,7 +440,7 @@ class DabSummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_2_list_generated, capacitor_2_id_list = (
-                    DabSummaryProcessing._generate_number_list_from_pkl_files(capacitor_2_filepath_results))
+                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
                 if not is_capacitor_2_list_generated:
                     logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -478,7 +467,6 @@ class DabSummaryProcessing:
                         "capacitor_2_id": capacitor_2_id,
                         "capacitor_2_volume": capacitor_2_dto.volume_total,
                         "capacitor_2_loss_array": capacitor_2_dto.loss_total_array,
-                        "capacitor_2_loss_mean": np.mean(capacitor_2_dto.loss_total_array),
                         "capacitor_2_area": capacitor_2_dto.area_total,
                         "capacitor_2_n_parallel": capacitor_2_dto.n_parallel,
                         "capacitor_2_n_series": capacitor_2_dto.n_series,
@@ -534,7 +522,8 @@ class DabSummaryProcessing:
         df["temperature_xfmr_heat_sink_max_array"] = 125 - df["r_th_xfmr_heat_sink"] * df["transformer_loss_array"]
 
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
-        df["t_min_array"] = df.apply(lambda x: np.minimum(x["circuit_heat_sink_max_1_array"], x["circuit_heat_sink_max_2_array"]), axis=1)
+        df["t_min_array"] = df.apply(lambda x: np.minimum(x["circuit_temperature_heat_sink_max_1_array"], x["circuit_temperature_heat_sink_max_2_array"]),
+                                     axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_inductor_heat_sink_max_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_xfmr_heat_sink_max_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], self.heat_sink_boundary_conditions.t_hs_max), axis=1)
