@@ -1604,4 +1604,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :param act_heat_sink_data: heat sink data
         :type act_heat_sink_data: act_heat_sink_data
         """
+        # use self here to avoid ruff warning
+        print(self.circuit_study_data)
         return False
