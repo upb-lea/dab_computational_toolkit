@@ -2,7 +2,6 @@
 from dct.boundary_check import *
 from dct.components.heat_sink_dtos import *
 from dct.toml_checker import *
-from dct.topology import *
 # capacitor selection classes
 from dct.components.capacitor_selection import *
 from dct.components.capacitor_optimization_dtos import *

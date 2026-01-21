@@ -1605,4 +1605,3 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :type act_heat_sink_data: act_heat_sink_data
         """
         return False
-
