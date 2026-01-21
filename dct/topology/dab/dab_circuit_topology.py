@@ -21,7 +21,7 @@ from dct.components.component_dtos import InductorRequirements
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
-from dct.components.heat_sink_dtos import ComponentCooling, HeatSinkBoundaryConditions
+from dct.components.heat_sink_dtos import ComponentCooling
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
@@ -61,7 +61,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
     transistor_b1_cooling: ComponentCooling
     copper_coin_area_2: float
     transistor_b2_cooling: ComponentCooling
-    heat_sink_boundary_conditions: HeatSinkBoundaryConditions
 
     def __init__(self) -> None:
         """Initialize the configuration list for the circuit optimizations."""
@@ -1383,8 +1382,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         with open(file_path, 'w') as output:
             output.write(toml_data)
 
-    def init_thermal_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """Initialize the thermal parameter of the connection points for the transistors, inductor and transformer.
+    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
+        """Initialize the thermal parameter of the connection points for the transistors.
 
         :param act_heat_sink_data: toml file with configuration data
         :type act_heat_sink_data: TomlHeatSink
@@ -1401,40 +1400,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
             tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[1])
 
-        print("inside summary processing init thermal config")
-        print(f"{self.transistor_b1_cooling=}")
-
         # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
         self.transistor_b2_cooling = ComponentCooling(
             tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[0],
             tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[1])
 
-        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        inductor_tim_thickness = act_heat_sink_data.thermal_resistance_data.inductor_cooling[0]
-        inductor_tim_conductivity = act_heat_sink_data.thermal_resistance_data.inductor_cooling[1]
-
-        # Check on zero
-        if inductor_tim_conductivity > 0:
-            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
-            # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
-            self.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
-        else:
-            logger.info(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
-            successful_init = False
-
-        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
-        transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
-
-        if transformer_tim_conductivity > 0:
-            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
-            # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
-            self.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
-        else:
-            logger.info(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
-            successful_init = False
-
-        self.heat_sink_boundary_conditions = HeatSinkBoundaryConditions(t_ambient=act_heat_sink_data.boundary_conditions.t_ambient,
-                                                                        t_hs_max=act_heat_sink_data.boundary_conditions.t_hs_max)
         # Return if initialization was successful performed (True)
         return successful_init

@@ -19,6 +19,7 @@ from sklearn.cluster import KMeans
 from scipy.signal import savgol_filter
 from typing import cast, SupportsFloat
 
+from dct import TomlHeatSink
 # own libraries
 from dct.topology.sbc import sbc_datasets_dtos as s_dtos
 from dct.topology.sbc import sbc_circuit_topology_dtos as circuit_dtos
@@ -1596,3 +1597,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
+
+    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
+        """To be defined."""
+        pass

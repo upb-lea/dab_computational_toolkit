@@ -14,7 +14,7 @@ import numpy as np
 from dct import ProgressStatus
 from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.components.capacitor_optimization_dtos import CapacitorResults
-from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions, ComponentCooling
+from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions
 from dct.toml_checker import TomlHeatSink
 from dct.datasets_dtos import StudyData, FilterData
 
@@ -33,11 +33,6 @@ class SummaryProcessing:
     _s_lock_stat: threading.Lock
     _progress_run_time: RunTime
     _progress_data: ProgressData
-    # Areas and transistor cooling parameter
-    copper_coin_area_1: float
-    transistor_b1_cooling: ComponentCooling
-    copper_coin_area_2: float
-    transistor_b2_cooling: ComponentCooling
 
     # Thermal resistance
     r_th_per_unit_area_ind_heat_sink: float
@@ -45,6 +40,7 @@ class SummaryProcessing:
 
     # Heat sink boundary condition parameter
     heat_sink_boundary_conditions: HeatSinkBoundaryConditions
+
     # Thermal calculation support class
     thr_sup: ThermalCalcSupport
 
@@ -53,17 +49,55 @@ class SummaryProcessing:
         self._s_lock_stat = threading.Lock()
         # Initialize the statistical data (For more configuration it needs to become instance instead of static
         self._progress_run_time = RunTime()
-        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0,
-                                           progress_status=ProgressStatus.Idle)
+        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
         # Heat sink boundary condition parameter
         self.heat_sink_boundary_conditions = HeatSinkBoundaryConditions(0, 0)
         # Thermal calculation support class
         self.thr_sup = ThermalCalcSupport()
 
+    def init_thermal_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
+        """Initialize the thermal parameter of the connection points for the inductor and transformer.
 
+        :param act_heat_sink_data: toml file with configuration data
+        :type act_heat_sink_data: TomlHeatSink
 
+        :return: True, if the thermal parameter of the connection points was successful initialized
+        :rtype: bool
+        """
+        # Variable declaration
+        # Return variable initialized to True
+        successful_init = True
 
+        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
+        inductor_tim_thickness = act_heat_sink_data.thermal_resistance_data.inductor_cooling[0]
+        inductor_tim_conductivity = act_heat_sink_data.thermal_resistance_data.inductor_cooling[1]
+
+        # Check on zero
+        if inductor_tim_conductivity > 0:
+            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
+            # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
+            self.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
+        else:
+            logger.info(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
+            successful_init = False
+
+        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
+        transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
+        transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
+
+        if transformer_tim_conductivity > 0:
+            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
+            # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
+            self.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
+        else:
+            logger.info(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
+            successful_init = False
+
+        self.heat_sink_boundary_conditions = HeatSinkBoundaryConditions(t_ambient=act_heat_sink_data.boundary_conditions.t_ambient,
+                                                                        t_hs_max=act_heat_sink_data.boundary_conditions.t_hs_max)
+        # Return if initialization was successful performed (True)
+        return successful_init
 
     def get_progress_data(self) -> ProgressData:
         """Provide the progress data of the optimization.
@@ -126,7 +160,8 @@ class SummaryProcessing:
                                  act_stacked_transformer_study_names: list[str], filter_data: FilterData,
                                  capacitor_1_study_data: StudyData, capacitor_2_study_data: StudyData,
                                  act_capacitor_1_study_names: list[str], act_capacitor_2_study_names: list[str], is_pre_summary: bool,
-                                 r_th_per_unit_area_ind_heat_sink: float, r_th_per_unit_area_xfmr_heat_sink: float) -> pd.DataFrame:
+                                 r_th_per_unit_area_ind_heat_sink: float, r_th_per_unit_area_xfmr_heat_sink: float,
+                                 heat_sink_boundary_conditions: HeatSinkBoundaryConditions) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
@@ -153,6 +188,14 @@ class SummaryProcessing:
         :type is_pre_summary: bool
         :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
+        :param r_th_per_unit_area_ind_heat_sink: r_th of inductor to heat sink per unit area
+        :type r_th_per_unit_area_ind_heat_sink: float
+        :param r_th_per_unit_area_xfmr_heat_sink: r_th of transformer to heat sink per unit area
+        :type r_th_per_unit_area_xfmr_heat_sink: float,
+        :param heat_sink_boundary_conditions: Boundary conditions for the heat sink
+        :type heat_sink_boundary_conditions: HeatSinkBoundaryConditions
+
+
         """
         # Variable declaration
 
@@ -192,7 +235,6 @@ class SummaryProcessing:
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
                 raise ValueError("Incomplete loss calculation.")
-
 
             logger.debug(f"{act_inductor_study_names=}")
 
@@ -442,10 +484,10 @@ class SummaryProcessing:
         df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda x: np.minimum(*x))
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_inductor_heat_sink_max_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_xfmr_heat_sink_max_array"]), axis=1)
-        df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], self.heat_sink_boundary_conditions.t_hs_max), axis=1)
+        df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], heat_sink_boundary_conditions.t_hs_max), axis=1)
 
         # maximum delta temperature over the heat sink
-        df["delta_t_max_heat_sink_array"] = df["t_min_array"] - self.heat_sink_boundary_conditions.t_ambient
+        df["delta_t_max_heat_sink_array"] = df["t_min_array"] - heat_sink_boundary_conditions.t_ambient
 
         df["r_th_heat_sink_target_array"] = df["delta_t_max_heat_sink_array"] / df["total_loss_array"]
 

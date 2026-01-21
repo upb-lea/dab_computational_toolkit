@@ -836,7 +836,17 @@ class HandleDabDto:
     def generate_thermal_transistor_parameters(circuit_dto: d_dtos.DabCircuitDTO,
                                                transistor_b1_cooling: ComponentCooling,
                                                transistor_b2_cooling: ComponentCooling) -> d_dtos.DabCircuitDTO:
+        """
+        Generate the transistor thermal parameters.
 
+        :param circuit_dto: DAB circuit DTO
+        :type circuit_dto: d_dtos.DabCircuitDTO
+        :param transistor_b1_cooling: Transistor cooling
+        :type transistor_b1_cooling: ComponentCooling
+        :param transistor_b2_cooling: Transistor cooling
+        :type transistor_b2_cooling: ComponentCooling
+        :return:
+        """
         b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
         b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
 
@@ -852,10 +862,8 @@ class HandleDabDto:
         circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
         circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
 
-        circuit_heat_sink_max_1_array = (
-                circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
-        circuit_heat_sink_max_2_array = (
-                circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
+        circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
+        circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
 
         circuit_dto.circuit_thermal = d_dtos.CircuitThermal(
             t_j_max=[circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
@@ -866,4 +874,3 @@ class HandleDabDto:
         )
 
         return circuit_dto
-

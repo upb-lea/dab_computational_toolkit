@@ -86,7 +86,6 @@ waveforms
 Qoss
 coss
 req
-TransistorCooling
 CircuitParetoDabDesign
 sqlite
 DabCircuitConf
@@ -319,8 +318,6 @@ getenv
 os
 pageID
 DctServer
-InductiveElementCooling
-MagneticElementCooling
 xfmr
 filepaths
 basename
@@ -396,4 +393,4 @@ SbcCircuitConf
 SbcGeneralConf
 SbcHeatSinkConf
 SbcInductorConf
-
+ComponentCooling

@@ -1602,14 +1602,12 @@ class DctMainCtl:
 
         # -- Start optimization  ----------------------------------------------------------------------------------------
 
-
         # Initialization thermal data
-        if not self._circuit_optimization.init_thermal_configuration(toml_heat_sink):
+        if not self._circuit_optimization.init_thermal_circuit_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
         print("dctmainctl")
         print(f"{self._circuit_optimization=}")
         print(f"{self._circuit_optimization.transistor_b1_cooling=}")
-
 
         # --------------------------
         # Circuit optimization
@@ -1810,6 +1808,8 @@ class DctMainCtl:
         # Allocate summary data object
         self._summary_pre_processing = SummaryProcessing()
 
+        if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
+            raise ValueError("Thermal data configuration not initialized!")
 
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
@@ -1822,8 +1822,10 @@ class DctMainCtl:
             self._inductor_study_data, self._transformer_study_data, pre_summary_data,
             inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
             self._capacitor_selection_data, self._capacitor_2_selection_data,
-            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=True, r_th_per_unit_area_ind_heat_sink=self._circuit_optimization.r_th_per_unit_area_ind_heat_sink,
-            r_th_per_unit_area_xfmr_heat_sink=self._circuit_optimization.r_th_per_unit_area_xfmr_heat_sink
+            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=True,
+            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
+            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
+            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
         #  Select the needed heat sink configuration
         self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
@@ -1899,8 +1901,9 @@ class DctMainCtl:
             inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
             self._capacitor_selection_data, self._capacitor_2_selection_data,
             capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False,
-            r_th_per_unit_area_ind_heat_sink=self._circuit_optimization.r_th_per_unit_area_ind_heat_sink,
-            r_th_per_unit_area_xfmr_heat_sink=self._circuit_optimization.r_th_per_unit_area_xfmr_heat_sink
+            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
+            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
+            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
         #  Select the needed heat sink configuration
         self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
