@@ -1,6 +1,5 @@
 """Init python files as modules."""
 from dct.boundary_check import *
-from dct.components.heat_sink import *
 from dct.components.heat_sink_dtos import *
 from dct.toml_checker import *
 # capacitor selection classes

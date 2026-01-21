@@ -12,15 +12,8 @@ class HeatSinkBoundaryConditions:
     t_hs_max: float
 
 @dataclasses.dataclass
-class TransistorCooling:
-    """Fix parameters for the transistor cooling."""
-
-    tim_conductivity: float
-    tim_thickness: float
-
-@dataclasses.dataclass
-class MagneticElementCooling:
-    """Fix parameters for the magnetic element cooling."""
+class ComponentCooling:
+    """Fix parameters for the transistor, inductor and transformer cooling."""
 
     tim_conductivity: float
     tim_thickness: float
