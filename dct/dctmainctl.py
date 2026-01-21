@@ -79,7 +79,7 @@ class DctMainCtl:
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
-        self._summary_processing: SummaryProcessing | None = None
+        self._summary_pre_processing: SummaryProcessing | None = None
         self._summary_processing: SummaryProcessing | None = None
 
         # Filtered point results in case of skip
@@ -1605,9 +1605,6 @@ class DctMainCtl:
         # Initialization thermal data
         if not self._circuit_optimization.init_thermal_circuit_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
-        print("dctmainctl")
-        print(f"{self._circuit_optimization=}")
-        print(f"{self._circuit_optimization.transistor_b1_cooling=}")
 
         # --------------------------
         # Circuit optimization

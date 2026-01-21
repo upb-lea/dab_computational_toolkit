@@ -847,6 +847,11 @@ class HandleDabDto:
         :type transistor_b2_cooling: ComponentCooling
         :return:
         """
+        if circuit_dto.calc_losses is None:
+            raise ValueError("Missing transistor loss calculation of bridge 1.")
+        if circuit_dto.calc_losses is None:
+            raise ValueError("Missing transistor loss calculation of bridge 2.")
+
         b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
         b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
 

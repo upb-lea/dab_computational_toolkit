@@ -1599,5 +1599,10 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             output.write(toml_data)
 
     def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """To be defined."""
-        pass
+        """To be defined.
+
+        :param act_heat_sink_data: heat sink data
+        :type act_heat_sink_data: act_heat_sink_data
+        """
+        return False
+
