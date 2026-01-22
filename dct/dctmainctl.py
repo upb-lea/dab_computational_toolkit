@@ -1611,11 +1611,11 @@ class DctMainCtl:
         # self._key_input_handler = threading.Thread(target=self._key_input,
         #                                            args=(srv_request_queue, srv_response_queue), daemon=True)
 
-        # -- Start optimization  ----------------------------------------------------------------------------------------
-
         # Initialization thermal data
         if not self._circuit_optimization.init_thermal_circuit_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
+
+        # -- Start optimization  ----------------------------------------------------------------------------------------
 
         # --------------------------
         # Circuit optimization
