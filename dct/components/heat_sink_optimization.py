@@ -362,14 +362,14 @@ class ThermalCalcSupport:
         return r_copper_coin, effective_bottom_cooling_area
 
     @staticmethod
-    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
+    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: ComponentCooling) -> float:
         """
         Calculate the thermal resistance of the thermal interface material (TIM).
 
         :param copper_coin_bot_area: bottom copper coin area in m²
         :type copper_coin_bot_area: float
         :param transistor_cooling: Transistor cooling DTO
-        :type transistor_cooling: TransistorCooling
+        :type transistor_cooling: ComponentCooling
         :return: r_th of TIM material
         :rtype: float
         """

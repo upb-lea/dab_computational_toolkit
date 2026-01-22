@@ -12,7 +12,3 @@
     v2_additional_user_point_list=[]
     p_additional_user_point_list=[]
     additional_user_weighting_point_list=[]
-
-[misc]
-    min_efficiency_percent=80
-    control_board_volume=10e-6

@@ -324,3 +324,14 @@ class TomlHeatSink(BaseModel):
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
     thermal_resistance_data: TomlHeatSinkThermalResistanceData
+
+# ######################################################
+# misc
+# ######################################################
+
+class TomlMisc(BaseModel):
+    """Data structure for Misc data."""
+
+    min_efficiency_percent: float
+    control_board_volume: float
+    control_board_loss: float

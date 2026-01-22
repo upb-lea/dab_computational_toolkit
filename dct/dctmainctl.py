@@ -36,8 +36,8 @@ from dct import HeatSinkOptimization
 from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
 import dct.generate_toml as toml_gen
+from dct.components.summary_processing import SummaryProcessing
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
-from dct.topology.dab.dab_summary_processing import DabSummaryProcessing
 from dct.server_ctl import DctServer as ServerCtl
 from dct.server_ctl import ServerRequestData
 from dct.server_ctl import RequestCmd
@@ -79,8 +79,8 @@ class DctMainCtl:
         self._inductor_optimization: InductorOptimization | None = None
         self._transformer_optimization: TransformerOptimization | None = None
         self._heat_sink_optimization: HeatSinkOptimization | None = None
-        self._summary_pre_processing: DabSummaryProcessing | None = None
-        self._summary_processing: DabSummaryProcessing | None = None
+        self._summary_pre_processing: SummaryProcessing | None = None
+        self._summary_processing: SummaryProcessing | None = None
 
         # Filtered point results in case of skip
         self._inductor_number_filtered_analytic_points_skip_list: list[int] = []
@@ -1185,6 +1185,17 @@ class DctMainCtl:
 
         DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "software_versions.txt"))
 
+        # --------------------------
+        # Misc
+        # --------------------------
+        logger.debug("Read misc file")
+        # Load the configuration for program flow and check the validity
+        file_path = os.path.join(workspace_path, "Misc.toml")
+        misc_loaded, dict_misc = self.load_toml_file(file_path)
+
+        # Verify toml data and transfer to class
+        toml_misc = tc.TomlMisc(**dict_misc)
+
         # -----------------------------------------
         # Introduce study data and filter data DTOs
         # -----------------------------------------
@@ -1600,7 +1611,12 @@ class DctMainCtl:
         # self._key_input_handler = threading.Thread(target=self._key_input,
         #                                            args=(srv_request_queue, srv_response_queue), daemon=True)
 
+        # Initialization thermal data
+        if not self._circuit_optimization.init_thermal_circuit_configuration(toml_heat_sink):
+            raise ValueError("Thermal data configuration not initialized!")
+
         # -- Start optimization  ----------------------------------------------------------------------------------------
+
         # --------------------------
         # Circuit optimization
         # --------------------------
@@ -1798,25 +1814,31 @@ class DctMainCtl:
         logger.info("Start pre-summary.")
 
         # Allocate summary data object
-        self._summary_pre_processing = DabSummaryProcessing()
+        self._summary_pre_processing = SummaryProcessing()
 
-        # Initialization thermal data
         if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
+
         # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
         inductor_study_names = [self._inductor_study_data.study_name]
         stacked_transformer_study_names = [self._transformer_study_data.study_name]
         capacitor_1_study_names = [self._capacitor_selection_data.study_name]
         capacitor_2_study_names = [self._capacitor_2_selection_data.study_name]
         # Start summary processing by generating the DataFrame from calculated simulation results
+
         s_df = self._summary_pre_processing.generate_result_database(
             self._inductor_study_data, self._transformer_study_data, pre_summary_data,
             inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
             self._capacitor_selection_data, self._capacitor_2_selection_data,
-            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=True
+            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=True,
+            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
+            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
+            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
         #  Select the needed heat sink configuration
-        self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
+        df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
+
+        self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
@@ -1875,7 +1897,7 @@ class DctMainCtl:
         logger.info("Start final summary.")
 
         # Allocate summary data object
-        self._summary_processing = DabSummaryProcessing()
+        self._summary_processing = SummaryProcessing()
 
         # Initialization thermal data
         if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
@@ -1888,10 +1910,16 @@ class DctMainCtl:
             self._inductor_study_data, self._transformer_study_data, summary_data,
             inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
             self._capacitor_selection_data, self._capacitor_2_selection_data,
-            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False
+            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False,
+            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
+            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
+            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
         #  Select the needed heat sink configuration
-        self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
+        df_w_hs_summary = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
+
+        # add control board volume and losses
+        self._summary_processing.add_offset_volume_losses(summary_data, df_w_hs_summary, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

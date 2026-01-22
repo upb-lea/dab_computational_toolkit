@@ -21,17 +21,18 @@ from dct.components.component_dtos import InductorRequirements
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
-from dct.topology.dab import dab_datasets as d_sets
+from dct.components.heat_sink_dtos import ComponentCooling
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
+from dct.toml_checker import TomlHeatSink
 from dct.topology.dab import dab_toml_checker as dab_tc
-from dct.datasets_dtos import StudyData, FilterData
+from dct.topology.dab.dab_datasets import HandleDabDto
+from dct.datasets_dtos import StudyData, FilterData, PlotData
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
-from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
 from dct.components.component_dtos import CapacitorRequirements, ComponentRequirements, TransformerRequirements
 
@@ -55,6 +56,14 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
     _study_in_storage: optuna.Study | None
     _fixed_parameters: d_dtos.FixedParameters | None
 
+    # Areas and transistor cooling parameter
+    copper_coin_area_1: float
+    transistor_b1_cooling: ComponentCooling
+    copper_coin_area_2: float
+    transistor_b2_cooling: ComponentCooling
+
+    misc: float
+
     def __init__(self) -> None:
         """Initialize the configuration list for the circuit optimizations."""
         # Call the constructor of the base class
@@ -62,8 +71,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Variable allocation
         self._c_lock_stat = threading.Lock()
         # Initialize the statistical data (For more configuration it needs to become instance instead of static
-        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0,
-                                           progress_status=ProgressStatus.Idle)
+        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
         self._progress_run_time = RunTime()
         self._dab_config = None
         self._is_study_available = False
@@ -76,6 +84,13 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         self._toml_general: dab_tc.TomlDabGeneral | None = None
         # Circuit optimization parameter
         self._toml_circuit: dab_tc.TomlDabCircuitParetoDesign | None = None
+
+        # Areas and transistor cooling parameter
+        self.copper_coin_area_1 = 0
+        self.transistor_b1_cooling = ComponentCooling(0, 0)
+        self.copper_coin_area_2 = 0
+        self.transistor_b2_cooling = ComponentCooling(0, 0)
+        self.misc = 0
 
     def save_config(self) -> None:
         """Save the actual configuration file as pickle file on the disk."""
@@ -255,8 +270,11 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Create dictionary from transistor database list
         db = tdb.DatabaseManager()
         db.set_operation_mode_json()
-        if not is_tdb_to_update:
-            db.update_from_fileexchange(True)
+        if is_tdb_to_update:
+            logger.info("Update transistor data from TDB file exchange.")
+            db.update_from_fileexchange(overwrite=True)
+        else:
+            logger.info(f"No transistor data update from TDB file exchange. ({is_tdb_to_update=})")
 
         # Get available keywords
         keyword_list: list[str] = db.get_transistor_names_list()
@@ -549,7 +567,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             if transistor_dto.name == transistor_2_name_suggest:
                 transistor_2_dto: d_dtos.TransistorDTO = transistor_dto
 
-        dab_calc = d_sets.HandleDabDto.init_config(
+        dab_calc = HandleDabDto.init_config(
             name=dab_config.circuit_study_name,
             mesh_v1=fixed_parameters.mesh_v1,
             mesh_v2=fixed_parameters.mesh_v2,
@@ -595,10 +613,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         transistor_2_dto_list = []
 
         for transistor in act_dab_config.design_space.transistor_1_name_list:
-            transistor_1_dto_list.append(d_sets.HandleDabDto.tdb_to_transistor_dto(transistor))
+            transistor_1_dto_list.append(HandleDabDto.tdb_to_transistor_dto(transistor))
 
         for transistor in act_dab_config.design_space.transistor_2_name_list:
-            transistor_2_dto_list.append(d_sets.HandleDabDto.tdb_to_transistor_dto(transistor))
+            transistor_2_dto_list.append(HandleDabDto.tdb_to_transistor_dto(transistor))
 
         # choose sampling method
         if act_dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
@@ -752,7 +770,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             os.makedirs(new_c_oss_directory)
 
         # Set the directory path
-        d_sets.HandleDabDto.set_c_oss_storage_directory(new_c_oss_directory)
+        HandleDabDto.set_c_oss_storage_directory(new_c_oss_directory)
 
         if os.path.exists(circuit_study_sqlite_database):
             logger.info("Existing circuit study found. Proceeding.")
@@ -917,7 +935,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         fix_parameters = DabCircuitOptimization.calculate_fixed_parameters(dab_config)
 
-        dab_dto = d_sets.HandleDabDto.init_config(
+        dab_dto = HandleDabDto.init_config(
             name=str(trial_number),
             mesh_v1=fix_parameters.mesh_v1,
             mesh_v2=fix_parameters.mesh_v2,
@@ -960,10 +978,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         for idx, _ in df.iterrows():
             index = int(str(idx))
-            transistor_dto_1 = d_sets.HandleDabDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
-            transistor_dto_2 = d_sets.HandleDabDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_2_name_suggest"]))
+            transistor_dto_1 = HandleDabDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_1_name_suggest"]))
+            transistor_dto_2 = HandleDabDto.tdb_to_transistor_dto(str(df.at[index, "params_transistor_2_name_suggest"]))
 
-            dab_dto = d_sets.HandleDabDto.init_config(
+            dab_dto = HandleDabDto.init_config(
                 name=str(df["number"][index].item()),
                 mesh_v1=self._fixed_parameters.mesh_v1,
                 mesh_v2=self._fixed_parameters.mesh_v2,
@@ -1106,6 +1124,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         df = self._study_in_storage.trials_dataframe()
         df.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._dab_config.circuit_study_name}.csv')
 
+        # get 100 percent ZVS coverage designs
         df = df[df["values_0"] == 100]
 
         smallest_dto_list: list[d_dtos.DabCircuitDTO] = []
@@ -1150,8 +1169,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         dto_directory = self.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)
         for dto in smallest_dto_list:
-            dto = d_sets.HandleDabDto.generate_components_target_requirements(dto)
-            d_sets.HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
+            # generate the target requirements for inductor, transformer and capacitor
+            dto = HandleDabDto.generate_components_target_requirements(dto)
+            # generate the thermal parameters for the given design
+            dto = HandleDabDto.generate_thermal_transistor_parameters(dto, self.transistor_b1_cooling, self.transistor_b2_cooling)
+
+            HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list
         self.filter_data.filtered_list_files = []
@@ -1182,7 +1205,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         capacitor_requirements_list: list[CapacitorRequirements] = []
         for circuit_id_file in self.filter_data.filtered_list_files:
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
-            circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_id_filepath)
+            circuit_dto = HandleDabDto.load_from_file(circuit_id_filepath)
             if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
                 # due to mypy checker
                 raise TypeError("Loaded component requirements have wrong type.")
@@ -1204,7 +1227,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         inductor_requirements_list: list[InductorRequirements] = []
         for circuit_id_file in self.filter_data.filtered_list_files:
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
-            circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_id_filepath)
+            circuit_dto = HandleDabDto.load_from_file(circuit_id_filepath)
             if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
                 # due to mypy checker
                 raise TypeError("Loaded component requirements have wrong type.")
@@ -1226,7 +1249,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         transformer_requirements_list: list[TransformerRequirements] = []
         for circuit_id_file in self.filter_data.filtered_list_files:
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
-            circuit_dto = d_sets.HandleDabDto.load_from_file(circuit_id_filepath)
+            circuit_dto = HandleDabDto.load_from_file(circuit_id_filepath)
             if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
                 # due to mypy checker
                 raise TypeError("Loaded component requirements have wrong type.")
@@ -1361,3 +1384,29 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
+
+    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
+        """Initialize the thermal parameter of the connection points for the transistors.
+
+        :param act_heat_sink_data: toml file with configuration data
+        :type act_heat_sink_data: TomlHeatSink
+
+        :return: True, if the thermal parameter of the connection points was successful initialized
+        :rtype: bool
+        """
+        # Variable declaration
+        # Return variable initialized to True
+        successful_init = True
+
+        # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
+        self.transistor_b1_cooling = ComponentCooling(
+            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
+            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[1])
+
+        # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
+        self.transistor_b2_cooling = ComponentCooling(
+            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[0],
+            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[1])
+
+        # Return if initialization was successful performed (True)
+        return successful_init

@@ -11,38 +11,37 @@ import pandas as pd
 import numpy as np
 
 # own libraries
-import dct
 from dct import ProgressStatus
 from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.components.capacitor_optimization_dtos import CapacitorResults
+from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions
+from dct.toml_checker import TomlHeatSink
+from dct.datasets_dtos import StudyData, FilterData
+
 import hct
-import dct.topology.dab.dab_datasets as dab_dset
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               CIRCUIT_CAPACITOR_LOSS_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET,
+                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL)
 
 logger = logging.getLogger(__name__)
 
-class DabSummaryProcessing:
+class SummaryProcessing:
     """Perform the summary calculation based on optimization results."""
 
     _s_lock_stat: threading.Lock
     _progress_run_time: RunTime
     _progress_data: ProgressData
-    # Areas and transistor cooling parameter
-    copper_coin_area_1: float
-    transistor_b1_cooling: dct.TransistorCooling
-    copper_coin_area_2: float
-    transistor_b2_cooling: dct.TransistorCooling
 
     # Thermal resistance
     r_th_per_unit_area_ind_heat_sink: float
     r_th_per_unit_area_xfmr_heat_sink: float
 
     # Heat sink boundary condition parameter
-    heat_sink_boundary_conditions: dct.HeatSinkBoundaryConditions
+    heat_sink_boundary_conditions: HeatSinkBoundaryConditions
+
     # Thermal calculation support class
     thr_sup: ThermalCalcSupport
 
@@ -51,29 +50,18 @@ class DabSummaryProcessing:
         self._s_lock_stat = threading.Lock()
         # Initialize the statistical data (For more configuration it needs to become instance instead of static
         self._progress_run_time = RunTime()
-        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0,
-                                           progress_status=ProgressStatus.Idle)
-
-        # Areas and transistor cooling parameter
-        self.copper_coin_area_1 = 0
-        self.transistor_b1_cooling = dct.TransistorCooling(0, 0)
-        self.copper_coin_area_2 = 0
-        self.transistor_b2_cooling = dct.TransistorCooling(0, 0)
-
-        # Thermal resistance
-        self.r_th_per_unit_area_ind_heat_sink = 0
-        self.r_th_per_unit_area_xfmr_heat_sink = 0
+        self._progress_data = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
         # Heat sink boundary condition parameter
-        self.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(0, 0)
+        self.heat_sink_boundary_conditions = HeatSinkBoundaryConditions(0, 0)
         # Thermal calculation support class
         self.thr_sup = ThermalCalcSupport()
 
-    def init_thermal_configuration(self, act_heat_sink_data: dct.TomlHeatSink) -> bool:
-        """Initialize the thermal parameter of the connection points for the transistors, inductor and transformer.
+    def init_thermal_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
+        """Initialize the thermal parameter of the connection points for the inductor and transformer.
 
         :param act_heat_sink_data: toml file with configuration data
-        :type act_heat_sink_data: dct.TomlHeatSink
+        :type act_heat_sink_data: TomlHeatSink
 
         :return: True, if the thermal parameter of the connection points was successful initialized
         :rtype: bool
@@ -81,16 +69,6 @@ class DabSummaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-
-        # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        self.transistor_b1_cooling = dct.TransistorCooling(
-            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
-            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[1])
-
-        # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        self.transistor_b2_cooling = dct.TransistorCooling(
-            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[0],
-            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[1])
 
         # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
         inductor_tim_thickness = act_heat_sink_data.thermal_resistance_data.inductor_cooling[0]
@@ -109,7 +87,6 @@ class DabSummaryProcessing:
         transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
         transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
 
-        # Check on zero ( ASA: Maybe in general all configuration files are to check for validity in advanced. In this case the check can be removed.)
         if transformer_tim_conductivity > 0:
             # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
             # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
@@ -118,8 +95,8 @@ class DabSummaryProcessing:
             logger.info(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
             successful_init = False
 
-        self.heat_sink_boundary_conditions = dct.HeatSinkBoundaryConditions(t_ambient=act_heat_sink_data.boundary_conditions.t_ambient,
-                                                                            t_hs_max=act_heat_sink_data.boundary_conditions.t_hs_max)
+        self.heat_sink_boundary_conditions = HeatSinkBoundaryConditions(t_ambient=act_heat_sink_data.boundary_conditions.t_ambient,
+                                                                        t_hs_max=act_heat_sink_data.boundary_conditions.t_hs_max)
         # Return if initialization was successful performed (True)
         return successful_init
 
@@ -179,19 +156,21 @@ class DabSummaryProcessing:
 
         return is_component_id_list_generated, component_id_list
 
-    def generate_result_database(self, inductor_study_data: dct.StudyData, transformer_study_data: dct.StudyData,
-                                 summary_data: dct.StudyData, act_inductor_study_names: list[str],
-                                 act_stacked_transformer_study_names: list[str], filter_data: dct.FilterData,
-                                 capacitor_1_study_data: dct.StudyData, capacitor_2_study_data: dct.StudyData,
-                                 act_capacitor_1_study_names: list[str], act_capacitor_2_study_names: list[str], is_pre_summary: bool) -> pd.DataFrame:
+    def generate_result_database(self, inductor_study_data: StudyData, transformer_study_data: StudyData,
+                                 summary_data: StudyData, act_inductor_study_names: list[str],
+                                 act_stacked_transformer_study_names: list[str], filter_data: FilterData,
+                                 capacitor_1_study_data: StudyData, capacitor_2_study_data: StudyData,
+                                 act_capacitor_1_study_names: list[str], act_capacitor_2_study_names: list[str], is_pre_summary: bool,
+                                 r_th_per_unit_area_ind_heat_sink: float, r_th_per_unit_area_xfmr_heat_sink: float,
+                                 heat_sink_boundary_conditions: HeatSinkBoundaryConditions) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
         :param inductor_study_data: inductor study data
-        :type inductor_study_data: dct.StudyData
+        :type inductor_study_data: StudyData
         :param transformer_study_data: transformer study data
-        :type transformer_study_data: dct.StudyData
+        :type transformer_study_data: StudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: dct.StudyData
+        :type summary_data: StudyData
         :param capacitor_1_study_data: List of names with capacitor studies which are to process
         :type capacitor_1_study_data: list[str]
         :param capacitor_2_study_data: List of names with capacitor studies which are to process
@@ -205,18 +184,28 @@ class DabSummaryProcessing:
         :param act_stacked_transformer_study_names: List of names with transformer studies which are to process
         :type  act_stacked_transformer_study_names: list[str]
         :param filter_data: filtered result lists
-        :type filter_data: dct.FilterData
+        :type filter_data: FilterData
         :param is_pre_summary: True for pre-summary, False for summary
         :type is_pre_summary: bool
         :return: DataFrame with result information of the pareto front
         :rtype:  pd.DataFrame
+        :param r_th_per_unit_area_ind_heat_sink: r_th of inductor to heat sink per unit area
+        :type r_th_per_unit_area_ind_heat_sink: float
+        :param r_th_per_unit_area_xfmr_heat_sink: r_th of transformer to heat sink per unit area
+        :type r_th_per_unit_area_xfmr_heat_sink: float,
+        :param heat_sink_boundary_conditions: Boundary conditions for the heat sink
+        :type heat_sink_boundary_conditions: HeatSinkBoundaryConditions
+
+
         """
         # Variable declaration
 
         if is_pre_summary:
+            # pre summary using reluctance model results (inductive components)
             inductor_result_directory = CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER
             transformer_result_directory = CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER
         else:
+            # final summary using FEM results (inductive components)
             inductor_result_directory = CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
             transformer_result_directory = CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
 
@@ -241,77 +230,47 @@ class DabSummaryProcessing:
             circuit_id_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
 
             # Get circuit results
-            circuit_dto = dab_dset.HandleDabDto.load_from_file(circuit_id_filepath)
+            with open(circuit_id_filepath, 'rb') as pickle_file_data:
+                circuit_dto = pickle.load(pickle_file_data)
 
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
                 raise ValueError("Incomplete loss calculation.")
 
-            # Begin: ASA: No influence by inductor or transformer ################################
-            # get transistor results
-            total_transistor_cond_loss_matrix \
-                = 4 * (circuit_dto.calc_losses.p_m1_conduction + circuit_dto.calc_losses.p_m2_conduction)
-
-            b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
-            b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
-            # End: ASA: No influence by inductor or transformer ################################
-            # Begin: ASA: No influence by inductor or transformer ################################
-            # get all the losses in a matrix
-            r_th_copper_coin_1, copper_coin_area_1 = self.thr_sup.calculate_r_th_copper_coin(
-                circuit_dto.input_config.transistor_dto_1.cooling_area)
-            r_th_copper_coin_2, copper_coin_area_2 = self.thr_sup.calculate_r_th_copper_coin(
-                circuit_dto.input_config.transistor_dto_2.cooling_area)
-
-            circuit_r_th_tim_1 = self.thr_sup.calculate_r_th_tim(copper_coin_area_1, self.transistor_b1_cooling)
-            circuit_r_th_tim_2 = self.thr_sup.calculate_r_th_tim(copper_coin_area_2, self.transistor_b2_cooling)
-
-            circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
-            circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
-
-            circuit_heat_sink_max_1_matrix = (
-                circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
-            circuit_heat_sink_max_2_matrix = (
-                circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
-            # End: ASA: No influence by inductor or transformer ################################
-
             logger.debug(f"{act_inductor_study_names=}")
 
             circuit_data = {
-                # circuit
                 "circuit_id": circuit_id,
-                "circuit_t_j_max_1": circuit_dto.input_config.transistor_dto_1.t_j_max_op,
-                "circuit_t_j_max_2": circuit_dto.input_config.transistor_dto_2.t_j_max_op,
-                "circuit_r_th_ib_jhs_1": circuit_r_th_1_jhs,
-                "circuit_r_th_ib_jhs_2": circuit_r_th_2_jhs,
-                "circuit_area": 4 * (copper_coin_area_1 + copper_coin_area_2),
-                "circuit_loss_array": total_transistor_cond_loss_matrix,
-                "circuit_temperature_heat_sink_max_1_array": circuit_heat_sink_max_1_matrix,
-                "circuit_temperature_heat_sink_max_2_array": circuit_heat_sink_max_2_matrix,
+                "circuit_t_j_max": circuit_dto.circuit_thermal.t_j_max,
+                "circuit_r_th_ib_jhs": circuit_dto.circuit_thermal.r_th_jhs,
+                "circuit_area": circuit_dto.circuit_thermal.area,
+                "circuit_loss_array": circuit_dto.circuit_thermal.loss_array,
+                "circuit_temperature_heat_sink_max_array": circuit_dto.circuit_thermal.temperature_heat_sink_max_array
             }
             df_circuit_local = pd.DataFrame([circuit_data])
 
             # iterate inductor study
             for inductor_study_name in act_inductor_study_names:
-                inductor_filepath_results = os.path.join(inductor_study_data.optimization_directory, circuit_id,
-                                                         inductor_study_name,
-                                                         inductor_result_directory)
+                inductor_study_results_filepath = os.path.join(inductor_study_data.optimization_directory, circuit_id,
+                                                               inductor_study_name,
+                                                               inductor_result_directory)
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
-                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(inductor_filepath_results))
+                    SummaryProcessing._generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
 
                 if not is_inductor_list_generated:
-                    logger.info(f"Path {inductor_filepath_results} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {inductor_study_results_filepath} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
 
                 # iterate inductor numbers
                 logger.debug(f"{inductor_id_list=}")
                 for inductor_id in inductor_id_list:
-                    inductor_filepath_number = os.path.join(inductor_filepath_results, f"{inductor_id}.pkl")
+                    inductor_id_filepath = os.path.join(inductor_study_results_filepath, f"{inductor_id}.pkl")
 
                     # Get inductor results
-                    with open(inductor_filepath_number, 'rb') as pickle_file_data:
+                    with open(inductor_id_filepath, 'rb') as pickle_file_data:
                         inductor_dto = pickle.load(pickle_file_data)
 
                     if inductor_dto.circuit_id != circuit_id:
@@ -340,17 +299,17 @@ class DabSummaryProcessing:
 
             # iterate transformer study
             for stacked_transformer_study_name in act_stacked_transformer_study_names:
-                stacked_transformer_filepath_results = os.path.join(transformer_study_data.optimization_directory,
-                                                                    circuit_id,
-                                                                    stacked_transformer_study_name,
-                                                                    transformer_result_directory)
+                stacked_transformer_study_results_filepath = os.path.join(transformer_study_data.optimization_directory,
+                                                                          circuit_id,
+                                                                          stacked_transformer_study_name,
+                                                                          transformer_result_directory)
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
-                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(stacked_transformer_filepath_results))
+                    SummaryProcessing._generate_component_id_list_from_pkl_files(stacked_transformer_study_results_filepath))
 
                 if not is_transformer_list_generated:
-                    logger.info(f"Path {stacked_transformer_filepath_results} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {stacked_transformer_study_results_filepath} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
 
@@ -358,7 +317,7 @@ class DabSummaryProcessing:
 
                 # iterate transformer numbers
                 for transformer_id in transformer_id_list:
-                    transformer_id_filepath = os.path.join(stacked_transformer_filepath_results, f"{transformer_id}.pkl")
+                    transformer_id_filepath = os.path.join(stacked_transformer_study_results_filepath, f"{transformer_id}.pkl")
 
                     # get transformer results
                     with open(transformer_id_filepath, 'rb') as pickle_file_data:
@@ -395,7 +354,7 @@ class DabSummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_1_list_generated, capacitor_1_id_list = (
-                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
+                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
                 if not is_capacitor_1_list_generated:
                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -440,7 +399,7 @@ class DabSummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_2_list_generated, capacitor_2_id_list = (
-                    DabSummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
+                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
                 if not is_capacitor_2_list_generated:
                     logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -499,44 +458,37 @@ class DabSummaryProcessing:
 
         # Calculate the total area as sum of circuit,  inductor and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
         # heat sink area, capacitors do not need heat sink area
-        df["total_area"] = df["circuit_area"] + df["inductor_area"] + df["transformer_area"]
+        df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
 
-        # TODO: Fix needed as capacitor 2 is not considered currently
-        df["total_mean_loss"] = (df["circuit_loss_array"].apply(np.mean) + df["inductor_loss_array"].apply(np.mean) + \
-                                 df["transformer_loss_array"].apply(np.mean) + \
-                                 df["capacitor_1_loss_array"].apply(np.mean)  # + np.mean(df["capacitor_2_loss_array"])
-                                 )
         # TODO: Fix needed, as capacitor 2 is not considered currently
         df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"] + df["capacitor_1_volume"]  # + df["capacitor_2_volume"]
 
         # TODO: Fix needed capacitor 2+  df["capacitor_2_loss_array"]
-        df["total_loss_array"] = (df["inductor_loss_array"] + df["circuit_loss_array"] + \
-                                  df["transformer_loss_array"] + df["capacitor_1_loss_array"])
+        df["total_loss_wo_capacitors_array"] = (df["inductor_loss_array"] + df["circuit_loss_array"] + df["transformer_loss_array"])
 
         # Calculate the thermal resistance according r_th = 1/lambda * l / A
         # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
-        df["r_th_ind_heat_sink"] = self.r_th_per_unit_area_ind_heat_sink / df["inductor_area"]
+        df["r_th_ind_heat_sink"] = r_th_per_unit_area_ind_heat_sink / df["inductor_area"]
         df["temperature_inductor_heat_sink_max_array"] = 125 - df["r_th_ind_heat_sink"] * df["inductor_loss_array"]
         # For transformer: r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l.
-        df["r_th_xfmr_heat_sink"] = self.r_th_per_unit_area_xfmr_heat_sink / df["transformer_area"]
+        df["r_th_xfmr_heat_sink"] = r_th_per_unit_area_xfmr_heat_sink / df["transformer_area"]
         df["temperature_xfmr_heat_sink_max_array"] = 125 - df["r_th_xfmr_heat_sink"] * df["transformer_loss_array"]
 
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
-        df["t_min_array"] = df.apply(lambda x: np.minimum(x["circuit_temperature_heat_sink_max_1_array"], x["circuit_temperature_heat_sink_max_2_array"]),
-                                     axis=1)
+        df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda x: np.minimum(*x))
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_inductor_heat_sink_max_array"]), axis=1)
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], x["temperature_xfmr_heat_sink_max_array"]), axis=1)
-        df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], self.heat_sink_boundary_conditions.t_hs_max), axis=1)
+        df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], heat_sink_boundary_conditions.t_hs_max), axis=1)
 
         # maximum delta temperature over the heat sink
-        df["delta_t_max_heat_sink_array"] = df["t_min_array"] - self.heat_sink_boundary_conditions.t_ambient
+        df["delta_t_max_heat_sink_array"] = df["t_min_array"] - heat_sink_boundary_conditions.t_ambient
 
-        df["r_th_heat_sink_target_array"] = df["delta_t_max_heat_sink_array"] / df["total_loss_array"]
+        df["r_th_heat_sink_target_array"] = df["delta_t_max_heat_sink_array"] / df["total_loss_wo_capacitors_array"]
 
         df["r_th_heat_sink"] = df["r_th_heat_sink_target_array"].apply(lambda x: x.min())
 
         # Save results to file (ASA : later to store only on demand)
-        df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
+        df.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET}")
 
         # Start the progress time measurement
         with self._s_lock_stat:
@@ -546,15 +498,17 @@ class DabSummaryProcessing:
         # return the database
         return df
 
-    def select_heat_sink_configuration(self, heat_sink_study_data: dct.StudyData, summary_data: dct.StudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(self, heat_sink_study_data: StudyData, summary_data: StudyData, act_df_for_hs: pd.DataFrame) -> pd.DataFrame:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: Information about the heat sink study name and study path
-        :type  heat_sink_study_data: dct.StudyData
+        :type  heat_sink_study_data: StudyData
         :param summary_data: Information about the summary name and path
-        :type summary_data: dct.StudyData
+        :type summary_data: StudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
+        :return: pandas data frame including heat sink volume
+        :rtype: pd.DataFrame
         """
         # Variable declaration
 
@@ -581,7 +535,7 @@ class DabSummaryProcessing:
         act_df_for_hs["total_volume"] = act_df_for_hs["volume_wo_heat_sink"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/df_w_hs.csv")
+        act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET}")
 
         # Update statistical data for summary processing finalized
         # Update statistical data
@@ -589,3 +543,35 @@ class DabSummaryProcessing:
             self._progress_run_time.stop_trigger()
             self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.Done
+
+        return act_df_for_hs
+
+    @staticmethod
+    def add_offset_volume_losses(summary_data: StudyData, df_w_hs: pd.DataFrame, control_board_volume: float, control_board_loss: float) -> pd.DataFrame:
+        """
+        Add the offset volume and offset loss to the calculated data (e.g. from control board).
+
+        :param summary_data: summary data
+        :type summary_data: StudyData
+        :param df_w_hs: dataframe including the selected heat sink
+        :type df_w_hs: pd.DataFrame
+        :param control_board_volume: control board volume in m³
+        :type control_board_volume: float
+        :param control_board_loss: control board loss in W
+        :type control_board_loss: float
+        :return: pandas dataframe including the offset volume and offset losses
+        :rtype: pd.DataFrame
+        """
+        df_w_hs["total_volume"] = df_w_hs["total_volume"] + control_board_volume
+        # TODO: capacitor 2 missing
+        df_w_hs["total_loss_array"] = df_w_hs["total_loss_wo_capacitors_array"] + df_w_hs["capacitor_1_loss_array"] + control_board_loss
+
+        # TODO: Fix needed as capacitor 2 is not considered currently
+        df_w_hs["total_mean_loss"] = (
+            df_w_hs["circuit_loss_array"].apply(lambda x: np.sum([np.mean(y) for y in x], axis=0)) + \
+            df_w_hs["inductor_loss_array"].apply(np.mean) + \
+            df_w_hs["transformer_loss_array"].apply(np.mean) + \
+            df_w_hs["capacitor_1_loss_array"].apply(np.mean) + control_board_loss)  # + np.mean(df["capacitor_2_loss_array"])
+
+        df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
+        return df_w_hs
