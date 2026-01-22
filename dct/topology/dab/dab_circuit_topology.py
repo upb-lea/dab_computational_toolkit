@@ -62,6 +62,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
     copper_coin_area_2: float
     transistor_b2_cooling: ComponentCooling
 
+    misc: float
+
     def __init__(self) -> None:
         """Initialize the configuration list for the circuit optimizations."""
         # Call the constructor of the base class
@@ -88,6 +90,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         self.transistor_b1_cooling = ComponentCooling(0, 0)
         self.copper_coin_area_2 = 0
         self.transistor_b2_cooling = ComponentCooling(0, 0)
+        self.misc = 0
 
     def save_config(self) -> None:
         """Save the actual configuration file as pickle file on the disk."""

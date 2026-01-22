@@ -1185,6 +1185,17 @@ class DctMainCtl:
 
         DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "software_versions.txt"))
 
+        # --------------------------
+        # Misc
+        # --------------------------
+        logger.debug("Read misc file")
+        # Load the configuration for program flow and check the validity
+        file_path = os.path.join(workspace_path, "Misc.toml")
+        misc_loaded, dict_misc = self.load_toml_file(file_path)
+
+        # Verify toml data and transfer to class
+        toml_misc = tc.TomlMisc(**dict_misc)
+
         # -----------------------------------------
         # Introduce study data and filter data DTOs
         # -----------------------------------------
@@ -1825,7 +1836,9 @@ class DctMainCtl:
             heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
         #  Select the needed heat sink configuration
-        self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
+        df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
+
+        self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
@@ -1903,7 +1916,10 @@ class DctMainCtl:
             heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
         #  Select the needed heat sink configuration
-        self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
+        df_w_hs_summary = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
+
+        # add control board volume and losses
+        self._summary_processing.add_offset_volume_losses(summary_data, df_w_hs_summary, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

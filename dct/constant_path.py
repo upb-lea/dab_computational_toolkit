@@ -19,3 +19,8 @@ FILTERED_RESULTS_PATH = "filtered_results"
 RELUCTANCE_COMPLETE_FILE = "reluctance_processing_complete.json"
 SIMULATION_COMPLETE_FILE = "simulation_processing_complete.json"
 PROCESSING_COMPLETE_FILE = "processing_complete.json"
+
+# result data frames filenames
+DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET = "df_wo_hs_wo_offset.csv"
+DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET = "df_w_hs_wo_offset.csv"
+DF_SUMMARY_FINAL = "df_final.csv"

@@ -15,6 +15,7 @@ import hct
 import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
+from dct.constant_path import DF_SUMMARY_FINAL
 
 
 class ParetoPlots:
@@ -265,7 +266,7 @@ class ParetoPlots:
         :type  circuit_optimization: CircuitOptimizationBase
         """
         # Assemble summary data csv-file name
-        summary_data_csv_file = os.path.join(summary_study_data.optimization_directory, "df_w_hs.csv")
+        summary_data_csv_file = os.path.join(summary_study_data.optimization_directory, DF_SUMMARY_FINAL)
         # Load data frame from csv-file
         df = pd.read_csv(summary_data_csv_file)
 
@@ -287,6 +288,6 @@ class ParetoPlots:
         y_scale_min = 0.9 * df_filtered["total_mean_loss"].min()
         y_scale_max = 1.1 * df_filtered["total_mean_loss"].max()
 
-        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["red", "green"], alpha=0.5,
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["black", "red"], alpha=0.5,
                                          x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])

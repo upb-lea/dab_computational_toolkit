@@ -43,6 +43,9 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
     r_th_per_unit_area_ind_heat_sink = 0
     r_th_per_unit_area_xfmr_heat_sink = 0
 
+    # control board
+    misc: float
+
     def __init__(self) -> None:
         """Initialize the member variables."""
         self.project_directory: str = ""

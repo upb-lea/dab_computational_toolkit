@@ -23,7 +23,8 @@ from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               CIRCUIT_CAPACITOR_LOSS_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET,
+                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL)
 
 logger = logging.getLogger(__name__)
 
@@ -459,18 +460,11 @@ class SummaryProcessing:
         # heat sink area, capacitors do not need heat sink area
         df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
 
-        # TODO: Fix needed as capacitor 2 is not considered currently
-        df["total_mean_loss"] = (df["circuit_loss_array"].apply(lambda x: np.sum([np.mean(y) for y in x], axis=0)) + \
-                                 df["inductor_loss_array"].apply(np.mean) + \
-                                 df["transformer_loss_array"].apply(np.mean) + \
-                                 df["capacitor_1_loss_array"].apply(np.mean)  # + np.mean(df["capacitor_2_loss_array"])
-                                 )
         # TODO: Fix needed, as capacitor 2 is not considered currently
         df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"] + df["capacitor_1_volume"]  # + df["capacitor_2_volume"]
 
         # TODO: Fix needed capacitor 2+  df["capacitor_2_loss_array"]
-        df["total_loss_array"] = (df["inductor_loss_array"] + df["circuit_loss_array"] + \
-                                  df["transformer_loss_array"] + df["capacitor_1_loss_array"])
+        df["total_loss_wo_capacitors_array"] = (df["inductor_loss_array"] + df["circuit_loss_array"] + df["transformer_loss_array"])
 
         # Calculate the thermal resistance according r_th = 1/lambda * l / A
         # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l
@@ -489,12 +483,12 @@ class SummaryProcessing:
         # maximum delta temperature over the heat sink
         df["delta_t_max_heat_sink_array"] = df["t_min_array"] - heat_sink_boundary_conditions.t_ambient
 
-        df["r_th_heat_sink_target_array"] = df["delta_t_max_heat_sink_array"] / df["total_loss_array"]
+        df["r_th_heat_sink_target_array"] = df["delta_t_max_heat_sink_array"] / df["total_loss_wo_capacitors_array"]
 
         df["r_th_heat_sink"] = df["r_th_heat_sink_target_array"].apply(lambda x: x.min())
 
         # Save results to file (ASA : later to store only on demand)
-        df.to_csv(f"{summary_data.optimization_directory}/df_wo_hs.csv")
+        df.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET}")
 
         # Start the progress time measurement
         with self._s_lock_stat:
@@ -504,7 +498,7 @@ class SummaryProcessing:
         # return the database
         return df
 
-    def select_heat_sink_configuration(self, heat_sink_study_data: StudyData, summary_data: StudyData, act_df_for_hs: pd.DataFrame) -> None:
+    def select_heat_sink_configuration(self, heat_sink_study_data: StudyData, summary_data: StudyData, act_df_for_hs: pd.DataFrame) -> pd.DataFrame:
         """Select the heat sink configuration from calculated heat sink pareto front.
 
         :param heat_sink_study_data: Information about the heat sink study name and study path
@@ -513,6 +507,8 @@ class SummaryProcessing:
         :type summary_data: StudyData
         :param act_df_for_hs: DataFrame with result information of the pareto front for heat sink selection
         :type  act_df_for_hs: pd.DataFrame
+        :return: pandas data frame including heat sink volume
+        :rtype: pd.DataFrame
         """
         # Variable declaration
 
@@ -539,7 +535,7 @@ class SummaryProcessing:
         act_df_for_hs["total_volume"] = act_df_for_hs["volume_wo_heat_sink"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
-        act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/df_w_hs.csv")
+        act_df_for_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET}")
 
         # Update statistical data for summary processing finalized
         # Update statistical data
@@ -547,3 +543,35 @@ class SummaryProcessing:
             self._progress_run_time.stop_trigger()
             self._progress_data.run_time = self._progress_run_time.get_runtime()
             self._progress_data.progress_status = ProgressStatus.Done
+
+        return act_df_for_hs
+
+    @staticmethod
+    def add_offset_volume_losses(summary_data: StudyData, df_w_hs: pd.DataFrame, control_board_volume: float, control_board_loss: float) -> pd.DataFrame:
+        """
+        Add the offset volume and offset loss to the calculated data (e.g. from control board).
+
+        :param summary_data: summary data
+        :type summary_data: StudyData
+        :param df_w_hs: dataframe including the selected heat sink
+        :type df_w_hs: pd.DataFrame
+        :param control_board_volume: control board volume in m³
+        :type control_board_volume: float
+        :param control_board_loss: control board loss in W
+        :type control_board_loss: float
+        :return: pandas dataframe including the offset volume and offset losses
+        :rtype: pd.DataFrame
+        """
+        df_w_hs["total_volume"] = df_w_hs["total_volume"] + control_board_volume
+        # TODO: capacitor 2 missing
+        df_w_hs["total_loss_array"] = df_w_hs["total_loss_wo_capacitors_array"] + df_w_hs["capacitor_1_loss_array"] + control_board_loss
+
+        # TODO: Fix needed as capacitor 2 is not considered currently
+        df_w_hs["total_mean_loss"] = (
+            df_w_hs["circuit_loss_array"].apply(lambda x: np.sum([np.mean(y) for y in x], axis=0)) + \
+            df_w_hs["inductor_loss_array"].apply(np.mean) + \
+            df_w_hs["transformer_loss_array"].apply(np.mean) + \
+            df_w_hs["capacitor_1_loss_array"].apply(np.mean) + control_board_loss)  # + np.mean(df["capacitor_2_loss_array"])
+
+        df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
+        return df_w_hs
