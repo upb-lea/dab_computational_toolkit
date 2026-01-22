@@ -33,12 +33,12 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
     
     [breakpoints]
         # possible values: no/pause/stop
-        circuit_pareto = "no"  # After Electrical paretofront calculation
+        circuit_pareto = "no"  # After Electrical pareto front calculation
         circuit_filtered = "no"  # After Electrical filtered result calculation
         capacitor = "no"   # After capacitor selection result calculation
-        inductor = "no"    # After inductor paretofront calculations of for all correspondent electrical points
-        transformer = "no" # After transformer paretofront calculations of for all correspondent electrical points
-        heat_sink = "no"    # After heatsink paretofront calculation
+        inductor = "no"    # After inductor pareto front calculations of for all correspondent electrical points
+        transformer = "no" # After transformer pareto front calculations of for all correspondent electrical points
+        heat_sink = "no"    # After heat sink pareto front calculation
         pre_summary = "no"    # After pre-summary calculation
         summary = "no"    # After summary calculation
     

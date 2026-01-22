@@ -396,4 +396,5 @@ SbcCircuitConf
 SbcGeneralConf
 SbcHeatSinkConf
 SbcInductorConf
+trf
 

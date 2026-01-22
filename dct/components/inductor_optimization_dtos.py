@@ -13,7 +13,10 @@ from dct.components.component_dtos import InductorRequirements
 class InductorOptimizationDto:
     """DTO for the inductor optimization."""
 
+    trial_directory: str
     circuit_id: str
     progress_data: ProgressData
-    inductor_optimization_dto: fmt.InductorOptimizationDTO
+    fmt_inductor_optimization_dto: fmt.InductorOptimizationDTO
+    number_of_trails: int
+    factor_dc_losses_min_max_list: list[float]
     inductor_requirements: InductorRequirements

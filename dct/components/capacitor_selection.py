@@ -17,7 +17,7 @@ import pecst
 from dct.components.capacitor_optimization_dtos import CapacitorOptimizationDto
 from dct.toml_checker import TomlCapacitorSelection, Debug
 from dct.circuit_enums import CalcModeEnum
-from dct.datasets_dtos import StudyData, FilterData, CapacitorConfiguration
+from dct.datasets_dtos import FilterData, CapacitorConfiguration
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.components.component_dtos import CapacitorRequirements
 from dct.components.capacitor_optimization_dtos import CapacitorResults
@@ -55,10 +55,13 @@ class CapacitorSelection:
         """
         Initialize the capacitor selection.
 
-        :param toml_capacitor_list: capacitor data in a list
-        :type toml_capacitor_list: list[TomlCapacitorSelection]
-        :param capacitor_study_data: capacitor study data
-        :type capacitor_study_data: StudyData
+        The initialisation initialize the optimization config list, which contains lists separeted by
+        number of capacitor component in circuit. After perfoming this method, the optimization handler
+        can be used to optimize the selected capacitor. The selection capacitor is defined by the number
+        of capacitor component.
+
+        :param configuration_data_list: List of capacitor configuration data including study data
+        :type  configuration_data_list: list[CapacitorConfiguration]
         :param capacitor_requirements_list: list with capacitor requirements
         :type capacitor_requirements_list: list[CapacitorRequirements]
         """
@@ -67,19 +70,23 @@ class CapacitorSelection:
         # Create the io_config_list for all trials
         for capacitor_requirements in capacitor_requirements_list:
             # Set index
-            capacitor_id = capacitor_requirements.capacitor_number_in_circuit
+            capacitor_number_in_circuit = capacitor_requirements.capacitor_number_in_circuit
 
             # Check, if capacitor optimization is not to skip
-            if not configuration_data_list[capacitor_id].study_data.calculation_mode == CalcModeEnum.skip_mode:
+            if not configuration_data_list[capacitor_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode:
 
                 circuit_id = capacitor_requirements.circuit_id
-                trial_directory = os.path.join(configuration_data_list[capacitor_id].study_data.optimization_directory,
-                                               circuit_id, configuration_data_list[capacitor_id].study_data.study_name)
-                capacitor_toml_data = configuration_data_list[capacitor_id].capacitor_toml_data
+                trial_directory = os.path.join(configuration_data_list[capacitor_number_in_circuit].study_data.optimization_directory,
+                                               circuit_id, configuration_data_list[capacitor_number_in_circuit].study_data.study_name)
+                capacitor_toml_data = configuration_data_list[capacitor_number_in_circuit].capacitor_toml_data
 
                 # catch mypy type issue
                 if not isinstance(capacitor_requirements, CapacitorRequirements):
                     raise TypeError("circuit DTO file is incomplete.")
+                # Catch mypy issue
+                if capacitor_toml_data is None:
+                    raise ValueError("Serious programming error in capacitor selection. toml-data are not initialized.",
+                                     "Please write an issue!")
 
                 # generate capacitor requirements from circuit simulation data
                 capacitor_requirements_dto = pecst.CapacitorRequirements(
@@ -107,11 +114,11 @@ class CapacitorSelection:
                     time_array=capacitor_requirements.time_array)
 
                 # Check list size
-                while len(self._optimization_config_list) <= capacitor_id:
+                while len(self._optimization_config_list) <= capacitor_number_in_circuit:
                     self._optimization_config_list.append([])
 
                 # Add capacitor dto to the sublist of assigned number in circuit
-                self._optimization_config_list[capacitor_id].append(capacitor_optimization_dto)
+                self._optimization_config_list[capacitor_number_in_circuit].append(capacitor_optimization_dto)
 
     @staticmethod
     def _start_optimization(capacitor_number_in_circuit: int, act_config: CapacitorOptimizationDto, filter_data: FilterData,
@@ -208,18 +215,18 @@ class CapacitorSelection:
 
         :param filter_data: Information about the filtered designs
         :type  filter_data: dct.FilterData
+        :param capacitor_in_circuit: Number of capacitor within topology
+        :type  capacitor_in_circuit: int
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
-        :param capacitor_requirements_list: list with capacitor requirements
-        :type capacitor_requirements_list: list[CapacitorRequirements]
         """
         number_cpus = cpu_count()
 
         # Check if class is initialized and capacitor_in_circuit is valid
-        if len(self._optimization_config_list) is 0:
+        if len(self._optimization_config_list) == 0:
             raise ValueError("Capacitor selection class is no initialized")
-        elif len(self._optimization_config_list) <= capacitor_in_circuit or capacitor_in_circuit<0:
-            raise ValueError("Invalid parameter value 'capacitor_in_circuit'={capacitor_in_circuit}.\n"
+        elif len(self._optimization_config_list) <= capacitor_in_circuit or capacitor_in_circuit < 0:
+            raise ValueError(f"Invalid parameter value 'capacitor_in_circuit'={capacitor_in_circuit}.\n"
                              f"Value has to be between 0 and {len(self._optimization_config_list)-1}.")
 
         with Pool(processes=number_cpus) as pool:
