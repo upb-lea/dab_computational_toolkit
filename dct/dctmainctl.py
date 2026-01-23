@@ -370,10 +370,10 @@ class DctMainCtl:
         :type  is_all_invalid : bool
         :param optimization_directory : Path to optimization folder
         :type  optimization_directory : str
-        :param sub_folder_list : Path to study directory within the optimization folder
-        :type  sub_folder_list : list[str]
         :param study_directory : Name of the study folders
         :type  study_directory : str
+        :param sub_folder_list : Path to study directory within the optimization folder
+        :type  sub_folder_list : list[str]
         """
         # Variable declaration
 
@@ -395,16 +395,20 @@ class DctMainCtl:
                         else:
                             # Delete this file
                             os.remove(full_path)
-            elif sub_folder_list is not None:
-                # Delete only this study
-                for sub_folder in sub_folder_list:
-                    sub_folder_path = os.path.join(optimization_directory, sub_folder, study_directory)
-                    # Check if it is a folder
-                    if os.path.isdir(sub_folder_path):
-                        # Delete the folder
-                        shutil.rmtree(sub_folder_path)
             else:
-                logger.info("sub folder list is empty. Nothing is deleted!")
+                # Create dummy sub folder list
+                if sub_folder_list is None:
+                    sub_folder_list = []
+                if len(sub_folder_list) > 0:
+                    # Delete only this study
+                    for sub_folder in sub_folder_list:
+                        sub_folder_path = os.path.join(optimization_directory, sub_folder, study_directory)
+                        # Check if it is a folder
+                        if os.path.isdir(sub_folder_path):
+                            # Delete the folder
+                            shutil.rmtree(sub_folder_path)
+                else:
+                    logger.info("sub folder list is empty. Nothing is deleted!")
         else:
             logger.info(f"Path {optimization_directory} does not exists!")
 

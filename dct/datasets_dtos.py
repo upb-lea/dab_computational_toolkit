@@ -4,7 +4,7 @@
 import dataclasses
 import os
 import logging
-import toml_checker as TomlConf
+import dct.toml_checker as TomlConf
 
 # 3rd party libraries
 
