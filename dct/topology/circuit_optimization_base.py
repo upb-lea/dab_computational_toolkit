@@ -17,6 +17,7 @@ from dct.server_ctl_dtos import ProgressData
 from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
+from dct.toml_checker import TomlHeatSink
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")
@@ -37,6 +38,13 @@ class TomlCData(BaseModel, ABC):
 
 class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
     """Represent the base class for electrical converter optimization depending on the topology."""
+
+    # Thermal resistance
+    r_th_per_unit_area_ind_heat_sink = 0
+    r_th_per_unit_area_xfmr_heat_sink = 0
+
+    # control board
+    misc: float
 
     def __init__(self) -> None:
         """Initialize the member variables."""
@@ -377,5 +385,16 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :param file_path: filename including absolute path
         :type  file_path: str
+        """
+        pass
+
+    @abstractmethod
+    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
+        """
+        Initialize the circuits thermal parameters.
+
+        :param act_heat_sink_data: heat sink data from the toml file
+        :type act_heat_sink_data: TomlHeatSink
+        :return: bool
         """
         pass

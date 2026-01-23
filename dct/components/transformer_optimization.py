@@ -22,7 +22,7 @@ from dct.datasets_dtos import TransformerConfiguration
 from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressStatus, ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_LOSSES_FOLDER
+from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
 from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults
 
 logger = logging.getLogger(__name__)
@@ -404,9 +404,9 @@ class TransformerOptimization:
                 logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
                 for vec_vvp in tqdm.tqdm(np.ndindex(result_array.shape), total=len(transformer_requirements.time_array[..., 0].flatten())):
-                    time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
-                    current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
-                    current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
+                    time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
+                    current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indices]
+                    current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indices]
 
                     current_waveform_1 = np.array([time, current_1])
                     current_waveform_2 = np.array([time, current_2])
@@ -577,7 +577,7 @@ class TransformerOptimization:
             result_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
-                                                     CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+                                                     CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
@@ -589,9 +589,9 @@ class TransformerOptimization:
                 try:
                     for vec_vvp in tqdm.tqdm(np.ndindex(transformer_requirements.time_array[..., 0].shape),
                                              total=len(transformer_requirements.time_array[..., 0].flatten())):
-                        time, unique_indicies = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
-                        current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indicies]
-                        current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indicies]
+                        time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
+                        current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indices]
+                        current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indices]
 
                         current_1_waveform = np.array([time, current_1])
                         current_2_waveform = np.array([time, current_2])

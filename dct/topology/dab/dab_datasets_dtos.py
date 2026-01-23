@@ -249,6 +249,23 @@ class GeckoWaveforms:
             if k in names:
                 setattr(self, k, v)
 
+
+@dataclasses.dataclass(init=False)
+class CircuitThermal:
+    """DTO contains the thermal circuit parameters for summarized [transistor_1, transistor_2]."""
+
+    t_j_max: list[float]
+    r_th_jhs: list[float]
+    area: list[float]
+    loss_array: list[np.ndarray]
+    temperature_heat_sink_max_array: list[np.ndarray]
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
 @dataclasses.dataclass
 class DabCircuitDTO:
     """Main DabDTO containing all input parameters, calculations and simulation results."""
@@ -269,3 +286,4 @@ class DabCircuitDTO:
     capacitor_2_results: CapacitorResults | None
     inductor_results: InductorResults | None
     stacked_transformer_results: StackedTransformerResults | None
+    circuit_thermal: CircuitThermal | None

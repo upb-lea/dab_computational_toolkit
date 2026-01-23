@@ -75,10 +75,12 @@ class HeatSinkOptimization:
             is_consistent = False
 
         # Convert min_max-list from integer to float values
-        float_number_fins_n_min_max_list = dct.BoundaryCheck.convert_int_list_to_float_list(toml_heat_sink.design_space.number_fins_n_min_max_list)
+        float_number_cooling_channels_n_min_max_list = dct.BoundaryCheck.convert_int_list_to_float_list(
+            toml_heat_sink.design_space.number_cooling_channels_n_min_max_list)
         # Perform the boundary check for number_fins_n_min_max_list
         is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values(
-            3, 100, float_number_fins_n_min_max_list, f"{group_name}: number_fins_n_min_max_list", c_flag.check_inclusive, c_flag.check_exclusive)
+            3, 100, float_number_cooling_channels_n_min_max_list, f"{group_name}: number_cooling_channels_n_min_max_list",
+            c_flag.check_inclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
@@ -241,7 +243,7 @@ class HeatSinkOptimization:
             width_b_min_max_list=toml_heat_sink.design_space.width_b_min_max_list,
             length_l_min_max_list=toml_heat_sink.design_space.length_l_min_max_list,
             height_d_min_max_list=toml_heat_sink.design_space.height_d_min_max_list,
-            number_fins_n_min_max_list=toml_heat_sink.design_space.number_fins_n_min_max_list,
+            number_cooling_channels_n_min_max_list=toml_heat_sink.design_space.number_cooling_channels_n_min_max_list,
             thickness_fin_t_min_max_list=toml_heat_sink.design_space.thickness_fin_t_min_max_list,
             fan_list=fan_list,
 
@@ -360,14 +362,14 @@ class ThermalCalcSupport:
         return r_copper_coin, effective_bottom_cooling_area
 
     @staticmethod
-    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: TransistorCooling) -> float:
+    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: ComponentCooling) -> float:
         """
         Calculate the thermal resistance of the thermal interface material (TIM).
 
         :param copper_coin_bot_area: bottom copper coin area in m²
         :type copper_coin_bot_area: float
         :param transistor_cooling: Transistor cooling DTO
-        :type transistor_cooling: TransistorCooling
+        :type transistor_cooling: ComponentCooling
         :return: r_th of TIM material
         :rtype: float
         """

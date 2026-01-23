@@ -125,3 +125,12 @@ class TransformerConfiguration:
 
     study_data: StudyData
     transformer_toml_data: TomlConf.TomlTransformer | None = None
+
+@dataclasses.dataclass
+class SummaryConfiguration:
+    """Represent the data for performing integration of circuit and component data."""
+
+    circuit_data: dict
+    capacitor_data_list: list[list[dict]]
+    inductor_data_list: list[list[dict]]
+    transformer_data_list: list[list[dict]]

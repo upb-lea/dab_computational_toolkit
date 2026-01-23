@@ -294,7 +294,7 @@ class TomlHeatSinkDesignSpace(BaseModel):
     width_b_min_max_list: list[float]
     length_l_min_max_list: list[float]
     height_d_min_max_list: list[float]
-    number_fins_n_min_max_list: list[int]
+    number_cooling_channels_n_min_max_list: list[int]
     thickness_fin_t_min_max_list: list[float]
 
 class TomlHeatSinkThermalResistanceData(BaseModel):
@@ -313,3 +313,14 @@ class TomlHeatSink(BaseModel):
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
     thermal_resistance_data: TomlHeatSinkThermalResistanceData
+
+# ######################################################
+# misc
+# ######################################################
+
+class TomlMisc(BaseModel):
+    """Data structure for Misc data."""
+
+    min_efficiency_percent: float
+    control_board_volume: float
+    control_board_loss: float
