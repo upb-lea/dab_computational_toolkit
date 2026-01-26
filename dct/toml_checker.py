@@ -179,6 +179,9 @@ class TomlInductorInsulation(BaseModel):
     core_top: float
     core_right: float
     core_left: float
+    # Temperature 'insulation'
+    # [tim_thickness, tim_conductivity]
+    thermal_cooling: list[float]
 
 class TomlMaterialDataSources(BaseModel):
     """Toml checker class for MaterialDataSources."""
@@ -189,8 +192,8 @@ class TomlMaterialDataSources(BaseModel):
 class TomlInductorBoundaryConditions(BaseModel):
     """Toml checker class for InductorBoundaryConditions."""
 
+    # Temperature
     temperature: float
-
 
 class TomlFilterDistance(BaseModel):
     """Toml checker class for FilterDistance."""
@@ -252,6 +255,9 @@ class TomlTransformerInsulation(BaseModel):
     iso_primary_to_primary: float
     iso_secondary_to_secondary: float
     iso_primary_to_secondary: float
+    # Temperature 'insulation'
+    # [tim_thickness, tim_conductivity]
+    thermal_cooling: list[float]
 
 class TomlTransformerFilterDistance(BaseModel):
     """Toml checker class for TransformerFilterDistance."""
@@ -269,7 +275,7 @@ class TomlTransformer(BaseModel):
     material_data_sources: TomlMaterialDataSources
 
 # ######################################################
-# heat sink inclusive data of summary calculation
+# heat sink
 # ######################################################
 
 class TomlHeatSinkBoundaryConditions(BaseModel):
@@ -297,22 +303,12 @@ class TomlHeatSinkDesignSpace(BaseModel):
     number_cooling_channels_n_min_max_list: list[int]
     thickness_fin_t_min_max_list: list[float]
 
-class TomlHeatSinkThermalResistanceData(BaseModel):
-    """Toml checker for HeatSinkThermalResistanceData."""
-
-    # [tim_thickness, tim_conductivity]
-    transistor_b1_cooling: list[float]
-    transistor_b2_cooling: list[float]
-    inductor_cooling: list[float]
-    transformer_cooling: list[float]
-
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
 
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
-    thermal_resistance_data: TomlHeatSinkThermalResistanceData
 
 # ######################################################
 # misc

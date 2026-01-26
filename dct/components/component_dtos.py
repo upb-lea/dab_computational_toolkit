@@ -122,6 +122,13 @@ class ComponentRequirements:
                 setattr(self, k, v)
 
 
+@dataclasses.dataclass
+class ComponentCooling:
+    """Fix parameters for the transistor, inductor and transformer cooling."""
+
+    tim_conductivity: float
+    tim_thickness: float
+
 @dataclasses.dataclass(init=False)
 class InductorResults:
     """DTO contains the inductor losses."""
@@ -129,11 +136,13 @@ class InductorResults:
     # identification
     circuit_id: str
     inductor_id: int
+    inductor_number_in_circuit: int
 
     # pareto
     loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
+    r_th_ind_heat_sink: float
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -148,11 +157,13 @@ class StackedTransformerResults:
     # identification
     circuit_id: str
     transformer_id: int
+    transformer_number_in_circuit: int
 
     # pareto
     loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
+    r_th_xfmr_heat_sink: float
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

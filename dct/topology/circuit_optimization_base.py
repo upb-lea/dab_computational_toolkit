@@ -387,14 +387,3 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type  file_path: str
         """
         pass
-
-    @abstractmethod
-    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """
-        Initialize the circuits thermal parameters.
-
-        :param act_heat_sink_data: heat sink data from the toml file
-        :type act_heat_sink_data: TomlHeatSink
-        :return: bool
-        """
-        pass

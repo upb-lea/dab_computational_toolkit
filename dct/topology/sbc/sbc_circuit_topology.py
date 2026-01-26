@@ -377,6 +377,47 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         is_check_passed, issue_report = BoundaryCheck.check_float_value(
             0.01, 100, toml_circuit.filter_distance.difference_percentage,
             f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_inclusive)
+
+        # Perform thermal resistance data check
+        group_name = "thermal_data"
+        # Create the list
+        toml_check_value_list1: list[tuple[float, str]] = []
+        toml_check_value_list2: list[tuple[float, str]] = []
+
+        # Perform list length check for transistor_b1_cooling
+        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b1_cooling' is not equal 2!\n"
+            is_consistent = False
+        else:
+            toml_check_value_list1.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b1_cooling[0]-tim_thickness"))
+            toml_check_value_list2.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b1_cooling[1]-tim_conductivity"))
+
+        # Perform list length check for transistor_b1_cooling
+        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b2_cooling' is not equal 2!\n"
+            is_consistent = False
+        else:
+            toml_check_value_list1.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b2_cooling[0]-tim_thickness"))
+            toml_check_value_list2.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b2_cooling[1]-tim_conductivity"))
+
+        # Perform the boundary check for tim-thickness
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
+            0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Perform the boundary check for tim-conductivity
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
+            1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
@@ -1594,16 +1635,12 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         [filter_distance]
             number_filtered_designs = 1
             difference_percentage = 5
+
+        [thermal_data]
+            # [tim_thickness, tim_conductivity]
+            transistor_b1_cooling = [1e-3,12.0]
+            transistor_b2_cooling = [1e-3,12.0]            
+           
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
-
-    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """To be defined.
-
-        :param act_heat_sink_data: heat sink data
-        :type act_heat_sink_data: act_heat_sink_data
-        """
-        # use self here to avoid ruff warning
-        print(self.circuit_study_data)
-        return False

@@ -151,7 +151,9 @@ def generate_default_inductor_toml(file_path: str) -> None:
         core_top=1e-3
         core_right=1e-3
         core_left=1e-3
-    
+        # [tim_thickness, tim_conductivity]
+        thermal_cooling = [1e-3,12.0]
+        
     [filter_distance]
         factor_dc_losses_min_max_list=[0.01, 100]
     '''
@@ -200,6 +202,8 @@ def generate_default_transformer_toml(file_path: str) -> None:
         iso_primary_to_primary=0.2e-3
         iso_secondary_to_secondary=0.2e-3
         iso_primary_to_secondary=0.2e-3
+        # [tim_thickness, tim_conductivity]
+        thermal_cooling = [1e-3,12.0]        
     
     [material_data_sources]
         permeability_datasource="LEA_MTB"
@@ -243,13 +247,6 @@ def generate_default_heat_sink_toml(file_path: str) -> None:
         factor_bottom_area_copper_coin = 0.39
         # W/(m*K)
         thermal_conductivity_copper = 136
-    
-    [thermal_resistance_data]
-        # [tim_thickness, tim_conductivity]
-        transistor_b1_cooling = [1e-3,12.0]
-        transistor_b2_cooling = [1e-3,12.0]
-        inductor_cooling = [1e-3,12.0]
-        transformer_cooling = [1e-3,12.0]
 
     '''
     with open(file_path, 'w') as output:

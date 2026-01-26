@@ -21,7 +21,6 @@ from dct.components.component_dtos import InductorRequirements
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
-from dct.components.heat_sink_dtos import ComponentCooling
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
@@ -34,7 +33,8 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 import dct.generalplotsettings as gps
-from dct.components.component_dtos import CapacitorRequirements, ComponentRequirements, TransformerRequirements
+from dct.components.component_dtos import (CapacitorRequirements, ComponentRequirements,
+                                           TransformerRequirements, ComponentCooling)
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +87,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         # Areas and transistor cooling parameter
         self.copper_coin_area_1 = 0
-        self.transistor_b1_cooling = ComponentCooling(0, 0)
         self.copper_coin_area_2 = 0
-        self.transistor_b2_cooling = ComponentCooling(0, 0)
         self.misc = 0
 
     def save_config(self) -> None:
@@ -369,6 +367,47 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         is_check_passed, issue_report = BoundaryCheck.check_float_value(
             0.01, 100, toml_circuit.filter_distance.difference_percentage,
             f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_inclusive)
+
+        # Perform thermal resistance data check
+        group_name = "thermal_data"
+        # Create the list
+        toml_check_value_list1: list[tuple[float, str]] = []
+        toml_check_value_list2: list[tuple[float, str]] = []
+
+        # Perform list length check for transistor_b1_cooling
+        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b1_cooling' is not equal 2!\n"
+            is_consistent = False
+        else:
+            toml_check_value_list1.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b1_cooling[0]-tim_thickness"))
+            toml_check_value_list2.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b1_cooling[1]-tim_conductivity"))
+
+        # Perform list length check for transistor_b1_cooling
+        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b2_cooling' is not equal 2!\n"
+            is_consistent = False
+        else:
+            toml_check_value_list1.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b2_cooling[0]-tim_thickness"))
+            toml_check_value_list2.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b2_cooling[1]-tim_conductivity"))
+
+        # Perform the boundary check for tim-thickness
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
+            0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Perform the boundary check for tim-conductivity
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
+            1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
@@ -1171,8 +1210,15 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         for dto in smallest_dto_list:
             # generate the target requirements for inductor, transformer and capacitor
             dto = HandleDabDto.generate_components_target_requirements(dto)
+            # Get thermal data
+            transistor_b1_cooling: ComponentCooling = ComponentCooling(
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_b1_cooling[0],
+                tim_thickness=self._toml_circuit.thermal_data.transistor_b1_cooling[1])
+            transistor_b2_cooling: ComponentCooling = ComponentCooling(
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_b2_cooling[0],
+                tim_thickness=self._toml_circuit.thermal_data.transistor_b2_cooling[1])
             # generate the thermal parameters for the given design
-            dto = HandleDabDto.generate_thermal_transistor_parameters(dto, self.transistor_b1_cooling, self.transistor_b2_cooling)
+            dto = HandleDabDto.generate_thermal_transistor_parameters(dto, transistor_b1_cooling, transistor_b2_cooling)
 
             HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
@@ -1381,32 +1427,13 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         [filter_distance]
             number_filtered_designs = 1
             difference_percentage = 5
+
+        [thermal_data]
+            # [tim_thickness, tim_conductivity]
+            transistor_b1_cooling = [1e-3,12.0]
+            transistor_b2_cooling = [1e-3,12.0]            
+
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
 
-    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """Initialize the thermal parameter of the connection points for the transistors.
-
-        :param act_heat_sink_data: toml file with configuration data
-        :type act_heat_sink_data: TomlHeatSink
-
-        :return: True, if the thermal parameter of the connection points was successful initialized
-        :rtype: bool
-        """
-        # Variable declaration
-        # Return variable initialized to True
-        successful_init = True
-
-        # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        self.transistor_b1_cooling = ComponentCooling(
-            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
-            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[1])
-
-        # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        self.transistor_b2_cooling = ComponentCooling(
-            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[0],
-            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[1])
-
-        # Return if initialization was successful performed (True)
-        return successful_init

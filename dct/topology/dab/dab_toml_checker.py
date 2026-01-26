@@ -53,6 +53,13 @@ class TomlDabCircuitParetoDesignSpace(TomlCData):
     c_par_1: float
     c_par_2: float
 
+class TomlThermalResistanceData(TomlCData):
+    """Toml checker for HeatSinkThermalResistanceData."""
+
+    # [tim_thickness, tim_conductivity]
+    transistor_b1_cooling: list[float]
+    transistor_b2_cooling: list[float]
+
 class TomlDabCircuitFilterDistance(TomlCData):
     """Toml checker class for CircuitFilterDistance."""
 
@@ -64,3 +71,4 @@ class TomlDabCircuitParetoDesign(TomlCData):
 
     design_space: TomlDabCircuitParetoDesignSpace
     filter_distance: TomlDabCircuitFilterDistance
+    thermal_data: TomlThermalResistanceData

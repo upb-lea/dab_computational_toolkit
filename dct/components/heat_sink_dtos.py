@@ -11,9 +11,3 @@ class HeatSinkBoundaryConditions:
     t_ambient: float
     t_hs_max: float
 
-@dataclasses.dataclass
-class ComponentCooling:
-    """Fix parameters for the transistor, inductor and transformer cooling."""
-
-    tim_conductivity: float
-    tim_thickness: float

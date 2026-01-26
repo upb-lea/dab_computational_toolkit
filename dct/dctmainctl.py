@@ -68,15 +68,15 @@ class DctMainCtl:
     _inductor_optimization: InductorOptimization | None
     _transformer_optimization: TransformerOptimization | None
     _heat_sink_optimization: HeatSinkOptimization | None
-    _summary_pre_processing: DabSummaryPreProcessing | None
-    _summary_processing: DabSummaryProcessing | None
+    _summary_pre_processing: SummaryProcessing | None
+    _summary_processing: SummaryProcessing | None
 
     # Configuration list for capacitor, inductor and transformer
     _transformer_study_configuration_list: list[TransformerConfiguration]
     _inductor_study_configuration_list: list[InductorConfiguration]
     _capacitor_selection_configuration_list: list[CapacitorConfiguration]
 
-    # Filtered point results in case of skip
+    # Filtered p>oint results in case of skip
     _inductor_number_filtered_analytic_points_skip_list: list[int]
     _inductor_number_filtered_simulation_points_skip_list: list[int]
     _transformer_number_filtered_analytic_points_skip_list: list[int]
@@ -1746,10 +1746,6 @@ class DctMainCtl:
         # self._key_input_handler = threading.Thread(target=self._key_input,
         #                                            args=(srv_request_queue, srv_response_queue), daemon=True)
 
-        # Initialization thermal data
-        if not self._circuit_optimization.init_thermal_circuit_configuration(toml_heat_sink):
-            raise ValueError("Thermal data configuration not initialized!")
-
         # -- Start optimization  ----------------------------------------------------------------------------------------
 
         # --------------------------
@@ -1986,14 +1982,13 @@ class DctMainCtl:
 
         # Initialize pre summary processing by collecting data from circuit and component optimization
         self._summary_pre_processing.initialize_processing(
-            self._circuit_optimization.filter_data,
-            self._capacitor_selection_configuration_list,
-            self._inductor_study_configuration_list,
-            self._transformer_study_configuration_list)
+            act_filter_data=self._circuit_optimization.filter_data,
+            act_capacitor_data_list=self._capacitor_selection_configuration_list,
+            act_inductor_data_list=self._inductor_study_configuration_list,
+            act_transformer_data_list=self._transformer_study_configuration_list, is_pre_summary=True)
 
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_pre_processing.generate_result_database(
-            is_pre_summary=True,
             r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
             r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
             heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions

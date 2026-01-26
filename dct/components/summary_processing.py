@@ -17,7 +17,7 @@ from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.components.capacitor_optimization_dtos import CapacitorResults
 from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions
 from dct.toml_checker import TomlHeatSink
-from dct.datasets_dtos import (CapacitorConfiguration, InductorConfiguration,
+from dct.datasets_dtos import (FilterData, StudyData, CapacitorConfiguration, InductorConfiguration,
                                TransformerConfiguration, SummaryConfiguration)
 
 import hct
@@ -36,10 +36,6 @@ class SummaryProcessing:
     _s_lock_stat: threading.Lock
     _progress_run_time: RunTime
     _progress_data: ProgressData
-
-    # Thermal resistance
-    r_th_per_unit_area_ind_heat_sink: float
-    r_th_per_unit_area_xfmr_heat_sink: float
 
     # Heat sink boundary condition parameter
     heat_sink_boundary_conditions: HeatSinkBoundaryConditions
@@ -77,31 +73,6 @@ class SummaryProcessing:
         # Variable declaration
         # Return variable initialized to True
         successful_init = True
-
-        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        inductor_tim_thickness = act_heat_sink_data.thermal_resistance_data.inductor_cooling[0]
-        inductor_tim_conductivity = act_heat_sink_data.thermal_resistance_data.inductor_cooling[1]
-
-        # Check on zero
-        if inductor_tim_conductivity > 0:
-            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
-            # r_th_per_unit_area_ind_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_ind_heat_sink / A
-            self.r_th_per_unit_area_ind_heat_sink = inductor_tim_thickness / inductor_tim_conductivity
-        else:
-            logger.info(f"inductor cooling tim conductivity value must be greater zero, but is {inductor_tim_conductivity}!")
-            successful_init = False
-
-        # Thermal parameter for inductor: r_th per area: List [tim_thickness, tim_conductivity]
-        transformer_tim_thickness = act_heat_sink_data.thermal_resistance_data.transformer_cooling[0]
-        transformer_tim_conductivity = act_heat_sink_data.thermal_resistance_data.transformer_cooling[1]
-
-        if transformer_tim_conductivity > 0:
-            # Calculate the thermal resistance per unit area as term from the formula r_th = 1/lambda * l / A
-            # r_th_per_unit_area_xfmr_heat_sink = 1/lambda * l. Later r_th = r_th_per_unit_area_xfmr_heat_sink / A
-            self.r_th_per_unit_area_xfmr_heat_sink = transformer_tim_thickness / transformer_tim_conductivity
-        else:
-            logger.info(f"transformer cooling tim conductivity value must be greater zero, but is {transformer_tim_conductivity}!")
-            successful_init = False
 
         self.heat_sink_boundary_conditions = HeatSinkBoundaryConditions(t_ambient=act_heat_sink_data.boundary_conditions.t_ambient,
                                                                         t_hs_max=act_heat_sink_data.boundary_conditions.t_hs_max)
@@ -212,7 +183,7 @@ class SummaryProcessing:
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
                 raise ValueError("Incomplete loss calculation.")
 
-            logger.debug(f"{act_inductor_study_names=}")
+            logger.debug(f"{act_filter_data.circuit_study_name=}")
 
             circuit_data = {
                 "circuit_id": circuit_id,
@@ -226,16 +197,16 @@ class SummaryProcessing:
             # iterate capacitor selection
             for act_capacitor_data in act_capacitor_data_list:
                 # Assemble directory name for capacitor 1 results
-                capacitor_1_filepath_results = os.path.join(act_capacitor_data.study_data.optimization_directory,
+                capacitor_filepath_results = os.path.join(act_capacitor_data.study_data.optimization_directory,
                                                             circuit_id,
                                                             act_capacitor_data.study_data.study_name,
                                                             CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
                 # Check, if capacitor  number list cannot be generated
                 is_capacitor_list_generated, capacitor_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
+                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_filepath_results))
                 if not is_capacitor_list_generated:
-                    logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {capacitor_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
                 logger.debug(f"{capacitor_id_list=}")
@@ -243,7 +214,7 @@ class SummaryProcessing:
                 # iterate capacitor numbers
                 capacitors: list[dict] = []
                 for capacitor_id in capacitor_id_list:
-                    capacitor_filepath_number = os.path.join(capacitor_1_filepath_results, f"{capacitor_id}.pkl")
+                    capacitor_filepath_number = os.path.join(capacitor_filepath_results, f"{capacitor_id}.pkl")
 
                     # get capacitor 1 results
                     with open(capacitor_filepath_number, 'rb') as pickle_file_data:
@@ -254,15 +225,18 @@ class SummaryProcessing:
                     if capacitor_dto.capacitor_id != capacitor_id:
                         raise ValueError(f"{capacitor_dto.capacitor_id=} != {capacitor_id}")
 
+                    # Get number for index of data frames
+                    number_in_circuit=capacitor_dto.capacitor_number_in_circuit
+                    # Assemble the data frame entry
                     capacitor_data = {
                         # capacitor
-                        "capacitor_study_name": act_capacitor_data.study_data.study_name,
-                        "capacitor_id": capacitor_id,
-                        "capacitor_volume": capacitor_dto.volume_total,
-                        "capacitor_loss_array": capacitor_dto.loss_total_array,
-                        "capacitor_area": capacitor_dto.area_total,
-                        "capacitor_n_parallel": capacitor_dto.n_parallel,
-                        "capacitor_n_series": capacitor_dto.n_series,
+                        f"capacitor_study_name_{number_in_circuit}": act_capacitor_data.study_data.study_name,
+                        f"capacitor_id_{number_in_circuit}": capacitor_id,
+                        f"capacitor_volume_{number_in_circuit}": capacitor_dto.volume_total,
+                        f"capacitor_loss_array_{number_in_circuit}": capacitor_dto.loss_total_array,
+                        f"capacitor_area_{number_in_circuit}": capacitor_dto.area_total,
+                        f"capacitor_n_parallel_{number_in_circuit}": capacitor_dto.n_parallel,
+                        f"capacitor_n_series_{number_in_circuit}": capacitor_dto.n_series,
                     }
                     # Store capacitor data set
                     capacitors.append(capacitor_data)
@@ -272,17 +246,17 @@ class SummaryProcessing:
 
             # iterate inductor study
             for index, act_inductor_data in enumerate(act_inductor_data_list):
-                inductor_results_filepath = os.path.join(act_inductor_study_data.optimization_directory,
-                                                         circuit_id,
-                                                         act_inductor_data.study_data.study_name,
-                                                         inductor_result_directory)
+                inductor_study_results_filepath = os.path.join(act_inductor_data.study_data.optimization_directory,
+                                                               circuit_id,
+                                                               act_inductor_data.study_data.study_name,
+                                                               inductor_result_directory)
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(inductor_results_filepath))
+                    SummaryProcessing._generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
 
                 if not is_inductor_list_generated:
-                    logger.info(f"Path {inductor_results_filepath} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {inductor_study_results_filepath} does not exists or does not contains any pkl-files!")
                     # Next circuit
                     continue
 
@@ -303,16 +277,20 @@ class SummaryProcessing:
 
                     inductance_loss_matrix = inductor_dto.loss_array
 
-                    logger.debug(f"{act_stacked_transformer_study_names=}")
+                    logger.debug(f"{act_inductor_data.study_data.study_name=}")
 
+                    # Get number for index of data frames
+                    number_in_circuit=inductor_dto.inductor_number_in_circuit
+
+                    # Assemble the data frame entry
                     inductor_data = {
                         # inductor
-                        "inductor_study_name": inductor_study_name,
-                        "inductor_id": inductor_id,
-                        "inductor_volume": inductor_dto.volume,
-                        "inductor_loss_array": inductance_loss_matrix,
-                        "inductor_t_max": 0,
-                        "inductor_area": inductor_dto.area_to_heat_sink,
+                        f"inductor_study_name_{number_in_circuit}": act_inductor_data.study_data.study_name,
+                        f"inductor_id_{number_in_circuit}": inductor_id,
+                        f"inductor_volume_{number_in_circuit}": inductor_dto.volume,
+                        f"inductor_loss_array_{number_in_circuit}": inductance_loss_matrix,
+                        f"inductor_t_max_{number_in_circuit}": 0,
+                        f"inductor_area_{number_in_circuit}": inductor_dto.area_to_heat_sink,
                     }
                     # Store inductor data set
                     inductors.append(inductor_data)
@@ -320,12 +298,12 @@ class SummaryProcessing:
                 # Add to inductor component list
                 inductor_data_list.append(inductors)
 
-            # iterate transformer study
-            for act_transformer_data in act_transformer_data_list:
-                stacked_transformer_study_results_filepath = os.path.join(act_transformer_data.study_data.optimization_directory,
-                                                                          circuit_id,
-                                                                          act_transformer_data.study_data.study_name,
-                                                                          transformer_result_directory)
+                # iterate transformer study
+                for act_transformer_data in act_transformer_data_list:
+                    stacked_transformer_study_results_filepath = os.path.join(act_transformer_data.study_data.optimization_directory,
+                                                                              circuit_id,
+                                                                              act_transformer_data.study_data.study_name,
+                                                                              transformer_result_directory)
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
@@ -352,16 +330,19 @@ class SummaryProcessing:
                     if int(transformer_dto.transformer_id) != int(transformer_id):
                         raise ValueError(f"{transformer_dto.transformer_id=} != {transformer_id}")
 
-                    logger.debug(f"{act_capacitor_1_study_names=}")
+                    logger.debug(f"{act_transformer_data.study_data.study_name=}")
 
+                    # Get number for index of data frames
+                    number_in_circuit=transformer_dto.transformer_number_in_circuit
+                    # Assemble the data frame entry
                     transformer_data = {
                         # transformer
-                        "transformer_study_name": stacked_transformer_study_name,
-                        "transformer_id": transformer_id,
-                        "transformer_volume": transformer_dto.volume,
-                        "transformer_loss_array": transformer_dto.loss_array,
-                        "transformer_t_max": 0,
-                        "transformer_area": transformer_dto.area_to_heat_sink,
+                        f"transformer_study_name_{number_in_circuit}": act_transformer_data.study_data.study_name,
+                        f"transformer_id_{number_in_circuit}": transformer_id,
+                        f"transformer_volume_{number_in_circuit}": transformer_dto.volume,
+                        f"transformer_loss_array_{number_in_circuit}": transformer_dto.loss_array,
+                        f"transformer_t_max_{number_in_circuit}": 0,
+                        f"transformer_area_{number_in_circuit}": transformer_dto.area_to_heat_sink,
                     }
 
                     # Store transformer data set
@@ -377,7 +358,7 @@ class SummaryProcessing:
                                                                          transformer_data_list=transformer_data_list))
 
     @staticmethod
-    def component_to_dataframe(component_data: list[dict]) -> pd.dataframe:
+    def component_to_dataframe(component_data: list[dict]) -> pd.DataFrame:
         """Generate a pd-dataframe form a list of dictionaries..
 
         :param component_data: List with component data within a dict
@@ -386,11 +367,30 @@ class SummaryProcessing:
         :rtype:  pd.DataFrame
         """
         df_components =pd.DataFrame()
-        for single_capacitor_data in capacitor_data:
-            df_single_component = pd.DataFrame([single_capacitor_data])
+        for single_component_data in component_data:
+            df_single_component = pd.DataFrame([single_component_data])
             df_components = pd.concat([df_components, df_single_component], axis=0)
 
-            return df_components
+        return df_components
+
+    @staticmethod
+    def _calculate_component_sum(act_df: pd.DataFrame, component: str):
+        """Generate a pd-dataframe form a list of dictionaries..
+
+        :param act_df: Actual data frame, which shall be filtered for prefix columns
+        :type  act_df: pd.DataFrame
+        :param component: Name of the component prefix
+        :type  component: str
+        :return: Data frame with result data of the dicts
+        :rtype:  pd.DataFrame
+        """
+        # Get index
+        cols = act_df.columns[act_df.columns.str.startswith(component)]
+        # Check, if no column with the prefix is found.
+        if len(cols) == 0:
+            return 0
+        return act_df[cols].sum(axis=1)
+
 
     def generate_result_database(self, r_th_per_unit_area_ind_heat_sink: float,
                                  r_th_per_unit_area_xfmr_heat_sink: float,
@@ -411,7 +411,7 @@ class SummaryProcessing:
         # Variable declaration
 
         # Check if initialisation list is empty
-        if not self._design_component_data:
+        if not self._summary_configuration_list:
             raise ValueError("First you need to initialize summary by calling 'initialize_processing'!")
 
         # Start the progress time measurement
@@ -432,7 +432,7 @@ class SummaryProcessing:
             # Put all capacitors to a pd-design
             capacitor_pd_list: list[pd.DataFrame] = []
             for capacitor_data in design.capacitor_data_list:
-                df_capacitors = component_to_dataframe(capacitor_data)
+                df_capacitors = SummaryProcessing.component_to_dataframe(capacitor_data)
                 # Merge different df by creating a common key
                 df_capacitors['key'] = 0
                 capacitor_pd_list.append(df_capacitors)
@@ -440,7 +440,7 @@ class SummaryProcessing:
             # Put all inductors to a pd-design
             inductor_pd_list: list[pd.DataFrame] = []
             for inductor_data in design.inductor_data_list:
-                df_inductors = component_to_dataframe(inductor_data)
+                df_inductors = SummaryProcessing.component_to_dataframe(inductor_data)
                 # Merge different df by creating a common key
                 df_inductors['key'] = 0
                 inductor_pd_list.append(df_inductors)
@@ -448,7 +448,7 @@ class SummaryProcessing:
             # Put all transformers to a pd-design
             transformer_pd_list: list[pd.DataFrame] = []
             for transformer_data in design.transformer_data_list:
-                df_transformers = component_to_dataframe(transformer_data)
+                df_transformers = SummaryProcessing.component_to_dataframe(transformer_data)
                 # Merge different df by creating a common key
                 df_transformers['key'] = 0
                 transformer_pd_list.append(df_transformers)
@@ -473,15 +473,24 @@ class SummaryProcessing:
         # Consume  design component data
         self._summary_configuration_list = []
 
-        # Calculate the total area as sum of circuit,  inductor and transformer area df-command is like vector sum v1[:]=v2[:]+v3[:])
-        # heat sink area, capacitors do not need heat sink area
-        df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
+        # Calculate the total area as sum of circuit,  inductor and transformer area based on df-command is like vector sum v1[:]= v2[:] + v3[:]
+        # and v2 = sumrow [matrix m2[:]]; v3 = sumrow [matrix m3[:]] The number of columns of the matrix corresponds to
+        # the number of components of the same type. heat sink area, capacitors do not need heat sink area
+        # df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
+        df["total_area"] = ( df["circuit_area"].apply(lambda x: np.sum(x)) +
+                            _calculate_component_sum(df,"inductor_area") +
+                            _calculate_component_sum(df,"transformer_area"))
 
-        # TODO: Fix needed, as capacitor 2 is not considered currently
-        df["volume_wo_heat_sink"] = df["transformer_volume"] + df["inductor_volume"] + df["capacitor_1_volume"]  # + df["capacitor_2_volume"]
+        # Calculate the volume without heat sink volume
+        df["volume_wo_heat_sink"] = (
+            _calculate_component_sum(df,"inductor_volume") +
+            _calculate_component_sum(df,"transformer_volume") +
+            _calculate_component_sum(df, "capacitor_volume"))
 
-        # TODO: Fix needed capacitor 2+  df["capacitor_2_loss_array"]
-        df["total_loss_wo_capacitors_array"] = (df["inductor_loss_array"] + df["circuit_loss_array"] + df["transformer_loss_array"])
+        # Calculate the power loss of the capacitors
+        df["total_loss_wo_capacitors_array"] = ( df["circuit_loss_array"] +
+                                                _calculate_component_sum(df, "inductor_loss_array") +
+                                                _calculate_component_sum(df, "transformer_loss_array"))
 
         # Calculate the thermal resistance according r_th = 1/lambda * l / A
         # For inductor: r_th_per_unit_area_ind_heat_sink = 1/lambda * l

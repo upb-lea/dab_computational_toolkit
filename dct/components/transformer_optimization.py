@@ -23,7 +23,8 @@ from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressStatus, ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
-from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults
+from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults, ComponentCooling
+from dct.components.heat_sink_optimization import ThermalCalcSupport
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +142,31 @@ class TransformerOptimization:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
+        # Perform list length check for thermal_cooling
+        if len(toml_transformer.insulation.thermal_cooling) != 2:
+            inconsistency_report = (inconsistency_report +
+                                    f"    Number of values in parameter '{group_name}: " +
+                                    "thermal_cooling' is not equal 2!\n")
+            is_consistent = False
+        else:
+            # Perform the boundary check for tim-thickness
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 0.01, toml_transformer.insulation.thermal_cooling[0],
+                f"'{group_name}: thermal_cooling[0]-tim-thickness",
+                c_flag.check_exclusive, c_flag.check_exclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
+            # Perform the boundary check for tim-conductivity
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 100, toml_transformer.insulation.thermal_cooling[1],
+                f"'{group_name}: thermal_cooling[1]-tim-conductivity",
+                c_flag.check_exclusive, c_flag.check_exclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
         # Perform boundary condition check
         group_name = "boundary_condition"
         # Perform the boundary check
@@ -204,9 +230,10 @@ class TransformerOptimization:
             if not configuration_data_list[transformer_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode:
 
                 circuit_id = transformer_requirements.circuit_id
-                trial_directory = os.path.join(configuration_data_list[transformer_number_in_circuit].study_data.optimization_directory,
-                                               circuit_id, configuration_data_list[transformer_number_in_circuit].study_data.study_name)
-                transformer_toml_data = configuration_data_list[transformer_number_in_circuit].transformer_toml_data
+                configuration_data = configuration_data_list[transformer_number_in_circuit]
+                trial_directory = os.path.join(configuration_data.study_data.optimization_directory,
+                                               circuit_id, configuration_data.study_data.study_name)
+                transformer_toml_data = configuration_data.transformer_toml_data
 
                 # Check if transformer_toml_data not initializes
                 if transformer_toml_data is None:
@@ -214,7 +241,7 @@ class TransformerOptimization:
                                      "Please write an issue!")
 
                 # common parameters for all types of transformers
-                act_insulation = fmt.StoInsulation(
+                act_insulations = fmt.StoInsulation(
                     # insulation for top core window
                     iso_window_top_core_top=transformer_toml_data.insulation.iso_window_top_core_top,
                     iso_window_top_core_bot=transformer_toml_data.insulation.iso_window_top_core_bot,
@@ -239,7 +266,7 @@ class TransformerOptimization:
 
                 # Create fix part of io_config
                 sto_config = fmt.StoSingleInputConfig(
-                    stacked_transformer_study_name=configuration_data_list[transformer_number_in_circuit].study_data.study_name,
+                    stacked_transformer_study_name=configuration_data.study_data.study_name,
                     # target parameters  initialized with default values
                     l_s12_target=0,
                     l_h_target=0,
@@ -261,10 +288,10 @@ class TransformerOptimization:
                     # maximum limitation for transformer total height and core volume
                     max_transformer_total_height=transformer_toml_data.boundary_conditions.max_transformer_total_height,
                     max_core_volume=transformer_toml_data.boundary_conditions.max_core_volume,
-                    # fix parameters: insulations
-                    insulations=act_insulation,
+                    # fix parameters: insulation
+                    insulations=act_insulations,
                     # misc
-                    stacked_transformer_optimization_directory=configuration_data_list[transformer_number_in_circuit].study_data.optimization_directory,
+                    stacked_transformer_optimization_directory=configuration_data.study_data.optimization_directory,
 
                     fft_filter_value_factor=transformer_toml_data.settings.fft_filter_value_factor,
                     mesh_accuracy=transformer_toml_data.settings.mesh_accuracy,
@@ -286,13 +313,20 @@ class TransformerOptimization:
                 next_io_config.time_current_1_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_1_vec])
                 next_io_config.time_current_2_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_2_vec])
                 # misc
+                # Get thermal data
+                thermal_data: ComponentCooling = ComponentCooling(
+                    tim_thickness=configuration_data.transformer_toml_data.insulation.thermal_cooling[0],
+                    tim_conductivity=configuration_data.transformer_toml_data.insulation.thermal_cooling[1])
+
                 next_io_config.stacked_transformer_optimization_directory = trial_directory
                 transformer_dto = TransformerOptimizationDto(
                     trial_directory="hh",
                     circuit_id=circuit_id,
+                    transformer_number_in_circuit=transformer_number_in_circuit,
                     progress_data=copy.deepcopy(stat_data_init),
-                    number_of_trails=configuration_data_list[transformer_number_in_circuit].study_data.number_of_trials,
+                    number_of_trails=configuration_data.study_data.number_of_trials,
                     fmt_transformer_optimization_dto=next_io_config,
+                    thermal_data=thermal_data,
                     factor_dc_losses_min_max_list=transformer_toml_data.filter_distance.factor_dc_losses_min_max_list,
                     transformer_requirements=transformer_requirements)
 
@@ -342,7 +376,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _optimize_reluctance_model(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, circuit_study_name: str,
-                                   transformer_requirements: TransformerRequirements,
+                                   transformer_requirements: TransformerRequirements, thermal_data: ComponentCooling,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
@@ -353,6 +387,10 @@ class TransformerOptimization:
         :type act_sto_config: fmt.StoSingleInputConfig
         :param circuit_study_name: Name of the cirucit study
         :type  circuit_study_name: str
+        :param transformer_requirements: Requirements for the transformer
+        :type  transformer_requirements: TransformerRequirements
+        :param thermal_data: Thermal data of the connection to heat sink
+        :type  thermal_data: ComponentCooling
         :param target_number_trials: Number of trials for the reluctance model optimization
         :type target_number_trials: int
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
@@ -423,12 +461,18 @@ class TransformerOptimization:
                         df_transformer_id, current_waveform_1, current_waveform_2, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
+                # Calculate thermal resistance
+                r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
+                    area_to_heat_sink, thermal_data)
+
                 results_dto = StackedTransformerResults(
                     loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
+                    r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
                     circuit_id=circuit_id,
-                    transformer_id=transformer_id
+                    transformer_id=transformer_id,
+                    transformer_number_in_circuit = transformer_requirements.transformer_number_in_circuit
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
@@ -457,6 +501,7 @@ class TransformerOptimization:
             parameter_set = (
                 act_optimization_configuration.circuit_id, act_optimization_configuration.fmt_transformer_optimization_dto,
                 circuit_study_name, act_optimization_configuration.transformer_requirements,
+                act_optimization_configuration.thermal_data,
                 act_optimization_configuration.number_of_trails,
                 act_optimization_configuration.factor_dc_losses_min_max_list,
                 debug)
@@ -532,7 +577,7 @@ class TransformerOptimization:
 
     @staticmethod
     def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, circuit_study_name: str,
-                        transformer_requirements: TransformerRequirements,
+                        transformer_requirements: TransformerRequirements, thermal_data: ComponentCooling,
                         factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
@@ -543,6 +588,10 @@ class TransformerOptimization:
         :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
         :param circuit_study_name: Name of the cirucit study
         :type  circuit_study_name: str
+        :param transformer_requirements: Requirements for the transformer
+        :type  transformer_requirements: TransformerRequirements
+        :param thermal_data: Thermal data of the connection to heat sink
+        :type  thermal_data: ComponentCooling
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
@@ -610,12 +659,18 @@ class TransformerOptimization:
 
                         result_array[vec_vvp] = combined_losses
 
+                    # Calculate thermal resistance
+                    r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
+                        area_to_heat_sink, thermal_data)
+
                     results_dto = StackedTransformerResults(
                         loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
+                        r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
                         circuit_id=circuit_id,
-                        transformer_id=transformer_id
+                        transformer_id=transformer_id,
+                        transformer_number_in_circuit=transformer_requirements.transformer_number_in_circuit
                     )
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
