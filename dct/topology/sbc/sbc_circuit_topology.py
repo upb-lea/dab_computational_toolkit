@@ -1175,7 +1175,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
     @staticmethod
     def filter_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1", factor_min_dc_losses: float = 1.2,
-                  factor_max_dc_losses: float = 10) -> pd.DataFrame:
+                  factor_max_dc_losses: float = 10, abs_max_losses: float = 100_000) -> pd.DataFrame:
         """
         Remove designs with too high losses compared to the minimum losses.
 
@@ -1189,6 +1189,8 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :type factor_min_dc_losses: float
         :param factor_max_dc_losses: dc_max_loss = factor_max_dc_losses * min_available_dc_losses_in_pareto_front
         :type factor_max_dc_losses: float
+        :param abs_max_losses: Absolute maximum losses (clip above this value)
+        :type abs_max_losses: float
         :returns: pandas DataFrame with Pareto front near points
         :rtype: pd.DataFrame
         """
@@ -1215,6 +1217,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
 
         pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
+
+        # clip point to the absolute maximum losses
+        pareto_df_offset = df[df[y] < abs_max_losses]
 
         return pareto_df_offset
 

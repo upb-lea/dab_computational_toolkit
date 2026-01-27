@@ -17,14 +17,14 @@ from dct.components.capacitor_optimization_dtos import CapacitorResults
 from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions
 from dct.toml_checker import TomlHeatSink
 from dct.datasets_dtos import StudyData, FilterData
-
+from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET,
-                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL)
+                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL, DF_SUMMARY_FINAL_FILTERED)
 
 logger = logging.getLogger(__name__)
 
@@ -581,3 +581,21 @@ class SummaryProcessing:
 
         df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
         return df_w_hs
+
+    @staticmethod
+    def filter(summary_data: StudyData, df: pd.DataFrame, abs_max_losses: float) -> pd.DataFrame:
+        """
+        Pareto front filter.
+
+        :param summary_data: summary data
+        :type summary_data: StudyData
+        :param df: dataframe
+        :type df: pd.DataFrame
+        :param abs_max_losses: absolute maximum losses of the converter to clip the Pareto front
+        :type abs_max_losses: float
+        :return:
+        """
+        df_filtered = CircuitOptimizationBase.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                        factor_min_dc_losses=0.001, factor_max_dc_losses=100, abs_max_losses=abs_max_losses)
+        df_filtered.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}")
+        return df_filtered

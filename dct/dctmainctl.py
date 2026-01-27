@@ -1838,7 +1838,10 @@ class DctMainCtl:
         #  Select the needed heat sink configuration
         df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
 
-        self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        df_pareto_plane = self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume,
+                                                                                toml_misc.control_board_loss)
+
+        df_pareto_front = self._summary_pre_processing.filter(pre_summary_data, df_pareto_plane, abs_max_losses=100_000)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
