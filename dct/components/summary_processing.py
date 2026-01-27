@@ -579,6 +579,11 @@ class SummaryProcessing:
         df_w_hs["inductor_loss_array"] = df_w_hs["inductor_loss_array"].apply(lambda x: str(x.tolist()))
         df_w_hs["transformer_loss_array"] = df_w_hs["transformer_loss_array"].apply(lambda x: str(x.tolist()))
 
+        # generate a new unique index for the combined dataframe
+        # this helps to easily adress unique combinations by the index
+        df_w_hs = df_w_hs.reset_index(drop=True)
+        df_w_hs.index.name = "combination_id"
+
         df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
         return df_w_hs
 

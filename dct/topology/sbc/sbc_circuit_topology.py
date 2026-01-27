@@ -1174,56 +1174,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         return pareto_df
 
     @staticmethod
-    def filter_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1", factor_min_dc_losses: float = 1.2,
-                  factor_max_dc_losses: float = 10, abs_max_losses: float = 100_000) -> pd.DataFrame:
-        """
-        Remove designs with too high losses compared to the minimum losses.
-
-        :param df: pandas DataFrame with study results
-        :type df: pd.DataFrame
-        :param x: x-value name for Pareto plot filtering
-        :type x: str
-        :param y: y-value name for Pareto plot filtering
-        :type y: str
-        :param factor_min_dc_losses: filter factor for the minimum dc losses
-        :type factor_min_dc_losses: float
-        :param factor_max_dc_losses: dc_max_loss = factor_max_dc_losses * min_available_dc_losses_in_pareto_front
-        :type factor_max_dc_losses: float
-        :param abs_max_losses: Absolute maximum losses (clip above this value)
-        :type abs_max_losses: float
-        :returns: pandas DataFrame with Pareto front near points
-        :rtype: pd.DataFrame
-        """
-        # figure out pareto front
-        # pareto_volume_list, pareto_core_hyst_list, pareto_dto_list = self.pareto_front(volume_list, core_hyst_loss_list, valid_design_list)
-
-        pareto_df: pd.DataFrame = SbcCircuitOptimization.pareto_front_from_df(df, x, y)
-
-        vector_to_sort = np.array([pareto_df[x], pareto_df[y]])
-
-        # sorting 2d array by 1st row
-        # https://stackoverflow.com/questions/49374253/sort-a-numpy-2d-array-by-1st-row-maintaining-columns
-        sorted_vector = vector_to_sort[:, vector_to_sort[0].argsort()]
-        x_pareto_vec = sorted_vector[0]
-        y_pareto_vec = sorted_vector[1]
-
-        total_losses_list = df[y][~np.isnan(df[y])].to_numpy()
-
-        min_total_dc_losses = total_losses_list[np.argmin(total_losses_list)]
-        loss_offset = factor_min_dc_losses * min_total_dc_losses
-
-        ref_loss_max = np.interp(df[x], x_pareto_vec, y_pareto_vec) + loss_offset
-        # clip losses to a maximum of the minimum losses
-        ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
-
-        pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
-
-        # clip point to the absolute maximum losses
-        pareto_df_offset = df[df[y] < abs_max_losses]
-
-        return pareto_df_offset
-
-    @staticmethod
     def hybrid_pareto_sampling(pareto_matrix: np.ndarray, n_points: int = 8) -> np.ndarray:
         """
         Filter points from pareto front by hybrid-strategy: Extremes + Knees + Density.

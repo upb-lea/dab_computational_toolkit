@@ -138,10 +138,11 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         # clip losses to a maximum of the minimum losses
         ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
 
+        # clip point of the relative maximum losses given by the factor
         pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
 
         # clip point to the absolute maximum losses
-        pareto_df_offset = df[df[y] < abs_max_losses]
+        pareto_df_offset = pareto_df_offset[pareto_df_offset[y] < abs_max_losses]
 
         return pareto_df_offset
 
