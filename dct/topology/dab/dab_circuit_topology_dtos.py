@@ -8,17 +8,6 @@ import dataclasses
 from dct.circuit_enums import SamplingEnum
 
 @dataclasses.dataclass
-class ParetoFilePaths:
-    """File paths for the sub simulation optimization parts."""
-
-    circuit: str
-    capacitor_1: str
-    capacitor_2: str
-    inductor: str
-    transformer: str
-    heat_sink: str
-
-@dataclasses.dataclass
 class CircuitParetoDesignSpace:
     """Definition of the hardware design space for electronic components."""
 

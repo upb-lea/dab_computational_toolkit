@@ -244,8 +244,8 @@ class SummaryProcessing:
                 "circuit_t_j_max": circuit_dto.circuit_thermal.t_j_max,
                 "circuit_r_th_ib_jhs": circuit_dto.circuit_thermal.r_th_jhs,
                 "circuit_area": circuit_dto.circuit_thermal.area,
-                "circuit_loss_array": circuit_dto.circuit_thermal.loss_array,
-                "circuit_temperature_heat_sink_max_array": circuit_dto.circuit_thermal.temperature_heat_sink_max_array
+                "circuit_loss_array": np.array(circuit_dto.circuit_thermal.loss_array),
+                "circuit_temperature_heat_sink_max_array": np.array(circuit_dto.circuit_thermal.temperature_heat_sink_max_array)
             }
             df_circuit_local = pd.DataFrame([circuit_data])
 
@@ -572,6 +572,12 @@ class SummaryProcessing:
             df_w_hs["inductor_loss_array"].apply(np.mean) + \
             df_w_hs["transformer_loss_array"].apply(np.mean) + \
             df_w_hs["capacitor_1_loss_array"].apply(np.mean) + control_board_loss)  # + np.mean(df["capacitor_2_loss_array"])
+
+        df_w_hs["total_loss_array"] = df_w_hs["total_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["circuit_loss_array"] = df_w_hs["circuit_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["capacitor_1_loss_array"] = df_w_hs["capacitor_1_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["inductor_loss_array"] = df_w_hs["inductor_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["transformer_loss_array"] = df_w_hs["transformer_loss_array"].apply(lambda x: str(x.tolist()))
 
         df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
         return df_w_hs
