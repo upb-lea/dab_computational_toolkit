@@ -35,6 +35,9 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 import dct.generalplotsettings as gps
 from dct.components.component_dtos import CapacitorRequirements, ComponentRequirements, TransformerRequirements
+from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -1410,3 +1413,86 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         # Return if initialization was successful performed (True)
         return successful_init
+
+    @staticmethod
+    def generate_result_dtos(filter_data: FilterData, summary_data: StudyData, capacitor_selection_data: StudyData,
+                             circuit_study_data: StudyData, inductor_study_data: StudyData, transformer_study_data: StudyData,
+                             df: pd.DataFrame, is_pre_summary: bool = True) -> None:
+        """
+        Generate the result dtos from a given (filtered) result dataframe.
+
+        :param filter_data: Filter data
+        :type filter_data: FilterData
+        :param summary_data: Summary Data
+        :type summary_data: StudyData
+        :param capacitor_selection_data: capacitor selection data
+        :type capacitor_selection_data: StudyData
+        :param circuit_study_data: circuit study data
+        :type circuit_study_data: StudyData
+        :param inductor_study_data: inductor study data
+        :type inductor_study_data: StudyData
+        :param transformer_study_data: transformer study data
+        :type transformer_study_data: StudyData
+        :param df: dataframe to take the results from
+        :type df: pd.DataFrame
+        :param is_pre_summary: True for pre-summary, False for summary
+        :type is_pre_summary: bool
+        """
+        if is_pre_summary:
+            # pre summary using reluctance model results (inductive components)
+            inductor_result_directory = CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER
+            transformer_result_directory = CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER
+        else:
+            # final summary using FEM results (inductive components)
+            inductor_result_directory = CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
+            transformer_result_directory = CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
+
+        for _, row in df.iterrows():
+            circuit_id = row['circuit_id']
+            inductor_id = row['inductor_id']
+            inductor_study_name = row['inductor_study_name']
+            transformer_id = row['transformer_id']
+            transformer_study_name = row['transformer_study_name']
+            capacitor_1_id = row['capacitor_1_id']
+            capacitor_1_study_name = row['capacitor_1_study_name']
+
+            # load circuit DTO
+            circuit_id_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
+            with open(circuit_id_filepath, 'rb') as pickle_file_data:
+                circuit_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+            # load inductor DTO
+            inductor_study_results_filepath = os.path.join(inductor_study_data.optimization_directory, circuit_id,
+                                                           inductor_study_name,
+                                                           inductor_result_directory)
+
+            inductor_id_filepath = os.path.join(inductor_study_results_filepath, f"{inductor_id}.pkl")
+            with open(inductor_id_filepath, 'rb') as pickle_file_data:
+                inductor_results = pickle.load(pickle_file_data)
+
+            # load transformer DTO
+            transformer_study_results_filepath = os.path.join(transformer_study_data.optimization_directory, circuit_id,
+                                                              transformer_study_name, transformer_result_directory)
+
+            transformer_id_filepath = os.path.join(transformer_study_results_filepath, f"{transformer_id}.pkl")
+            with open(transformer_id_filepath, 'rb') as pickle_file_data:
+                transformer_results = pickle.load(pickle_file_data)
+
+            # load capacitor DTO
+            capacitor_1_study_results_filepath = os.path.join(capacitor_selection_data.optimization_directory, circuit_id,
+                                                              capacitor_1_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_1_id_filepath = os.path.join(capacitor_1_study_results_filepath, f"{capacitor_1_id}.pkl")
+            with open(capacitor_1_id_filepath, 'rb') as pickle_file_data:
+                capacitor_1_results = pickle.load(pickle_file_data)
+
+            circuit_dto.inductor_results = inductor_results
+            circuit_dto.stacked_transformer_results = transformer_results
+            circuit_dto.capacitor_1_results = capacitor_1_results
+
+            results_folder = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
+            if not os.path.exists(results_folder):
+                os.makedirs(results_folder)
+
+            HandleDabDto.save(circuit_dto, f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap{capacitor_1_id}",
+                              directory=results_folder, timestamp=False)

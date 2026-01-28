@@ -404,3 +404,32 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :return: bool
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_result_dtos(filter_data: FilterData, summary_data: StudyData, capacitor_selection_data: StudyData,
+                             circuit_study_data: StudyData, inductor_study_data: StudyData, transformer_study_data: StudyData,
+                             df: pd.DataFrame, is_pre_summary: bool = True) -> None:
+        """
+        Generate the result dtos from a given (filtered) result dataframe.
+
+        :param filter_data: Filter data
+        :type filter_data: FilterData
+        :param summary_data: Summary Data
+        :type summary_data: StudyData
+        :param capacitor_selection_data: capacitor selection data
+        :type capacitor_selection_data: StudyData
+        :param circuit_study_data: circuit study data
+        :type circuit_study_data: StudyData
+        :param inductor_study_data: inductor study data
+        :type inductor_study_data: StudyData
+        :param transformer_study_data: transformer study data
+        :type transformer_study_data: StudyData
+        :param df: dataframe to take the results from
+        :type df: pd.DataFrame
+        :param is_pre_summary: True for pre-summary, False for summary
+        :type is_pre_summary: bool
+        :return: None
+        :rtype: None
+        """
+        pass
