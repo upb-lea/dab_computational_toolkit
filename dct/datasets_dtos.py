@@ -117,6 +117,7 @@ class InductorConfiguration:
     """Study data and toml-file for inductor configuration."""
 
     study_data: StudyData
+    simulation_calculation_mode: CalcModeEnum
     inductor_toml_data: TomlConf.TomlInductor | None = None
 
 @dataclasses.dataclass
@@ -124,6 +125,7 @@ class TransformerConfiguration:
     """Study data and toml-file for transformer configuration."""
 
     study_data: StudyData
+    simulation_calculation_mode: CalcModeEnum
     transformer_toml_data: TomlConf.TomlTransformer | None = None
 
 @dataclasses.dataclass

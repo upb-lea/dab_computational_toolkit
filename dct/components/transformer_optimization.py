@@ -144,9 +144,8 @@ class TransformerOptimization:
 
         # Perform list length check for thermal_cooling
         if len(toml_transformer.insulation.thermal_cooling) != 2:
-            inconsistency_report = (inconsistency_report +
-                                    f"    Number of values in parameter '{group_name}: " +
-                                    "thermal_cooling' is not equal 2!\n")
+            issue_report = f"    Number of values in parameter '{group_name}: " + "     thermal_cooling' is not equal 2!\n"
+            inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         else:
             # Perform the boundary check for tim-thickness
@@ -226,19 +225,21 @@ class TransformerOptimization:
             # Set index
             transformer_number_in_circuit = transformer_requirements.transformer_number_in_circuit
 
-            # Check, if capacitor optimization is not to skip
-            if not configuration_data_list[transformer_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check, if transformer optimization is not to skip
+            if not configuration_data_list[transformer_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode\
+                    or not configuration_data_list[transformer_number_in_circuit].simulation_calculation_mode == CalcModeEnum.skip_mode:
 
                 circuit_id = transformer_requirements.circuit_id
                 configuration_data = configuration_data_list[transformer_number_in_circuit]
                 trial_directory = os.path.join(configuration_data.study_data.optimization_directory,
                                                circuit_id, configuration_data.study_data.study_name)
-                transformer_toml_data = configuration_data.transformer_toml_data
 
                 # Check if transformer_toml_data not initializes
-                if transformer_toml_data is None:
+                if configuration_data.transformer_toml_data is None:
                     raise ValueError("Serious programming error in transformer optimization. toml-data are not initialized.",
                                      "Please write an issue!")
+
+                transformer_toml_data = configuration_data.transformer_toml_data
 
                 # common parameters for all types of transformers
                 act_insulations = fmt.StoInsulation(
@@ -472,7 +473,7 @@ class TransformerOptimization:
                     r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
                     circuit_id=circuit_id,
                     transformer_id=transformer_id,
-                    transformer_number_in_circuit = transformer_requirements.transformer_number_in_circuit
+                    transformer_number_in_circuit=transformer_requirements.transformer_number_in_circuit
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
@@ -578,7 +579,7 @@ class TransformerOptimization:
     @staticmethod
     def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, circuit_study_name: str,
                         transformer_requirements: TransformerRequirements, thermal_data: ComponentCooling,
-                        factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
+                        target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
@@ -592,6 +593,8 @@ class TransformerOptimization:
         :type  transformer_requirements: TransformerRequirements
         :param thermal_data: Thermal data of the connection to heat sink
         :type  thermal_data: ComponentCooling
+        :param target_number_trials: Number of trials for the reluctance model optimization (not used)
+        :type target_number_trials: int (not used)
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO

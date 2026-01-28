@@ -126,8 +126,8 @@ class ComponentRequirements:
 class ComponentCooling:
     """Fix parameters for the transistor, inductor and transformer cooling."""
 
-    tim_conductivity: float
     tim_thickness: float
+    tim_conductivity: float
 
 @dataclasses.dataclass(init=False)
 class InductorResults:

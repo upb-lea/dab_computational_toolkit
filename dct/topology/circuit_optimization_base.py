@@ -17,7 +17,6 @@ from dct.server_ctl_dtos import ProgressData
 from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
-from dct.toml_checker import TomlHeatSink
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")

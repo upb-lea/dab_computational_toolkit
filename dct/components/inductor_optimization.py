@@ -123,9 +123,8 @@ class InductorOptimization:
 
         # Perform list length check for thermal_cooling
         if len(toml_inductor.insulations.thermal_cooling) != 2:
-            inconsistency_report = (inconsistency_report +
-                                    f"    Number of values in parameter '{group_name}: " +
-                                    "thermal_cooling' is not equal 2!\n")
+            issue_report = f"    Number of values in parameter '{group_name}: thermal_cooling' is not equal 2!\n"
+            inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         else:
             # Perform the boundary check for tim-thickness
@@ -173,19 +172,21 @@ class InductorOptimization:
             # Set index
             inductor_number_in_circuit = inductor_requirements.inductor_number_in_circuit
 
-            # Check, if capacitor optimization is not to skip
-            if not configuration_data_list[inductor_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check, if inductor optimization is not to skip
+            if not configuration_data_list[inductor_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode\
+                    or not configuration_data_list[inductor_number_in_circuit].simulation_calculation_mode == CalcModeEnum.skip_mode:
 
                 circuit_id = inductor_requirements.circuit_id
                 configuration_data = configuration_data_list[inductor_number_in_circuit]
                 trial_directory = os.path.join(configuration_data.study_data.optimization_directory,
                                                circuit_id, configuration_data.study_data.study_name)
-                inductor_toml_data = configuration_data.inductor_toml_data
 
                 # Catch mypy issue
-                if inductor_toml_data is None:
+                if configuration_data.inductor_toml_data is None:
                     raise ValueError("Serious programming error in inductor optimization. toml-data are not initialized.",
                                      "Please write an issue!")
+
+                inductor_toml_data = configuration_data.inductor_toml_data
 
                 # Insulation parameter
                 act_insulations = fmt.InductorInsulationDTO(primary_to_primary=inductor_toml_data.insulations.primary_to_primary,
@@ -487,7 +488,7 @@ class InductorOptimization:
     @staticmethod
     def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, circuit_study_name: str,
                         inductor_requirements: InductorRequirements, thermal_data: ComponentCooling,
-                        factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
+                        target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
@@ -495,12 +496,14 @@ class InductorOptimization:
         :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param inductor_requirements: Requirements for the inductor
         :type  inductor_requirements: InductorRequirements
         :param thermal_data: Thermal data of the connection to heat sink
         :type  thermal_data: ComponentCooling
+        :param target_number_trials: Number of trials for the optimization (Not used)
+        :type  target_number_trials: int (Not used)
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
@@ -566,7 +569,7 @@ class InductorOptimization:
                         loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
-                        r_th_ind_heat_sink=thermal_data,
+                        r_th_ind_heat_sink=r_th_ind_heat_sink,
                         circuit_id=circuit_id,
                         inductor_id=inductor_id,
                         inductor_number_in_circuit=inductor_requirements.inductor_number_in_circuit,

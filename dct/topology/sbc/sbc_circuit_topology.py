@@ -19,7 +19,6 @@ from sklearn.cluster import KMeans
 from scipy.signal import savgol_filter
 from typing import cast, SupportsFloat
 
-from dct import TomlHeatSink
 # own libraries
 from dct.topology.sbc import sbc_datasets_dtos as s_dtos
 from dct.topology.sbc import sbc_circuit_topology_dtos as circuit_dtos
@@ -405,14 +404,14 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                 (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b2_cooling[1]-tim_conductivity"))
 
         # Perform the boundary check for tim-thickness
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
             0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform the boundary check for tim-conductivity
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
             1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report

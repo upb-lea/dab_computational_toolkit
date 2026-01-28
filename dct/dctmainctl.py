@@ -1328,7 +1328,6 @@ class DctMainCtl:
 
         DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "software_versions.txt"))
 
-
         # Extract topology dependent configuration files (0 = general file, 1 = circuit file)
         general_configuration_file: str = toml_prog_flow.configuration_data_files.topology_files[0]
         circuit_configuration_file: str = toml_prog_flow.configuration_data_files.topology_files[1]
@@ -1367,7 +1366,8 @@ class DctMainCtl:
                 number_of_trials=toml_prog_flow.inductor.numbers_of_trials[index],
                 calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.inductor.calculation_modes[index]))
             # Add component to list
-            self._inductor_study_configuration_list.append(InductorConfiguration(study_data=inductor_study_data))
+            self._inductor_study_configuration_list.append(InductorConfiguration(
+                study_data=inductor_study_data, simulation_calculation_mode=inductor_study_data.calculation_mode))
 
         for index, transformer_entry in enumerate(toml_prog_flow.configuration_data_files.transformer_configuration_files):
             transformer_study_data = StudyData(
@@ -1377,7 +1377,8 @@ class DctMainCtl:
                 number_of_trials=toml_prog_flow.transformer.numbers_of_trials[index],
                 calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.transformer.calculation_modes[index]))
             # Add component to list
-            self._transformer_study_configuration_list.append(TransformerConfiguration(study_data=transformer_study_data))
+            self._transformer_study_configuration_list.append(TransformerConfiguration(
+                study_data=transformer_study_data, simulation_calculation_mode=transformer_study_data.calculation_mode))
 
         self._heat_sink_study_data = StudyData(
             study_name=toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", ""),
@@ -1574,7 +1575,8 @@ class DctMainCtl:
             # Create processing complete indicator file name
             processing_complete_file_name = f"ind_{index}_" + PROCESSING_COMPLETE_FILE
             # Overtake the calculation mode
-            inductor_sim_calculation_mode_list.append(self._inductor_study_configuration_list[index].study_data.calculation_mode)
+            self._inductor_study_configuration_list[index].simulation_calculation_mode =\
+                self._inductor_study_configuration_list[index].study_data.calculation_mode
             # Check, if inductor optimization is to skip
             if self._inductor_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Initialize _inductor_number_filtered_points_skip_list
@@ -1587,21 +1589,22 @@ class DctMainCtl:
                     self._circuit_optimization.filter_data.filtered_list_files)
                 # Evaluate if the optimization is skippable for analytic calculation
                 if not is_skippable:
-                    self._inductor_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.new_mode
-                    inductor_sim_calculation_mode_list[index] = CalcModeEnum.continue_mode
+                    self._inductor_study_configuration_list[index].simulation_calculation_mode = CalcModeEnum.continue_mode
                     self._inductor_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
                     logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
                 else:
+                    # Assemble processing complete file name
+                    processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
                     # Check if the optimization is skippable for simulation calculation
                     is_skippable, issue_report = DctMainCtl._is_skippable(
-                        self._inductor_study_configuration_list[index].study_data, SIMULATION_COMPLETE_FILE, True,
+                        self._inductor_study_configuration_list[index].study_data, processing_complete_file, True,
                         self._circuit_optimization.filter_data.filtered_list_files)
                     # Evaluate if the optimization is skippable for simulation calculation
                     if not is_skippable:
                         logger.warning("Inductor optimization (simulation part) is not skippable:\n"
                                        f"{issue_report}")
-                        inductor_sim_calculation_mode = CalcModeEnum.continue_mode
+                        self._inductor_study_configuration_list[index].simulation_calculation_mode = CalcModeEnum.continue_mode
 
             # In case of CalcModeEnum.new_mode the old study is to delete
             if self._inductor_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
@@ -1650,7 +1653,8 @@ class DctMainCtl:
             # Create processing complete indicator file name
             processing_complete_file_name = f"trf_{index}_" + PROCESSING_COMPLETE_FILE
             # Overtake the calculation mode
-            transformer_sim_calculation_mode_list.append(self._transformer_study_configuration_list[index].study_data.calculation_mode)
+            self._transformer_study_configuration_list[index].simulation_calculation_mode =\
+                self._transformer_study_configuration_list[index].study_data.calculation_mode
             # Check, if transformer optimization is to skip
             if self._transformer_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Initialize _transformer_number_filtered_points_skip_list
@@ -1663,21 +1667,22 @@ class DctMainCtl:
                     self._circuit_optimization.filter_data.filtered_list_files)
                 # Evaluate if the optimization is skippable for analytic calculation
                 if not is_skippable:
-                    self._transformer_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.new_mode
-                    transformer_sim_calculation_mode_list[index] = CalcModeEnum.continue_mode
+                    self._transformer_study_configuration_list[index].simulation_calculation_mode = CalcModeEnum.continue_mode
                     self._transformer_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
                     logger.warning("transformer optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
                 else:
+                    # Assemble processing complete file name
+                    processing_complete_file = f"trf_{index}_" + SIMULATION_COMPLETE_FILE
                     # Check if the optimization is skippable for simulation calculation
                     is_skippable, issue_report = DctMainCtl._is_skippable(
-                        self._transformer_study_configuration_list[index].study_data, SIMULATION_COMPLETE_FILE, True,
+                        self._transformer_study_configuration_list[index].study_data, processing_complete_file, True,
                         self._circuit_optimization.filter_data.filtered_list_files)
                     # Evaluate if the optimization is skippable for simulation calculation
                     if not is_skippable:
                         logger.warning("transformer optimization (simulation part) is not skippable:\n"
                                        f"{issue_report}")
-                        transformer_sim_calculation_mode = CalcModeEnum.continue_mode
+                        self._transformer_study_configuration_list[index].simulation_calculation_mode = CalcModeEnum.continue_mode
 
             # In case of CalcModeEnum.new_mode the old study is to delete
             if self._transformer_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
@@ -1853,7 +1858,7 @@ class DctMainCtl:
         self._inductor_optimization.initialize_inductor_optimization_list(configuration_data_list=self._inductor_study_configuration_list,
                                                                           inductor_requirements_list=inductor_requirements_list)
 
-        # Optimize capacitors by number in circuit
+        # Optimize inductor by number in circuit
         for index in range(len(self._inductor_study_configuration_list)):
 
             # Set the status to InProgress
@@ -1903,7 +1908,7 @@ class DctMainCtl:
         self._transformer_optimization.initialize_transformer_optimization_list(configuration_data_list=self._transformer_study_configuration_list,
                                                                                 transformer_requirements_list=transformer_requirements_list)
 
-        # Optimize capacitors by number in circuit
+        # Optimize transformer by number in circuit
         for index in range(len(self._transformer_study_configuration_list)):
 
             # Set the status to InProgress
@@ -1967,37 +1972,24 @@ class DctMainCtl:
         if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
 
-        # Create list of capacitor studies
-        capacitor_study_names: list[str] = []
-        for capacitor_study_name in self._capacitor_selection_configuration_list:
-            capacitor_study_names.append(capacitor_study_name.study_data.study_name)
-        # Create list of inductor studies
-        inductor_study_names: list[str] = []
-        for inductor_study_configuration in self._inductor_study_configuration_list:
-            inductor_study_names.append(inductor_study_configuration.study_data.study_name)
-        # Create list of transformer studies
-        stacked_transformer_study_names: list[str] = []
-        for transformer_study_configuration in self._transformer_study_configuration_list:
-            stacked_transformer_study_names.append(transformer_study_configuration.study_data.study_name)
-
         # Initialize pre summary processing by collecting data from circuit and component optimization
         self._summary_pre_processing.initialize_processing(
             act_filter_data=self._circuit_optimization.filter_data,
             act_capacitor_data_list=self._capacitor_selection_configuration_list,
             act_inductor_data_list=self._inductor_study_configuration_list,
-            act_transformer_data_list=self._transformer_study_configuration_list, is_pre_summary=True)
+            act_transformer_data_list=self._transformer_study_configuration_list,
+            summary_study_data=pre_summary_data, is_pre_summary=True)
 
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_pre_processing.generate_result_database(
-            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
-            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
             heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
         )
 
         #  Select the needed heat sink configuration
-        df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, pre_summary_data, s_df)
-
-        self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
+        # ASA: Generally control_board_volume and control_board_loss depends on the topology.
+        # Only for test setups it could be the same
+        self._summary_pre_processing.add_offset_volume_losses(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
@@ -2025,7 +2017,7 @@ class DctMainCtl:
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
 
             # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-            if not inductor_sim_calculation_mode_list[index] == CalcModeEnum.skip_mode:
+            if not self._inductor_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
                 processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
                 # Delete processing complete indicator
@@ -2036,7 +2028,7 @@ class DctMainCtl:
                     self._circuit_optimization.circuit_study_data.study_name, index, debug=toml_debug)
                 # Set processing complete indicator
                 design_directory = os.path.join(self._inductor_study_configuration_list[index].study_data.study_name,
-                                                CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
+                                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
                 DctMainCtl._set_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
                                                     design_directory, processing_complete_file,
                                                     self._circuit_optimization.filter_data.filtered_list_files)
@@ -2053,7 +2045,7 @@ class DctMainCtl:
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.InProgress
 
             # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
-            if not transformer_sim_calculation_mode_list[index] == CalcModeEnum.skip_mode:
+            if not self._transformer_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
                 processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
                 # Delete processing complete indicator
@@ -2064,7 +2056,7 @@ class DctMainCtl:
                     self._circuit_optimization.circuit_study_data.study_name, index, debug=toml_debug)
                 # Set processing complete indicator
                 design_directory = os.path.join(self._transformer_study_configuration_list[index].study_data.study_name,
-                                                CIRCUIT_TRANSFORMER_LOSSES_FOLDER)
+                                                CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
                 DctMainCtl._set_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
                                                     design_directory, processing_complete_file,
                                                     self._circuit_optimization.filter_data.filtered_list_files)
@@ -2077,28 +2069,27 @@ class DctMainCtl:
         # Allocate summary data object
         self._summary_processing = SummaryProcessing()
 
-        # Initialization thermal data
         if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
-        # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
-        inductor_study_names = [self._inductor_study_configuration_list[0].study_data.study_name]
-        stacked_transformer_study_names = [self._transformer_study_configuration_list[0].study_data.study_name]
+
+        # Initialize pre summary processing by collecting data from circuit and component optimization
+        self._summary_processing.initialize_processing(
+            act_filter_data=self._circuit_optimization.filter_data,
+            act_capacitor_data_list=self._capacitor_selection_configuration_list,
+            act_inductor_data_list=self._inductor_study_configuration_list,
+            act_transformer_data_list=self._transformer_study_configuration_list,
+            summary_study_data=summary_data, is_pre_summary=False)
+
         # Start summary processing by generating the DataFrame from calculated simulation results
         s_df = self._summary_processing.generate_result_database(
-            self._inductor_study_configuration_list[0].study_data, self._transformer_study_configuration_list[0].study_data,
-            summary_data, inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
-            self._capacitor_selection_data, self._capacitor_2_selection_data,
-            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False,
-            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
-            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
-            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
+            heat_sink_boundary_conditions=self._summary_processing.heat_sink_boundary_conditions
         )
 
         #  Select the needed heat sink configuration
-        df_w_hs_summary = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
-
-        # add control board volume and losses
-        self._summary_processing.add_offset_volume_losses(summary_data, df_w_hs_summary, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
+        # ASA: Generally control_board_volume and control_board_loss depends on the topology.
+        # Only for test setups it could be the same
+        self._summary_processing.add_offset_volume_losses(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

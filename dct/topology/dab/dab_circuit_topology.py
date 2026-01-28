@@ -24,7 +24,6 @@ from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
-from dct.toml_checker import TomlHeatSink
 from dct.topology.dab import dab_toml_checker as dab_tc
 from dct.topology.dab.dab_datasets import HandleDabDto
 from dct.datasets_dtos import StudyData, FilterData, PlotData
@@ -1152,6 +1151,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         if self._study_in_storage is None:
             issue_report = "Study is not calculated. First run 'start_proceed_study'!"
             return is_filter_available, issue_report
+        if self._toml_circuit is None:
+            raise ValueError("Serious programming error in 'filter study results'. Please write an issue!")
 
         is_filter_available = True
 
@@ -1212,11 +1213,11 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             dto = HandleDabDto.generate_components_target_requirements(dto)
             # Get thermal data
             transistor_b1_cooling: ComponentCooling = ComponentCooling(
-                tim_conductivity=self._toml_circuit.thermal_data.transistor_b1_cooling[0],
-                tim_thickness=self._toml_circuit.thermal_data.transistor_b1_cooling[1])
+                tim_thickness=self._toml_circuit.thermal_data.transistor_b1_cooling[0],
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_b1_cooling[1])
             transistor_b2_cooling: ComponentCooling = ComponentCooling(
-                tim_conductivity=self._toml_circuit.thermal_data.transistor_b2_cooling[0],
-                tim_thickness=self._toml_circuit.thermal_data.transistor_b2_cooling[1])
+                tim_thickness=self._toml_circuit.thermal_data.transistor_b2_cooling[0],
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_b2_cooling[1])
             # generate the thermal parameters for the given design
             dto = HandleDabDto.generate_thermal_transistor_parameters(dto, transistor_b1_cooling, transistor_b2_cooling)
 
@@ -1436,4 +1437,3 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
-
