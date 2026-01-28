@@ -310,7 +310,7 @@ class InductorOptimization:
                         inductor_config_filepath=config_filepath)
                     combined_loss_array[vec_vvp] = combined_losses
 
-                inductor_losses = InductorResults(
+                inductor_results = InductorResults(
                     loss_array=combined_loss_array,
                     volume=inductor_volume,
                     area_to_heat_sink=area_to_heat_sink,
@@ -320,7 +320,7 @@ class InductorOptimization:
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                 with open(pickle_file, 'wb') as output:
-                    pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(inductor_results, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return quantity_of_inductor_id_pareto
@@ -484,7 +484,7 @@ class InductorOptimization:
                             inductor_config_filepath=config_filepath, process_number=process_number, print_derivations=False)
                         combined_loss_array[vec_vvp] = combined_losses
 
-                    inductor_losses = InductorResults(
+                    inductor_results = InductorResults(
                         loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
@@ -494,6 +494,6 @@ class InductorOptimization:
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
-                        pickle.dump(inductor_losses, output, pickle.HIGHEST_PROTOCOL)
+                        pickle.dump(inductor_results, output, pickle.HIGHEST_PROTOCOL)
             except:
                 logger.warning(f"for number {inductor_id} an operation point exceeds the boundary!")
