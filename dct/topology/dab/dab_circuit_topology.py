@@ -1415,21 +1415,16 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Return if initialization was successful performed (True)
         return successful_init
 
-    @staticmethod
-    def generate_result_dtos(filter_data: FilterData, summary_data: StudyData, capacitor_selection_data: StudyData,
-                             circuit_study_data: StudyData, inductor_study_data: StudyData, transformer_study_data: StudyData,
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
+                             inductor_study_data: StudyData, transformer_study_data: StudyData,
                              df: pd.DataFrame, is_pre_summary: bool = True) -> None:
         """
         Generate the result dtos from a given (filtered) result dataframe.
 
-        :param filter_data: Filter data
-        :type filter_data: FilterData
         :param summary_data: Summary Data
         :type summary_data: StudyData
         :param capacitor_selection_data: capacitor selection data
         :type capacitor_selection_data: StudyData
-        :param circuit_study_data: circuit study data
-        :type circuit_study_data: StudyData
         :param inductor_study_data: inductor study data
         :type inductor_study_data: StudyData
         :param transformer_study_data: transformer study data
@@ -1458,7 +1453,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             capacitor_1_study_name = row['capacitor_1_study_name']
 
             # load circuit DTO
-            circuit_id_filepath = os.path.join(filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
             with open(circuit_id_filepath, 'rb') as pickle_file_data:
                 circuit_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
@@ -1543,7 +1538,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         df = pd.DataFrame(data)
 
-        print(df.head())
+        logger.debug(df.head())
         df.to_csv(f"{plot_results_path}/{combination_id}.csv")
 
     @staticmethod

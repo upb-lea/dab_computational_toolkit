@@ -1563,21 +1563,16 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         print(self.circuit_study_data)
         return False
 
-    @staticmethod
-    def generate_result_dtos(filter_data: FilterData, summary_data: StudyData, capacitor_selection_data: StudyData,
-                             circuit_study_data: StudyData, inductor_study_data: StudyData, transformer_study_data: StudyData,
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
+                             inductor_study_data: StudyData, transformer_study_data: StudyData,
                              df: pd.DataFrame, is_pre_summary: bool = True) -> None:
         """
         Generate the result dtos from a given (filtered) result dataframe.
 
-        :param filter_data: Filter data
-        :type filter_data: FilterData
         :param summary_data: Summary Data
         :type summary_data: StudyData
         :param capacitor_selection_data: capacitor selection data
         :type capacitor_selection_data: StudyData
-        :param circuit_study_data: circuit study data
-        :type circuit_study_data: StudyData
         :param inductor_study_data: inductor study data
         :type inductor_study_data: StudyData
         :param transformer_study_data: transformer study data
@@ -1587,10 +1582,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :param is_pre_summary: True for pre-summary, False for summary
         :type is_pre_summary: bool
         """
-        print(filter_data)
+        print(self.filter_data)
         print(summary_data)
         print(capacitor_selection_data)
-        print(circuit_study_data)
         print(inductor_study_data)
         print(transformer_study_data)
         print(df.head())

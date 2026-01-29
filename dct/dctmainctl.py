@@ -1843,10 +1843,8 @@ class DctMainCtl:
 
         df_pareto_front = self._summary_pre_processing.filter(pre_summary_data, df_pareto_plane, abs_max_losses=100_000)
 
-        self._circuit_optimization.generate_result_dtos(
-            self._circuit_optimization.filter_data, pre_summary_data, self._capacitor_selection_data,
-            self._circuit_optimization.circuit_study_data, self._inductor_study_data,
-            self._transformer_study_data, df_pareto_front, is_pre_summary=True)
+        self._circuit_optimization.generate_result_dtos(pre_summary_data, self._capacitor_selection_data, self._inductor_study_data,
+                                                        self._transformer_study_data, df_pareto_front, is_pre_summary=True)
 
         self._circuit_optimization.visualize_lab_data(pre_summary_data.optimization_directory)
 
