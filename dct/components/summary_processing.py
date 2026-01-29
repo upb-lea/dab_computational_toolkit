@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 # own libraries
-from dct import ProgressStatus
+from dct.server_ctl_dtos import ProgressStatus
 from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.components.capacitor_optimization_dtos import CapacitorResults
 from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions
@@ -116,7 +116,7 @@ class SummaryProcessing:
         return copy.deepcopy(self._progress_data)
 
     @staticmethod
-    def _generate_component_id_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
+    def generate_component_id_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
         """Generate a list of the IDs from pickle filenames (inductor, transformer, capacitor).
 
         :param act_dir_name : Name of the directory containing the files
@@ -257,7 +257,7 @@ class SummaryProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
 
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_study_results_filepath} does not exists or does not contains any pkl-files!")
@@ -306,7 +306,7 @@ class SummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(stacked_transformer_study_results_filepath))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(stacked_transformer_study_results_filepath))
 
                 if not is_transformer_list_generated:
                     logger.info(f"Path {stacked_transformer_study_results_filepath} does not exists or does not contains any pkl-files!")
@@ -354,7 +354,7 @@ class SummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_1_list_generated, capacitor_1_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
                 if not is_capacitor_1_list_generated:
                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -399,7 +399,7 @@ class SummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_2_list_generated, capacitor_2_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
                 if not is_capacitor_2_list_generated:
                     logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit

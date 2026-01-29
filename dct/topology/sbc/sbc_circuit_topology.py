@@ -1595,3 +1595,13 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         print(transformer_study_data)
         print(df.head())
         print(is_pre_summary)
+
+    @staticmethod
+    def visualize_lab_data(filepath: str) -> None:
+        """
+        Generate plots or tables for the practical operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
+        """
+        print(filepath)

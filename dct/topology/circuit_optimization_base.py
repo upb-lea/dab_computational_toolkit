@@ -433,3 +433,14 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :rtype: None
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    def visualize_lab_data(filepath: str) -> None:
+        """
+        Generate plots or tables for the practical operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
+        """
+        pass

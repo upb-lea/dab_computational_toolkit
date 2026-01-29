@@ -21,6 +21,7 @@ from dct.components.component_dtos import InductorRequirements
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
+from dct.components.summary_processing import SummaryProcessing
 from dct.components.heat_sink_dtos import ComponentCooling
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
@@ -37,7 +38,7 @@ import dct.generalplotsettings as gps
 from dct.components.component_dtos import CapacitorRequirements, ComponentRequirements, TransformerRequirements
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -1496,3 +1497,110 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
             HandleDabDto.save(circuit_dto, f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap{capacitor_1_id}",
                               directory=results_folder, timestamp=False)
+
+    @staticmethod
+    def visualize_lab_data(filepath: str) -> None:
+        """
+        Generate plots or tables for the practical operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
+        """
+        result_dto_path = os.path.join(filepath, SUMMARY_COMBINATION_FOLDER)
+        plot_results_path = os.path.join(filepath, SUMMARY_COMBINATION_PlOTS_FOLDER)
+        _, id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(result_dto_path)
+
+        for combination_id in id_list:
+            # Assemble pkl-filename
+            combination_id_filepath = os.path.join(result_dto_path, f"{combination_id}.pkl")
+
+            # Get circuit results
+            with open(combination_id_filepath, 'rb') as pickle_file_data:
+                combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+            DabCircuitOptimization.plot_single_design_operating_points_from_dto(combination_dto, plot_results_path, combination_id)
+            DabCircuitOptimization.generate_operating_point_table(combination_dto, plot_results_path, combination_id)
+
+    @staticmethod
+    def generate_operating_point_table(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str) -> None:
+        """
+        Generate operating point table for lab work.
+
+        :param combination_dto: combination DTO
+        :type combination_dto: DabCircuitDTO
+        :param plot_results_path: Path to store the result table
+        :type plot_results_path: str
+        :param combination_id: combination ID
+        :type combination_id: int
+        """
+        data = {
+            "v1": np.array(combination_dto.input_config.mesh_v1).flatten(),
+            "v2": np.array(combination_dto.input_config.mesh_v2).flatten(),
+            "p": np.array(combination_dto.input_config.mesh_p).flatten(),
+            "phi": np.array(combination_dto.calc_modulation.phi).flatten(),
+            "tau_1": np.array(combination_dto.calc_modulation.tau1).flatten(),
+            "tau_2": np.array(combination_dto.calc_modulation.tau2).flatten()}
+
+        df = pd.DataFrame(data)
+
+        print(df.head())
+        df.to_csv(f"{plot_results_path}/{combination_id}.csv")
+
+    @staticmethod
+    def plot_single_design_operating_points_from_dto(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str) -> None:
+        """
+        Generate plot outputs to show the operating points and compare the converters.
+
+        :param combination_dto: combination DTO
+        :type combination_dto: DabCircuitDTO
+        :param plot_results_path: Path to store the result table
+        :type plot_results_path: str
+        :param combination_id: combination ID
+        :type combination_id: int
+        """
+        if not os.path.exists(plot_results_path):
+            os.makedirs(plot_results_path)
+
+        if combination_dto.calc_losses is None:
+            raise ValueError("Incomplete dataset.")
+        if combination_dto.capacitor_1_results is None:
+            raise ValueError("Incomplete dataset.")
+        if combination_dto.inductor_results is None:
+            raise ValueError("Incomplete dataset.")
+        if combination_dto.stacked_transformer_results is None:
+            raise ValueError("Incomplete dataset.")
+
+        data = {
+            "circuit b1": combination_dto.calc_losses.p_m1_conduction.flatten(),
+            "circuit b2": combination_dto.calc_losses.p_m2_conduction.flatten(),
+            "capacitor b1": combination_dto.capacitor_1_results.loss_total_array.flatten(),
+            "inductor": combination_dto.inductor_results.loss_array.flatten(),
+            "transformer": combination_dto.stacked_transformer_results.loss_array.flatten()
+        }
+
+        # set up operating point x-labels
+        x_labels = []
+        for count, _ in enumerate(combination_dto.input_config.mesh_v1.flatten()):
+            v1 = int(combination_dto.input_config.mesh_v1.flatten()[count])
+            v2 = int(combination_dto.input_config.mesh_v2.flatten()[count])
+            power = int(combination_dto.input_config.mesh_p.flatten()[count])
+            operating_point_str = f"{v1} V,\n{v2} V,\n{power} W"
+            x_labels.append(operating_point_str)
+
+        fig, ax = plt.subplots()
+
+        number_operating_points = len(np.array(combination_dto.calc_modulation.phi).flatten())
+        operating_point_list = np.linspace(1, number_operating_points, number_operating_points).tolist()
+
+        # generate bar graph
+        bottom = np.zeros(number_operating_points)
+        for label, data_count in data.items():
+            ax.bar(operating_point_list, data_count, bottom=bottom, label=label)
+            bottom += data_count
+        plt.xticks(operating_point_list, labels=x_labels)
+        plt.xlabel("Operating points")
+        plt.ylabel("Loss / W")
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
