@@ -97,7 +97,7 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
     @staticmethod
     def filter_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1", factor_min_dc_losses: float = 1.2,
-                  factor_max_dc_losses: float = 10) -> pd.DataFrame:
+                  factor_max_dc_losses: float = 10, abs_max_losses: float = 100_000) -> pd.DataFrame:
         """
         Remove designs with too high losses compared to the minimum losses.
 
@@ -111,6 +111,8 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type factor_min_dc_losses: float
         :param factor_max_dc_losses: dc_max_loss = factor_max_dc_losses * min_available_dc_losses_in_pareto_front
         :type factor_max_dc_losses: float
+        :param abs_max_losses: Absolute maximum losses (clip above this value)
+        :type abs_max_losses: float
         :returns: pandas DataFrame with Pareto front near points
         :rtype: pd.DataFrame
         """
@@ -136,7 +138,11 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         # clip losses to a maximum of the minimum losses
         ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
 
+        # clip point of the relative maximum losses given by the factor
         pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
+
+        # clip point to the absolute maximum losses
+        pareto_df_offset = pareto_df_offset[pareto_df_offset[y] < abs_max_losses]
 
         return pareto_df_offset
 
@@ -396,5 +402,40 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :param act_heat_sink_data: heat sink data from the toml file
         :type act_heat_sink_data: TomlHeatSink
         :return: bool
+        """
+        pass
+
+    @abstractmethod
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
+                             inductor_study_data: StudyData, transformer_study_data: StudyData,
+                             df: pd.DataFrame, is_pre_summary: bool = True) -> None:
+        """
+        Generate the result dtos from a given (filtered) result dataframe.
+
+        :param summary_data: Summary Data
+        :type summary_data: StudyData
+        :param capacitor_selection_data: capacitor selection data
+        :type capacitor_selection_data: StudyData
+        :param inductor_study_data: inductor study data
+        :type inductor_study_data: StudyData
+        :param transformer_study_data: transformer study data
+        :type transformer_study_data: StudyData
+        :param df: dataframe to take the results from
+        :type df: pd.DataFrame
+        :param is_pre_summary: True for pre-summary, False for summary
+        :type is_pre_summary: bool
+        :return: None
+        :rtype: None
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def visualize_lab_data(filepath: str) -> None:
+        """
+        Generate plots or tables for the practical operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
         """
         pass

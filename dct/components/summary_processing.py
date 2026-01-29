@@ -11,20 +11,20 @@ import pandas as pd
 import numpy as np
 
 # own libraries
-from dct import ProgressStatus
+from dct.server_ctl_dtos import ProgressStatus
 from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.components.capacitor_optimization_dtos import CapacitorResults
 from dct.components.heat_sink_dtos import HeatSinkBoundaryConditions
 from dct.toml_checker import TomlHeatSink
 from dct.datasets_dtos import StudyData, FilterData
-
+from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 import hct
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET,
-                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL)
+                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL, DF_SUMMARY_FINAL_FILTERED)
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ class SummaryProcessing:
         return copy.deepcopy(self._progress_data)
 
     @staticmethod
-    def _generate_component_id_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
+    def generate_component_id_list_from_pkl_files(act_dir_name: str) -> tuple[bool, list[str]]:
         """Generate a list of the IDs from pickle filenames (inductor, transformer, capacitor).
 
         :param act_dir_name : Name of the directory containing the files
@@ -244,8 +244,8 @@ class SummaryProcessing:
                 "circuit_t_j_max": circuit_dto.circuit_thermal.t_j_max,
                 "circuit_r_th_ib_jhs": circuit_dto.circuit_thermal.r_th_jhs,
                 "circuit_area": circuit_dto.circuit_thermal.area,
-                "circuit_loss_array": circuit_dto.circuit_thermal.loss_array,
-                "circuit_temperature_heat_sink_max_array": circuit_dto.circuit_thermal.temperature_heat_sink_max_array
+                "circuit_loss_array": np.array(circuit_dto.circuit_thermal.loss_array),
+                "circuit_temperature_heat_sink_max_array": np.array(circuit_dto.circuit_thermal.temperature_heat_sink_max_array)
             }
             df_circuit_local = pd.DataFrame([circuit_data])
 
@@ -257,7 +257,7 @@ class SummaryProcessing:
 
                 # Generate magnetic list
                 is_inductor_list_generated, inductor_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
 
                 if not is_inductor_list_generated:
                     logger.info(f"Path {inductor_study_results_filepath} does not exists or does not contains any pkl-files!")
@@ -306,7 +306,7 @@ class SummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(stacked_transformer_study_results_filepath))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(stacked_transformer_study_results_filepath))
 
                 if not is_transformer_list_generated:
                     logger.info(f"Path {stacked_transformer_study_results_filepath} does not exists or does not contains any pkl-files!")
@@ -354,7 +354,7 @@ class SummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_1_list_generated, capacitor_1_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_1_filepath_results))
                 if not is_capacitor_1_list_generated:
                     logger.info(f"Path {capacitor_1_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -399,7 +399,7 @@ class SummaryProcessing:
 
                 # Check, if stacked transformer number list cannot be generated
                 is_capacitor_2_list_generated, capacitor_2_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_2_filepath_results))
                 if not is_capacitor_2_list_generated:
                     logger.info(f"Path {capacitor_2_filepath_results} does not exists or does not contains any pkl-files!")
                     # Next circuit
@@ -532,6 +532,11 @@ class SummaryProcessing:
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
+        # add heat sink ID
+        act_df_for_hs["heat_sink_id"] = act_df_for_hs["r_th_heat_sink"].apply(
+            lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).index[0] \
+            if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
+
         act_df_for_hs["total_volume"] = act_df_for_hs["volume_wo_heat_sink"] + act_df_for_hs["heat_sink_volume"]
 
         # save full summary
@@ -573,5 +578,34 @@ class SummaryProcessing:
             df_w_hs["transformer_loss_array"].apply(np.mean) + \
             df_w_hs["capacitor_1_loss_array"].apply(np.mean) + control_board_loss)  # + np.mean(df["capacitor_2_loss_array"])
 
+        df_w_hs["total_loss_array"] = df_w_hs["total_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["circuit_loss_array"] = df_w_hs["circuit_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["capacitor_1_loss_array"] = df_w_hs["capacitor_1_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["inductor_loss_array"] = df_w_hs["inductor_loss_array"].apply(lambda x: str(x.tolist()))
+        df_w_hs["transformer_loss_array"] = df_w_hs["transformer_loss_array"].apply(lambda x: str(x.tolist()))
+
+        # generate a new unique index for the combined dataframe
+        # this helps to easily adress unique combinations by the index
+        df_w_hs = df_w_hs.reset_index(drop=True)
+        df_w_hs.index.name = "combination_id"
+
         df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
         return df_w_hs
+
+    @staticmethod
+    def filter(summary_data: StudyData, df: pd.DataFrame, abs_max_losses: float) -> pd.DataFrame:
+        """
+        Pareto front filter.
+
+        :param summary_data: summary data
+        :type summary_data: StudyData
+        :param df: dataframe
+        :type df: pd.DataFrame
+        :param abs_max_losses: absolute maximum losses of the converter to clip the Pareto front
+        :type abs_max_losses: float
+        :return:
+        """
+        df_filtered = CircuitOptimizationBase.filter_df(df, x="total_volume", y="total_mean_loss",
+                                                        factor_min_dc_losses=0.001, factor_max_dc_losses=100, abs_max_losses=abs_max_losses)
+        df_filtered.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}")
+        return df_filtered

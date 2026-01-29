@@ -406,7 +406,7 @@ class TransformerOptimization:
                         df_transformer_id, current_waveform_1, current_waveform_2, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
-                results_dto = StackedTransformerResults(
+                transformer_results = StackedTransformerResults(
                     loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
@@ -416,7 +416,7 @@ class TransformerOptimization:
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                 with open(pickle_file, 'wb') as output:
-                    pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(transformer_results, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return quantity_transformer_id_pareto
@@ -587,7 +587,7 @@ class TransformerOptimization:
 
                         result_array[vec_vvp] = combined_losses
 
-                    results_dto = StackedTransformerResults(
+                    transformer_results = StackedTransformerResults(
                         loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
@@ -597,6 +597,6 @@ class TransformerOptimization:
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
-                        pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+                        pickle.dump(transformer_results, output, pickle.HIGHEST_PROTOCOL)
                 except:
                     logger.info(f"Re-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")
