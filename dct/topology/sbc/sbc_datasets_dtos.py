@@ -7,7 +7,7 @@ import dataclasses
 import numpy as np
 
 # own libraries
-from dct.components.component_dtos import ComponentRequirements, InductorResults
+from dct.components.component_dtos import ComponentRequirements, InductorResults, CircuitThermal
 
 @dataclasses.dataclass
 class LossDataGrid:
@@ -119,6 +119,7 @@ class SbcCircuitDTO:
     calc_losses: CalcLosses
     component_requirements: ComponentRequirements | None
     inductor_results: InductorResults | None
+    circuit_thermal: CircuitThermal | None
 
 @dataclasses.dataclass
 class StudyData:

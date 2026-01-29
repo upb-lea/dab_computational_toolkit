@@ -60,8 +60,8 @@ class TomlSbcThermalResistanceData(TomlCData):
     """Toml checker for HeatSinkThermalResistanceData."""
 
     # [tim_thickness, tim_conductivity]
-    transistor_b1_cooling: list[float]
-    transistor_b2_cooling: list[float]
+    transistor_hs_cooling: list[float]
+    transistor_ls_cooling: list[float]
 
 class TomlSbcCircuitParetoDesign(TomlCData):
     """Config to optimize the Dual-Active Bridge (SBC) converter."""

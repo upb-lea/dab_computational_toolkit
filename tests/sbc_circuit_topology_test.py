@@ -627,15 +627,15 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
         thermal_data=sbc_tc.TomlSbcThermalResistanceData(
-            transistor_b1_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
-            transistor_b2_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
+            transistor_hs_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
+            transistor_ls_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         filter_distance=sbc_tc.TomlSbcCircuitFilterDistance(
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])
     )
 
     # Create boundary list from minimum-maximum list with assigned parameters
-    min_max_list_name_list: list[str] = ["f_s_min_max_list", "l_s_min_max_list", "transistor_b1_cooling", "transistor_b2_cooling"]
+    min_max_list_name_list: list[str] = ["f_s_min_max_list", "l_s_min_max_list", "transistor_hs_cooling", "transistor_ls_cooling"]
     value_name_list: list[str] = ["c_par_1", "c_par_2", "difference_percentage"]
     value_name_low_limit_list: list[str] = []
 
@@ -832,8 +832,8 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
         thermal_data=sbc_tc.TomlSbcThermalResistanceData(
-            transistor_b1_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
-            transistor_b2_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
+            transistor_hs_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
+            transistor_ls_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         filter_distance=sbc_tc.TomlSbcCircuitFilterDistance(
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])

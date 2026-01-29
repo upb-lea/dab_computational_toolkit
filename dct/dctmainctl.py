@@ -1794,9 +1794,11 @@ class DctMainCtl:
             # Workaround: Set filtered result id list here, later to handle in circuit_optimization
             self._filtered_list_files = self._circuit_optimization.filter_data.filtered_list_files
 
-        # Set the number of calculations for the magnetic components
-        self._inductor_main_list[0].number_calculations = len(self._filtered_list_files)
-        self._transformer_main_list[0].number_calculations = len(self._filtered_list_files)
+        # Set the number of calculations for the magnetic components for all components
+        for inductor_main in self._inductor_main_list:
+            inductor_main.number_calculations = len(self._filtered_list_files)
+        for transformer_main in self._transformer_main_list:
+            transformer_main.number_calculations = len(self._filtered_list_files)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
@@ -1996,12 +1998,16 @@ class DctMainCtl:
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
-        ParetoPlots.plot_inductor_results(self._inductor_study_configuration_list[0].study_data,
-                                          self._circuit_optimization.filter_data.filtered_list_files,
-                                          pre_summary_data.optimization_directory)
-        ParetoPlots.plot_transformer_results(self._transformer_study_configuration_list[0].study_data,
-                                             self._circuit_optimization.filter_data.filtered_list_files,
-                                             pre_summary_data.optimization_directory)
+        # Plot results of all inductors
+        for inductor_study_configuration in self._inductor_study_configuration_list:
+            ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
+                                              self._circuit_optimization.filter_data.filtered_list_files,
+                                              pre_summary_data.optimization_directory)
+        # Plot results of all transformers
+        for transformer_study_configuration in self._transformer_study_configuration_list:
+            ParetoPlots.plot_inductor_results(transformer_study_configuration.study_data,
+                                              self._circuit_optimization.filter_data.filtered_list_files,
+                                              pre_summary_data.optimization_directory)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
         ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
 
@@ -2019,7 +2025,7 @@ class DctMainCtl:
             # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
             if not self._inductor_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
-                processing_complete_file = f"trf_{index}_" + SIMULATION_COMPLETE_FILE
+                processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
                 # Delete processing complete indicator
                 DctMainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
                                                        processing_complete_file)
@@ -2047,7 +2053,7 @@ class DctMainCtl:
             # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
             if not self._transformer_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
-                processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
+                processing_complete_file = f"trf_{index}_" + SIMULATION_COMPLETE_FILE
                 # Delete processing complete indicator
                 DctMainCtl._delete_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
                                                        processing_complete_file)
@@ -2096,12 +2102,16 @@ class DctMainCtl:
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
-        ParetoPlots.plot_inductor_results(self._inductor_study_configuration_list[0].study_data,
-                                          self._circuit_optimization.filter_data.filtered_list_files,
-                                          summary_data.optimization_directory)
-        ParetoPlots.plot_transformer_results(self._transformer_study_configuration_list[0].study_data,
-                                             self._circuit_optimization.filter_data.filtered_list_files,
-                                             summary_data.optimization_directory)
+        # Plot results of all inductors
+        for inductor_study_configuration in self._inductor_study_configuration_list:
+            ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
+                                              self._circuit_optimization.filter_data.filtered_list_files,
+                                              summary_data.optimization_directory)
+        # Plot results of all transformers
+        for transformer_study_configuration in self._transformer_study_configuration_list:
+            ParetoPlots.plot_inductor_results(transformer_study_configuration.study_data,
+                                              self._circuit_optimization.filter_data.filtered_list_files,
+                                              summary_data.optimization_directory)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization)
 

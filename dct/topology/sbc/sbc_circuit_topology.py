@@ -35,8 +35,8 @@ from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
-from dct.components.component_dtos import ComponentRequirements
-from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
+from dct.components.component_dtos import (CapacitorRequirements, InductorRequirements, TransformerRequirements,
+                                           ComponentRequirements, ComponentCooling)
 
 logger = logging.getLogger(__name__)
 
@@ -386,25 +386,25 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         toml_check_value_list1: list[tuple[float, str]] = []
         toml_check_value_list2: list[tuple[float, str]] = []
 
-        # Perform list length check for transistor_b1_cooling
-        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
-            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b1_cooling' is not equal 2!\n"
+        # Perform list length check for transistor_hs_cooling
+        if len(toml_circuit.thermal_data.transistor_hs_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_hs_cooling' is not equal 2!\n"
             is_consistent = False
         else:
             toml_check_value_list1.append(
-                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b1_cooling[0]-tim_thickness"))
+                (toml_circuit.thermal_data.transistor_hs_cooling[0], f"{group_name}: transistor_hs_cooling[0]-tim_thickness"))
             toml_check_value_list2.append(
-                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b1_cooling[1]-tim_conductivity"))
+                (toml_circuit.thermal_data.transistor_hs_cooling[1], f"{group_name}: transistor_hs_cooling[1]-tim_conductivity"))
 
-        # Perform list length check for transistor_b1_cooling
-        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
-            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b2_cooling' is not equal 2!\n"
+        # Perform list length check for transistor_ls_cooling
+        if len(toml_circuit.thermal_data.transistor_hs_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_ls_cooling' is not equal 2!\n"
             is_consistent = False
         else:
             toml_check_value_list1.append(
-                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b2_cooling[0]-tim_thickness"))
+                (toml_circuit.thermal_data.transistor_hs_cooling[0], f"{group_name}: transistor_ls_cooling[0]-tim_thickness"))
             toml_check_value_list2.append(
-                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b2_cooling[1]-tim_conductivity"))
+                (toml_circuit.thermal_data.transistor_hs_cooling[1], f"{group_name}: transistor_ls_cooling[1]-tim_conductivity"))
 
         # Perform the boundary check for tim-thickness
         is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
@@ -1397,6 +1397,8 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         if self._study_in_storage is None:
             issue_report = "Study is not calculated. First run 'start_proceed_study'!"
             return is_filter_available, issue_report
+        if self._toml_circuit is None:
+            raise ValueError("Serious programming error in 'filter study results'. Please write an issue!")
 
         is_filter_available = True
 
@@ -1438,6 +1440,16 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         for dto in selected_dto_list:
             # Calculate component requirement
             dto = d_sets.HandleSbcDto.generate_components_target_requirements(dto, self.circuit_study_data.study_name)
+            # Get thermal data
+            transistor_hs_cooling: ComponentCooling = ComponentCooling(
+                tim_thickness=self._toml_circuit.thermal_data.transistor_hs_cooling[0],
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_hs_cooling[1])
+            transistor_ls_cooling: ComponentCooling = ComponentCooling(
+                tim_thickness=self._toml_circuit.thermal_data.transistor_ls_cooling[0],
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_ls_cooling[1])
+            # generate the thermal parameters for the given design
+            dto = d_sets.HandleTransistorDto.generate_thermal_transistor_parameters(dto, transistor_hs_cooling, transistor_ls_cooling)
+
             d_sets.HandleSbcDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list
@@ -1573,7 +1585,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
     @staticmethod
     def generate_general_toml(file_path: str) -> None:
         """
-        Generate the default DabCircuitConf.toml file.
+        Generate the default SbcCircuitConf.toml file.
 
         :param file_path: filename including absolute path
         :type file_path: str
@@ -1603,7 +1615,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
     @staticmethod
     def generate_circuit_toml(file_path: str) -> None:
-        """Generate the default DabCircuitConf.toml file.
+        """Generate the default SbcCircuitConf.toml file.
 
         :param file_path: filename including absolute path
         :type file_path: str
@@ -1640,8 +1652,8 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         [thermal_data]
             # [tim_thickness, tim_conductivity]
-            transistor_b1_cooling = [1e-3,12.0]
-            transistor_b2_cooling = [1e-3,12.0]            
+            transistor_hs_cooling = [1e-3,12.0]
+            transistor_ls_cooling = [1e-3,12.0]            
            
         '''
         with open(file_path, 'w') as output:
