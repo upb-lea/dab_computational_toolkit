@@ -121,26 +121,28 @@ class InductorOptimization:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
+        # Thermal data parameter check
+        group_name = "thermal_data"
         # Perform list length check for thermal_cooling
-        if len(toml_inductor.insulations.thermal_cooling) != 2:
+        if len(toml_inductor.thermal_data.thermal_cooling) != 2:
             issue_report = f"    Number of values in parameter '{group_name}: thermal_cooling' is not equal 2!\n"
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         else:
             # Perform the boundary check for tim-thickness
             is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                0, 0.01, toml_inductor.insulations.thermal_cooling[0],
+                0, 0.01, toml_inductor.thermal_data.thermal_cooling[0],
                 f"'{group_name}: thermal_cooling[0]-tim-thickness",
-                c_flag.check_exclusive, c_flag.check_exclusive)
+                c_flag.check_exclusive, c_flag.check_inclusive)
             if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
             # Perform the boundary check for tim-conductivity
             is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                0, 100, toml_inductor.insulations.thermal_cooling[1],
+                0, 100, toml_inductor.thermal_data.thermal_cooling[1],
                 f"'{group_name}: thermal_cooling[1]-tim-conductivity",
-                c_flag.check_exclusive, c_flag.check_exclusive)
+                c_flag.check_exclusive, c_flag.check_inclusive)
             if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
@@ -226,8 +228,8 @@ class InductorOptimization:
 
                 # Get thermal data
                 thermal_data: ComponentCooling = ComponentCooling(
-                    tim_thickness=configuration_data.inductor_toml_data.insulations.thermal_cooling[0],
-                    tim_conductivity=configuration_data.inductor_toml_data.insulations.thermal_cooling[1])
+                    tim_thickness=configuration_data.inductor_toml_data.thermal_data.thermal_cooling[0],
+                    tim_conductivity=configuration_data.inductor_toml_data.thermal_data.thermal_cooling[1])
 
                 inductor_optimization_dto = InductorOptimizationDto(
                     trial_directory=trial_directory,
@@ -398,7 +400,7 @@ class InductorOptimization:
         return quantity_of_inductor_id_pareto
 
     def _generate_optimization_parameter(self, circuit_study_name: str, inductor_in_circuit: int, debug: dct.Debug) -> (
-            list[tuple[str, fmt.InductorOptimizationDTO, str, InductorRequirements, int, list[float], dct.Debug]]):
+            list[tuple[str, fmt.InductorOptimizationDTO, str, InductorRequirements, ComponentCooling, int, list[float], dct.Debug]]):
         """
         Generate the list of parameter sets for analytic and simulation optimization.
 
@@ -409,7 +411,8 @@ class InductorOptimization:
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
         :return: List of parameter sets for multi simulation processes
-        :rtype:  list[tuple[str, fmt.InductorOptimizationDTO, FilterData, InductorRequirements, int, list[float], dct.Debug]]
+        :rtype:  list[tuple[str, fmt.InductorOptimizationDTO, FilterData, InductorRequirements,
+                 ComponentCooling, int, list[float], dct.Debug]]
         """
         parameter_set_list = []
         for act_optimization_configuration in self._optimization_config_list[inductor_in_circuit]:

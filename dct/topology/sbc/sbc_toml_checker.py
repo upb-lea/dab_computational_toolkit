@@ -56,7 +56,7 @@ class TomlSbcCircuitFilterDistance(TomlCData):
     number_filtered_designs: int
     difference_percentage: float
 
-class TomlThermalResistanceData(TomlCData):
+class TomlSbcThermalResistanceData(TomlCData):
     """Toml checker for HeatSinkThermalResistanceData."""
 
     # [tim_thickness, tim_conductivity]
@@ -68,4 +68,4 @@ class TomlSbcCircuitParetoDesign(TomlCData):
 
     design_space: TomlSbcCircuitParetoDesignSpace
     filter_distance: TomlSbcCircuitFilterDistance
-    thermal_data: TomlThermalResistanceData
+    thermal_data: TomlSbcThermalResistanceData

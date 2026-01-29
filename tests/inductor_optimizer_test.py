@@ -193,7 +193,8 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
         [[1e-18, 1e-18], [100, 100], [34, 77], [90, 67], [33], [33, 66, 99], [0, 88], [55, 100.1]])
     float_value_gem40_le175: list[float] = [-40, 175, 80.1, 105.55, -21.3, 125.5, -40.21, 275]
     float_value_gt0_lt1em1: list[float] = [1e-17, 0.0991, 0.034, 0.074, 0.033, 0.066, 0, 0.1]
-
+    float_value_list_configuration_gt0_le1em2xgt1_le100: list[list[float]] = (
+        [[1e-17, 1.1], [0.01, 100], [0.0034, 73.78], [-1, -282.3], [0.0033], [0.0066, 22.76, 33], [0, 10], [0.011, 100.01]])
     # Check if core list is not empty
     if is_core_list_available:
         # Create an empty list for the core parameter values
@@ -217,6 +218,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
             core_top=float_value_gt0_lt1em1[test_index],
             core_right=float_value_gt0_lt1em1[test_index],
             core_left=float_value_gt0_lt1em1[test_index]),
+        thermal_data=tc.TomlThermalData(thermal_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         boundary_conditions=tc.TomlInductorBoundaryConditions(
             temperature=float_value_gem40_le175[test_index]),
         filter_distance=dct.TomlFilterDistance(
@@ -229,7 +231,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
     # Create boundary list from minimum-maximum list with assigned parameters
     min_max_list_name_list_w_o_core_list: list[str] = ["core_inner_diameter_min_max_list", "window_h_min_max_list",
                                                        "window_w_min_max_list", "factor_dc_losses_min_max_list"]
-    min_max_list_name_list_w_core_list: list[str] = ["factor_dc_losses_min_max_list"]
+    min_max_list_name_list_w_core_list: list[str] = ["factor_dc_losses_min_max_list", "thermal_cooling"]
     value_name_list: list[str] = ["primary_to_primary", "core_bot", "core_top", "core_right", "core_left", "temperature"]
 
     # Perform the test

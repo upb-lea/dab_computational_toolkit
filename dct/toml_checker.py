@@ -8,7 +8,6 @@ from pydantic import BaseModel
 # own libraries
 from materialdatabase.meta.data_enums import Material, DataSource
 
-
 # ######################################################
 # debug
 # ######################################################
@@ -158,6 +157,16 @@ class TomlCapacitorSelection(BaseModel):
     lifetime_h: float
 
 # ######################################################
+# inductor and transformer
+# ######################################################
+
+class TomlThermalData(BaseModel):
+    """Toml checker for HeatSinkThermalResistanceData."""
+
+    # [tim_thickness, tim_conductivity]
+    thermal_cooling: list[float]
+
+# ######################################################
 # inductor
 # ######################################################
 
@@ -179,9 +188,6 @@ class TomlInductorInsulation(BaseModel):
     core_top: float
     core_right: float
     core_left: float
-    # Temperature 'insulation'
-    # [tim_thickness, tim_conductivity]
-    thermal_cooling: list[float]
 
 class TomlMaterialDataSources(BaseModel):
     """Toml checker class for MaterialDataSources."""
@@ -206,6 +212,7 @@ class TomlInductor(BaseModel):
     design_space: TomlInductorDesignSpace
     insulations: TomlInductorInsulation
     boundary_conditions: TomlInductorBoundaryConditions
+    thermal_data: TomlThermalData
     filter_distance: TomlFilterDistance
     material_data_sources: TomlMaterialDataSources
 
@@ -255,9 +262,6 @@ class TomlTransformerInsulation(BaseModel):
     iso_primary_to_primary: float
     iso_secondary_to_secondary: float
     iso_primary_to_secondary: float
-    # Temperature 'insulation'
-    # [tim_thickness, tim_conductivity]
-    thermal_cooling: list[float]
 
 class TomlTransformerFilterDistance(BaseModel):
     """Toml checker class for TransformerFilterDistance."""
@@ -270,6 +274,7 @@ class TomlTransformer(BaseModel):
     design_space: TomlTransformerDesignSpace
     insulation: TomlTransformerInsulation
     boundary_conditions: TomlTransformerBoundaryConditions
+    thermal_data: TomlThermalData
     filter_distance: TomlTransformerFilterDistance
     settings: TomlTransformerSettings
     material_data_sources: TomlMaterialDataSources

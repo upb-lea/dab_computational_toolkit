@@ -21,7 +21,7 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
-from dct.components.component_dtos import (CapacitorRequirements, InductorRequirements, TransformerRequirements,
+from dct.components.component_dtos import (CircuitThermal, CapacitorRequirements, InductorRequirements, TransformerRequirements,
                                            InductorResults, StackedTransformerResults, ComponentCooling)
 from dct.components.heat_sink_optimization import ThermalCalcSupport
 
@@ -872,7 +872,7 @@ class HandleDabDto:
         circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
         circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
 
-        circuit_dto.circuit_thermal = d_dtos.CircuitThermal(
+        circuit_dto.circuit_thermal = CircuitThermal(
             t_j_max=[circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
             r_th_jhs=[circuit_r_th_1_jhs, circuit_r_th_2_jhs],
             area=[4 * copper_coin_area_1, 4 * copper_coin_area_2],

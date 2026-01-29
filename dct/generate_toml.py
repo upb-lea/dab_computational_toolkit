@@ -151,6 +151,8 @@ def generate_default_inductor_toml(file_path: str) -> None:
         core_top=1e-3
         core_right=1e-3
         core_left=1e-3
+
+    [thermal_data]
         # [tim_thickness, tim_conductivity]
         thermal_cooling = [1e-3,12.0]
         
@@ -202,13 +204,15 @@ def generate_default_transformer_toml(file_path: str) -> None:
         iso_primary_to_primary=0.2e-3
         iso_secondary_to_secondary=0.2e-3
         iso_primary_to_secondary=0.2e-3
-        # [tim_thickness, tim_conductivity]
-        thermal_cooling = [1e-3,12.0]        
     
     [material_data_sources]
         permeability_datasource="LEA_MTB"
         permittivity_datasource="LEA_MTB"
-    
+        
+    [thermal_data]
+        # [tim_thickness, tim_conductivity]
+        thermal_cooling = [1e-3,12.0]
+            
     [settings]
         fft_filter_value_factor=0.01
         mesh_accuracy=0.8

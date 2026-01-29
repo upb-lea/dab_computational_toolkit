@@ -135,6 +135,26 @@ class SummaryProcessing:
 
         return is_component_id_list_generated, component_id_list
 
+    @staticmethod
+    def _remove_invalid_design(act_summary_configuration_list: list[SummaryConfiguration], missing_component_circuit_index: str) -> list[SummaryConfiguration]:
+        """Generate a list of the IDs from pickle filenames (inductor, transformer, capacitor).
+
+        :param act_summary_configuration_list : summary configuration list
+        :type  act_summary_configuration_list : str
+        :param missing_component_circuit_index : Name of the circuit_id, which contains one or more missing components
+        :type  missing_component_circuit_index : str
+        :return: Summary configuration list without the entry defined by the missing component circuit index
+        :rtype:  list[SummaryConfiguration]
+        """
+        # Variable declaration
+        result_summary_configuration_list: list[SummaryConfiguration] = []
+
+        for summary_configuration in act_summary_configuration_list:
+            if summary_configuration.circuit_data["circuit_id"] is not missing_component_circuit_index:
+                result_summary_configuration_list.append(summary_configuration)
+
+        return result_summary_configuration_list
+
     def initialize_processing(self, act_filter_data: FilterData, act_capacitor_data_list: list[CapacitorConfiguration],
                               act_inductor_data_list: list[InductorConfiguration],
                               act_transformer_data_list: list[TransformerConfiguration],
@@ -168,6 +188,9 @@ class SummaryProcessing:
         # Set study data
         self._summary_study_data = summary_study_data
 
+        # Index of designs, which miss a component solution (No pkl-file available for this design)
+        missing_component_index_list: list[str] = []
+
         # iterate circuit numbers
         for circuit_id in act_filter_data.filtered_list_files:
 
@@ -182,6 +205,8 @@ class SummaryProcessing:
             # Get circuit results
             with open(circuit_id_filepath, 'rb') as pickle_file_data:
                 circuit_dto = pickle.load(pickle_file_data)
+            # Get the topology independent part from stored circuit dto
+            act_circuit_data = circuit_dto.circuit_thermal
 
             # Calculate the thermal values
             if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
@@ -191,11 +216,11 @@ class SummaryProcessing:
 
             circuit_data = {
                 "circuit_id": circuit_id,
-                "circuit_t_j_max": circuit_dto.circuit_thermal.t_j_max,
-                "circuit_r_th_ib_jhs": circuit_dto.circuit_thermal.r_th_jhs,
-                "circuit_area": circuit_dto.circuit_thermal.area,
-                "circuit_loss_array": np.squeeze(circuit_dto.circuit_thermal.loss_array),
-                "circuit_temperature_heat_sink_max_array": np.squeeze(circuit_dto.circuit_thermal.temperature_heat_sink_max_array)
+                "circuit_t_j_max": act_circuit_data.t_j_max,
+                "circuit_r_th_ib_jhs": act_circuit_data.r_th_jhs,
+                "circuit_area": act_circuit_data.area,
+                "circuit_loss_array": np.squeeze(act_circuit_data.loss_array),
+                "circuit_temperature_heat_sink_max_array": np.squeeze(act_circuit_data.temperature_heat_sink_max_array)
             }
 
             # iterate capacitor selection
@@ -210,7 +235,10 @@ class SummaryProcessing:
                 is_capacitor_list_generated, capacitor_id_list = (
                     SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_filepath_results))
                 if not is_capacitor_list_generated:
-                    logger.info(f"Path {capacitor_filepath_results} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {capacitor_filepath_results} does not exists or does not contains any pkl-files!\n"
+                                f"circuit design {circuit_id} cannot be realized!")
+                    # Add circuit index to missing component index list
+                    missing_component_index_list.append(circuit_id)
                     # Next circuit
                     continue
                 logger.debug(f"{capacitor_id_list=}")
@@ -260,7 +288,10 @@ class SummaryProcessing:
                     SummaryProcessing._generate_component_id_list_from_pkl_files(inductor_study_results_filepath))
 
                 if not is_inductor_list_generated:
-                    logger.info(f"Path {inductor_study_results_filepath} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {inductor_study_results_filepath} does not exists or does not contains any pkl-files!\n"
+                                f"circuit design {circuit_id} cannot be realized!")
+                    # Add circuit index to missing component index list
+                    missing_component_index_list.append(circuit_id)
                     # Next circuit
                     continue
 
@@ -303,19 +334,22 @@ class SummaryProcessing:
                 # Add to inductor component list
                 inductor_data_list.append(inductors)
 
-                # iterate transformer study
-                for act_transformer_data in act_transformer_data_list:
-                    stacked_transformer_study_results_filepath = os.path.join(act_transformer_data.study_data.optimization_directory,
-                                                                              circuit_id,
-                                                                              act_transformer_data.study_data.study_name,
-                                                                              transformer_result_directory)
+            # iterate transformer study
+            for act_transformer_data in act_transformer_data_list:
+                stacked_transformer_study_results_filepath = os.path.join(act_transformer_data.study_data.optimization_directory,
+                                                                          circuit_id,
+                                                                          act_transformer_data.study_data.study_name,
+                                                                          transformer_result_directory)
 
                 # Check, if stacked transformer number list cannot be generated
                 is_transformer_list_generated, transformer_id_list = (
                     SummaryProcessing._generate_component_id_list_from_pkl_files(stacked_transformer_study_results_filepath))
 
                 if not is_transformer_list_generated:
-                    logger.info(f"Path {stacked_transformer_study_results_filepath} does not exists or does not contains any pkl-files!")
+                    logger.info(f"Path {stacked_transformer_study_results_filepath} does not exists or does not contains any pkl-files!\n"
+                                f"circuit design {circuit_id} cannot be realized!")
+                    # Add circuit index to missing component index list
+                    missing_component_index_list.append(circuit_id)
                     # Next circuit
                     continue
 
@@ -363,6 +397,13 @@ class SummaryProcessing:
                                                                          capacitor_data_list=capacitor_data_list,
                                                                          inductor_data_list=inductor_data_list,
                                                                          transformer_data_list=transformer_data_list))
+
+        # Check, if any circuit design cannot be realised
+        if missing_component_index_list:
+            for missing_component in missing_component_index_list:
+                # Remove circuit from summary configuration list
+                self._summary_configuration_list = SummaryProcessing._remove_invalid_design(
+                    self._summary_configuration_list, missing_component)
 
     @staticmethod
     def component_to_dataframe(component_data: list[dict]) -> pd.DataFrame:

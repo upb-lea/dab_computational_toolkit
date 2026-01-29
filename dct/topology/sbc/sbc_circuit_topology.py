@@ -376,6 +376,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         is_check_passed, issue_report = BoundaryCheck.check_float_value(
             0.01, 100, toml_circuit.filter_distance.difference_percentage,
             f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
 
         # Perform thermal resistance data check
         group_name = "thermal_data"
@@ -405,14 +408,14 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         # Perform the boundary check for tim-thickness
         is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
-            0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_exclusive)
+            0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_inclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
         # Perform the boundary check for tim-conductivity
         is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
-            1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_exclusive)
+            1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_inclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False

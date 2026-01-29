@@ -76,7 +76,7 @@ class DctMainCtl:
     _inductor_study_configuration_list: list[InductorConfiguration]
     _capacitor_selection_configuration_list: list[CapacitorConfiguration]
 
-    # Filtered p>oint results in case of skip
+    # Filtered point results in case of skip
     _inductor_number_filtered_analytic_points_skip_list: list[int]
     _inductor_number_filtered_simulation_points_skip_list: list[int]
     _transformer_number_filtered_analytic_points_skip_list: list[int]
@@ -2019,7 +2019,7 @@ class DctMainCtl:
             # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
             if not self._inductor_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
-                processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
+                processing_complete_file = f"trf_{index}_" + SIMULATION_COMPLETE_FILE
                 # Delete processing complete indicator
                 DctMainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
                                                        processing_complete_file)

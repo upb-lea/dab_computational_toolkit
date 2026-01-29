@@ -142,26 +142,28 @@ class TransformerOptimization:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
+        # Thermal data parameter check
+        group_name = "thermal_data"
         # Perform list length check for thermal_cooling
-        if len(toml_transformer.insulation.thermal_cooling) != 2:
-            issue_report = f"    Number of values in parameter '{group_name}: " + "     thermal_cooling' is not equal 2!\n"
+        if len(toml_transformer.thermal_data.thermal_cooling) != 2:
+            issue_report = f"    Number of values in parameter '{group_name}: thermal_cooling' is not equal 2!\n"
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
         else:
             # Perform the boundary check for tim-thickness
             is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                0, 0.01, toml_transformer.insulation.thermal_cooling[0],
+                0, 0.01, toml_transformer.thermal_data.thermal_cooling[0],
                 f"'{group_name}: thermal_cooling[0]-tim-thickness",
-                c_flag.check_exclusive, c_flag.check_exclusive)
+                c_flag.check_exclusive, c_flag.check_inclusive)
             if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
             # Perform the boundary check for tim-conductivity
             is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-                0, 100, toml_transformer.insulation.thermal_cooling[1],
+                0, 100, toml_transformer.thermal_data.thermal_cooling[1],
                 f"'{group_name}: thermal_cooling[1]-tim-conductivity",
-                c_flag.check_exclusive, c_flag.check_exclusive)
+                c_flag.check_exclusive, c_flag.check_inclusive)
             if not is_check_passed:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
@@ -316,8 +318,8 @@ class TransformerOptimization:
                 # misc
                 # Get thermal data
                 thermal_data: ComponentCooling = ComponentCooling(
-                    tim_thickness=configuration_data.transformer_toml_data.insulation.thermal_cooling[0],
-                    tim_conductivity=configuration_data.transformer_toml_data.insulation.thermal_cooling[1])
+                    tim_thickness=configuration_data.transformer_toml_data.thermal_data.thermal_cooling[0],
+                    tim_conductivity=configuration_data.transformer_toml_data.thermal_data.thermal_cooling[1])
 
                 next_io_config.stacked_transformer_optimization_directory = trial_directory
                 transformer_dto = TransformerOptimizationDto(
@@ -484,18 +486,19 @@ class TransformerOptimization:
         return quantity_transformer_id_pareto
 
     def _generate_optimization_parameter(self, circuit_study_name: str, transformer_in_circuit: int, debug: dct.Debug) -> (
-            list[tuple[str, fmt.fmt.StoSingleInputConfig, str, TransformerRequirements, int, list[float], dct.Debug]]):
+            list[tuple[str, fmt.fmt.StoSingleInputConfig, str, TransformerRequirements, ComponentCooling, int, list[float], dct.Debug]]):
         """
         Generate the list of parameter sets for analytic and simulation optimization.
 
         :param circuit_study_name: Name of the cirucit study
         :type  circuit_study_name: str
-        :param inductor_in_circuit: Number of inductor to optimize
-        :type  inductor_in_circuit: int
+        :param transformer_in_circuit: Number of transformer to optimize
+        :type  transformer_in_circuit: int
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
         :return: List of parameter sets for multi simulation processes
-        :rtype:  list[tuple[str, fmt.InductorOptimizationDTO, FilterData, InductorRequirements, int, list[float], dct.Debug]]
+        :rtype:  list[tuple[str, fmt.TransformerOptimizationDTO, FilterData, TransformerRequirements,
+                 ComponentCooling, int, list[float], dct.Debug]]
         """
         parameter_set_list = []
         for act_optimization_configuration in self._optimization_config_list[transformer_in_circuit]:
