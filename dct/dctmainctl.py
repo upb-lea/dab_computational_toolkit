@@ -1991,7 +1991,15 @@ class DctMainCtl:
         df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
         # ASA: Generally control_board_volume and control_board_loss depends on the topology.
         # Only for test setups it could be the same
-        self._summary_pre_processing.add_offset_volume_losses(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        df_pareto_plane = self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume,
+                                                                                toml_misc.control_board_loss)
+
+        df_pareto_front = self._summary_pre_processing.filter(pre_summary_data, df_pareto_plane, abs_max_losses=100_000)
+
+        self._circuit_optimization.generate_result_dtos(pre_summary_data, self._capacitor_selection_data, self._inductor_study_data,
+                                                        self._transformer_study_data, df_pareto_front, is_pre_summary=True)
+
+        self._circuit_optimization.visualize_lab_data(pre_summary_data.optimization_directory)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")

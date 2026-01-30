@@ -480,7 +480,7 @@ class TransformerOptimization:
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                 with open(pickle_file, 'wb') as output:
-                    pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(transformer_results, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return quantity_transformer_id_pareto
@@ -681,6 +681,6 @@ class TransformerOptimization:
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
-                        pickle.dump(results_dto, output, pickle.HIGHEST_PROTOCOL)
+                        pickle.dump(transformer_results, output, pickle.HIGHEST_PROTOCOL)
                 except:
                     logger.info(f"Re-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")

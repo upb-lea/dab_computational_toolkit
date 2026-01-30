@@ -190,7 +190,7 @@ class CapacitorSelection:
 
                     loss_total_array[vec_vvp] = loss_per_capacitor * n_series * n_parallel
 
-                capacitor_losses = CapacitorResults(
+                capacitor_results = CapacitorResults(
                     loss_total_array=loss_total_array,
                     volume_total=volume_total,
                     area_total=area_total,
@@ -203,7 +203,7 @@ class CapacitorSelection:
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
                 with open(pickle_file, 'wb') as output:
-                    pickle.dump(capacitor_losses, output, pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(capacitor_results, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return number_of_filtered_points
