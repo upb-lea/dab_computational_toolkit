@@ -27,7 +27,8 @@ from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
 from dct.topology.dab import dab_toml_checker as dab_tc
 from dct.topology.dab.dab_datasets import HandleDabDto
-from dct.datasets_dtos import StudyData, FilterData, PlotData
+from dct.datasets_dtos import (StudyData, FilterData, PlotData, CapacitorConfiguration,
+                               InductorConfiguration, TransformerConfiguration)
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
@@ -1445,24 +1446,29 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         with open(file_path, 'w') as output:
             output.write(toml_data)
 
-    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
-                             inductor_study_data: StudyData, transformer_study_data: StudyData,
+    _transformer_study_configuration_list: list[TransformerConfiguration]
+    _inductor_study_configuration_list: list[InductorConfiguration]
+    _capacitor_selection_configuration_list: list[CapacitorConfiguration]
+
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data_list: list[CapacitorConfiguration],
+                             inductor_configuration_list: list[InductorConfiguration],
+                             transformer_configuration_list: list[TransformerConfiguration],
                              df: pd.DataFrame, is_pre_summary: bool = True) -> None:
         """
         Generate the result dtos from a given (filtered) result dataframe.
 
         :param summary_data: Summary Data
-        :type summary_data: StudyData
-        :param capacitor_selection_data: capacitor selection data
-        :type capacitor_selection_data: StudyData
-        :param inductor_study_data: inductor study data
-        :type inductor_study_data: StudyData
-        :param transformer_study_data: transformer study data
-        :type transformer_study_data: StudyData
+        :type  summary_data: StudyData
+        :param capacitor_selection_data_list: List of capacitor selection data
+        :type  capacitor_selection_data_list: list[CapacitorConfiguration]
+        :param inductor_configuration_list: List of inductor study data
+        :type  inductor_configuration_list: list[InductorConfiguration]
+        :param transformer_configuration_list: List of transformer study data
+        :type  transformer_configuration_list: list[TransformerConfiguration]
         :param df: dataframe to take the results from
-        :type df: pd.DataFrame
+        :type  df: pd.DataFrame
         :param is_pre_summary: True for pre-summary, False for summary
-        :type is_pre_summary: bool
+        :type  is_pre_summary: bool
         """
         if is_pre_summary:
             # pre summary using reluctance model results (inductive components)
@@ -1475,12 +1481,14 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         for _, row in df.iterrows():
             circuit_id = row['circuit_id']
-            inductor_id = row['inductor_id']
-            inductor_study_name = row['inductor_study_name']
-            transformer_id = row['transformer_id']
-            transformer_study_name = row['transformer_study_name']
-            capacitor_1_id = row['capacitor_1_id']
-            capacitor_1_study_name = row['capacitor_1_study_name']
+            inductor_id = row['inductor_id_0']
+            inductor_study_name = row['inductor_study_name_0']
+            transformer_id = row['transformer_id_0']
+            transformer_study_name = row['transformer_study_name_0']
+            capacitor_1_id = row['capacitor_id_0']
+            capacitor_1_study_name = row['capacitor_study_name_0']
+            capacitor_2_id = row['capacitor_id_1']
+            capacitor_2_study_name = row['capacitor_study_name_1']
 
             # load circuit DTO
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
@@ -1488,7 +1496,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 circuit_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
             # load inductor DTO
-            inductor_study_results_filepath = os.path.join(inductor_study_data.optimization_directory, circuit_id,
+            study_data = inductor_configuration_list[0].study_data
+            inductor_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
                                                            inductor_study_name,
                                                            inductor_result_directory)
 
@@ -1497,30 +1506,43 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 inductor_results = pickle.load(pickle_file_data)
 
             # load transformer DTO
-            transformer_study_results_filepath = os.path.join(transformer_study_data.optimization_directory, circuit_id,
+            study_data = transformer_configuration_list[0].study_data
+            transformer_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
                                                               transformer_study_name, transformer_result_directory)
 
             transformer_id_filepath = os.path.join(transformer_study_results_filepath, f"{transformer_id}.pkl")
             with open(transformer_id_filepath, 'rb') as pickle_file_data:
                 transformer_results = pickle.load(pickle_file_data)
 
-            # load capacitor DTO
-            capacitor_1_study_results_filepath = os.path.join(capacitor_selection_data.optimization_directory, circuit_id,
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[0].study_data
+            capacitor_1_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
                                                               capacitor_1_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
             capacitor_1_id_filepath = os.path.join(capacitor_1_study_results_filepath, f"{capacitor_1_id}.pkl")
             with open(capacitor_1_id_filepath, 'rb') as pickle_file_data:
                 capacitor_1_results = pickle.load(pickle_file_data)
 
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[1].study_data
+            capacitor_2_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                              capacitor_2_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_2_id_filepath = os.path.join(capacitor_2_study_results_filepath, f"{capacitor_2_id}.pkl")
+            with open(capacitor_2_id_filepath, 'rb') as pickle_file_data:
+                capacitor_2_results = pickle.load(pickle_file_data)
+
             circuit_dto.inductor_results = inductor_results
             circuit_dto.stacked_transformer_results = transformer_results
             circuit_dto.capacitor_1_results = capacitor_1_results
+            circuit_dto.capacitor_2_results = capacitor_2_results
 
             results_folder = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
             if not os.path.exists(results_folder):
                 os.makedirs(results_folder)
 
-            HandleDabDto.save(circuit_dto, f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap{capacitor_1_id}",
+            HandleDabDto.save(circuit_dto,
+                              f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap1_{capacitor_1_id}_cap2_{capacitor_2_id}",
                               directory=results_folder, timestamp=False)
 
     @staticmethod
@@ -1629,4 +1651,3 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         plt.legend()
         plt.tight_layout()
         fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
-

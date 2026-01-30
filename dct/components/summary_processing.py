@@ -233,7 +233,7 @@ class SummaryProcessing:
 
                 # Check, if capacitor  number list cannot be generated
                 is_capacitor_list_generated, capacitor_id_list = (
-                    SummaryProcessing._generate_component_id_list_from_pkl_files(capacitor_filepath_results))
+                    SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_filepath_results))
                 if not is_capacitor_list_generated:
                     logger.info(f"Path {capacitor_filepath_results} does not exists or does not contains any pkl-files!\n"
                                 f"circuit design {circuit_id} cannot be realized!")
@@ -535,6 +535,52 @@ class SummaryProcessing:
 
         return result_df['min_new_value']
 
+    @staticmethod
+    def _backup_columns(act_df: pd.DataFrame, column_name_prefix_list: list[str]) -> list[tuple[str, pd.Series]]:
+        """Generate a list of tuples consists of column name and the column of the data frame.
+
+        This method backs up all columns, which starts with the names in the column_name_prefix_list.
+        Each tuple contains the columns name and the correspondent column.
+
+        :param act_df: Actual data frame
+        :type  act_df: pd.DataFrame
+        :param column_name_prefix_list: List of column name prefix, which are to copy
+        :type  column_name_prefix_list: list[str]
+        :return: Data series containing the minimal temperature values of both input data frames
+        :rtype:  pd.Series
+        """
+        # Variable declaration
+        df_backup_list: list[tuple[str, pd.Series]] = []
+
+        for column_name_prefix in column_name_prefix_list:
+            # Get columns names
+            column_name_list = act_df.columns[act_df.columns.str.startswith(column_name_prefix)]
+            for column_name in column_name_list:
+                df_backup_list.append((column_name, act_df[column_name]))
+
+        return df_backup_list
+
+    @staticmethod
+    def _convert_for_csv(act_df: pd.DataFrame, column_name_prefix_list: list[str]) -> None:
+        """Generate a list of tuples consists of column name and the column of the data frame.
+
+        This method backs up all columns, which starts with the names in the column_name_prefix_list.
+        Each tuple contains the columns name and the correspondent column.
+
+        :param act_df: Actual data frame
+        :type  act_df: pd.DataFrame
+        :param column_name_prefix_list: List of column name prefix, which are to copy
+        :type  column_name_prefix_list: list[str]
+        :return: Data series containing the minimal temperature values of both input data frames
+        :rtype:  pd.Series
+        """
+        for column_name_prefix in column_name_prefix_list:
+            # Get columns names
+            column_name_list = act_df.columns[act_df.columns.str.startswith(column_name_prefix)]
+            for column_name in column_name_list:
+                # Convert the column and overwrite the dataframe
+                act_df[column_name] = act_df[column_name].apply(lambda x: str(x.tolist()))
+
     def generate_result_database(self, heat_sink_boundary_conditions: HeatSinkBoundaryConditions) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results.
 
@@ -734,30 +780,32 @@ class SummaryProcessing:
             SummaryProcessing._calculate_component_mean(df_w_hs, "transformer_loss_array") +\
             control_board_loss)
 
-        # ASA-> Replace fix naming 
-        df_w_hs["total_loss_array"] = df_w_hs["total_loss_array"].apply(lambda x: str(x.tolist()))
-        df_w_hs["circuit_loss_array"] = df_w_hs["circuit_loss_array"].apply(lambda x: str(x.tolist()))
-        df_w_hs["capacitor_1_loss_array"] = df_w_hs["capacitor_1_loss_array"].apply(lambda x: str(x.tolist()))
-        df_w_hs["inductor_loss_array"] = df_w_hs["inductor_loss_array"].apply(lambda x: str(x.tolist()))
-        df_w_hs["transformer_loss_array"] = df_w_hs["transformer_loss_array"].apply(lambda x: str(x.tolist()))
-
         # generate a new unique index for the combined dataframe
         # this helps to easily adress unique combinations by the index
         df_w_hs = df_w_hs.reset_index(drop=True)
         df_w_hs.index.name = "combination_id"
 
-        df_w_hs.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL}")
-        # ASA-> End Replace fix naming 
+        df_backup_list = SummaryProcessing._backup_columns(
+            df_w_hs, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
+                      "inductor_loss_array", "transformer_loss_array"])
+
+        # Convert for saving data in CSV-format
+        SummaryProcessing._convert_for_csv(
+            df_w_hs, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
+                      "inductor_loss_array", "transformer_loss_array""circuit_loss_array"])
+
+        df_w_hs.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL}")
+
+        # Restore list
+        for colname, series_backup in df_backup_list:
+            df_w_hs[colname] = series_backup
 
         return df_w_hs
 
-    @staticmethod
-    def filter(summary_data: StudyData, df: pd.DataFrame, abs_max_losses: float) -> pd.DataFrame:
+    def filter(self, df: pd.DataFrame, abs_max_losses: float) -> pd.DataFrame:
         """
         Pareto front filter.
 
-        :param summary_data: summary data
-        :type summary_data: StudyData
         :param df: dataframe
         :type df: pd.DataFrame
         :param abs_max_losses: absolute maximum losses of the converter to clip the Pareto front
@@ -766,5 +814,5 @@ class SummaryProcessing:
         """
         df_filtered = CircuitOptimizationBase.filter_df(df, x="total_volume", y="total_mean_loss",
                                                         factor_min_dc_losses=0.001, factor_max_dc_losses=100, abs_max_losses=abs_max_losses)
-        df_filtered.to_csv(f"{summary_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}")
+        df_filtered.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}")
         return df_filtered

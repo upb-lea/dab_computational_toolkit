@@ -1389,10 +1389,13 @@ class DctMainCtl:
         )
 
         pre_summary_data = StudyData(study_name="pre_summary",
-                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory),
+                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory,
+                                                                         circuit_configuration_file.replace(".toml", "")),
                                      calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.pre_summary.calculation_mode))
 
-        summary_data = StudyData(study_name="summary", optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory))
+        summary_data = StudyData(study_name="summary",
+                                 optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory,
+                                                                     circuit_configuration_file.replace(".toml", "")))
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
@@ -1991,15 +1994,18 @@ class DctMainCtl:
         df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
         # ASA: Generally control_board_volume and control_board_loss depends on the topology.
         # Only for test setups it could be the same
-        df_pareto_plane = self._summary_pre_processing.add_offset_volume_losses(pre_summary_data, df_w_hs, toml_misc.control_board_volume,
+        df_pareto_plane = self._summary_pre_processing.add_offset_volume_losses(df_w_hs, toml_misc.control_board_volume,
                                                                                 toml_misc.control_board_loss)
 
-        df_pareto_front = self._summary_pre_processing.filter(pre_summary_data, df_pareto_plane, abs_max_losses=100_000)
+        df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000)
 
-        self._circuit_optimization.generate_result_dtos(pre_summary_data, self._capacitor_selection_data, self._inductor_study_data,
-                                                        self._transformer_study_data, df_pareto_front, is_pre_summary=True)
+        self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
+                                                        self._capacitor_selection_configuration_list,
+                                                        self._inductor_study_configuration_list,
+                                                        self._transformer_study_configuration_list,
+                                                        df_pareto_front, is_pre_summary=True)
 
-        self._circuit_optimization.visualize_lab_data(pre_summary_data.optimization_directory)
+        self._circuit_optimization.visualize_lab_data(self._summary_pre_processing._summary_study_data.optimization_directory)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
@@ -2013,9 +2019,9 @@ class DctMainCtl:
                                               pre_summary_data.optimization_directory)
         # Plot results of all transformers
         for transformer_study_configuration in self._transformer_study_configuration_list:
-            ParetoPlots.plot_inductor_results(transformer_study_configuration.study_data,
-                                              self._circuit_optimization.filter_data.filtered_list_files,
-                                              pre_summary_data.optimization_directory)
+            ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
+                                                 self._circuit_optimization.filter_data.filtered_list_files,
+                                                 pre_summary_data.optimization_directory)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
         ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
 
@@ -2117,9 +2123,9 @@ class DctMainCtl:
                                               summary_data.optimization_directory)
         # Plot results of all transformers
         for transformer_study_configuration in self._transformer_study_configuration_list:
-            ParetoPlots.plot_inductor_results(transformer_study_configuration.study_data,
-                                              self._circuit_optimization.filter_data.filtered_list_files,
-                                              summary_data.optimization_directory)
+            ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
+                                                 self._circuit_optimization.filter_data.filtered_list_files,
+                                                 summary_data.optimization_directory)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization)
 

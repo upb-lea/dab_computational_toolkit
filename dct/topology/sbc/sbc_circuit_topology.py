@@ -27,16 +27,19 @@ import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
 from dct.topology.sbc import sbc_toml_checker as sbc_tc
-from dct.datasets_dtos import StudyData, FilterData
+from dct.datasets_dtos import (FilterData, StudyData, PlotData, CapacitorConfiguration,
+                               InductorConfiguration, TransformerConfiguration)
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
-from dct.datasets_dtos import PlotData
 import dct.generalplotsettings as gps
 from dct.components.component_dtos import (CapacitorRequirements, InductorRequirements, TransformerRequirements,
                                            ComponentRequirements, ComponentCooling)
+from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
+                               SUMMARY_COMBINATION_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -1614,32 +1617,80 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         with open(file_path, 'w') as output:
             output.write(toml_data)
 
-    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
-                             inductor_study_data: StudyData, transformer_study_data: StudyData,
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data_list: list[CapacitorConfiguration],
+                             inductor_configuration_list: list[InductorConfiguration],
+                             transformer_configuration_list: list[TransformerConfiguration],
                              df: pd.DataFrame, is_pre_summary: bool = True) -> None:
         """
         Generate the result dtos from a given (filtered) result dataframe.
 
         :param summary_data: Summary Data
         :type summary_data: StudyData
-        :param capacitor_selection_data: capacitor selection data
-        :type capacitor_selection_data: StudyData
-        :param inductor_study_data: inductor study data
-        :type inductor_study_data: StudyData
-        :param transformer_study_data: transformer study data
-        :type transformer_study_data: StudyData
+        :param capacitor_selection_data_list: List of capacitor selection data
+        :type  capacitor_selection_data_list: list[CapacitorConfiguration]
+        :param inductor_configuration_list: List of inductor study data
+        :type  inductor_configuration_list: list[InductorConfiguration]
+        :param transformer_configuration_list: List of transformer study data
+        :type  transformer_configuration_list: list[TransformerConfiguration]
         :param df: dataframe to take the results from
         :type df: pd.DataFrame
         :param is_pre_summary: True for pre-summary, False for summary
         :type is_pre_summary: bool
         """
-        print(self.filter_data)
-        print(summary_data)
-        print(capacitor_selection_data)
-        print(inductor_study_data)
-        print(transformer_study_data)
-        print(df.head())
-        print(is_pre_summary)
+        """
+        Generate the result dtos from a given (filtered) result dataframe.
+
+        :param summary_data: Summary Data
+        :type summary_data: StudyData
+        :param capacitor_selection_data_list: List of capacitor selection data
+        :type capacitor_selection_data_list: list[CapacitorConfiguration]
+        :param inductor_configuration_list: List of inductor study data
+        :type inductor_configuration_list: list[InductorConfiguration]
+        :param transformer_study_data: List of transformer study data
+        :type transformer_study_data: list[TransformerConfiguration]
+        :param df: dataframe to take the results from
+        :type df: pd.DataFrame
+        :param is_pre_summary: True for pre-summary, False for summary
+        :type is_pre_summary: bool
+        """
+        if is_pre_summary:
+            # pre summary using reluctance model results (inductive components)
+            inductor_result_directory = CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER
+            transformer_result_directory = CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER
+        else:
+            # final summary using FEM results (inductive components)
+            inductor_result_directory = CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
+            transformer_result_directory = CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
+
+        for _, row in df.iterrows():
+            circuit_id = row['circuit_id']
+            inductor_id = row['inductor_id_0']
+            inductor_study_name = row['inductor_study_name_0']
+
+            # load circuit DTO
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
+            with open(circuit_id_filepath, 'rb') as pickle_file_data:
+                circuit_dto: s_dtos.SbcCircuitDTO = pickle.load(pickle_file_data)
+
+            # load inductor DTO
+            study_data = inductor_configuration_list[0].study_data
+            inductor_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                           inductor_study_name,
+                                                           inductor_result_directory)
+
+            inductor_id_filepath = os.path.join(inductor_study_results_filepath, f"{inductor_id}.pkl")
+            with open(inductor_id_filepath, 'rb') as pickle_file_data:
+                inductor_results = pickle.load(pickle_file_data)
+
+            circuit_dto.inductor_results = inductor_results
+
+            results_folder = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
+            if not os.path.exists(results_folder):
+                os.makedirs(results_folder)
+
+            d_sets.HandleSbcDto.save(circuit_dto,
+                                     f"c{circuit_id}_i{inductor_id}",
+                                     directory=results_folder, timestamp=False)
 
     @staticmethod
     def visualize_lab_data(filepath: str) -> None:
@@ -1650,4 +1701,3 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :type filepath: str
         """
         print(filepath)
-

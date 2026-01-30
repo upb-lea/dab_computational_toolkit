@@ -468,7 +468,7 @@ class TransformerOptimization:
                 r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
                     area_to_heat_sink, thermal_data)
 
-                results_dto = StackedTransformerResults(
+                transformer_results = StackedTransformerResults(
                     loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
@@ -669,7 +669,7 @@ class TransformerOptimization:
                     r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
                         area_to_heat_sink, thermal_data)
 
-                    results_dto = StackedTransformerResults(
+                    transformer_results = StackedTransformerResults(
                         loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,

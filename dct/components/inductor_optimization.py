@@ -382,7 +382,7 @@ class InductorOptimization:
                 r_th_ind_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
                     area_to_heat_sink, thermal_data)
 
-                inductor_losses = InductorResults(
+                inductor_results = InductorResults(
                     loss_array=combined_loss_array,
                     volume=inductor_volume,
                     area_to_heat_sink=area_to_heat_sink,
@@ -568,7 +568,7 @@ class InductorOptimization:
                     r_th_ind_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
                         area_to_heat_sink, thermal_data)
 
-                    inductor_losses = InductorResults(
+                    inductor_results = InductorResults(
                         loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
