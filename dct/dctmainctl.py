@@ -1907,39 +1907,42 @@ class DctMainCtl:
         # Allocate summary data object
         self._summary_processing = SummaryProcessing()
 
-        # Initialization thermal data
-        if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
-            raise ValueError("Thermal data configuration not initialized!")
-        # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
-        inductor_study_names = [self._inductor_study_data.study_name]
-        stacked_transformer_study_names = [self._transformer_study_data.study_name]
-        # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = self._summary_processing.generate_result_database(
-            self._inductor_study_data, self._transformer_study_data, summary_data,
-            inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
-            self._capacitor_selection_data, self._capacitor_2_selection_data,
-            capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False,
-            r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
-            r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
-            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
-        )
-        #  Select the needed heat sink configuration
-        df_w_hs_summary = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 
-        # add control board volume and losses
-        self._summary_processing.add_offset_volume_losses(summary_data, df_w_hs_summary, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        # Check, if electrical optimization is not to skip
+        if not summary_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Initialization thermal data
+            if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
+                raise ValueError("Thermal data configuration not initialized!")
+            # Create list of inductor and transformer study (ASA: Currently not implemented in configuration files)
+            inductor_study_names = [self._inductor_study_data.study_name]
+            stacked_transformer_study_names = [self._transformer_study_data.study_name]
+            # Start summary processing by generating the DataFrame from calculated simulation results
+            s_df = self._summary_processing.generate_result_database(
+                self._inductor_study_data, self._transformer_study_data, summary_data,
+                inductor_study_names, stacked_transformer_study_names, self._circuit_optimization.filter_data,
+                self._capacitor_selection_data, self._capacitor_2_selection_data,
+                capacitor_1_study_names, capacitor_2_study_names, is_pre_summary=False,
+                r_th_per_unit_area_ind_heat_sink=self._summary_pre_processing.r_th_per_unit_area_ind_heat_sink,
+                r_th_per_unit_area_xfmr_heat_sink=self._summary_pre_processing.r_th_per_unit_area_xfmr_heat_sink,
+                heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
+            )
+            #  Select the needed heat sink configuration
+            df_w_hs_summary = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, summary_data, s_df)
 
-        # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
-        self.generate_zip_archive(toml_prog_flow)
+            # add control board volume and losses
+            self._summary_processing.add_offset_volume_losses(summary_data, df_w_hs_summary, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
-        ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
-        ParetoPlots.plot_inductor_results(self._inductor_study_data, self._circuit_optimization.filter_data.filtered_list_files,
-                                          summary_data.optimization_directory)
-        ParetoPlots.plot_transformer_results(self._transformer_study_data, self._circuit_optimization.filter_data.filtered_list_files,
-                                             summary_data.optimization_directory)
-        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
-        ParetoPlots.plot_summary(summary_data, self._circuit_optimization)
+            # Check breakpoint
+            self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
+            self.generate_zip_archive(toml_prog_flow)
+
+            ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
+            ParetoPlots.plot_inductor_results(self._inductor_study_data, self._circuit_optimization.filter_data.filtered_list_files,
+                                              summary_data.optimization_directory)
+            ParetoPlots.plot_transformer_results(self._transformer_study_data, self._circuit_optimization.filter_data.filtered_list_files,
+                                                 summary_data.optimization_directory)
+            ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
+            ParetoPlots.plot_summary(summary_data, self._circuit_optimization)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

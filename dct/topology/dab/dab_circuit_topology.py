@@ -1599,3 +1599,4 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         plt.legend()
         plt.tight_layout()
         fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
+        fig.clf()
