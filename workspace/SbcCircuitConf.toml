@@ -19,3 +19,8 @@
 [filter_distance]
     number_filtered_designs = 2
     difference_percentage = 5
+
+[thermal_data]
+    # [tim_thickness, tim_conductivity]
+    transistor_hs_cooling = [1e-3,12.0]
+    transistor_ls_cooling = [1e-3,12.0]

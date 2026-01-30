@@ -28,18 +28,17 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
     [default data] # After update this configuration file according your project delete this line to validate it
     # Path configuration
     [general]
-        project_directory = "2025-12-18_example"
+        project_directory = "2026-01-09_example"
         topology = "dab"
     
     [breakpoints]
         # possible values: no/pause/stop
-        circuit_pareto = "no"  # After Electrical Pareto front calculation
+        circuit_pareto = "no"  # After Electrical pareto front calculation
         circuit_filtered = "no"  # After Electrical filtered result calculation
-        capacitor_1 = "no"
-        capacitor_2 = "no"
-        inductor = "no"    # After inductor Pareto front calculations of for all correspondent electrical points
-        transformer = "no" # After transformer Pareto front calculations of for all correspondent electrical points
-        heat_sink = "no"    # After heat sink P front calculation
+        capacitor = "no"   # After capacitor selection result calculation
+        inductor = "no"    # After inductor pareto front calculations of for all correspondent electrical points
+        transformer = "no" # After transformer pareto front calculations of for all correspondent electrical points
+        heat_sink = "no"    # After heat sink pareto front calculation
         pre_summary = "no"    # After pre-summary calculation
         summary = "no"    # After summary calculation
     
@@ -54,52 +53,52 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
         calculation_mode = "new" # (new,continue,skip)
         subdirectory = "01_circuit"
     
-    [capacitor_1]
-        calculation_mode = "new" # (new,skip)
-        subdirectory = "02_capacitor_1"
-    
-    [capacitor_2]
-        calculation_mode = "new" # (new,skip)
-        subdirectory = "03_capacitor_2"
+    [capacitor]
+        # number of the entries corresponds to the number of required capacitors of the  topology
+        calculation_modes = ["new", "new"] # (new,skip)
+        subdirectory = "02_capacitor"
     
     [inductor]
-        number_of_trials = 200
-        calculation_mode = "new" # (new,continue,skip)
-        subdirectory = "04_inductor"
+        numbers_of_trials = [200]
+        calculation_modes = ["new"] # (new,continue,skip)
+        subdirectory = "03_inductor"
     
     [transformer]
-        number_of_trials = 400
-        calculation_mode = "new" # (new,continue,skip)
-        subdirectory = "05_transformer"
+        numbers_of_trials = [400]
+        calculation_modes = ["new"] # (new,continue,skip)
+        subdirectory = "04_transformer"
     
     [heat_sink]
         number_of_trials = 500
         calculation_mode = "new" # (new,continue,skip)
-        subdirectory = "06_heat_sink"
+        subdirectory = "05_heat_sink"
     
     [pre_summary]
         calculation_mode = "new" # (new,skip)
-        subdirectory = "07_pre_summary"
+        subdirectory = "06_pre_summary"
     
     [summary]
-        calculation_mode = "skip" # (new,skip)
-        subdirectory = "08_summary"
+        subdirectory = "07_summary"
     
     [configuration_data_files]
-        general_configuration_file = "DabGeneralConf.toml"
-        circuit_configuration_file = "DabCircuitConf.toml"
-        capacitor_1_configuration_file = "DabCapacitor1Conf.toml"
-        capacitor_2_configuration_file = "DabCapacitor2Conf.toml"
-        inductor_configuration_file = "DabInductorConf.toml"
-        transformer_configuration_file = "DabTransformerConf.toml"
+        # General configuration file followed by circuit configuration file
+        topology_files =  ["DabGeneralConf.toml","DabCircuitConf.toml"]
+        # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
+        capacitor_configuration_files = ["DabCapacitor1Conf.toml", "DabCapacitor2Conf.toml"]
+        # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
+        inductor_configuration_files = ["DabInductorConf.toml"]
+        # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
+        transformer_configuration_files = ["DabTransformerConf.toml"]
         heat_sink_configuration_file = "DabHeatSinkConf.toml"
-        # general_configuration_file = "SbcGeneralConf.toml"
-        # circuit_configuration_file = "SbcCircuitConf.toml"
-        # capacitor_1_configuration_file = ""
-        # capacitor_2_configuration_file = ""
-        # inductor_configuration_file = "SbcInductorConf.toml"
-        # transformer_configuration_file = ""
-        # heat_sink_configuration_file = "SbcHeatSinkConf.toml"
+        #    # General configuration file followed by circuit configuration file
+        #    topology_files =  ["SbcGeneralConf.toml","SbcCircuitConf.toml"]
+        #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
+        #    capacitor_configuration_files = [""]
+        #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
+        #    inductor_configuration_files = ["SbcInductorConf.toml"]
+        #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
+        #    transformer_configuration_files = [""]
+        #    heat_sink_configuration_file = "SbcHeatSinkConf.toml"
     '''
     with open(f"{working_directory}/progFlow.toml", 'w') as output:
         output.write(toml_data)
@@ -152,7 +151,11 @@ def generate_default_inductor_toml(file_path: str) -> None:
         core_top=1e-3
         core_right=1e-3
         core_left=1e-3
-    
+
+    [thermal_data]
+        # [tim_thickness, tim_conductivity]
+        thermal_cooling = [1e-3,12.0]
+        
     [filter_distance]
         factor_dc_losses_min_max_list=[0.01, 100]
     '''
@@ -205,7 +208,11 @@ def generate_default_transformer_toml(file_path: str) -> None:
     [material_data_sources]
         permeability_datasource="LEA_MTB"
         permittivity_datasource="LEA_MTB"
-    
+        
+    [thermal_data]
+        # [tim_thickness, tim_conductivity]
+        thermal_cooling = [1e-3,12.0]
+            
     [settings]
         fft_filter_value_factor=0.01
         mesh_accuracy=0.8
@@ -244,13 +251,6 @@ def generate_default_heat_sink_toml(file_path: str) -> None:
         factor_bottom_area_copper_coin = 0.39
         # W/(m*K)
         thermal_conductivity_copper = 136
-    
-    [thermal_resistance_data]
-        # [tim_thickness, tim_conductivity]
-        transistor_b1_cooling = [1e-3,12.0]
-        transistor_b2_cooling = [1e-3,12.0]
-        inductor_cooling = [1e-3,12.0]
-        transformer_cooling = [1e-3,12.0]
 
     '''
     with open(file_path, 'w') as output:

@@ -22,20 +22,20 @@ from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
 from dct.components.summary_processing import SummaryProcessing
-from dct.components.heat_sink_dtos import ComponentCooling
 import transistordatabase as tdb
 from dct.boundary_check import CheckCondition as c_flag
 from dct.boundary_check import BoundaryCheck
-from dct.toml_checker import TomlHeatSink
 from dct.topology.dab import dab_toml_checker as dab_tc
 from dct.topology.dab.dab_datasets import HandleDabDto
-from dct.datasets_dtos import StudyData, FilterData, PlotData
+from dct.datasets_dtos import (StudyData, FilterData, PlotData, CapacitorConfiguration,
+                               InductorConfiguration, TransformerConfiguration)
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.circuit_enums import SamplingEnum
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 import dct.generalplotsettings as gps
-from dct.components.component_dtos import CapacitorRequirements, ComponentRequirements, TransformerRequirements
+from dct.components.component_dtos import (CapacitorRequirements, ComponentRequirements,
+                                           TransformerRequirements, ComponentCooling)
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER)
@@ -91,9 +91,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         # Areas and transistor cooling parameter
         self.copper_coin_area_1 = 0
-        self.transistor_b1_cooling = ComponentCooling(0, 0)
         self.copper_coin_area_2 = 0
-        self.transistor_b2_cooling = ComponentCooling(0, 0)
         self.misc = 0
 
     def save_config(self) -> None:
@@ -373,6 +371,50 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         is_check_passed, issue_report = BoundaryCheck.check_float_value(
             0.01, 100, toml_circuit.filter_distance.difference_percentage,
             f"{group_name}: difference_percentage", c_flag.check_exclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Perform thermal resistance data check
+        group_name = "thermal_data"
+        # Create the list
+        toml_check_value_list1: list[tuple[float, str]] = []
+        toml_check_value_list2: list[tuple[float, str]] = []
+
+        # Perform list length check for transistor_b1_cooling
+        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b1_cooling' is not equal 2!\n"
+            is_consistent = False
+        else:
+            toml_check_value_list1.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b1_cooling[0]-tim_thickness"))
+            toml_check_value_list2.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b1_cooling[1]-tim_conductivity"))
+
+        # Perform list length check for transistor_b1_cooling
+        if len(toml_circuit.thermal_data.transistor_b1_cooling) != 2:
+            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b2_cooling' is not equal 2!\n"
+            is_consistent = False
+        else:
+            toml_check_value_list1.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[0], f"{group_name}: transistor_b2_cooling[0]-tim_thickness"))
+            toml_check_value_list2.append(
+                (toml_circuit.thermal_data.transistor_b1_cooling[1], f"{group_name}: transistor_b2_cooling[1]-tim_conductivity"))
+
+        # Perform the boundary check for tim-thickness
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
+            0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Perform the boundary check for tim-conductivity
+        is_check_passed, issue_report = BoundaryCheck.check_float_value_list(
+            1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
@@ -1117,6 +1159,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         if self._study_in_storage is None:
             issue_report = "Study is not calculated. First run 'start_proceed_study'!"
             return is_filter_available, issue_report
+        if self._toml_circuit is None:
+            raise ValueError("Serious programming error in 'filter study results'. Please write an issue!")
 
         is_filter_available = True
 
@@ -1175,8 +1219,15 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         for dto in smallest_dto_list:
             # generate the target requirements for inductor, transformer and capacitor
             dto = HandleDabDto.generate_components_target_requirements(dto)
+            # Get thermal data
+            transistor_b1_cooling: ComponentCooling = ComponentCooling(
+                tim_thickness=self._toml_circuit.thermal_data.transistor_b1_cooling[0],
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_b1_cooling[1])
+            transistor_b2_cooling: ComponentCooling = ComponentCooling(
+                tim_thickness=self._toml_circuit.thermal_data.transistor_b2_cooling[0],
+                tim_conductivity=self._toml_circuit.thermal_data.transistor_b2_cooling[1])
             # generate the thermal parameters for the given design
-            dto = HandleDabDto.generate_thermal_transistor_parameters(dto, self.transistor_b1_cooling, self.transistor_b2_cooling)
+            dto = HandleDabDto.generate_thermal_transistor_parameters(dto, transistor_b1_cooling, transistor_b2_cooling)
 
             HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
@@ -1385,54 +1436,39 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         [filter_distance]
             number_filtered_designs = 1
             difference_percentage = 5
+
+        [thermal_data]
+            # [tim_thickness, tim_conductivity]
+            transistor_b1_cooling = [1e-3,12.0]
+            transistor_b2_cooling = [1e-3,12.0]            
+
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
 
-    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """Initialize the thermal parameter of the connection points for the transistors.
+    _transformer_study_configuration_list: list[TransformerConfiguration]
+    _inductor_study_configuration_list: list[InductorConfiguration]
+    _capacitor_selection_configuration_list: list[CapacitorConfiguration]
 
-        :param act_heat_sink_data: toml file with configuration data
-        :type act_heat_sink_data: TomlHeatSink
-
-        :return: True, if the thermal parameter of the connection points was successful initialized
-        :rtype: bool
-        """
-        # Variable declaration
-        # Return variable initialized to True
-        successful_init = True
-
-        # Thermal parameter for bridge transistor 1: List [tim_thickness, tim_conductivity]
-        self.transistor_b1_cooling = ComponentCooling(
-            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[0],
-            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b1_cooling[1])
-
-        # Thermal parameter for bridge transistor 2: List [tim_thickness, tim_conductivity]
-        self.transistor_b2_cooling = ComponentCooling(
-            tim_thickness=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[0],
-            tim_conductivity=act_heat_sink_data.thermal_resistance_data.transistor_b2_cooling[1])
-
-        # Return if initialization was successful performed (True)
-        return successful_init
-
-    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
-                             inductor_study_data: StudyData, transformer_study_data: StudyData,
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data_list: list[CapacitorConfiguration],
+                             inductor_configuration_list: list[InductorConfiguration],
+                             transformer_configuration_list: list[TransformerConfiguration],
                              df: pd.DataFrame, is_pre_summary: bool = True) -> None:
         """
         Generate the result dtos from a given (filtered) result dataframe.
 
         :param summary_data: Summary Data
-        :type summary_data: StudyData
-        :param capacitor_selection_data: capacitor selection data
-        :type capacitor_selection_data: StudyData
-        :param inductor_study_data: inductor study data
-        :type inductor_study_data: StudyData
-        :param transformer_study_data: transformer study data
-        :type transformer_study_data: StudyData
+        :type  summary_data: StudyData
+        :param capacitor_selection_data_list: List of capacitor selection data
+        :type  capacitor_selection_data_list: list[CapacitorConfiguration]
+        :param inductor_configuration_list: List of inductor study data
+        :type  inductor_configuration_list: list[InductorConfiguration]
+        :param transformer_configuration_list: List of transformer study data
+        :type  transformer_configuration_list: list[TransformerConfiguration]
         :param df: dataframe to take the results from
-        :type df: pd.DataFrame
+        :type  df: pd.DataFrame
         :param is_pre_summary: True for pre-summary, False for summary
-        :type is_pre_summary: bool
+        :type  is_pre_summary: bool
         """
         if is_pre_summary:
             # pre summary using reluctance model results (inductive components)
@@ -1445,12 +1481,14 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         for _, row in df.iterrows():
             circuit_id = row['circuit_id']
-            inductor_id = row['inductor_id']
-            inductor_study_name = row['inductor_study_name']
-            transformer_id = row['transformer_id']
-            transformer_study_name = row['transformer_study_name']
-            capacitor_1_id = row['capacitor_1_id']
-            capacitor_1_study_name = row['capacitor_1_study_name']
+            inductor_id = row['inductor_id_0']
+            inductor_study_name = row['inductor_study_name_0']
+            transformer_id = row['transformer_id_0']
+            transformer_study_name = row['transformer_study_name_0']
+            capacitor_1_id = row['capacitor_id_0']
+            capacitor_1_study_name = row['capacitor_study_name_0']
+            capacitor_2_id = row['capacitor_id_1']
+            capacitor_2_study_name = row['capacitor_study_name_1']
 
             # load circuit DTO
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
@@ -1458,7 +1496,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 circuit_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
             # load inductor DTO
-            inductor_study_results_filepath = os.path.join(inductor_study_data.optimization_directory, circuit_id,
+            study_data = inductor_configuration_list[0].study_data
+            inductor_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
                                                            inductor_study_name,
                                                            inductor_result_directory)
 
@@ -1467,30 +1506,43 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 inductor_results = pickle.load(pickle_file_data)
 
             # load transformer DTO
-            transformer_study_results_filepath = os.path.join(transformer_study_data.optimization_directory, circuit_id,
+            study_data = transformer_configuration_list[0].study_data
+            transformer_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
                                                               transformer_study_name, transformer_result_directory)
 
             transformer_id_filepath = os.path.join(transformer_study_results_filepath, f"{transformer_id}.pkl")
             with open(transformer_id_filepath, 'rb') as pickle_file_data:
                 transformer_results = pickle.load(pickle_file_data)
 
-            # load capacitor DTO
-            capacitor_1_study_results_filepath = os.path.join(capacitor_selection_data.optimization_directory, circuit_id,
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[0].study_data
+            capacitor_1_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
                                                               capacitor_1_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
             capacitor_1_id_filepath = os.path.join(capacitor_1_study_results_filepath, f"{capacitor_1_id}.pkl")
             with open(capacitor_1_id_filepath, 'rb') as pickle_file_data:
                 capacitor_1_results = pickle.load(pickle_file_data)
 
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[1].study_data
+            capacitor_2_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                              capacitor_2_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_2_id_filepath = os.path.join(capacitor_2_study_results_filepath, f"{capacitor_2_id}.pkl")
+            with open(capacitor_2_id_filepath, 'rb') as pickle_file_data:
+                capacitor_2_results = pickle.load(pickle_file_data)
+
             circuit_dto.inductor_results = inductor_results
             circuit_dto.stacked_transformer_results = transformer_results
             circuit_dto.capacitor_1_results = capacitor_1_results
+            circuit_dto.capacitor_2_results = capacitor_2_results
 
             results_folder = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
             if not os.path.exists(results_folder):
                 os.makedirs(results_folder)
 
-            HandleDabDto.save(circuit_dto, f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap{capacitor_1_id}",
+            HandleDabDto.save(circuit_dto,
+                              f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap1_{capacitor_1_id}_cap2_{capacitor_2_id}",
                               directory=results_folder, timestamp=False)
 
     @staticmethod

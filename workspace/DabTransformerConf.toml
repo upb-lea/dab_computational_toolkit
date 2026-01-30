@@ -36,6 +36,10 @@
     permeability_datasource="LEA_MTB"
     permittivity_datasource="LEA_MTB"
 
+[thermal_data]
+    # [tim_thickness, tim_conductivity]
+    thermal_cooling = [1e-3,12.0]
+
 [settings]
     fft_filter_value_factor=0.01
     mesh_accuracy=0.8

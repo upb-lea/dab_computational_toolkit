@@ -61,8 +61,7 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
                        topology="dab"),
     breakpoints=tc.Breakpoints(circuit_pareto="no",
                                circuit_filtered="no",
-                               capacitor_1="no",
-                               capacitor_2="no",
+                               capacitor="no",
                                inductor="no",
                                transformer="no",
                                heat_sink="no",
@@ -73,35 +72,29 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
         inductor=2,
         transformer=3,
         heat_sink=1),
-    circuit=tc.Circuit(number_of_trials=1,
+    circuit=tc.Circuit(number_of_trials=5,
                        calculation_mode="continue",
                        subdirectory="dummy"),
-    capacitor_1=tc.Capacitor1(
-        calculation_mode="new",
+    capacitor=tc.Capacitor(
+        calculation_modes=["new", "new"],
         subdirectory="dummy"),
-    capacitor_2=tc.Capacitor2(
-        calculation_mode="new",
-        subdirectory="dummy"),
-    inductor=tc.Inductor(number_of_trials=1,
-                         calculation_mode="continue",
+    inductor=tc.Inductor(numbers_of_trials=[10, 20],
+                         calculation_modes=["continue", "continue"],
                          subdirectory="dummy"),
-    transformer=tc.Transformer(number_of_trials=1,
-                               calculation_mode="continue",
+    transformer=tc.Transformer(numbers_of_trials=[30, 40],
+                               calculation_modes=["continue", "continue"],
                                subdirectory="dummy"),
-    heat_sink=tc.HeatSink(number_of_trials=1,
+    heat_sink=tc.HeatSink(number_of_trials=50,
                           calculation_mode="continue",
                           subdirectory="dummy"),
     pre_summary=tc.PreSummary(calculation_mode="new",
                               subdirectory="dummy"),
-    summary=tc.Summary(calculation_mode="new",
-                       subdirectory="dummy"),
+    summary=tc.Summary(subdirectory="dummy"),
     configuration_data_files=tc.ConfigurationDataFiles(
-        general_configuration_file="dummy",
-        circuit_configuration_file="dummy",
-        capacitor_1_configuration_file="dummy",
-        capacitor_2_configuration_file="dummy",
-        inductor_configuration_file="dummy",
-        transformer_configuration_file="dummy",
+        topology_files=["dummy1", "dummy2"],
+        capacitor_configuration_files=["dummy1", "dummy2"],
+        inductor_configuration_files=["dummy", "dummy2"],
+        transformer_configuration_files=["dummy", "dummy2"],
         heat_sink_configuration_file="dummy")
 )
 
@@ -353,26 +346,36 @@ def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data:
 test_ascii_file_data = "This is a test file"
 
 # test parameter list
-@pytest.mark.parametrize("is_path_existing, is_file_existing, exp_message_id", [
+@pytest.mark.parametrize("is_path_existing,  is_folder_list_empty, is_folder_empty, is_delete_all_flag, exp_message_id", [
     # --invalid input parameter----
     # Path does not exist
-    (False, False, 1),
+    (False, False, False, False, 1),
+    (False, False, False, True, 1),
     # --valid input parameter----
-    # Input file does not exist
-    (True, False, 2),
-    # Valid input file exists
-    (True, True, 0)
+    # Empty folder or empty folder list
+    (True, False, True, True, 2),
+    (True, True, True, False, 3),
+    (True, True, False, False, 3),
+    # Valid input folder contains data
+    (True, False, True, False, 0),
+    (True, True, False, True, 0),
+    (True, True, False, True, 0)
 ])
 # Unit test function
-def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool, is_file_existing: bool, exp_message_id: int) -> None:
+def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool, is_folder_list_empty: bool,
+                              is_folder_empty: bool, is_delete_all_flag: bool, exp_message_id: int) -> None:
     """Test method load_generate_logging_config(logging_config_file: str) -> None: according values.
 
     :param caplog: class instance for logger data
     :type  caplog: LogCaptureFixture
     :param is_path_existing: Flag to indicate, if the path exists for the test
     :type  is_path_existing: bool
-    :param is_file_existing: Flag to indicate, if the file exists for the test
-    :type  is_file_existing: bool
+    :param is_folder_list_empty: Flag to indicate, if the folder list is empty
+    :type  is_folder_list_empty: bool
+    :param is_folder_empty: Flag to indicate, if the folder is empty
+    :type  is_folder_empty: bool
+    :param is_delete_all_flag: Flag to indicate, if the complete optimization folder will be deleted
+    :type  is_delete_all_flag: bool
     :param exp_message_id: List index of the expected message
     :type  exp_message_id: int
     """
@@ -380,33 +383,41 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
     # Create the instance
     test_dct: DctMainCtl = DctMainCtl()
 
+    # Initialize sub folder list
+    sub_folder_list = ["sub_folder1", "sub_folder2", "sub_folder3"]
+
     # Prepare the setup
     # Create path
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create filenames
-        study_asc_name = "study_data.text"
-        study_bin_name = "study_data.sqlite3"
-        # Create the pathname
-        valid_asc_source = os.path.join(tmpdir, study_asc_name)
-        valid_bin_source = os.path.join(tmpdir, study_bin_name)
-        # Create 2 files
-        # text file
-        with open(valid_asc_source, "w") as f:
-            f.write(test_ascii_file_data)
-        # Binary file (1 kilo byte random data)
-        with open(valid_bin_source, "wb") as f:
-            f.write(os.urandom(1024))
-        # Create sub folders (3 levels) and store files within each level
-        actual_dir = tmpdir
-        for level in ["level1", "level2", "level3"]:
-            actual_dir = os.path.join(actual_dir, level)
-            os.makedirs(actual_dir, exist_ok=True)
-            # Copy test file
-            target_file = os.path.join(actual_dir, study_asc_name)
-            shutil.copy(valid_asc_source, target_file)
-            # Copy binary file
-            target_file = os.path.join(actual_dir, study_bin_name)
-            shutil.copy(valid_bin_source, target_file)
+        # Check for empty folder in mode is_all_flag
+        if not (is_folder_empty and is_delete_all_flag):
+            # Create filenames
+            study_asc_name = "study_data.text"
+            study_bin_name = "study_data.sqlite3"
+            # Create the pathname
+            valid_asc_source = os.path.join(tmpdir, study_asc_name)
+            valid_bin_source = os.path.join(tmpdir, study_bin_name)
+            # Create 2 files
+            # text file
+            with open(valid_asc_source, "w") as f:
+                f.write(test_ascii_file_data)
+            # Binary file (1 kilo byte random data)
+            with open(valid_bin_source, "wb") as f:
+                f.write(os.urandom(1024))
+            # Create sub folders (3 levels) and store files within each level
+            for sub_folder in sub_folder_list:
+                sub_dir = os.path.join(tmpdir, sub_folder)
+                os.makedirs(sub_dir, exist_ok=True)
+                if not is_folder_empty:
+                    for level in ["level1", "level2"]:
+                        actual_dir = os.path.join(sub_dir, level)
+                        os.makedirs(actual_dir, exist_ok=True)
+                        # Copy test file
+                        target_file = os.path.join(actual_dir, study_asc_name)
+                        shutil.copy(valid_asc_source, target_file)
+                        # Copy binary file
+                        target_file = os.path.join(actual_dir, study_bin_name)
+                        shutil.copy(valid_bin_source, target_file)
 
         # Assign pathname
         if is_path_existing:
@@ -414,19 +425,20 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
         else:
             path_name = os.path.join(tmpdir, "not_existing_folder")
 
-        # Check, if files not exists
-        if not is_file_existing:
-            # Delete the files at temporary folder
-            os.remove(valid_asc_source)
-            os.remove(valid_bin_source)
+        # Assign folder list
+        if is_folder_list_empty:
+            used_sub_folder_list = []
+        else:
+            used_sub_folder_list = sub_folder_list
 
         # Perform the test
         with caplog.at_level(logging.INFO):
-            test_dct.delete_study_content(path_name, os.path.splitext(study_bin_name)[0])
+            test_dct.delete_study_content(is_delete_all_flag, path_name, "level1", used_sub_folder_list)
             # Expected messages
             expected_message = ["",
                                 f"Path {path_name} does not exists!",
-                                f"File of study {os.path.splitext(study_bin_name)[0]} does not exists in {path_name}!"]
+                                f"Folder {path_name} is empty!",
+                                "sub folder list is empty. Nothing is deleted!"]
 
             if len(caplog.records) > 0:
                 assert caplog.records[0].message == expected_message[exp_message_id]
@@ -435,7 +447,12 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
 
             # Check, if the folders are deleted, if the file exists
             if is_path_existing:
-                assert len(os.listdir(path_name)) == 0
+                if is_delete_all_flag:
+                    assert len(os.listdir(path_name)) == 0
+                elif (is_folder_list_empty or is_folder_empty) is False:
+                    for sub_folder in sub_folder_list:
+                        sub_dir = os.path.join(tmpdir, sub_folder, "level1")
+                        assert len(os.listdir(sub_dir)) == 0
 
 #########################################################################################################
 # test of check_study_data
@@ -1500,7 +1517,7 @@ def test__get_page_main_data(test_index: int) -> None:
 
     # Initialize test_parameter 1 and expected results
     # Circuit
-    test_parameter_1.configuration_data_files.circuit_configuration_file = string_test_values[test_index % str_test_len]
+    test_parameter_1.configuration_data_files.topology_files[1] = string_test_values[test_index % str_test_len]
     test_parameter_1.circuit.number_of_trials = int_test_values[test_index % int_test_len]
     exp_result_circuit: list[srv_ctl_dtos.ConfigurationDataEntryDto] = [srv_ctl_dtos.ConfigurationDataEntryDto(
         configuration_name=string_test_values[test_index % str_test_len],
@@ -1508,30 +1525,49 @@ def test__get_page_main_data(test_index: int) -> None:
         progress_data=copy.deepcopy(start_progress_data))]
 
     # Inductor
-    test_parameter_1.configuration_data_files.inductor_configuration_file = string_test_values[(test_index + 1) % str_test_len]
-    test_parameter_1.inductor.number_of_trials = int_test_values[(test_index + 1) % int_test_len]
+    test_parameter_1.configuration_data_files.inductor_configuration_files[0] = string_test_values[(test_index + 1) % str_test_len]
+    test_parameter_1.inductor.numbers_of_trials[0] = int_test_values[(test_index + 1) % int_test_len]
     exp_result_inductor_main: list[srv_ctl_dtos.MagneticDataEntryDto] = [srv_ctl_dtos.MagneticDataEntryDto(
         magnetic_configuration_name=string_test_values[(test_index + 1) % str_test_len],
         number_calculations=0, number_performed_calculations=0,
         progress_data=copy.deepcopy(start_progress_data))]
+    test_parameter_1.configuration_data_files.inductor_configuration_files[1] = string_test_values[(test_index + 2) % str_test_len]
+    test_parameter_1.inductor.numbers_of_trials[1] = int_test_values[(test_index + 2) % int_test_len]
+    exp_result_inductor_main.append(srv_ctl_dtos.MagneticDataEntryDto(
+        magnetic_configuration_name=string_test_values[(test_index + 2) % str_test_len],
+        number_calculations=0, number_performed_calculations=0,
+        progress_data=copy.deepcopy(start_progress_data)))
     # Inductor list (entry per configuration)
     exp_result_inductor: list[srv_ctl_dtos.ConfigurationDataEntryDto] = [srv_ctl_dtos.ConfigurationDataEntryDto(
         configuration_name=string_test_values[(test_index + 1) % str_test_len],
         number_of_trials=int_test_values[(test_index + 1) % int_test_len],
         progress_data=copy.deepcopy(start_progress_data))]
-
+    exp_result_inductor.append(srv_ctl_dtos.ConfigurationDataEntryDto(
+        configuration_name=string_test_values[(test_index + 2) % str_test_len],
+        number_of_trials=int_test_values[(test_index + 2) % int_test_len],
+        progress_data=copy.deepcopy(start_progress_data)))
     # Transformer
-    test_parameter_1.configuration_data_files.transformer_configuration_file = string_test_values[(test_index + 2) % str_test_len]
-    test_parameter_1.transformer.number_of_trials = int_test_values[(test_index + 2) % int_test_len]
+    test_parameter_1.configuration_data_files.transformer_configuration_files[0] = string_test_values[(test_index + 2) % str_test_len]
+    test_parameter_1.transformer.numbers_of_trials[0] = int_test_values[(test_index + 2) % int_test_len]
     exp_result_transformer_main: list[srv_ctl_dtos.MagneticDataEntryDto] = [srv_ctl_dtos.MagneticDataEntryDto(
         magnetic_configuration_name=string_test_values[(test_index + 2) % str_test_len],
         number_calculations=0, number_performed_calculations=0,
         progress_data=copy.deepcopy(start_progress_data))]
+    test_parameter_1.configuration_data_files.transformer_configuration_files[1] = string_test_values[(test_index + 3) % str_test_len]
+    test_parameter_1.transformer.numbers_of_trials[1] = int_test_values[(test_index + 3) % int_test_len]
+    exp_result_transformer_main.append(srv_ctl_dtos.MagneticDataEntryDto(
+        magnetic_configuration_name=string_test_values[(test_index + 3) % str_test_len],
+        number_calculations=0, number_performed_calculations=0,
+        progress_data=copy.deepcopy(start_progress_data)))
     # Transformer data (List per configuration)
     exp_result_transformer: list[srv_ctl_dtos.ConfigurationDataEntryDto] = [srv_ctl_dtos.ConfigurationDataEntryDto(
         configuration_name=string_test_values[(test_index + 2) % str_test_len],
         number_of_trials=int_test_values[(test_index + 2) % int_test_len],
         progress_data=copy.deepcopy(start_progress_data))]
+    exp_result_transformer.append(srv_ctl_dtos.ConfigurationDataEntryDto(
+        configuration_name=string_test_values[(test_index + 3) % str_test_len],
+        number_of_trials=int_test_values[(test_index + 3) % int_test_len],
+        progress_data=copy.deepcopy(start_progress_data)))
 
     # Heat_sink data (List per configuration)
     test_parameter_1.configuration_data_files.heat_sink_configuration_file = string_test_values[(test_index + 3) % str_test_len]

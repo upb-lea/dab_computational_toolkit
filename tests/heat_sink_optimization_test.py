@@ -109,8 +109,6 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
         [[1e-18, 1e-18], [4.9999, 4.9999], [0.1, 2], [4, 3.5], [1], [0.1, 2, 2.3], [0, 1.1], [1, 5]])
     float_min_max_list_configuration_gt0_lt1em1: list[list[float]] = (
         [[1e-18, 1e-18], [0.09999, 0.09999], [0.01, 0.055], [0.04, 0.035], [0.06], [0.01, 0.08, 0.083], [0, 0.03], [0.06, 0.1]])
-    float_value_list_configuration_gt0_lt1em2xgt1_lt100: list[list[float]] = (
-        [[1e-17, 1.1], [0.00991, 99.999], [0.0034, 73.78], [0, 282.3], [0.0033], [0.0066, 22.76, 33], [0, 10], [0.01, 100]])
     float_value_list_configuration_gt0_lt25: list[float] = [1e-17, 24.991, 3.4, 7.4, 3.343, 6.6, 0, 25]
     float_value_list_configuration_ge80_le200: list[float] = [80, 200, 130.78, 182.3, 133.1, 99.76, 79.7, 200.001]
     float_value_list_configuration_gt0_lt10: list[float] = [1.1e-20, 9.99, 5.5, 3.2, 0.38, 7.6, -0, 10]
@@ -135,18 +133,11 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
             t_ambient=float_value_list_configuration_gem40_le125[test_index],
             t_hs_max=float_value_list_configuration_gem40_le125[test_index],
             area_min=float_value_list_configuration_gt0_lt25[test_index]),
-        thermal_resistance_data=dct.TomlHeatSinkThermalResistanceData(
-            transistor_b1_cooling=float_value_list_configuration_gt0_lt1em2xgt1_lt100[test_index],
-            transistor_b2_cooling=float_value_list_configuration_gt0_lt1em2xgt1_lt100[test_index],
-            inductor_cooling=float_value_list_configuration_gt0_lt1em2xgt1_lt100[test_index],
-            transformer_cooling=float_value_list_configuration_gt0_lt1em2xgt1_lt100[test_index])
     )
 
     # Create boundary list from minimum-maximum list with assigned parameters
     min_max_list_name_list: list[str] = ["height_c_min_max_list", "width_b_min_max_list", "length_l_min_max_list",
-                                         "height_d_min_max_list", "number_cooling_channels_n_min_max_list", "thickness_fin_t_min_max_list",
-                                         "transistor_b1_cooling", "transistor_b2_cooling",
-                                         "inductor_cooling", "transformer_cooling"]
+                                         "height_d_min_max_list", "number_cooling_channels_n_min_max_list", "thickness_fin_t_min_max_list"]
     value_name_list: list[str] = (["number_directions", "factor_pcb_area_copper_coin", "factor_bottom_area_copper_coin",
                                    "thermal_conductivity_copper", "t_ambient", "t_hs_max", "area_min"])
 

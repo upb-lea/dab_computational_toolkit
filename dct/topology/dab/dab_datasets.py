@@ -21,9 +21,9 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
-from dct.components.component_dtos import (CapacitorRequirements, InductorRequirements, TransformerRequirements,
-                                           InductorResults, StackedTransformerResults)
-from dct.components.heat_sink_optimization import ThermalCalcSupport, ComponentCooling
+from dct.components.component_dtos import (CircuitThermal, CapacitorRequirements, InductorRequirements, TransformerRequirements,
+                                           InductorResults, StackedTransformerResults, ComponentCooling)
+from dct.components.heat_sink_optimization import ThermalCalcSupport
 
 logger = logging.getLogger(__name__)
 
@@ -861,8 +861,10 @@ class HandleDabDto:
         r_th_copper_coin_2, copper_coin_area_2 = ThermalCalcSupport.calculate_r_th_copper_coin(
             circuit_dto.input_config.transistor_dto_2.cooling_area)
 
-        circuit_r_th_tim_1 = ThermalCalcSupport.calculate_r_th_tim(copper_coin_area_1, transistor_b1_cooling)
-        circuit_r_th_tim_2 = ThermalCalcSupport.calculate_r_th_tim(copper_coin_area_2, transistor_b2_cooling)
+        circuit_r_th_tim_1 = ThermalCalcSupport.calculate_r_th_tim(
+            copper_coin_area_1, transistor_b1_cooling)
+        circuit_r_th_tim_2 = ThermalCalcSupport.calculate_r_th_tim(
+            copper_coin_area_2, transistor_b2_cooling)
 
         circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
         circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
@@ -870,7 +872,7 @@ class HandleDabDto:
         circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
         circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
 
-        circuit_dto.circuit_thermal = d_dtos.CircuitThermal(
+        circuit_dto.circuit_thermal = CircuitThermal(
             t_j_max=[circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
             r_th_jhs=[circuit_r_th_1_jhs, circuit_r_th_2_jhs],
             area=[4 * copper_coin_area_1, 4 * copper_coin_area_2],
