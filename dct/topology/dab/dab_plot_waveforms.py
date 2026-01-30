@@ -18,8 +18,8 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
     :param compare_gecko_waveforms: True to compare calculation with simulated waveforms (GeckoCIRCUITS)
     :type compare_gecko_waveforms: bool
     """
-    if not isinstance(dab_dto.gecko_results, d_dtos.GeckoWaveforms):
-        raise TypeError(f"{dab_dto.gecko_results} is not of Type GeckoWaveforms.")
+    if not isinstance(dab_dto.gecko_waveforms, d_dtos.GeckoWaveforms):
+        raise TypeError(f"{dab_dto.gecko_waveforms} is not of Type GeckoWaveforms.")
 
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
 
@@ -62,8 +62,8 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
             plt.ylabel('i_L_s in A')
             plt.grid()
             plt.legend()
-            plot_info = (f", P= {dab_dto.calc_config.mesh_p[vec_vvp]} W "
-                         f"v1={dab_dto.calc_config.mesh_v1[vec_vvp]} V, v2={dab_dto.calc_config.mesh_v2[vec_vvp]} V,"
+            plot_info = (f", P= {dab_dto.input_config.mesh_p[vec_vvp]} W "
+                         f"v1={dab_dto.input_config.mesh_v1[vec_vvp]} V, v2={dab_dto.input_config.mesh_v2[vec_vvp]} V,"
                          f"f={dab_dto.input_config.fs=}")
 
             if dab_dto.calc_modulation.mask_zvs[vec_vvp]:

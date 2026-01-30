@@ -1809,6 +1809,16 @@ class DctMainCtl:
         self.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
 
         # --------------------------
+        # Time domain simulation
+        # --------------------------
+
+        self._circuit_optimization.add_time_domain_simulations(os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                                                            FILTERED_RESULTS_PATH))
+
+        self._circuit_optimization.plot_compare_waveforms(os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                                                       FILTERED_RESULTS_PATH))
+
+        # --------------------------
         # Pre-summary calculation
         # --------------------------
         logger.info("Start pre-summary.")
@@ -1898,7 +1908,6 @@ class DctMainCtl:
             DctMainCtl._set_processing_complete(self._transformer_study_data.optimization_directory,
                                                 design_directory, SIMULATION_COMPLETE_FILE,
                                                 self._circuit_optimization.filter_data.filtered_list_files)
-
         # --------------------------
         # Final summary calculation
         # --------------------------
@@ -1906,7 +1915,6 @@ class DctMainCtl:
 
         # Allocate summary data object
         self._summary_processing = SummaryProcessing()
-
 
         # Check, if electrical optimization is not to skip
         if not summary_data.calculation_mode == CalcModeEnum.skip_mode:

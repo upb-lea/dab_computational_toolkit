@@ -424,8 +424,6 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type df: pd.DataFrame
         :param is_pre_summary: True for pre-summary, False for summary
         :type is_pre_summary: bool
-        :return: None
-        :rtype: None
         """
         pass
 
@@ -439,3 +437,24 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type filepath: str
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    def add_time_domain_simulations(dto_directory: str) -> None:
+        """
+        Add time domain simulations to the existing circuit DTOs.
+
+        :param dto_directory: path to folder containing calculation results
+        :type dto_directory: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def plot_compare_waveforms(dto_directory: str) -> None:
+        """
+        Compare calculated waveforms with simulataed waveforms (geckoCIRCUITS).
+
+        :param dto_directory: Folder of circuit DTOs to read the values from
+        :type dto_directory: str
+        """

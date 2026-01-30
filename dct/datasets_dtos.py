@@ -23,8 +23,8 @@ class StudyData:
         If no member variables are provided, its will be initialized as empty strings, which corresponds to invalid values.
         :param optimization_directory: Drive location folder to the optimization data
         :type  optimization_directory: str
-        :param circuit_study_name: Name of the study
-        :type  circuit_study_name: str
+        :param study_name: Name of the study
+        :type  study_name: str
         """
         self.study_name = study_name
         self.optimization_directory = optimization_directory
