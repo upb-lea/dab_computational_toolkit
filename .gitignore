@@ -7,9 +7,14 @@ dab_modulation_output*
 *.npz
 */__pycache__/
 dct/__pycache__/
+dct/components/__pycache__/
 dct/topology/__pycache__/
 dct/topology/dab/__pycache__/
+dct/topology/sbc/__pycache__/
 dct/design_check/__pycache__/
+report.log
+trial.py
+trial*.py
 *.sqlite3
 *.html
 *.csv
