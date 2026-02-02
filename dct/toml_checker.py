@@ -18,6 +18,11 @@ class DebugGeneral(BaseModel):
 
     is_debug: bool
 
+class DebugCircuit(BaseModel):
+    """Debug information for the circuit."""
+
+    is_waveform_validation: bool
+
 class DebugCapacitor(BaseModel):
     """Debug information for the capacitor."""
 
@@ -39,6 +44,7 @@ class Debug(BaseModel):
     """General information in debug configuration."""
 
     general: DebugGeneral
+    circuit: DebugCircuit
     capacitor_1: DebugCapacitor
     capacitor_2: DebugCapacitor
     inductor: DebugInductor

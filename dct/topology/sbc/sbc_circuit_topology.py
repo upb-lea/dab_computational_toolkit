@@ -1601,19 +1601,22 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         print(filepath)
 
     @staticmethod
-    def add_time_domain_simulations(dto_directory: str) -> None:
+    def add_time_domain_simulations(dto_source_directory: str, dto_target_directory: str) -> None:
         """
         Add time domain simulations to the existing circuit DTOs.
 
-        :param dto_directory: path to folder containing calculation results
-        :type dto_directory: str
+        :param dto_source_directory: source path to folder containing calculation results
+        :type dto_source_directory: str
+        :param dto_target_directory: target path to folder containing calculation and simulation results
+        :type dto_target_directory: str
         """
-        print(dto_directory)
+        print(dto_source_directory)
+        print(dto_target_directory)
 
     @staticmethod
     def plot_compare_waveforms(dto_directory: str) -> None:
         """
-        Compare calculated waveforms with simulataed waveforms (geckoCIRCUITS).
+        Compare calculated waveforms with simulated waveforms (GeckoCIRCUITS).
 
         :param dto_directory: Folder of circuit DTOs to read the values from
         :type dto_directory: str
