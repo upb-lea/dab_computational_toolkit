@@ -4,6 +4,7 @@
 # own libraries
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_functions_waveforms as fw
+from dct.components.component_dtos import InductorRequirements, TransformerRequirements
 
 # 3rd party libraries
 import numpy as np
@@ -182,7 +183,7 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_wavefo
             plt.tight_layout()
             plt.show()
 
-def plot_calc_vs_requirements(dab_dto: d_dtos.DabCircuitDTO):
+def plot_calc_vs_requirements(dab_dto: d_dtos.DabCircuitDTO) -> None:
     """
     Verify the component requirement waveforms against the calculated ones.
 
@@ -209,6 +210,9 @@ def plot_calc_vs_requirements(dab_dto: d_dtos.DabCircuitDTO):
         sorted_i_l_s_total = fw.full_current_waveform_from_currents(i_l_s_sorted)
         sorted_i_l_1_total = fw.full_current_waveform_from_currents(i_l_1_sorted)
         sorted_i_l_2_total = fw.full_current_waveform_from_currents(i_l_2_sorted)
+
+        if dab_dto.component_requirements is None:
+            raise TypeError(f"{dab_dto.component_requirements} is None, but must be of type InductorRequirements.")
 
         # from component requirements
         i_l_1_requirement_time_vec = dab_dto.component_requirements.inductor_requirements[0].time_array[vec_vvp]
