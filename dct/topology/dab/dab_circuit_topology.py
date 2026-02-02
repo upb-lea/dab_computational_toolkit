@@ -39,7 +39,7 @@ from dct.components.component_dtos import CapacitorRequirements, ComponentRequir
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER)
-from dct.topology.dab.dab_plot_waveforms import plot_calc_waveforms
+from dct.topology.dab.dab_plot_waveforms import plot_calc_vs_requirements
 
 logger = logging.getLogger(__name__)
 
@@ -1653,3 +1653,5 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
             plot_calc_waveforms(combination_dto, compare_gecko_waveforms=True)
+            plot_calc_i_hf_waveforms(combination_dto, compare_gecko_waveforms=True)
+            plot_calc_vs_requirements(combination_dto)

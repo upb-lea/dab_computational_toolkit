@@ -63,8 +63,6 @@ def visualize_waveform_verification(working_directory: str) -> None:
         toml_prog_flow.configuration_data_files.circuit_configuration_file.replace(".toml", ""),
         CIRCUIT_WAVEFORMS_FOLDER)
 
-    print(f"{dto_directory=}")
-
     circuit_optimization.plot_compare_waveforms(dto_directory)
 
 
