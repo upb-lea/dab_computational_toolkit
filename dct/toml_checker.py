@@ -38,8 +38,7 @@ class Debug(BaseModel):
     """General information in debug configuration."""
 
     general: DebugGeneral
-    capacitor_1: DebugCapacitor
-    capacitor_2: DebugCapacitor
+    capacitor: DebugCapacitor
     inductor: DebugInductor
     transformer: DebugTransformer
 
@@ -83,21 +82,21 @@ class Circuit(BaseModel):
 class Capacitor(BaseModel):
     """Flow control for the capacitor 1."""
 
-    calculation_modes: list[Literal['new', 'skip', '']]
+    calculation_modes: list[Literal['new', 'skip']]
     subdirectory: str
 
 class Inductor(BaseModel):
     """Flow control for the inductor."""
 
     numbers_of_trials: list[int]
-    calculation_modes: list[Literal['new', 'continue', 'skip', '']]
+    calculation_modes: list[Literal['new', 'continue', 'skip']]
     subdirectory: str
 
 class Transformer(BaseModel):
     """Flow control for the transformer."""
 
     numbers_of_trials: list[int]
-    calculation_modes: list[Literal['new', 'continue', 'skip', '']]
+    calculation_modes: list[Literal['new', 'continue', 'skip']]
     subdirectory: str
 
 class HeatSink(BaseModel):

@@ -43,7 +43,7 @@ class SummaryProcessing:
     # Thermal calculation support class
     thr_sup: ThermalCalcSupport
 
-    # Dictionaries and list of dictionaries for circuit and components
+    # Dictionaries and list of dictionaries for circuit and components to cool by heat sink
     _summary_configuration_list: list[SummaryConfiguration]
 
     def __init__(self):
@@ -392,16 +392,16 @@ class SummaryProcessing:
                 # Add to inductor component list
                 transformer_data_list.append(transformers)
 
-            # Assemble design component tuple for actual circuit design
+            # Assemble design component tuple for actual circuit design requiring a heat sink
             self._summary_configuration_list.append(SummaryConfiguration(circuit_data=circuit_data,
-                                                                         capacitor_data_list=capacitor_data_list,
                                                                          inductor_data_list=inductor_data_list,
+                                                                         capacitor_data_list=capacitor_data_list,
                                                                          transformer_data_list=transformer_data_list))
 
-        # Check, if any circuit design cannot be realised
+        # Check, if any circuit design cannot be realized
         if missing_component_index_list:
             for missing_component in missing_component_index_list:
-                # Remove circuit from summary configuration list
+                # Remove circuit from summary configuration lists
                 self._summary_configuration_list = SummaryProcessing._remove_invalid_design(
                     self._summary_configuration_list, missing_component)
 
@@ -411,7 +411,7 @@ class SummaryProcessing:
 
         :param component_data: List with component data within a dict
         :type  component_data: list[dict]
-        :return: Data frame with result data of the dicts
+        :return: Data frame with result data of the dictionary
         :rtype:  pd.DataFrame
         """
         df_components = pd.DataFrame()
@@ -429,7 +429,7 @@ class SummaryProcessing:
         :type  act_df: pd.DataFrame
         :param key_prefix: Name of the component prefix
         :type  key_prefix: str
-        :return: pandas series with result data of the dicts
+        :return: pandas series with result data of the dictionary
         :rtype:  pd.Series
         """
         # Get index
@@ -447,7 +447,7 @@ class SummaryProcessing:
         :type  act_df: pd.DataFrame
         :param key_prefix: Name of the component prefix
         :type  key_prefix: str
-        :return: pandas series with result data of the dicts
+        :return: pandas series with result data of the dictionary
         :rtype:  pd.Series
         """
         # Get index
@@ -473,7 +473,7 @@ class SummaryProcessing:
         :type  act_df: pd.DataFrame
         :param component_name: Name of the component prefix
         :type  component_name: str
-        :return: Data frame with result data of the dicts or 0
+        :return: Data frame with result data of the dictionary or 0
         :rtype:  pd.DataFrame | int
         """
         # Variable declaration
@@ -528,7 +528,7 @@ class SummaryProcessing:
         :return: Data series containing the minimal temperature values of both input data frames
         :rtype:  pd.Series
         """
-        # Concate both data series to a data frame
+        # Concatenate both data series to a data frame
         result_df = pd.concat([total_min_temperature, component_temperature], axis=1)
         # Calculate the minimum per line
         result_df['min_new_value'] = result_df.min(axis=1)
@@ -581,8 +581,8 @@ class SummaryProcessing:
                 # Convert the column and overwrite the dataframe
                 act_df[column_name] = act_df[column_name].apply(lambda x: str(x.tolist()))
 
-    def generate_result_database(self, heat_sink_boundary_conditions: HeatSinkBoundaryConditions) -> pd.DataFrame:
-        """Generate a database df by summaries the calculation results.
+    def generate_cooling_requirement_database(self, heat_sink_boundary_conditions: HeatSinkBoundaryConditions) -> pd.DataFrame:
+        """Generate a database df by summaries the calculation results for all components required a heat sink.
 
         :param heat_sink_boundary_conditions: Boundary conditions for the heat sink
         :type heat_sink_boundary_conditions: HeatSinkBoundaryConditions
@@ -591,7 +591,7 @@ class SummaryProcessing:
         """
         # Variable declaration
 
-        # Check if initialisation list is empty
+        # Check if initialization list is empty
         if not self._summary_configuration_list:
             raise ValueError("First you need to initialize summary by calling 'initialize_processing'!")
 
@@ -609,14 +609,6 @@ class SummaryProcessing:
             df_circuit_local = pd.DataFrame([design.circuit_data])
             # Merge different df by creating a common key
             df_circuit_local['key'] = 0
-
-            # Put all capacitors to a pd-design
-            capacitor_pd_list: list[pd.DataFrame] = []
-            for capacitor_data in design.capacitor_data_list:
-                df_capacitors = SummaryProcessing.component_to_dataframe(capacitor_data)
-                # Merge different df by creating a common key
-                df_capacitors['key'] = 0
-                capacitor_pd_list.append(df_capacitors)
 
             # Put all inductors to a pd-design
             inductor_pd_list: list[pd.DataFrame] = []
@@ -636,8 +628,6 @@ class SummaryProcessing:
 
             # Perform cross join
             df_merge_data = df_circuit_local
-            for df_component in capacitor_pd_list:
-                df_merge_data = df_merge_data.merge(df_component, on='key', how='outer')
 
             for df_component in inductor_pd_list:
                 df_merge_data = df_merge_data.merge(df_component, on='key', how='outer')
@@ -648,24 +638,13 @@ class SummaryProcessing:
             # Add design to main data frame
             df = pd.concat([df, df_merge_data], axis=0)
 
-        # Consume  design component data
-        self._summary_configuration_list = []
-        # Remove the key
-        # df["inductor_loss_array_0"] = df["inductor_loss_array_0"].apply(lambda x: x[1] if isinstance(x, tuple) else x)
-
         # Calculate the total area as sum of circuit,  inductor and transformer area based on df-command is like vector sum v1[:]= v2[:] + v3[:]
-        # and v2 = sumrow [matrix m2[:]]; v3 = sumrow [matrix m3[:]] The number of columns of the matrix corresponds to
+        # and v2 = sum_row [matrix m2[:]]; v3 = sum_row [matrix m3[:]] The number of columns of the matrix corresponds to
         # the number of components of the same type. heat sink area, capacitors do not need heat sink area
         # df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
-        df["total_area"] = (df["circuit_area"].apply(lambda x: np.sum(x)) +\
-                            SummaryProcessing._calculate_component_sum(df, "inductor_area") +\
-                            SummaryProcessing._calculate_component_sum(df, "transformer_area"))
-
-        # Calculate the volume without heat sink volume
-        df["volume_wo_heat_sink"] = (
-            SummaryProcessing._calculate_component_sum(df, "inductor_volume") +\
-            SummaryProcessing._calculate_component_sum(df, "transformer_volume") +\
-            SummaryProcessing._calculate_component_sum(df, "capacitor_volume"))
+        df["total_cooling_array"] = (df["circuit_area"].apply(lambda x: np.sum(x)) +\
+                                     SummaryProcessing._calculate_component_sum(df, "inductor_area") +\
+                                     SummaryProcessing._calculate_component_sum(df, "transformer_area"))
 
         # Calculate the power loss of the design without capacitors loss
         df["total_loss_wo_capacitors_array"] = (df["circuit_loss_array"] +\
@@ -673,7 +652,6 @@ class SummaryProcessing:
                                                 SummaryProcessing._calculate_component_sum(df, "transformer_loss_array"))
 
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
-        # df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda x: np.minimum(*x))
         df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda arr: arr.min())
         # Calculate the maximal temperature for all inductors
         component_temperatur_series = SummaryProcessing._calculate_minimum_component_temperature(df, "inductor")
@@ -739,8 +717,6 @@ class SummaryProcessing:
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).index[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
-        act_df_for_hs["total_volume"] = act_df_for_hs["volume_wo_heat_sink"] + act_df_for_hs["heat_sink_volume"]
-
         # save full summary
         act_df_for_hs.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET}")
 
@@ -753,12 +729,12 @@ class SummaryProcessing:
 
         return act_df_for_hs
 
-    def add_offset_volume_losses(self, df_w_hs: pd.DataFrame, control_board_volume: float, control_board_loss: float) -> pd.DataFrame:
+    def generate_result_database(self, act_df: pd.DataFrame, control_board_volume: float, control_board_loss: float) -> pd.DataFrame:
         """
-        Add the offset volume and offset loss to the calculated data (e.g. from control board).
+        Finalize database by add components without required heat sink and add remaining volumes and losses.
 
-        :param df_w_hs: dataframe including the selected heat sink
-        :type df_w_hs: pd.DataFrame
+        :param act_df: dataframe including the selected heat sink
+        :type act_df: pd.DataFrame
         :param control_board_volume: control board volume in m³
         :type control_board_volume: float
         :param control_board_loss: control board loss in W
@@ -766,41 +742,85 @@ class SummaryProcessing:
         :return: pandas dataframe including the offset volume and offset losses
         :rtype: pd.DataFrame
         """
-        df_w_hs["total_volume"] = df_w_hs["total_volume"] + control_board_volume
-        df_w_hs["total_loss_array"] = (
-            df_w_hs["total_loss_wo_capacitors_array"] + control_board_loss +\
-            SummaryProcessing._calculate_component_sum(df_w_hs, "capacitor_loss_array")
+        # Variable declaration
+        # Result DataFrame
+        local_df = pd.DataFrame()
+
+        # Check if initialization list is empty
+        if not self._summary_configuration_list:
+            raise ValueError("First you need to initialize summary by calling 'initialize_processing'!")
+
+        # iterate circuit numbers
+        for design in self._summary_configuration_list:
+            df_merge_data = pd.DataFrame()
+            df_merge_data['key'] = 0
+            # Put all capacitors to a pd-design
+            capacitor_pd_list: list[pd.DataFrame] = []
+            for capacitor_data in design.capacitor_data_list:
+                df_capacitors = SummaryProcessing.component_to_dataframe(capacitor_data)
+                df_capacitors['key'] = 0
+                capacitor_pd_list.append(df_capacitors)
+
+            # Perform cross join
+            for df_component in capacitor_pd_list:
+                df_merge_data = df_merge_data.merge(df_component, on='key', how='outer')
+
+            # Add circuit id for merge to main dataframe
+            df_merge_data["circuit_id"] = design.circuit_data["circuit_id"]
+
+            # Add design to main data frame
+            local_df = pd.concat([local_df, df_merge_data], axis=0)
+
+        # Merge, if this component is part of the design
+        if not local_df.empty:
+            act_df = pd.merge(act_df, local_df, on='circuit_id')
+
+        # Consume  design component data
+        self._summary_configuration_list = []
+
+        # Calculate the volume without heat sink volume
+        act_df["volume_wo_heat_sink"] = (
+            SummaryProcessing._calculate_component_sum(act_df, "inductor_volume") +\
+            SummaryProcessing._calculate_component_sum(act_df, "transformer_volume") +\
+            SummaryProcessing._calculate_component_sum(act_df, "capacitor_volume"))
+
+        # Calculate the total volume
+        act_df["total_volume"] = act_df["volume_wo_heat_sink"] + act_df["heat_sink_volume"] +\
+            + control_board_volume
+        act_df["total_loss_array"] = (
+            act_df["total_loss_wo_capacitors_array"] + control_board_loss + \
+            SummaryProcessing._calculate_component_sum(act_df, "capacitor_loss_array")
         )
 
         # Calculate the total mean loss
-        df_w_hs["total_mean_loss"] = (
-            SummaryProcessing._calculate_component_mean(df_w_hs, "circuit_loss_array") +\
-            SummaryProcessing._calculate_component_mean(df_w_hs, "capacitor_loss_array") +\
-            SummaryProcessing._calculate_component_mean(df_w_hs, "inductor_loss_array") +\
-            SummaryProcessing._calculate_component_mean(df_w_hs, "transformer_loss_array") +\
+        act_df["total_mean_loss"] = (
+            SummaryProcessing._calculate_component_mean(act_df, "circuit_loss_array") + \
+            SummaryProcessing._calculate_component_mean(act_df, "capacitor_loss_array") + \
+            SummaryProcessing._calculate_component_mean(act_df, "inductor_loss_array") + \
+            SummaryProcessing._calculate_component_mean(act_df, "transformer_loss_array") + \
             control_board_loss)
 
         # generate a new unique index for the combined dataframe
-        # this helps to easily adress unique combinations by the index
-        df_w_hs = df_w_hs.reset_index(drop=True)
-        df_w_hs.index.name = "combination_id"
+        # this helps to easily address unique combinations by the index
+        act_df = act_df.reset_index(drop=True)
+        act_df.index.name = "combination_id"
 
         df_backup_list = SummaryProcessing._backup_columns(
-            df_w_hs, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
-                      "inductor_loss_array", "transformer_loss_array"])
+            act_df, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
+                     "inductor_loss_array", "transformer_loss_array"])
 
         # Convert for saving data in CSV-format
         SummaryProcessing._convert_for_csv(
-            df_w_hs, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
-                      "inductor_loss_array", "transformer_loss_array""circuit_loss_array"])
+            act_df, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
+                     "inductor_loss_array", "transformer_loss_array""circuit_loss_array"])
 
-        df_w_hs.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL}")
+        act_df.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL}")
 
         # Restore list
         for colname, series_backup in df_backup_list:
-            df_w_hs[colname] = series_backup
+            act_df[colname] = series_backup
 
-        return df_w_hs
+        return act_df
 
     def filter(self, df: pd.DataFrame, abs_max_losses: float) -> pd.DataFrame:
         """

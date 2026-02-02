@@ -55,8 +55,8 @@ class CapacitorSelection:
         """
         Initialize the capacitor selection.
 
-        The initialisation initialize the optimization config list, which contains lists separeted by
-        number of capacitor component in circuit. After perfoming this method, the optimization handler
+        The initialization initialize the optimization config list, which contains lists separated by
+        number of capacitor component in circuit. After performing this method, the optimization handler
         can be used to optimize the selected capacitor. The selection capacitor is defined by the number
         of capacitor component.
 
@@ -117,7 +117,7 @@ class CapacitorSelection:
                 while len(self._optimization_config_list) <= capacitor_number_in_circuit:
                     self._optimization_config_list.append([])
 
-                # Add capacitor dto to the sublist of assigned number in circuit
+                # Add capacitor dto to the sub-list of assigned number in circuit
                 self._optimization_config_list[capacitor_number_in_circuit].append(capacitor_optimization_dto)
 
     @staticmethod
@@ -136,7 +136,7 @@ class CapacitorSelection:
         df_filtered = pecst.filter_df(c_db_df)
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
-            df_filtered = df_filtered.iloc[:debug.capacitor_1.number_working_point_max]
+            df_filtered = df_filtered.iloc[:debug.capacitor.number_working_point_max]
         # save Pareto front designs (reduced in case of active debugging)
         df_filtered.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/results_filtered.csv")
 

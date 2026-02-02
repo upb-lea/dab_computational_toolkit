@@ -108,7 +108,7 @@ class CalcLosses:
 
 @dataclasses.dataclass
 class SbcCircuitDTO:
-    """Main SbcDTO containing all input parameters, calculations and simulation results."""
+    """Main SbcCircuitDTO containing all input parameters, calculations and simulation results."""
 
     timestamp: np.ndarray | None
     circuit_id: str

@@ -1281,8 +1281,7 @@ class DctMainCtl:
             toml_debug = tc.Debug(**debug_dict)
         else:
             toml_debug = tc.Debug(general=tc.DebugGeneral(is_debug=False),
-                                  capacitor_1=tc.DebugCapacitor(number_working_point_max=1),
-                                  capacitor_2=tc.DebugCapacitor(number_working_point_max=1),
+                                  capacitor=tc.DebugCapacitor(number_working_point_max=1),
                                   inductor=tc.DebugInductor(number_reluctance_working_point_max=1,
                                                             number_fem_working_point_max=1),
                                   transformer=tc.DebugTransformer(number_reluctance_working_point_max=1,
@@ -1986,15 +1985,14 @@ class DctMainCtl:
             summary_study_data=pre_summary_data, is_pre_summary=True)
 
         # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = self._summary_pre_processing.generate_result_database(
-            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions
-        )
+        s_df = self._summary_pre_processing.generate_cooling_requirement_database(
+            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions)
 
         #  Select the needed heat sink configuration
         df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
         # ASA: Generally control_board_volume and control_board_loss depends on the topology.
         # Only for test setups it could be the same
-        df_pareto_plane = self._summary_pre_processing.add_offset_volume_losses(df_w_hs, toml_misc.control_board_volume,
+        df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
                                                                                 toml_misc.control_board_loss)
 
         df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000)
@@ -2101,7 +2099,7 @@ class DctMainCtl:
             summary_study_data=summary_data, is_pre_summary=False)
 
         # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = self._summary_processing.generate_result_database(
+        s_df = self._summary_processing.generate_cooling_requirement_database(
             heat_sink_boundary_conditions=self._summary_processing.heat_sink_boundary_conditions
         )
 
@@ -2109,7 +2107,7 @@ class DctMainCtl:
         df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
         # ASA: Generally control_board_volume and control_board_loss depends on the topology.
         # Only for test setups it could be the same
-        self._summary_processing.add_offset_volume_losses(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

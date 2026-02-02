@@ -397,4 +397,16 @@ ComponentCooling
 CapacitorConfiguration
 InductorConfiguration
 TransformerConfiguration
-
+TransformerOptimizationDTO
+SwitchEnergyData
+SbcCircuitDTO
+CircuitSbcDTO
+CircuitParetoSbcDesign
+TomlSbcParameterRange
+SummaryConfiguration
+StoSingleInputConfig
+Golay
+Savitzky
+libretexts
+OpenStax
+homogenous

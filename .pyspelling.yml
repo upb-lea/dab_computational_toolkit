@@ -5,8 +5,10 @@ matrix:
     d: en_US
   sources:
   - dct/*.py
+  - dct/components/*.py
   - dct/topology/*.py
   - dct/topology/dab/*.py
+  - dct/topology/sbc/*.py
   - tests/*.py
   dictionary:
     wordlists:

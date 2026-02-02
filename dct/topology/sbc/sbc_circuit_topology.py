@@ -101,7 +101,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         :param act_circuit_study_data: Information about the circuit study name and study path
         :type  act_circuit_study_data: StudyData
-        :return: Configuration file as circuit_dtos.SbcDesign
+        :return: Configuration file as circuit_dtos.CircuitParetoSbcDesign
         :rtype: circuit_dtos.CircuitParetoSbcDesign
         """
         config_pickle_filepath = os.path.join(act_circuit_study_data.optimization_directory,
@@ -547,7 +547,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         """
         Return the actual loaded configuration file.
 
-        :return: Configuration file as circuit_dtos.SbcDesign
+        :return: Configuration file as circuit_dtos.CircuitParetoSbcDesign
         :rtype: circuit_dtos.CircuitParetoSbcDesign
         """
         if self._sbc_config is None:

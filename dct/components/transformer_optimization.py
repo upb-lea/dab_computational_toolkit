@@ -218,7 +218,7 @@ class TransformerOptimization:
         """Initialize the transformer optimization.
 
         :param configuration_data_list: List of transformer configuration data including study data
-        :type  configuration_data_list: list[transformerConfiguration]
+        :type  configuration_data_list: list[TransformerConfiguration]
         :param transformer_requirements_list: list with transformer requirements
         :type transformer_requirements_list: list[TransformerRequirements]
         """
@@ -323,7 +323,7 @@ class TransformerOptimization:
 
                 next_io_config.stacked_transformer_optimization_directory = trial_directory
                 transformer_dto = TransformerOptimizationDto(
-                    trial_directory="hh",
+                    trial_directory=trial_directory,
                     circuit_id=circuit_id,
                     transformer_number_in_circuit=transformer_number_in_circuit,
                     progress_data=copy.deepcopy(stat_data_init),
@@ -337,7 +337,7 @@ class TransformerOptimization:
                 while len(self._optimization_config_list) <= transformer_number_in_circuit:
                     self._optimization_config_list.append([])
 
-                # Add transformer dto to the sublist of assigned number in circuit
+                # Add transformer dto to the sub-list of assigned number in circuit
                 self._optimization_config_list[transformer_number_in_circuit].append(transformer_dto)
 
     def get_progress_data(self, index: int, filtered_list_id: int) -> ProgressData:
@@ -386,9 +386,9 @@ class TransformerOptimization:
 
         :param circuit_id: Filename of the filtered optimal electrical circuit
         :type circuit_id: str
-        :param act_sto_config: stracked transformer optimization configuration
+        :param act_sto_config: stacked transformer optimization configuration
         :type act_sto_config: fmt.StoSingleInputConfig
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param transformer_requirements: Requirements for the transformer
         :type  transformer_requirements: TransformerRequirements
@@ -490,7 +490,7 @@ class TransformerOptimization:
         """
         Generate the list of parameter sets for analytic and simulation optimization.
 
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param transformer_in_circuit: Number of transformer to optimize
         :type  transformer_in_circuit: int
@@ -519,7 +519,7 @@ class TransformerOptimization:
         """
         Control the multi simulation processes.
 
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param transformer_in_circuit: Number of transformer component in circuit
         :type  transformer_in_circuit: int
@@ -540,7 +540,7 @@ class TransformerOptimization:
         with Pool(processes=number_cpus) as pool:
 
             if debug.general.is_debug:
-                # In debug mode, reduce the number of parameter sets to number of cpu-cores
+                # In debug mode, reduce the number of parameter sets to number of processor cores
                 if len(parameter_set_list) > number_cpus:
                     parameter_set_list = parameter_set_list[0:(number_cpus-1)]
 
@@ -551,7 +551,7 @@ class TransformerOptimization:
         """
         Control the multi simulation processes.
 
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param transformer_in_circuit: Number of transformer component in circuit
         :type  transformer_in_circuit: int
@@ -572,7 +572,7 @@ class TransformerOptimization:
         with Pool(processes=number_cpus) as pool:
 
             if debug.general.is_debug:
-                # In debug mode, reduce the number of parameter sets to number of cpu-cores
+                # In debug mode, reduce the number of parameter sets to number of processor cores
                 if len(parameter_set_list) > number_cpus:
                     parameter_set_list = parameter_set_list[0:(number_cpus - 1)]
 
@@ -590,7 +590,7 @@ class TransformerOptimization:
         :type  circuit_id: str
         :param act_sto_config: stacked transformer configuration for the optimization
         :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param transformer_requirements: Requirements for the transformer
         :type  transformer_requirements: TransformerRequirements

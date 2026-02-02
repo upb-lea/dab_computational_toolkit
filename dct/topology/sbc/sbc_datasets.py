@@ -25,7 +25,7 @@ from dct.topology.sbc.sbc_circuit_topology_dtos import CircuitSampling
 logger = logging.getLogger(__name__)
 
 class HandleSbcDto:
-    """Class to handle the SbcDTO, e.g. save and load the files."""
+    """Class to handle the Sbc data transfer object, e.g. save and load the files."""
 
     @staticmethod
     def init_config(name: str, mesh_v: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i: np.ndarray,
@@ -176,7 +176,7 @@ class HandleSbcDto:
     @staticmethod
     def save(sbc_dto: s_dtos.SbcCircuitDTO, name: str, directory: str, timestamp: bool = True) -> None:
         """
-        Save the SbcDTO-class to a npz file.
+        Save the SbcCircuitDTO-class to a npz file.
 
         :param sbc_dto: Class to store
         :type sbc_dto: d_dtos.SbcCircuitDTO
@@ -294,7 +294,7 @@ class HandleSbcDto:
         time_array: np.ndarray
 
         # Create time array with 3 columns and number of operation points rows
-        n = sbc_dto.input_config.mesh_duty_cycle.shape[1]  # Anzahl Zeilen
+        n = sbc_dto.input_config.mesh_duty_cycle.shape[1]  # Number of lines
         time_array = np.zeros((n, 3))
         time_array[:, 0] = 0
         time_array[:, 1] = sbc_dto.input_config.mesh_duty_cycle.ravel()
@@ -317,7 +317,7 @@ class HandleSbcDto:
         :param act_study_name: Name of the optuna study
         :type  act_study_name: str
         :param sbc_dto: SBC circuit DTO
-        :type sbc_dto: s_dtos.DbcCircuitDTO
+        :type sbc_dto: s_dtos.SbcCircuitDTO
         :return: updated SBC circuit DTO
         :rtype: s_dtos.SbcCircuitDTO
         """
@@ -536,7 +536,7 @@ class HandleTransistorDto:
 
             # Generate the interpolation object for each curve
             for entry in curve_2D_array:
-                # Overtake values (entry[0]=switch voltage, entry[1]=graph conists of entry[1][0]=current value, entry[1][1]=loss value
+                # Overtake values (entry[0]=switch voltage, entry[1]=graph consists of entry[1][0]=current value, entry[1][1]=loss value
                 act_interpole_obj = interp1d(entry[1][0], entry[1][1], kind='linear', bounds_error=False, fill_value='extrapolate')
                 common_losses.append(act_interpole_obj(common_current_grid))
                 switch_voltage_list.append(entry[0])

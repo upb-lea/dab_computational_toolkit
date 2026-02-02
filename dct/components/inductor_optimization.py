@@ -246,7 +246,7 @@ class InductorOptimization:
                 while len(self._optimization_config_list) <= inductor_number_in_circuit:
                     self._optimization_config_list.append([])
 
-                # Add inductor dto to the sublist of assigned number in circuit
+                # Add inductor dto to the sub-list of assigned number in circuit
                 self._optimization_config_list[inductor_number_in_circuit].append(inductor_optimization_dto)
 
     def get_progress_data(self, index: int, filtered_list_id: int) -> ProgressData:
@@ -301,7 +301,7 @@ class InductorOptimization:
         :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param inductor_requirements: Requirements for the inductor
         :type  inductor_requirements: InductorRequirements
@@ -314,7 +314,7 @@ class InductorOptimization:
         :param debug: Debug mode flag
         :type debug: bool
 
-        :return: Number of calculated parteo fronts
+        :return: Number of calculated Pareto fronts
         :rtype:  int
         """
         quantity_of_inductor_id_pareto = 0
@@ -404,7 +404,7 @@ class InductorOptimization:
         """
         Generate the list of parameter sets for analytic and simulation optimization.
 
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param inductor_in_circuit: Number of inductor to optimize
         :type  inductor_in_circuit: int
@@ -430,7 +430,7 @@ class InductorOptimization:
         """
         Control the multi simulation processes.
 
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param inductor_in_circuit: Number of inductor to optimize
         :type  inductor_in_circuit: int
@@ -450,7 +450,7 @@ class InductorOptimization:
 
         with Pool(processes=number_cpus) as pool:
             if debug.general.is_debug:
-                # In debug mode, reduce the number of parameter sets to number of cpu-cores
+                # In debug mode, reduce the number of parameter sets to number of processor cores
                 if len(parameter_set_list) > number_cpus:
                     parameter_set_list = parameter_set_list[0:(number_cpus-1)]
             # Perform parallel calculation
@@ -460,7 +460,7 @@ class InductorOptimization:
         """
         Control the multi simulation processes.
 
-        :param circuit_study_name: Name of the cirucit study
+        :param circuit_study_name: Name of the circuit study
         :type  circuit_study_name: str
         :param inductor_in_circuit: Number of inductor to optimize
         :type  inductor_in_circuit: int
@@ -480,7 +480,7 @@ class InductorOptimization:
 
         with Pool(processes=number_cpus) as pool:
             if debug.general.is_debug:
-                # In debug mode, reduce the number of parameter sets to number of cpu-cores
+                # In debug mode, reduce the number of parameter sets to number of processor cores
                 if len(parameter_set_list) > number_cpus:
                     parameter_set_list = parameter_set_list[0:(number_cpus-1)]
 
