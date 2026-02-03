@@ -1613,6 +1613,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             raise ValueError("Incomplete dataset.")
         if combination_dto.capacitor_1_results is None:
             raise ValueError("Incomplete dataset.")
+        if combination_dto.capacitor_2_results is None:
+            raise ValueError("Incomplete dataset.")
         if combination_dto.inductor_results is None:
             raise ValueError("Incomplete dataset.")
         if combination_dto.stacked_transformer_results is None:
@@ -1622,8 +1624,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             "circuit b1": combination_dto.calc_losses.p_m1_conduction.flatten(),
             "circuit b2": combination_dto.calc_losses.p_m2_conduction.flatten(),
             "capacitor b1": combination_dto.capacitor_1_results.loss_total_array.flatten(),
-            "inductor": combination_dto.inductor_results.loss_array.flatten(),
-            "transformer": combination_dto.stacked_transformer_results.loss_array.flatten()
+            "capacitor b2": combination_dto.capacitor_2_results.loss_total_array.flatten(),
+            "inductor winding": combination_dto.inductor_results.winding_loss_array.flatten(),
+            "inductor core": combination_dto.inductor_results.core_loss_array.flatten(),
+            "transformer winding 1": combination_dto.stacked_transformer_results.winding_1_loss_array.flatten(),
+            "transformer winding 2": combination_dto.stacked_transformer_results.winding_2_loss_array.flatten(),
+            "transformer core": combination_dto.stacked_transformer_results.core_loss_array.flatten()
         }
 
         # set up operating point x-labels

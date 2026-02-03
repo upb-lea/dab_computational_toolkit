@@ -15,7 +15,7 @@ import hct
 import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
-from dct.constant_path import DF_SUMMARY_FINAL
+from dct.constant_path import DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER
 
 
 class ParetoPlots:
@@ -71,16 +71,16 @@ class ParetoPlots:
         fig_name_path = fig_name_path.replace(".pdf", "")
         path, fig_name = os.path.split(fig_name_path)
 
-        if not os.path.exists(f"{path}/pdf"):
-            os.mkdir(f"{path}/pdf")
-        if not os.path.exists(f"{path}/png"):
-            os.mkdir(f"{path}/png")
-        if not os.path.exists(f"{path}/pkl"):
-            os.mkdir(f"{path}/pkl")
-        plt.savefig(f"{path}/pdf/{fig_name}.pdf")
-        plt.savefig(f"{path}/png/{fig_name}.png")
+        if not os.path.exists(f"{path}/{PARETO_PLOT_PDF_FOLDER}"):
+            os.mkdir(f"{path}/{PARETO_PLOT_PDF_FOLDER}")
+        if not os.path.exists(f"{path}/{PARETO_PLOT_PNG_FOLDER}"):
+            os.mkdir(f"{path}/{PARETO_PLOT_PNG_FOLDER}")
+        if not os.path.exists(f"{path}/{PARETO_PLOT_PKL_FOLDER}"):
+            os.mkdir(f"{path}/{PARETO_PLOT_PKL_FOLDER}")
+        plt.savefig(f"{path}/{PARETO_PLOT_PDF_FOLDER}/{fig_name}.pdf")
+        plt.savefig(f"{path}/{PARETO_PLOT_PNG_FOLDER}/{fig_name}.png")
         # Save the figure as pickle file type, for later view
-        with open(f"{path}/pkl/{fig_name}.pkl", "wb") as f:
+        with open(f"{path}/{PARETO_PLOT_PKL_FOLDER}/{fig_name}.pkl", "wb") as f:
             pickle.dump(fig, f)
 
     @staticmethod

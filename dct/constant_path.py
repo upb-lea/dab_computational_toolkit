@@ -24,6 +24,9 @@ SUMMARY_COMBINATION_FOLDER = "combination_results"
 SUMMARY_COMBINATION_PlOTS_FOLDER = "combination_plots"
 FILTERED_RESULTS_PATH = "filtered_results"
 CIRCUIT_WAVEFORMS_FOLDER = "filtered_results_waveforms"
+PARETO_PLOT_PDF_FOLDER = "pareto_plot_pdf"
+PARETO_PLOT_PNG_FOLDER = "pareto_plot_png"
+PARETO_PLOT_PKL_FOLDER = "pareto_plot_pkl"
 
 # processing status
 RELUCTANCE_COMPLETE_FILE = "reluctance_processing_complete.json"

@@ -435,6 +435,9 @@ class TransformerOptimization:
             df_transformer_id = df_transformer_pareto[df_transformer_pareto["number"] == transformer_id]
 
             result_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
+            winding_1_loss_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
+            winding_2_loss_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
+            core_loss_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                                      CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
@@ -460,9 +463,13 @@ class TransformerOptimization:
                     logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                     logger.debug(f"   * Transformer ID: {transformer_id}")
 
-                    volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.ReluctanceModel.full_simulation(
-                        df_transformer_id, current_waveform_1, current_waveform_2, config_filepath)
+                    volume, combined_losses, area_to_heat_sink, winding_1_loss, winding_2_loss, core_loss = (
+                        fmt.StackedTransformerOptimization.ReluctanceModel.full_simulation(
+                            df_transformer_id, current_waveform_1, current_waveform_2, config_filepath))
                     result_array[vec_vvp] = combined_losses
+                    winding_1_loss_array[vec_vvp] = winding_1_loss
+                    winding_2_loss_array[vec_vvp] = winding_2_loss
+                    core_loss_array[vec_vvp] = core_loss
 
                 # Calculate thermal resistance
                 r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
@@ -470,6 +477,9 @@ class TransformerOptimization:
 
                 transformer_results = StackedTransformerResults(
                     loss_array=result_array,
+                    winding_1_loss_array=winding_1_loss_array,
+                    winding_2_loss_array=winding_2_loss_array,
+                    core_loss_array=core_loss_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
                     r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
@@ -630,6 +640,9 @@ class TransformerOptimization:
             df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == transformer_id]
 
             result_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
+            winding_1_loss_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
+            winding_2_loss_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
+            core_loss_array = np.full_like(transformer_requirements.time_array[..., 0], np.nan)
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                                      CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
@@ -659,11 +672,15 @@ class TransformerOptimization:
                         logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                         logger.debug(f"   * Transformer ID: {transformer_id}")
 
-                        volume, combined_losses, area_to_heat_sink = fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
-                            df_geometry_re_simulation_number, current_1_waveform, current_2_waveform, config_filepath, show_visual_outputs=False,
-                            process_number=process_number)
+                        volume, combined_losses, area_to_heat_sink, winding_1_loss, winding_2_loss, core_loss = (
+                            fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
+                                df_geometry_re_simulation_number, current_1_waveform, current_2_waveform, config_filepath, show_visual_outputs=False,
+                                process_number=process_number))
 
                         result_array[vec_vvp] = combined_losses
+                        winding_1_loss_array[vec_vvp] = winding_1_loss
+                        winding_2_loss_array[vec_vvp] = winding_2_loss
+                        core_loss_array[vec_vvp] = core_loss
 
                     # Calculate thermal resistance
                     r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
@@ -671,6 +688,9 @@ class TransformerOptimization:
 
                     transformer_results = StackedTransformerResults(
                         loss_array=result_array,
+                        winding_1_loss_array=winding_1_loss_array,
+                        winding_2_loss_array=winding_2_loss_array,
+                        core_loss_array=core_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
                         r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
