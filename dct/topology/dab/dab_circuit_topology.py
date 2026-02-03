@@ -38,7 +38,8 @@ from dct.components.component_dtos import (CapacitorRequirements, ComponentRequi
                                            TransformerRequirements, ComponentCooling)
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER,
+                               FILTERED_RESULTS_PATH, CIRCUIT_WAVEFORMS_FOLDER)
 from dct.topology.dab.dab_plot_waveforms import plot_calc_vs_requirements, plot_calc_waveforms, plot_calc_i_hf_waveforms
 
 logger = logging.getLogger(__name__)
@@ -1659,16 +1660,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
         fig.clf()
 
-    @staticmethod
-    def add_time_domain_simulations(dto_source_directory: str, dto_target_directory: str) -> None:
-        """
-        Add time domain simulations to the existing circuit DTOs.
+    def add_time_domain_simulations(self) -> None:
+        """Add time domain simulations to the existing circuit DTOs."""
 
-        :param dto_source_directory: source path to folder containing calculation results
-        :type dto_source_directory: str
-        :param dto_target_directory: target path to folder containing calculation and simulation results
-        :type dto_target_directory: str
-        """
+        dto_source_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+        dto_target_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+
         _, circuit_id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(dto_source_directory)
 
         if not os.path.exists(dto_target_directory):
@@ -1682,9 +1679,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             # Get circuit results
             with open(circuit_source_id_filepath, 'rb') as pickle_file_data:
                 combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
-
-            print(combination_dto.gecko_additional_params.simfilepath)
-            print(combination_dto.gecko_additional_params.lossfilepath)
 
             combination_dto = HandleDabDto.add_gecko_simulation_results(combination_dto, get_waveforms=True)
 

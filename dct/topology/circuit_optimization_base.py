@@ -430,17 +430,9 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         """
         pass
 
-    @staticmethod
     @abstractmethod
-    def add_time_domain_simulations(dto_source_directory: str, dto_target_directory: str) -> None:
-        """
-        Add time domain simulations to the existing circuit DTOs.
-
-        :param dto_source_directory: source path to folder containing calculation results
-        :type dto_source_directory: str
-        :param dto_target_directory: target path to folder containing calculation and simulation results
-        :type dto_target_directory: str
-        """
+    def add_time_domain_simulations(self) -> None:
+        """Add time domain simulations to the existing circuit DTOs."""
         pass
 
     @staticmethod

@@ -48,7 +48,7 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, CIRCUIT_WAVEFORMS_FOLDER)
+                               SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
 
 logger = logging.getLogger(__name__)
 
@@ -1812,10 +1812,7 @@ class DctMainCtl:
         if toml_debug.circuit.is_waveform_validation:
             logger.info("Start time domain simulation")
 
-            source_folder = os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
-            destination_folder = os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory, CIRCUIT_WAVEFORMS_FOLDER)
-
-            self._circuit_optimization.add_time_domain_simulations(source_folder, destination_folder)
+            self._circuit_optimization.add_time_domain_simulations()
 
             logger.info("End time domain simulation")
 
