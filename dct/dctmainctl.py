@@ -48,7 +48,7 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
+                               SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, CIRCUIT_WAVEFORMS_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -1281,6 +1281,7 @@ class DctMainCtl:
             toml_debug = tc.Debug(**debug_dict)
         else:
             toml_debug = tc.Debug(general=tc.DebugGeneral(is_debug=False),
+                                  circuit=tc.DebugCircuit(is_waveform_validation=False),
                                   capacitor=tc.DebugCapacitor(number_working_point_max=1),
                                   inductor=tc.DebugInductor(number_reluctance_working_point_max=1,
                                                             number_fem_working_point_max=1),
@@ -1804,6 +1805,19 @@ class DctMainCtl:
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
+
+        # --------------------------
+        # Time domain simulation
+        # --------------------------
+        if toml_debug.circuit.is_waveform_validation:
+            logger.info("Start time domain simulation")
+
+            source_folder = os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+            destination_folder = os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory, CIRCUIT_WAVEFORMS_FOLDER)
+
+            self._circuit_optimization.add_time_domain_simulations(source_folder, destination_folder)
+
+            logger.info("End time domain simulation")
 
         # --------------------------
         # Capacitor selection
