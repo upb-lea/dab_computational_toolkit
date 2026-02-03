@@ -39,7 +39,7 @@ from dct.components.component_dtos import (CapacitorRequirements, ComponentRequi
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER,
-                               FILTERED_RESULTS_PATH, CIRCUIT_WAVEFORMS_FOLDER)
+                               FILTERED_RESULTS_PATH)
 from dct.topology.dab.dab_plot_waveforms import plot_calc_vs_requirements, plot_calc_waveforms, plot_calc_i_hf_waveforms
 
 logger = logging.getLogger(__name__)
@@ -1662,7 +1662,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
     def add_time_domain_simulations(self) -> None:
         """Add time domain simulations to the existing circuit DTOs."""
-
         dto_source_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
         dto_target_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
 
