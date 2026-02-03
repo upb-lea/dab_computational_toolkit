@@ -16,8 +16,8 @@ import tqdm
 import pecst
 from dct.components.capacitor_optimization_dtos import CapacitorOptimizationDto
 from dct.toml_checker import TomlCapacitorSelection, Debug
-from dct.datasets_dtos import StudyData
-from dct.datasets_dtos import FilterData
+from dct.circuit_enums import CalcModeEnum
+from dct.datasets_dtos import FilterData, CapacitorConfiguration
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.components.component_dtos import CapacitorRequirements
 from dct.components.capacitor_optimization_dtos import CapacitorResults
@@ -29,7 +29,7 @@ class CapacitorSelection:
     """Select suitable capacitors."""
 
     c_df: pd.DataFrame
-    _optimization_config_list: list[CapacitorOptimizationDto]
+    _optimization_config_list: list[list[CapacitorOptimizationDto]]
 
     def __init__(self):
         self._optimization_config_list = []
@@ -50,15 +50,18 @@ class CapacitorSelection:
             pass
         return True, ""
 
-    def initialize_capacitor_selection(self, toml_capacitor_list: list[TomlCapacitorSelection], capacitor_study_data: StudyData,
+    def initialize_capacitor_selection(self, configuration_data_list: list[CapacitorConfiguration],
                                        capacitor_requirements_list: list[CapacitorRequirements]) -> None:
         """
         Initialize the capacitor selection.
 
-        :param toml_capacitor_list: capacitor data in a list
-        :type toml_capacitor_list: list[TomlCapacitorSelection]
-        :param capacitor_study_data: capacitor study data
-        :type capacitor_study_data: StudyData
+        The initialization initialize the optimization config list, which contains lists separated by
+        number of capacitor component in circuit. After performing this method, the optimization handler
+        can be used to optimize the selected capacitor. The selection capacitor is defined by the number
+        of capacitor component.
+
+        :param configuration_data_list: List of capacitor configuration data including study data
+        :type  configuration_data_list: list[CapacitorConfiguration]
         :param capacitor_requirements_list: list with capacitor requirements
         :type capacitor_requirements_list: list[CapacitorRequirements]
         """
@@ -66,56 +69,76 @@ class CapacitorSelection:
 
         # Create the io_config_list for all trials
         for capacitor_requirements in capacitor_requirements_list:
+            # Set index
+            capacitor_number_in_circuit = capacitor_requirements.capacitor_number_in_circuit
 
-            circuit_id = capacitor_requirements.circuit_id
-            trial_directory = os.path.join(capacitor_study_data.optimization_directory, circuit_id, capacitor_study_data.study_name)
+            # Check, if capacitor optimization is not to skip
+            if not configuration_data_list[capacitor_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode:
 
-            # catch mypy type issue
-            if not isinstance(capacitor_requirements, CapacitorRequirements):
-                raise TypeError("circuit DTO file is incomplete.")
+                circuit_id = capacitor_requirements.circuit_id
+                trial_directory = os.path.join(configuration_data_list[capacitor_number_in_circuit].study_data.optimization_directory,
+                                               circuit_id, configuration_data_list[capacitor_number_in_circuit].study_data.study_name)
+                capacitor_toml_data = configuration_data_list[capacitor_number_in_circuit].capacitor_toml_data
 
-            # generate capacitor requirements from circuit simulation data
-            capacitor_requirements_dto = pecst.CapacitorRequirements(
-                maximum_peak_to_peak_voltage_ripple=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].maximum_peak_to_peak_voltage_ripple,
-                current_waveform_for_op_max_current=np.array([capacitor_requirements.time_vec, capacitor_requirements.current_vec]),
-                v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
-                temperature_ambient=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].temperature_ambient,
-                voltage_safety_margin_percentage=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].voltage_safety_margin_percentage,
-                capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
-                maximum_number_series_capacitors=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].maximum_number_series_capacitors,
-                capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
-                lifetime_h=toml_capacitor_list[capacitor_requirements.capacitor_number_in_circuit].lifetime_h,
-                results_directory=trial_directory)
+                # catch mypy type issue
+                if not isinstance(capacitor_requirements, CapacitorRequirements):
+                    raise TypeError("circuit DTO file is incomplete.")
+                # Catch mypy issue
+                if capacitor_toml_data is None:
+                    raise ValueError("Serious programming error in capacitor selection. toml-data are not initialized.",
+                                     "Please write an issue!")
 
-            # Initialize the statistical data
-            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
+                # generate capacitor requirements from circuit simulation data
+                capacitor_requirements_dto = pecst.CapacitorRequirements(
+                    maximum_peak_to_peak_voltage_ripple=capacitor_toml_data.maximum_peak_to_peak_voltage_ripple,
+                    current_waveform_for_op_max_current=np.array([capacitor_requirements.time_vec,
+                                                                  capacitor_requirements.current_vec]),
+                    v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
+                    temperature_ambient=capacitor_toml_data.temperature_ambient,
+                    voltage_safety_margin_percentage=capacitor_toml_data.voltage_safety_margin_percentage,
+                    capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
+                    maximum_number_series_capacitors=capacitor_toml_data.maximum_number_series_capacitors,
+                    capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
+                    lifetime_h=capacitor_toml_data.lifetime_h,
+                    results_directory=trial_directory)
 
-            capacitor_optimization_dto = CapacitorOptimizationDto(
-                circuit_id=circuit_id,
-                progress_data=copy.deepcopy(stat_data_init),
-                capacitor_optimization_dto=capacitor_requirements_dto,
-                capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit)
+                # Initialize the statistical data
+                stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
 
-            self._optimization_config_list.append(capacitor_optimization_dto)
+                capacitor_optimization_dto = CapacitorOptimizationDto(
+                    circuit_id=circuit_id,
+                    progress_data=copy.deepcopy(stat_data_init),
+                    capacitor_optimization_dto=capacitor_requirements_dto,
+                    capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit,
+                    current_array=capacitor_requirements.current_array,
+                    time_array=capacitor_requirements.time_array)
+
+                # Check list size
+                while len(self._optimization_config_list) <= capacitor_number_in_circuit:
+                    self._optimization_config_list.append([])
+
+                # Add capacitor dto to the sub-list of assigned number in circuit
+                self._optimization_config_list[capacitor_number_in_circuit].append(capacitor_optimization_dto)
 
     @staticmethod
-    def _start_optimization(circuit_id: str, act_cst_config: pecst.CapacitorRequirements, filter_data: FilterData,
-                            capacitor_requirements: CapacitorRequirements, debug: Debug) -> int:
+    def _start_optimization(capacitor_number_in_circuit: int, act_config: CapacitorOptimizationDto, filter_data: FilterData,
+                            debug: Debug) -> int:
+
         # capacitor requirements
-        _, c_db_df_list = pecst.select_capacitors(act_cst_config)
+        _, c_db_df_list = pecst.select_capacitors(act_config.capacitor_optimization_dto)
 
         c_db_df = pd.concat(c_db_df_list)
 
-        if not os.path.exists(act_cst_config.results_directory):
-            os.makedirs(act_cst_config.results_directory)
-        c_db_df.to_csv(f"{act_cst_config.results_directory}/results.csv")
+        if not os.path.exists(act_config.capacitor_optimization_dto.results_directory):
+            os.makedirs(act_config.capacitor_optimization_dto.results_directory)
+        c_db_df.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/results.csv")
 
         df_filtered = pecst.filter_df(c_db_df)
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
-            df_filtered = df_filtered.iloc[:debug.capacitor_1.number_working_point_max]
+            df_filtered = df_filtered.iloc[:debug.capacitor.number_working_point_max]
         # save Pareto front designs (reduced in case of active debugging)
-        df_filtered.to_csv(f"{act_cst_config.results_directory}/results_filtered.csv")
+        df_filtered.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/results_filtered.csv")
 
         all_operation_point_ordering_codes_list = df_filtered["ordering code"].to_numpy()
         all_operation_point_volume_list = df_filtered["volume_total"].to_numpy()
@@ -140,24 +163,24 @@ class CapacitorSelection:
             logger.debug(f"ordering_code: \n"
                          f"    {df_geometry_re_simulation_number.head()}")
 
-            loss_total_array = np.full_like(capacitor_requirements.current_array[:, :, :, 0], np.nan)
+            loss_total_array = np.full_like(act_config.current_array[:, :, :, 0], np.nan)
 
-            new_circuit_dto_directory = os.path.join(act_cst_config.results_directory, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+            new_circuit_dto_directory = os.path.join(act_config.capacitor_optimization_dto.results_directory, CIRCUIT_CAPACITOR_LOSS_FOLDER)
             if not os.path.exists(new_circuit_dto_directory):
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")):
                 logger.info(f"Re-simulation of {ordering_code} already exists. Skip.")
             else:
-                for vec_vvp in np.ndindex(capacitor_requirements.current_array[:, :, :, 0].shape):
-                    time = capacitor_requirements.time_array[vec_vvp]
-                    current = capacitor_requirements.current_array[vec_vvp]
+                for vec_vvp in np.ndindex(act_config.current_array[:, :, :, 0].shape):
+                    time = act_config.time_array[vec_vvp]
+                    current = act_config.current_array[vec_vvp]
 
                     current_waveform = np.array([time, current])
                     logger.debug(f"{current_waveform=}")
                     logger.debug("All operating point simulation of:")
                     logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
-                    logger.debug(f"   * Circuit trial: {circuit_id}")
+                    logger.debug(f"   * Circuit trial: {act_config.circuit_id}")
                     logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
 
                     [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='fft input current')
@@ -171,11 +194,11 @@ class CapacitorSelection:
                     loss_total_array=loss_total_array,
                     volume_total=volume_total,
                     area_total=area_total,
-                    circuit_id=circuit_id,
+                    circuit_id=act_config.circuit_id,
                     capacitor_id=df_geometry_re_simulation_number['ordering code'].values[0],
                     n_series=n_series,
                     n_parallel=n_parallel,
-                    capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit
+                    capacitor_number_in_circuit=capacitor_number_in_circuit
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
@@ -185,35 +208,39 @@ class CapacitorSelection:
         # returns the number of filtered results
         return number_of_filtered_points
 
-    def optimization_handler(self, filter_data: FilterData, capacitor_requirements_list: list[CapacitorRequirements],
+    def optimization_handler(self, filter_data: FilterData, capacitor_in_circuit: int,
                              debug: Debug) -> None:
         """
         Control the multi simulation processes.
 
         :param filter_data: Information about the filtered designs
         :type  filter_data: dct.FilterData
+        :param capacitor_in_circuit: Number of capacitor within topology
+        :type  capacitor_in_circuit: int
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
-        :param capacitor_requirements_list: list with capacitor requirements
-        :type capacitor_requirements_list: list[CapacitorRequirements]
         """
         number_cpus = cpu_count()
 
+        # Check if class is initialized and capacitor_in_circuit is valid
+        if len(self._optimization_config_list) == 0:
+            raise ValueError("Capacitor selection class is no initialized")
+        elif len(self._optimization_config_list) <= capacitor_in_circuit or capacitor_in_circuit < 0:
+            raise ValueError(f"Invalid parameter value 'capacitor_in_circuit'={capacitor_in_circuit}.\n"
+                             f"Value has to be between 0 and {len(self._optimization_config_list)-1}.")
+
         with Pool(processes=number_cpus) as pool:
             parameters = []
-            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
+            for count, act_optimization_configuration in enumerate(self._optimization_config_list[capacitor_in_circuit]):
                 if debug.general.is_debug:
                     # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
                     if count == number_cpus:
                         break
 
-                capacitor_requirements = capacitor_requirements_list[count]
-
                 parameters.append((
-                    act_optimization_configuration.circuit_id,
-                    act_optimization_configuration.capacitor_optimization_dto,
+                    capacitor_in_circuit,
+                    act_optimization_configuration,
                     filter_data,
-                    capacitor_requirements,
                     debug
                 ))
 

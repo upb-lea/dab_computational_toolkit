@@ -4,6 +4,7 @@
 import dataclasses
 import os
 import logging
+import dct.toml_checker as TomlConf
 
 # 3rd party libraries
 
@@ -16,7 +17,8 @@ logger = logging.getLogger(__name__)
 class StudyData:
     """Data class containing all general information to perform a study."""
 
-    def __init__(self, study_name: str, optimization_directory: str, calculation_mode: CalcModeEnum):
+    def __init__(self, study_name: str, optimization_directory: str,
+                 calculation_mode: CalcModeEnum = CalcModeEnum.new_mode, number_of_trials: int = 0):
         """
         Initialize the member variables.
 
@@ -29,6 +31,7 @@ class StudyData:
         self.study_name = study_name
         self.optimization_directory = optimization_directory
         self.calculation_mode = calculation_mode
+        self.number_of_trials = number_of_trials
         # Check if optimization_directory is not empty
         if optimization_directory != "":
             # Create optimization_directory if not exists
@@ -101,3 +104,35 @@ class PlotData:
     fig_name_path: str
     xlim: list | None = None
     ylim: list | None = None
+
+@dataclasses.dataclass
+class CapacitorConfiguration:
+    """Study data and toml-file for capacitor configuration."""
+
+    study_data: StudyData
+    capacitor_toml_data: TomlConf.TomlCapacitorSelection | None = None
+
+@dataclasses.dataclass
+class InductorConfiguration:
+    """Study data and toml-file for inductor configuration."""
+
+    study_data: StudyData
+    simulation_calculation_mode: CalcModeEnum
+    inductor_toml_data: TomlConf.TomlInductor | None = None
+
+@dataclasses.dataclass
+class TransformerConfiguration:
+    """Study data and toml-file for transformer configuration."""
+
+    study_data: StudyData
+    simulation_calculation_mode: CalcModeEnum
+    transformer_toml_data: TomlConf.TomlTransformer | None = None
+
+@dataclasses.dataclass
+class SummaryConfiguration:
+    """Represent the data for performing integration of circuit and component data."""
+
+    circuit_data: dict
+    capacitor_data_list: list[list[dict]]
+    inductor_data_list: list[list[dict]]
+    transformer_data_list: list[list[dict]]

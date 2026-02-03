@@ -14,6 +14,7 @@ from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressData
 from dct.server_ctl_dtos import ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
+from dct.components.component_dtos import ComponentCooling
 from dct.components.heat_sink_dtos import *
 
 logger = logging.getLogger(__name__)
@@ -134,62 +135,6 @@ class HeatSinkOptimization:
         is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
             80, 200, toml_heat_sink.settings.thermal_conductivity_copper, f"{group_name}: thermal_conductivity_copper",
             c_flag.check_inclusive, c_flag.check_inclusive)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-
-        # Perform thermal resistance data check
-        group_name = "thermal_resistance_data"
-
-        # Create the list
-        toml_check_value_list1: list[tuple[float, str]] = []
-        toml_check_value_list2: list[tuple[float, str]] = []
-
-        # Perform list length check for transistor_b1_cooling
-        if len(toml_heat_sink.thermal_resistance_data.transistor_b1_cooling) != 2:
-            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b1_cooling' is not equal 2!\n"
-            is_consistent = False
-        else:
-            toml_check_value_list1.append(
-                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[0], f"{group_name}: transistor_b1_cooling-tim_thickness"))
-            toml_check_value_list2.append(
-                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[1], f"{group_name}: transistor_b1_cooling-tim_conductivity"))
-        # Perform list length check for transistor_b2_cooling
-        if len(toml_heat_sink.thermal_resistance_data.transistor_b2_cooling) != 2:
-            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transistor_b2_cooling' is not equal 2!\n"
-            is_consistent = False
-        else:
-            toml_check_value_list1.append(
-                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[0], f"{group_name}: transistor_b2_cooling-tim_thickness"))
-            toml_check_value_list2.append(
-                (toml_heat_sink.thermal_resistance_data.transistor_b2_cooling[1], f"{group_name}: transistor_b2_cooling-tim_conductivity"))
-        # Perform list length check for inductor_cooling
-        if len(toml_heat_sink.thermal_resistance_data.inductor_cooling) != 2:
-            inconsistency_report = inconsistency_report + "    Number of values in parameter 'inductor_cooling' is not equal 2!\n"
-            is_consistent = False
-        else:
-            toml_check_value_list1.append((toml_heat_sink.thermal_resistance_data.inductor_cooling[0], f"{group_name}: inductor_cooling-tim_thickness"))
-            toml_check_value_list2.append((toml_heat_sink.thermal_resistance_data.inductor_cooling[1], f"{group_name}: inductor_cooling-tim_conductivity"))
-        # Perform list length check for transformer_cooling
-        if len(toml_heat_sink.thermal_resistance_data.transformer_cooling) != 2:
-            inconsistency_report = inconsistency_report + "    Number of values in parameter 'transformer_cooling' is not equal 2!\n"
-            is_consistent = False
-        else:
-            toml_check_value_list1.append(
-                (toml_heat_sink.thermal_resistance_data.transformer_cooling[0], f"{group_name}: transformer_cooling-tim_thickness"))
-            toml_check_value_list2.append(
-                (toml_heat_sink.thermal_resistance_data.transformer_cooling[1], f"{group_name}: transformer_cooling-tim_conductivity"))
-
-        # Perform the boundary check for tim-thickness
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
-            0, 0.01, toml_check_value_list1, c_flag.check_exclusive, c_flag.check_exclusive)
-        if not is_check_passed:
-            inconsistency_report = inconsistency_report + issue_report
-            is_consistent = False
-
-        # Perform the boundary check for tim-conductivity
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
-            1, 100, toml_check_value_list2, c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
@@ -362,17 +307,17 @@ class ThermalCalcSupport:
         return r_copper_coin, effective_bottom_cooling_area
 
     @staticmethod
-    def calculate_r_th_tim(copper_coin_bot_area: float, transistor_cooling: ComponentCooling) -> float:
+    def calculate_r_th_tim(copper_coin_bot_area: float, component_cooling: ComponentCooling) -> float:
         """
         Calculate the thermal resistance of the thermal interface material (TIM).
 
-        :param copper_coin_bot_area: bottom copper coin area in m²
+        :param copper_coin_bot_area: bottom area in m²
         :type copper_coin_bot_area: float
-        :param transistor_cooling: Transistor cooling DTO
-        :type transistor_cooling: ComponentCooling
+        :param component_cooling: Thermal material data: Specific thermal conductance and thickness
+        :type component_cooling: ComponentCooling
         :return: r_th of TIM material
         :rtype: float
         """
-        r_th_tim = 1 / transistor_cooling.tim_conductivity * transistor_cooling.tim_thickness / copper_coin_bot_area
+        r_th_tim = 1 / component_cooling.tim_conductivity * component_cooling.tim_thickness / copper_coin_bot_area
 
         return r_th_tim

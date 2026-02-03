@@ -8,7 +8,6 @@ from pydantic import BaseModel
 # own libraries
 from materialdatabase.meta.data_enums import Material, DataSource
 
-
 # ######################################################
 # debug
 # ######################################################
@@ -39,8 +38,7 @@ class Debug(BaseModel):
     """General information in debug configuration."""
 
     general: DebugGeneral
-    capacitor_1: DebugCapacitor
-    capacitor_2: DebugCapacitor
+    capacitor: DebugCapacitor
     inductor: DebugInductor
     transformer: DebugTransformer
 
@@ -59,8 +57,7 @@ class Breakpoints(BaseModel):
 
     circuit_pareto: Literal['no', 'pause', 'stop']
     circuit_filtered: Literal['no', 'pause', 'stop']
-    capacitor_1: Literal['no', 'pause', 'stop']
-    capacitor_2: Literal['no', 'pause', 'stop']
+    capacitor: Literal['no', 'pause', 'stop']
     inductor: Literal['no', 'pause', 'stop']
     transformer: Literal['no', 'pause', 'stop']
     heat_sink: Literal['no', 'pause', 'stop']
@@ -82,30 +79,24 @@ class Circuit(BaseModel):
     calculation_mode: Literal['new', 'continue', 'skip']
     subdirectory: str
 
-class Capacitor1(BaseModel):
+class Capacitor(BaseModel):
     """Flow control for the capacitor 1."""
 
-    calculation_mode: Literal['new', 'skip']
-    subdirectory: str
-
-class Capacitor2(BaseModel):
-    """Flow control for the capacitor 2."""
-
-    calculation_mode: Literal['new', 'skip']
+    calculation_modes: list[Literal['new', 'skip']]
     subdirectory: str
 
 class Inductor(BaseModel):
     """Flow control for the inductor."""
 
-    number_of_trials: int
-    calculation_mode: Literal['new', 'continue', 'skip']
+    numbers_of_trials: list[int]
+    calculation_modes: list[Literal['new', 'continue', 'skip']]
     subdirectory: str
 
 class Transformer(BaseModel):
     """Flow control for the transformer."""
 
-    number_of_trials: int
-    calculation_mode: Literal['new', 'continue', 'skip']
+    numbers_of_trials: list[int]
+    calculation_modes: list[Literal['new', 'continue', 'skip']]
     subdirectory: str
 
 class HeatSink(BaseModel):
@@ -124,18 +115,15 @@ class PreSummary(BaseModel):
 class Summary(BaseModel):
     """Flow control for the summary."""
 
-    calculation_mode: Literal['new', 'skip']
     subdirectory: str
 
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
 
-    general_configuration_file: str
-    circuit_configuration_file: str
-    capacitor_1_configuration_file: str
-    capacitor_2_configuration_file: str
-    inductor_configuration_file: str
-    transformer_configuration_file: str
+    topology_files: list[str]
+    capacitor_configuration_files: list[str]
+    inductor_configuration_files: list[str]
+    transformer_configuration_files: list[str]
     heat_sink_configuration_file: str
 
 class FlowControl(BaseModel):
@@ -145,8 +133,7 @@ class FlowControl(BaseModel):
     breakpoints: Breakpoints
     conditional_breakpoints: CondBreakpoints
     circuit: Circuit
-    capacitor_1: Capacitor1
-    capacitor_2: Capacitor2
+    capacitor: Capacitor
     inductor: Inductor
     transformer: Transformer
     heat_sink: HeatSink
@@ -156,7 +143,7 @@ class FlowControl(BaseModel):
 
 
 # ######################################################
-# capacitor 1 and capacitor 2
+# capacitor
 # ######################################################
 
 class TomlCapacitorSelection(BaseModel):
@@ -167,6 +154,16 @@ class TomlCapacitorSelection(BaseModel):
     voltage_safety_margin_percentage: float
     maximum_number_series_capacitors: int
     lifetime_h: float
+
+# ######################################################
+# inductor and transformer
+# ######################################################
+
+class TomlThermalData(BaseModel):
+    """Toml checker for HeatSinkThermalResistanceData."""
+
+    # [tim_thickness, tim_conductivity]
+    thermal_cooling: list[float]
 
 # ######################################################
 # inductor
@@ -200,8 +197,8 @@ class TomlMaterialDataSources(BaseModel):
 class TomlInductorBoundaryConditions(BaseModel):
     """Toml checker class for InductorBoundaryConditions."""
 
+    # Temperature
     temperature: float
-
 
 class TomlFilterDistance(BaseModel):
     """Toml checker class for FilterDistance."""
@@ -214,6 +211,7 @@ class TomlInductor(BaseModel):
     design_space: TomlInductorDesignSpace
     insulations: TomlInductorInsulation
     boundary_conditions: TomlInductorBoundaryConditions
+    thermal_data: TomlThermalData
     filter_distance: TomlFilterDistance
     material_data_sources: TomlMaterialDataSources
 
@@ -275,12 +273,13 @@ class TomlTransformer(BaseModel):
     design_space: TomlTransformerDesignSpace
     insulation: TomlTransformerInsulation
     boundary_conditions: TomlTransformerBoundaryConditions
+    thermal_data: TomlThermalData
     filter_distance: TomlTransformerFilterDistance
     settings: TomlTransformerSettings
     material_data_sources: TomlMaterialDataSources
 
 # ######################################################
-# heat sink inclusive data of summary calculation
+# heat sink
 # ######################################################
 
 class TomlHeatSinkBoundaryConditions(BaseModel):
@@ -308,22 +307,12 @@ class TomlHeatSinkDesignSpace(BaseModel):
     number_cooling_channels_n_min_max_list: list[int]
     thickness_fin_t_min_max_list: list[float]
 
-class TomlHeatSinkThermalResistanceData(BaseModel):
-    """Toml checker for HeatSinkThermalResistanceData."""
-
-    # [tim_thickness, tim_conductivity]
-    transistor_b1_cooling: list[float]
-    transistor_b2_cooling: list[float]
-    inductor_cooling: list[float]
-    transformer_cooling: list[float]
-
 class TomlHeatSink(BaseModel):
     """Toml checker for HeatSink."""
 
     design_space: TomlHeatSinkDesignSpace
     settings: TomlHeatSinkSettings
     boundary_conditions: TomlHeatSinkBoundaryConditions
-    thermal_resistance_data: TomlHeatSinkThermalResistanceData
 
 # ######################################################
 # misc

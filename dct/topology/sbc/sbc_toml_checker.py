@@ -56,8 +56,16 @@ class TomlSbcCircuitFilterDistance(TomlCData):
     number_filtered_designs: int
     difference_percentage: float
 
+class TomlSbcThermalResistanceData(TomlCData):
+    """Toml checker for HeatSinkThermalResistanceData."""
+
+    # [tim_thickness, tim_conductivity]
+    transistor_hs_cooling: list[float]
+    transistor_ls_cooling: list[float]
+
 class TomlSbcCircuitParetoDesign(TomlCData):
     """Config to optimize the Dual-Active Bridge (SBC) converter."""
 
     design_space: TomlSbcCircuitParetoDesignSpace
     filter_distance: TomlSbcCircuitFilterDistance
+    thermal_data: TomlSbcThermalResistanceData

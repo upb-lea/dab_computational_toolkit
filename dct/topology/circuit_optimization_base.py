@@ -12,12 +12,12 @@ import pandas as pd
 import numpy as np
 
 # Own libraries
-from dct.datasets_dtos import StudyData, FilterData, PlotData
+from dct.datasets_dtos import (FilterData, StudyData, PlotData, CapacitorConfiguration,
+                               InductorConfiguration, TransformerConfiguration)
 from dct.server_ctl_dtos import ProgressData
 from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
-from dct.toml_checker import TomlHeatSink
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")
@@ -395,37 +395,27 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         pass
 
     @abstractmethod
-    def init_thermal_circuit_configuration(self, act_heat_sink_data: TomlHeatSink) -> bool:
-        """
-        Initialize the circuits thermal parameters.
-
-        :param act_heat_sink_data: heat sink data from the toml file
-        :type act_heat_sink_data: TomlHeatSink
-        :return: bool
-        """
-        pass
-
-    @abstractmethod
-    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data: StudyData,
-                             inductor_study_data: StudyData, transformer_study_data: StudyData,
+    def generate_result_dtos(self, summary_data: StudyData, capacitor_selection_data_list: list[CapacitorConfiguration],
+                             inductor_configuration_list: list[InductorConfiguration],
+                             transformer_configuration_list: list[TransformerConfiguration],
                              df: pd.DataFrame, is_pre_summary: bool = True) -> None:
         """
         Generate the result dtos from a given (filtered) result dataframe.
 
         :param summary_data: Summary Data
-        :type summary_data: StudyData
-        :param capacitor_selection_data: capacitor selection data
-        :type capacitor_selection_data: StudyData
-        :param inductor_study_data: inductor study data
-        :type inductor_study_data: StudyData
-        :param transformer_study_data: transformer study data
-        :type transformer_study_data: StudyData
+        :type  summary_data: StudyData
+        :param capacitor_selection_data_list: List of capacitor selection data
+        :type  capacitor_selection_data_list: list[CapacitorConfiguration]
+        :param inductor_configuration_list: List of inductor study data
+        :type  inductor_configuration_list: list[InductorConfiguration]
+        :param transformer_configuration_list: List of transformer study data
+        :type  transformer_configuration_list: list[TransformerConfiguration]
         :param df: dataframe to take the results from
-        :type df: pd.DataFrame
+        :type  df:  pd.DataFrame
         :param is_pre_summary: True for pre-summary, False for summary
-        :type is_pre_summary: bool
+        :type  is_pre_summary: bool
         :return: None
-        :rtype: None
+        :rtype:  None
         """
         pass
 

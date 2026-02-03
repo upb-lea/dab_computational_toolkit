@@ -8,7 +8,7 @@ import numpy as np
 
 # own libraries
 from dct.components.capacitor_optimization_dtos import CapacitorResults
-from dct.components.component_dtos import ComponentRequirements, InductorResults, StackedTransformerResults
+from dct.components.component_dtos import ComponentRequirements, InductorResults, StackedTransformerResults, CircuitThermal
 
 @dataclasses.dataclass
 class TransistorDTO:
@@ -242,23 +242,6 @@ class GeckoWaveforms:
     i_Lc2: np.ndarray
     i_HF1: np.ndarray
     i_HF2: np.ndarray
-
-    def __init__(self, **kwargs):
-        names = set([f.name for f in dataclasses.fields(self)])
-        for k, v in kwargs.items():
-            if k in names:
-                setattr(self, k, v)
-
-
-@dataclasses.dataclass(init=False)
-class CircuitThermal:
-    """DTO contains the thermal circuit parameters for summarized [transistor_1, transistor_2]."""
-
-    t_j_max: list[float]
-    r_th_jhs: list[float]
-    area: list[float]
-    loss_array: list[np.ndarray]
-    temperature_heat_sink_max_array: list[np.ndarray]
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

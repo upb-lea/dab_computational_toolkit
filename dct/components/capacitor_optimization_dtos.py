@@ -18,6 +18,8 @@ class CapacitorOptimizationDto:
     progress_data: ProgressData
     capacitor_optimization_dto: pecst.CapacitorRequirements
     capacitor_number_in_circuit: int
+    time_array: np.ndarray
+    current_array: np.ndarray
 
 @dataclasses.dataclass(init=False)
 class CapacitorResults:

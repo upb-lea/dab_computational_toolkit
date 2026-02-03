@@ -14,15 +14,15 @@ import tqdm
 # own libraries
 import femmt as fmt
 import dct
+from dct.circuit_enums import CalcModeEnum
 from dct.boundary_check import CheckCondition as c_flag
 from dct.components.inductor_optimization_dtos import InductorOptimizationDto
+from dct.components.heat_sink_optimization import ThermalCalcSupport
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
-from dct.datasets_dtos import StudyData
-from dct.datasets_dtos import FilterData
+from dct.datasets_dtos import InductorConfiguration
 from dct.constant_path import CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
-from dct.components.component_dtos import InductorRequirements, InductorResults
-from dct.toml_checker import TomlInductor
+from dct.components.component_dtos import InductorRequirements, InductorResults, ComponentCooling
 
 # configure root logger
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class InductorOptimization:
     """Optimization of the inductor."""
 
     # Declaration of member types
-    _optimization_config_list: list[InductorOptimizationDto]
+    _optimization_config_list: list[list[InductorOptimizationDto]]
     _i_lock_stat: threading.Lock
     _progress_run_time: RunTime
 
@@ -59,6 +59,7 @@ class InductorOptimization:
         toml_check_value_list: list[tuple[float, str]]
 
         # Design space parameter check
+        group_name = "design_space"
         # Check core_name_list
         if len(toml_inductor.design_space.core_name_list) != 0:
             # Get available keywords
@@ -73,9 +74,9 @@ class InductorOptimization:
         else:
 
             toml_check_min_max_values_list = (
-                [(toml_inductor.design_space.core_inner_diameter_min_max_list, "core_inner_diameter_min_max_list"),
-                 (toml_inductor.design_space.window_h_min_max_list, "window_h_min_max_list"),
-                 (toml_inductor.design_space.window_w_min_max_list, "window_w_min_max_list")])
+                [(toml_inductor.design_space.core_inner_diameter_min_max_list, f"{group_name}: core_inner_diameter_min_max_list"),
+                 (toml_inductor.design_space.window_h_min_max_list, f"{group_name}: window_h_min_max_list"),
+                 (toml_inductor.design_space.window_w_min_max_list, f"{group_name}: window_w_min_max_list")])
 
             # Perform the boundary check
             is_check_passed, issue_report = dct.BoundaryCheck.check_float_min_max_values_list(
@@ -95,13 +96,24 @@ class InductorOptimization:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
-        # Insulation parameter check
-        toml_check_value_list = (
-            [(toml_inductor.insulations.primary_to_primary, "primary_to_primary"),
-             (toml_inductor.insulations.core_bot, "core_bot"), (toml_inductor.insulations.core_top, "core_top"),
-             (toml_inductor.insulations.core_right, "core_right"), (toml_inductor.insulations.core_left, "core_left")])
+        # Perform temperature value check
+        # Perform the boundary check
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+            -40, 175, toml_inductor.boundary_conditions.temperature,
+            "boundary_conditions: temperature", c_flag.check_inclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
 
-        # Perform insulation value check
+        # Insulation parameter check
+        group_name = "insulations"
+        toml_check_value_list = (
+            [(toml_inductor.insulations.primary_to_primary, f"{group_name}: primary_to_primary"),
+             (toml_inductor.insulations.core_bot, f"{group_name}: core_bot"),
+             (toml_inductor.insulations.core_top, f"{group_name}: core_top"),
+             (toml_inductor.insulations.core_right, f"{group_name}: core_right"),
+             (toml_inductor.insulations.core_left, f"{group_name}: core_left")])
+
         # Perform the boundary check
         is_check_passed, issue_report = dct.BoundaryCheck.check_float_value_list(
             0, 0.1, toml_check_value_list, c_flag.check_exclusive, c_flag.check_exclusive)
@@ -109,13 +121,31 @@ class InductorOptimization:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
-        # Perform temperature value check
-        # Perform the boundary check
-        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
-            -40, 175, toml_inductor.boundary_conditions.temperature, "temperature", c_flag.check_inclusive, c_flag.check_inclusive)
-        if not is_check_passed:
+        # Thermal data parameter check
+        group_name = "thermal_data"
+        # Perform list length check for thermal_cooling
+        if len(toml_inductor.thermal_data.thermal_cooling) != 2:
+            issue_report = f"    Number of values in parameter '{group_name}: thermal_cooling' is not equal 2!\n"
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
+        else:
+            # Perform the boundary check for tim-thickness
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 0.01, toml_inductor.thermal_data.thermal_cooling[0],
+                f"'{group_name}: thermal_cooling[0]-tim-thickness",
+                c_flag.check_exclusive, c_flag.check_inclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
+            # Perform the boundary check for tim-conductivity
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 100, toml_inductor.thermal_data.thermal_cooling[1],
+                f"'{group_name}: thermal_cooling[1]-tim-conductivity",
+                c_flag.check_exclusive, c_flag.check_inclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
 
         # Perform filter_distance value check
         group_name = "filter_distance"
@@ -129,70 +159,101 @@ class InductorOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_inductor_optimization_list(self, toml_inductor: TomlInductor, inductor_study_data: StudyData,
+    def initialize_inductor_optimization_list(self, configuration_data_list: list[InductorConfiguration],
                                               inductor_requirements_list: list[InductorRequirements]) -> None:
         """
         Initialize the inductor optimization.
 
-        :param toml_inductor: inductor data
-        :type toml_inductor: TomlInductor
-        :param inductor_study_data: inductor study data
-        :type inductor_study_data: StudyData
+        :param configuration_data_list: List of inductor configuration data including study data
+        :type  configuration_data_list: list[InductorConfiguration]
         :param inductor_requirements_list: list with inductor requirements
         :type inductor_requirements_list: list[InductorRequirements]
         """
         # Create the io_config_list for all trials
         for inductor_requirements in inductor_requirements_list:
-            circuit_id = inductor_requirements.circuit_id
+            # Set index
+            inductor_number_in_circuit = inductor_requirements.inductor_number_in_circuit
 
-            # catch mypy type issue
-            if not isinstance(inductor_requirements, InductorRequirements):
-                raise TypeError("circuit DTO file is incomplete.")
+            # Check, if inductor optimization is not to skip
+            if not configuration_data_list[inductor_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode\
+                    or not configuration_data_list[inductor_number_in_circuit].simulation_calculation_mode == CalcModeEnum.skip_mode:
 
-            # Insulation parameter
-            act_insulations = fmt.InductorInsulationDTO(primary_to_primary=toml_inductor.insulations.primary_to_primary,
-                                                        core_bot=toml_inductor.insulations.core_bot,
-                                                        core_top=toml_inductor.insulations.core_top,
-                                                        core_right=toml_inductor.insulations.core_right,
-                                                        core_left=toml_inductor.insulations.core_left)
+                circuit_id = inductor_requirements.circuit_id
+                configuration_data = configuration_data_list[inductor_number_in_circuit]
+                trial_directory = os.path.join(configuration_data.study_data.optimization_directory,
+                                               circuit_id, configuration_data.study_data.study_name)
 
-            # Initialize the material data source
-            act_material_data_sources = fmt.MaterialDataSources(
-                permeability_datasource=toml_inductor.material_data_sources.permeability_datasource,
-                permittivity_datasource=toml_inductor.material_data_sources.permittivity_datasource,
-            )
+                # Catch mypy issue
+                if configuration_data.inductor_toml_data is None:
+                    raise ValueError("Serious programming error in inductor optimization. toml-data are not initialized.",
+                                     "Please write an issue!")
 
-            # Create fix part of io_config
-            inductor_optimization_dto = fmt.InductorOptimizationDTO(
-                inductor_study_name=inductor_study_data.study_name,
-                core_name_list=toml_inductor.design_space.core_name_list,
-                material_name_list=toml_inductor.design_space.material_name_list,
-                core_inner_diameter_min_max_list=toml_inductor.design_space.core_inner_diameter_min_max_list,
-                window_h_min_max_list=toml_inductor.design_space.window_h_min_max_list,
-                window_w_min_max_list=toml_inductor.design_space.window_w_min_max_list,
-                litz_wire_name_list=toml_inductor.design_space.litz_wire_name_list,
-                insulations=act_insulations,
-                target_inductance=inductor_requirements.target_inductance,
-                temperature=toml_inductor.boundary_conditions.temperature,
-                time_current_vec=[inductor_requirements.time_vec, inductor_requirements.current_vec],
-                inductor_optimization_directory=os.path.join(inductor_study_data.optimization_directory, circuit_id, inductor_study_data.study_name),
-                material_data_sources=act_material_data_sources)
+                inductor_toml_data = configuration_data.inductor_toml_data
 
-            # Initialize the statistical data
-            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
-                                                        progress_status=ProgressStatus.Idle)
+                # Insulation parameter
+                act_insulations = fmt.InductorInsulationDTO(primary_to_primary=inductor_toml_data.insulations.primary_to_primary,
+                                                            core_bot=inductor_toml_data.insulations.core_bot,
+                                                            core_top=inductor_toml_data.insulations.core_top,
+                                                            core_right=inductor_toml_data.insulations.core_right,
+                                                            core_left=inductor_toml_data.insulations.core_left)
 
-            inductor_optimization_dto = InductorOptimizationDto(
-                circuit_id=circuit_id,
-                progress_data=copy.deepcopy(stat_data_init),
-                inductor_optimization_dto=inductor_optimization_dto,
-                inductor_requirements=inductor_requirements)
+                # Initialize the material data source
+                act_material_data_sources = fmt.MaterialDataSources(
+                    permeability_datasource=inductor_toml_data.material_data_sources.permeability_datasource,
+                    permittivity_datasource=inductor_toml_data.material_data_sources.permittivity_datasource,
+                )
 
-            self._optimization_config_list.append(inductor_optimization_dto)
+                # Create fix part of io_config
+                fmt_inductor_optimization_dto = fmt.InductorOptimizationDTO(
+                    inductor_study_name=configuration_data.study_data.study_name,
+                    core_name_list=inductor_toml_data.design_space.core_name_list,
+                    material_name_list=inductor_toml_data.design_space.material_name_list,
+                    core_inner_diameter_min_max_list=inductor_toml_data.design_space.core_inner_diameter_min_max_list,
+                    window_h_min_max_list=inductor_toml_data.design_space.window_h_min_max_list,
+                    window_w_min_max_list=inductor_toml_data.design_space.window_w_min_max_list,
+                    litz_wire_name_list=inductor_toml_data.design_space.litz_wire_name_list,
+                    insulations=act_insulations,
+                    target_inductance=inductor_requirements.target_inductance,
+                    temperature=inductor_toml_data.boundary_conditions.temperature,
+                    time_current_vec=[inductor_requirements.time_vec, inductor_requirements.current_vec],
+                    inductor_optimization_directory=os.path.join(
+                        configuration_data.study_data.optimization_directory,
+                        circuit_id,
+                        configuration_data.study_data.study_name),
+                    material_data_sources=act_material_data_sources)
 
-    def get_progress_data(self, filtered_list_id: int) -> ProgressData:
+                # Initialize the statistical data
+                stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
+                                                            progress_status=ProgressStatus.Idle)
+
+                # Get thermal data
+                thermal_data: ComponentCooling = ComponentCooling(
+                    tim_thickness=configuration_data.inductor_toml_data.thermal_data.thermal_cooling[0],
+                    tim_conductivity=configuration_data.inductor_toml_data.thermal_data.thermal_cooling[1])
+
+                inductor_optimization_dto = InductorOptimizationDto(
+                    trial_directory=trial_directory,
+                    circuit_id=circuit_id,
+                    inductor_number_in_circuit=inductor_number_in_circuit,
+                    progress_data=copy.deepcopy(stat_data_init),
+                    fmt_inductor_optimization_dto=fmt_inductor_optimization_dto,
+                    number_of_trails=configuration_data.study_data.number_of_trials,
+                    thermal_data=thermal_data,
+                    factor_dc_losses_min_max_list=inductor_toml_data.filter_distance.factor_dc_losses_min_max_list,
+                    inductor_requirements=inductor_requirements)
+
+                # Check list size
+                while len(self._optimization_config_list) <= inductor_number_in_circuit:
+                    self._optimization_config_list.append([])
+
+                # Add inductor dto to the sub-list of assigned number in circuit
+                self._optimization_config_list[inductor_number_in_circuit].append(inductor_optimization_dto)
+
+    def get_progress_data(self, index: int, filtered_list_id: int) -> ProgressData:
         """Provide the progress data of the optimization.
 
+        :param index: Index within the list of component configurations
+        :type  index: int
         :param filtered_list_id: List index of the filtered operation point from circuit
         :type  filtered_list_id: int
 
@@ -204,16 +265,16 @@ class InductorOptimization:
                                                        progress_status=ProgressStatus.Idle)
 
         # Check for valid filtered_list_id
-        if len(self._optimization_config_list) > filtered_list_id:
+        if len(self._optimization_config_list[index]) > filtered_list_id:
             # Lock statistical performance data access
             with self._i_lock_stat:
                 # Check if list is in progress
-                if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
+                if self._optimization_config_list[index][filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
                     # Update statistical data
-                    self._optimization_config_list[filtered_list_id].progress_data.run_time = self._progress_run_time.get_runtime()
+                    self._optimization_config_list[index][filtered_list_id].progress_data.run_time = self._progress_run_time.get_runtime()
 
                 # Create a copy of actual data
-                ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
+                ret_progress_data = copy.deepcopy(self._optimization_config_list[index][filtered_list_id].progress_data)
 
         return ret_progress_data
 
@@ -230,8 +291,8 @@ class InductorOptimization:
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _optimize_reluctance_model(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
-                                   inductor_requirements: InductorRequirements,
+    def _optimize_reluctance_model(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, circuit_study_name: str,
+                                   inductor_requirements: InductorRequirements, thermal_data: ComponentCooling,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
@@ -240,14 +301,21 @@ class InductorOptimization:
         :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
-        :param filter_data: Contains information about filtered circuit designs
-        :type  filter_data: FilterData
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param inductor_requirements: Requirements for the inductor
+        :type  inductor_requirements: InductorRequirements
+        :param thermal_data: Thermal data of the connection to heat sink
+        :type  thermal_data: ComponentCooling
         :param target_number_trials: Number of trials for the optimization
         :type  target_number_trials: int
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug mode flag
         :type debug: bool
+
+        :return: Number of calculated Pareto fronts
+        :rtype:  int
         """
         quantity_of_inductor_id_pareto = 0
 
@@ -300,7 +368,7 @@ class InductorOptimization:
                     current_waveform = np.array([time, current])
                     logger.debug(f"{current_waveform=}")
                     logger.debug("All operating point simulation of:")
-                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit study: {circuit_study_name}")
                     logger.debug(f"   * Circuit ID: {circuit_id}")
                     logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
                     logger.debug(f"   * Inductor ID: {inductor_id}")
@@ -310,11 +378,17 @@ class InductorOptimization:
                         inductor_config_filepath=config_filepath)
                     combined_loss_array[vec_vvp] = combined_losses
 
+                # Calculate thermal resistance
+                r_th_ind_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
+                    area_to_heat_sink, thermal_data)
+
                 inductor_results = InductorResults(
                     loss_array=combined_loss_array,
                     volume=inductor_volume,
                     area_to_heat_sink=area_to_heat_sink,
+                    r_th_ind_heat_sink=r_th_ind_heat_sink,
                     circuit_id=circuit_id,
+                    inductor_number_in_circuit=inductor_requirements.inductor_number_in_circuit,
                     inductor_id=inductor_id
                 )
 
@@ -325,99 +399,99 @@ class InductorOptimization:
         # returns the number of filtered results
         return quantity_of_inductor_id_pareto
 
-    def optimization_handler_reluctance_model(self, filter_data: FilterData, target_number_trials: int,
-                                              factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
+    def _generate_optimization_parameter(self, circuit_study_name: str, inductor_in_circuit: int, debug: dct.Debug) -> (
+            list[tuple[str, fmt.InductorOptimizationDTO, str, InductorRequirements, ComponentCooling, int, list[float], dct.Debug]]):
+        """
+        Generate the list of parameter sets for analytic and simulation optimization.
+
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param inductor_in_circuit: Number of inductor to optimize
+        :type  inductor_in_circuit: int
+        :param debug: True to use debug mode which stops earlier
+        :type debug: bool
+        :return: List of parameter sets for multi simulation processes
+        :rtype:  list[tuple[str, fmt.InductorOptimizationDTO, FilterData, InductorRequirements,
+                 ComponentCooling, int, list[float], dct.Debug]]
+        """
+        parameter_set_list = []
+        for act_optimization_configuration in self._optimization_config_list[inductor_in_circuit]:
+            parameter_set = (act_optimization_configuration.circuit_id, act_optimization_configuration.fmt_inductor_optimization_dto,
+                             circuit_study_name, act_optimization_configuration.inductor_requirements,
+                             act_optimization_configuration.thermal_data,
+                             act_optimization_configuration.number_of_trails, act_optimization_configuration.factor_dc_losses_min_max_list,
+                             debug)
+            # Add set to list
+            parameter_set_list.append(parameter_set)
+
+        return parameter_set_list
+
+    def optimization_handler_reluctance_model(self, circuit_study_name: str, inductor_in_circuit: int, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
-        :param filter_data: Information about the filtered designs
-        :type  filter_data: FilterData
-        :param target_number_trials: Number of trials for the optimization
-        :type  target_number_trials: int
-        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
-        :type  factor_dc_losses_min_max_list: float
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param inductor_in_circuit: Number of inductor to optimize
+        :type  inductor_in_circuit: int
         :param debug: True to use debug mode which stops earlier
         :type debug: bool
         """
-        if factor_dc_losses_min_max_list is None:
-            factor_dc_losses_min_max_list = [1.0, 100]
+        # Check if class is initialized and inductor_in_circuit is valid
+        if len(self._optimization_config_list) == 0:
+            raise ValueError("Inductor reluctance handler: Inductor selection class is no initialized")
+        elif len(self._optimization_config_list) <= inductor_in_circuit or inductor_in_circuit < 0:
+            raise ValueError(f"Inductor reluctance handler: Invalid parameter value 'inductor_in_circuit'={inductor_in_circuit}.\n"
+                             f"Value has to be between 0 and {len(self._optimization_config_list)-1}.")
 
         number_cpus = cpu_count()
 
+        parameter_set_list = self._generate_optimization_parameter(circuit_study_name, inductor_in_circuit, debug)
+
         with Pool(processes=number_cpus) as pool:
-            parameters = []
-            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
-                if debug.general.is_debug:
-                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
-                    if count == number_cpus:
-                        break
+            if debug.general.is_debug:
+                # In debug mode, reduce the number of parameter sets to number of processor cores
+                if len(parameter_set_list) > number_cpus:
+                    parameter_set_list = parameter_set_list[0:(number_cpus-1)]
+            # Perform parallel calculation
+            pool.starmap(func=InductorOptimization._optimize_reluctance_model, iterable=parameter_set_list)
 
-                # Update statistical data
-                # with self._i_lock_stat:
-                #     # Start the progress time measurement
-                #     self._progress_run_time.reset_start_trigger()
-                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
-
-                parameters.append((
-                    act_optimization_configuration.circuit_id,
-                    act_optimization_configuration.inductor_optimization_dto,
-                    filter_data,
-                    act_optimization_configuration.inductor_requirements,
-                    target_number_trials,
-                    factor_dc_losses_min_max_list,
-                    debug
-                ))
-
-                # Update statistical data
-                # with self._i_lock_stat:
-                #     self._progress_run_time.stop_trigger()
-                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
-                #     act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_points
-                #     # Increment performed calculation counter
-                #     self._number_performed_calculations = self._number_performed_calculations + 1
-
-            pool.starmap(func=InductorOptimization._optimize_reluctance_model, iterable=parameters)
-
-    def fem_simulation_handler(self, filter_data: FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
+    def fem_simulation_handler(self, circuit_study_name: str, inductor_in_circuit: int, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
-        :param filter_data: Information about the filtered designs
-        :type  filter_data: FilterData
-        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
-        :type  factor_dc_losses_min_max_list: float
-        :param debug: Debug DTO
-        :type debug: dct.Debug
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param inductor_in_circuit: Number of inductor to optimize
+        :type  inductor_in_circuit: int
+        :param debug: True to use debug mode which stops earlier
+        :type debug: bool
         """
-        if factor_dc_losses_min_max_list is None:
-            factor_dc_losses_min_max_list = [1.0, 100]
+        # Check if class is initialized and inductor_in_circuit is valid
+        if len(self._optimization_config_list) == 0:
+            raise ValueError("Inductor simulation handler: Inductor optimization class is no initialized")
+        elif len(self._optimization_config_list) <= inductor_in_circuit or inductor_in_circuit < 0:
+            raise ValueError(f"Inductor simulation handler:: Invalid parameter value 'inductor_in_circuit'={inductor_in_circuit}.\n"
+                             f"Value has to be between 0 and {len(self._optimization_config_list)-1}.")
 
         number_cpus = cpu_count()
 
+        parameter_set_list = self._generate_optimization_parameter(circuit_study_name, inductor_in_circuit, debug)
+
         with Pool(processes=number_cpus) as pool:
-            parameters = []
-            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
-                if debug.general.is_debug:
-                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
-                    if count == number_cpus:
-                        break
+            if debug.general.is_debug:
+                # In debug mode, reduce the number of parameter sets to number of processor cores
+                if len(parameter_set_list) > number_cpus:
+                    parameter_set_list = parameter_set_list[0:(number_cpus-1)]
 
-                parameters.append((act_optimization_configuration.circuit_id,
-                                   act_optimization_configuration.inductor_optimization_dto,
-                                   filter_data,
-                                   act_optimization_configuration.inductor_requirements,
-                                   factor_dc_losses_min_max_list,
-                                   debug))
-
-            pool.starmap(func=InductorOptimization._fem_simulation, iterable=parameters)
+            # Perform parallel calculation
+            pool.starmap(func=InductorOptimization._fem_simulation, iterable=parameter_set_list)
 
     # Simulation handler. Later the simulation handler starts a process per list entry.
     @staticmethod
-    def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, filter_data: FilterData,
-                        inductor_requirements: InductorRequirements,
-                        factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
+    def _fem_simulation(circuit_id: str, act_io_config: fmt.InductorOptimizationDTO, circuit_study_name: str,
+                        inductor_requirements: InductorRequirements, thermal_data: ComponentCooling,
+                        target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
@@ -425,8 +499,14 @@ class InductorOptimization:
         :type  circuit_id: str
         :param act_io_config: inductor configuration for the optimization
         :type  act_io_config: fmt.InductorOptimizationDTO
-        :param filter_data: Contains information about filtered circuit designs
-        :type  filter_data: FilterData
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param inductor_requirements: Requirements for the inductor
+        :type  inductor_requirements: InductorRequirements
+        :param thermal_data: Thermal data of the connection to heat sink
+        :type  thermal_data: ComponentCooling
+        :param target_number_trials: Number of trials for the optimization (Not used)
+        :type  target_number_trials: int (Not used)
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
@@ -474,7 +554,7 @@ class InductorOptimization:
                         current_waveform = np.array([time, current])
                         logger.debug(f"{current_waveform=}")
                         logger.debug("All operating point simulation of:")
-                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                        logger.debug(f"   * Circuit study: {circuit_study_name}")
                         logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
                         logger.debug(f"   * Inductor ID: {inductor_id}")
@@ -484,12 +564,18 @@ class InductorOptimization:
                             inductor_config_filepath=config_filepath, process_number=process_number, print_derivations=False)
                         combined_loss_array[vec_vvp] = combined_losses
 
+                    # Calculate thermal resistance
+                    r_th_ind_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
+                        area_to_heat_sink, thermal_data)
+
                     inductor_results = InductorResults(
                         loss_array=combined_loss_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
+                        r_th_ind_heat_sink=r_th_ind_heat_sink,
                         circuit_id=circuit_id,
-                        inductor_id=inductor_id
+                        inductor_id=inductor_id,
+                        inductor_number_in_circuit=inductor_requirements.inductor_number_in_circuit,
                     )
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")

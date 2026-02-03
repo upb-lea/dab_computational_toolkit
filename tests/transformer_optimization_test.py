@@ -198,6 +198,8 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
     float_value_list_configuration_ge0_le1: list[float] = [0, 1, 0.44, 0.84, 0.38, 0.76, -0.1, 1.01]
     float_value_gem40_le175: list[float] = [-40, 175, 80.1, 105.55, -21.3, 125.5, -40.21, 275]
     float_value_gt0_lt1em1: list[float] = [1e-17, 0.0991, 0.034, 0.074, 0.033, 0.066, 0, 0.1]
+    float_value_list_configuration_gt0_le1em2xgt1_le100: list[list[float]] = (
+        [[1e-17, 1.1], [0.01, 100], [0.0034, 73.78], [-1, -282.3], [0.0033], [0.0066, 22.76, 33], [0, 10], [0.011, 100.01]])
     float_value_gt0_lt5: list[float] = [1e-18, 4.9999, 2, 3.5, 1, 0.1, -0.11, 5]
 
     # Check if core list is not empty
@@ -235,6 +237,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
             iso_primary_to_primary=float_value_gt0_lt1em1[test_index],
             iso_secondary_to_secondary=float_value_gt0_lt1em1[test_index],
             iso_primary_to_secondary=float_value_gt0_lt1em1[test_index]),
+        thermal_data=tc.TomlThermalData(thermal_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         boundary_conditions=tc.TomlTransformerBoundaryConditions(
             max_transformer_total_height=float_value_gt0_lt5[test_index],
             max_core_volume=float_value_gt0_lt5[test_index],
@@ -254,7 +257,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
         ["core_inner_diameter_min_max_list", "window_w_min_max_list", "window_h_bot_min_max_list",
          "factor_dc_losses_min_max_list", "n_p_top_min_max_list", "n_p_bot_min_max_list"])
     min_max_list_name_list_w_core_list: list[str] = (
-        ["factor_dc_losses_min_max_list", "n_p_top_min_max_list", "n_p_bot_min_max_list"])
+        ["factor_dc_losses_min_max_list", "n_p_top_min_max_list", "n_p_bot_min_max_list", "thermal_cooling"])
     value_name_list: list[str] = (
         ["iso_window_top_core_top", "iso_window_top_core_bot", "iso_window_top_core_left", "iso_window_top_core_right",
          "iso_window_bot_core_top", "iso_window_bot_core_bot", "iso_window_bot_core_left", "iso_window_bot_core_right",

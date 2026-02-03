@@ -613,6 +613,8 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
         [[1e-18, 1e-18], [99.8, 99.8], [34, 77], [90, 67], [33], [33, 66, 99], [0, 88], [55, 100]])
     float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, 4.55e-4, 8.98e-14, 6.6e-12, -1e-3, 1.2e-3]
     float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 99, 45, 67, 9.9e-3, 100.15]
+    float_value_list_configuration_gt0_le1em2xgt1_le100: list[list[float]] = (
+        [[1e-17, 1.1], [0.01, 100], [0.0034, 73.78], [-1, -282.3], [0.0033], [0.0066, 22.76, 33], [0, 10], [0.011, 100.01]])
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
 
     # Initialize the circuit parameters
@@ -624,13 +626,16 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
             transistor_2_name_list=transistor_name_list_configuration[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
+        thermal_data=sbc_tc.TomlSbcThermalResistanceData(
+            transistor_hs_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
+            transistor_ls_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         filter_distance=sbc_tc.TomlSbcCircuitFilterDistance(
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])
     )
 
     # Create boundary list from minimum-maximum list with assigned parameters
-    min_max_list_name_list: list[str] = ["f_s_min_max_list", "l_s_min_max_list"]
+    min_max_list_name_list: list[str] = ["f_s_min_max_list", "l_s_min_max_list", "transistor_hs_cooling", "transistor_ls_cooling"]
     value_name_list: list[str] = ["c_par_1", "c_par_2", "difference_percentage"]
     value_name_low_limit_list: list[str] = []
 
@@ -785,6 +790,8 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
         [[-9.9999, 0], [22, 9.9999e4], [2000, 5e4], [-1.01e5, 3222]])
     float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, -1e-3]
     float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 9.9e-3]
+    float_value_list_configuration_gt0_le1em2xgt1_le100: list[list[float]] = (
+        [[1e-17, 1.1], [0.01, 100], [0.0034, 73.78], [0, 282.3]])
     int_value_gt0 = [1, 181877627, 1111, 10000]
     int_value_ge0 = [0, 181877627, 1111, 10000]
 
@@ -824,6 +831,9 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             transistor_2_name_list=transistor_name_list_configuration[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
+        thermal_data=sbc_tc.TomlSbcThermalResistanceData(
+            transistor_hs_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
+            transistor_ls_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         filter_distance=sbc_tc.TomlSbcCircuitFilterDistance(
             number_filtered_designs=int_value_gt0[test_index],
             difference_percentage=float_value_gt1em2_le100[test_index])

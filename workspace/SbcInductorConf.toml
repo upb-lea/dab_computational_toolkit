@@ -20,6 +20,10 @@
     core_right=1e-3
     core_left=1e-3
 
+[thermal_data]
+    # [tim_thickness, tim_conductivity]
+    thermal_cooling = [1e-3,12.0]
+
 [filter_distance]
     factor_dc_losses_min_max_list = [0.01, 100]
 

@@ -18,13 +18,14 @@ from scipy.interpolate import RegularGridInterpolator as RGI
 # own libraries
 import dct.topology.sbc.sbc_datasets_dtos as s_dtos
 import dct.components.component_dtos as c_dtos
+from dct.components.heat_sink_optimization import ThermalCalcSupport
 import dct.topology.sbc.sbc_currents as dct_currents
 from dct.topology.sbc.sbc_circuit_topology_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
 class HandleSbcDto:
-    """Class to handle the SbcDTO, e.g. save and load the files."""
+    """Class to handle the Sbc data transfer object, e.g. save and load the files."""
 
     @staticmethod
     def init_config(name: str, mesh_v: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i: np.ndarray,
@@ -104,7 +105,8 @@ class HandleSbcDto:
             calc_losses=p_loss,
             component_requirements=None,
             calc_volume_inductor_proxy=calc_volume_inductor_proxy,
-            inductor_results=None
+            inductor_results=None,
+            circuit_thermal=None,
         )
 
         return sbc_dto
@@ -174,7 +176,7 @@ class HandleSbcDto:
     @staticmethod
     def save(sbc_dto: s_dtos.SbcCircuitDTO, name: str, directory: str, timestamp: bool = True) -> None:
         """
-        Save the SbcDTO-class to a npz file.
+        Save the SbcCircuitDTO-class to a npz file.
 
         :param sbc_dto: Class to store
         :type sbc_dto: d_dtos.SbcCircuitDTO
@@ -292,13 +294,13 @@ class HandleSbcDto:
         time_array: np.ndarray
 
         # Create time array with 3 columns and number of operation points rows
-        n = sbc_dto.input_config.mesh_duty_cycle.shape[1]  # Anzahl Zeilen
+        n = sbc_dto.input_config.mesh_duty_cycle.shape[1]  # Number of lines
         time_array = np.zeros((n, 3))
         time_array[:, 0] = 0
         time_array[:, 1] = sbc_dto.input_config.mesh_duty_cycle.ravel()
         time_array[:, 2] = 1
         # Calculate times
-        time_array = np.array([0, 0.5, 1]) * 1 / sbc_dto.input_config.fs
+        time_array = time_array * (1 / sbc_dto.input_config.fs)
 
         # FEMMT issue: DC current leads to problems-> Code is to correct after FEMMT-issue is solved
         i_rms_current = sbc_dto.calc_currents.i_ripple.reshape(8, 1)
@@ -315,7 +317,7 @@ class HandleSbcDto:
         :param act_study_name: Name of the optuna study
         :type  act_study_name: str
         :param sbc_dto: SBC circuit DTO
-        :type sbc_dto: s_dtos.DbcCircuitDTO
+        :type sbc_dto: s_dtos.SbcCircuitDTO
         :return: updated SBC circuit DTO
         :rtype: s_dtos.SbcCircuitDTO
         """
@@ -345,8 +347,8 @@ class HandleSbcDto:
         time_array, i_rms_current_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
 
         inductor_requirements: c_dtos.InductorRequirements = c_dtos.InductorRequirements(
+            time_vec=time_vec,
             current_vec=i_rms_current_vec,
-            time_vec=time_array,
             time_array=time_array,
             current_array=i_rms_current_array,
             study_name=act_study_name,
@@ -534,7 +536,7 @@ class HandleTransistorDto:
 
             # Generate the interpolation object for each curve
             for entry in curve_2D_array:
-                # Overtake values (entry[0]=switch voltage, entry[1]=graph conists of entry[1][0]=current value, entry[1][1]=loss value
+                # Overtake values (entry[0]=switch voltage, entry[1]=graph consists of entry[1][0]=current value, entry[1][1]=loss value
                 act_interpole_obj = interp1d(entry[1][0], entry[1][1], kind='linear', bounds_error=False, fill_value='extrapolate')
                 common_losses.append(act_interpole_obj(common_current_grid))
                 switch_voltage_list.append(entry[0])
@@ -551,3 +553,51 @@ class HandleTransistorDto:
                                               current_data=np.array([]))
 
         return result_data
+
+    @staticmethod
+    def generate_thermal_transistor_parameters(circuit_dto: s_dtos.SbcCircuitDTO,
+                                               transistor_hs_cooling: c_dtos.ComponentCooling,
+                                               transistor_ls_cooling: c_dtos.ComponentCooling) -> s_dtos.SbcCircuitDTO:
+        """
+        Generate the transistor thermal parameters.
+
+        :param circuit_dto: DAB circuit DTO
+        :type  circuit_dto: d_dtos.DabCircuitDTO
+        :param transistor_hs_cooling: Transistor cooling
+        :type  transistor_hs_cooling: ComponentCooling
+        :param transistor_ls_cooling: Transistor cooling
+        :type  transistor_ls_cooling: ComponentCooling
+        :return:
+        """
+        if circuit_dto.calc_losses is None:
+            raise ValueError("Missing transistor loss calculation of transistors.")
+
+        hs_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_hs_conduction + circuit_dto.calc_losses.p_hs_switch
+        ls_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_ls_conduction + circuit_dto.calc_losses.p_ls_switch
+
+        # get all the losses in a matrix
+        r_th_copper_coin_1, copper_coin_area_1 = ThermalCalcSupport.calculate_r_th_copper_coin(
+            circuit_dto.input_config.transistor_dto_1.cooling_area)
+        r_th_copper_coin_2, copper_coin_area_2 = ThermalCalcSupport.calculate_r_th_copper_coin(
+            circuit_dto.input_config.transistor_dto_2.cooling_area)
+
+        circuit_r_th_tim_1 = ThermalCalcSupport.calculate_r_th_tim(
+            copper_coin_area_1, transistor_hs_cooling)
+        circuit_r_th_tim_2 = ThermalCalcSupport.calculate_r_th_tim(
+            copper_coin_area_2, transistor_ls_cooling)
+
+        circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
+        circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
+
+        circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * hs_transistor_cond_loss_matrix)
+        circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * ls_transistor_cond_loss_matrix)
+
+        circuit_dto.circuit_thermal = c_dtos.CircuitThermal(
+            t_j_max=[circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
+            r_th_jhs=[circuit_r_th_1_jhs, circuit_r_th_2_jhs],
+            area=[4 * copper_coin_area_1, 4 * copper_coin_area_2],
+            loss_array=[hs_transistor_cond_loss_matrix, ls_transistor_cond_loss_matrix],
+            temperature_heat_sink_max_array=[circuit_heat_sink_max_1_array, circuit_heat_sink_max_2_array]
+        )
+
+        return circuit_dto

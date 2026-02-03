@@ -15,14 +15,16 @@ import tqdm
 
 # own libraries
 import dct
+from dct.circuit_enums import CalcModeEnum
 from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
 import femmt as fmt
-from dct.datasets_dtos import StudyData, FilterData
+from dct.datasets_dtos import TransformerConfiguration
 from dct.boundary_check import CheckCondition as c_flag
 from dct.server_ctl_dtos import ProgressStatus, ProgressData
 from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
-from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults
+from dct.components.component_dtos import TransformerRequirements, StackedTransformerResults, ComponentCooling
+from dct.components.heat_sink_optimization import ThermalCalcSupport
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ class TransformerOptimization:
     """Optimization of the transformer."""
 
     # List with configurations to optimize and lock variable
-    _optimization_config_list: list[TransformerOptimizationDto]
+    _optimization_config_list: list[list[TransformerOptimizationDto]]
     _t_lock_stat: threading.Lock
     _progress_run_time: RunTime
 
@@ -140,6 +142,32 @@ class TransformerOptimization:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
+        # Thermal data parameter check
+        group_name = "thermal_data"
+        # Perform list length check for thermal_cooling
+        if len(toml_transformer.thermal_data.thermal_cooling) != 2:
+            issue_report = f"    Number of values in parameter '{group_name}: thermal_cooling' is not equal 2!\n"
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+        else:
+            # Perform the boundary check for tim-thickness
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 0.01, toml_transformer.thermal_data.thermal_cooling[0],
+                f"'{group_name}: thermal_cooling[0]-tim-thickness",
+                c_flag.check_exclusive, c_flag.check_inclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
+            # Perform the boundary check for tim-conductivity
+            is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+                0, 100, toml_transformer.thermal_data.thermal_cooling[1],
+                f"'{group_name}: thermal_cooling[1]-tim-conductivity",
+                c_flag.check_exclusive, c_flag.check_inclusive)
+            if not is_check_passed:
+                inconsistency_report = inconsistency_report + issue_report
+                is_consistent = False
+
         # Perform boundary condition check
         group_name = "boundary_condition"
         # Perform the boundary check
@@ -185,114 +213,140 @@ class TransformerOptimization:
 
         return is_consistent, inconsistency_report
 
-    def initialize_transformer_optimization_list(self, toml_transformer: dct.TomlTransformer, transformer_study_data: StudyData,
+    def initialize_transformer_optimization_list(self, configuration_data_list: list[TransformerConfiguration],
                                                  transformer_requirements_list: list[TransformerRequirements]) -> None:
-        """
-        Initialize the transformer optimization.
+        """Initialize the transformer optimization.
 
-        :param toml_transformer: transformer toml file
-        :type toml_transformer: dct.TomlTransformer
-        :param transformer_study_data: Study data
-        :type transformer_study_data: StudyData
+        :param configuration_data_list: List of transformer configuration data including study data
+        :type  configuration_data_list: list[TransformerConfiguration]
         :param transformer_requirements_list: list with transformer requirements
         :type transformer_requirements_list: list[TransformerRequirements]
         """
-        # common parameters for all types of transformers
-        act_insulation = fmt.StoInsulation(
-            # insulation for top core window
-            iso_window_top_core_top=toml_transformer.insulation.iso_window_top_core_top,
-            iso_window_top_core_bot=toml_transformer.insulation.iso_window_top_core_bot,
-            iso_window_top_core_left=toml_transformer.insulation.iso_window_top_core_left,
-            iso_window_top_core_right=toml_transformer.insulation.iso_window_top_core_right,
-            # insulation for bottom core window
-            iso_window_bot_core_top=toml_transformer.insulation.iso_window_bot_core_top,
-            iso_window_bot_core_bot=toml_transformer.insulation.iso_window_bot_core_bot,
-            iso_window_bot_core_left=toml_transformer.insulation.iso_window_bot_core_left,
-            iso_window_bot_core_right=toml_transformer.insulation.iso_window_bot_core_right,
-            # winding-to-winding insulation
-            iso_primary_to_primary=toml_transformer.insulation.iso_primary_to_primary,
-            iso_secondary_to_secondary=toml_transformer.insulation.iso_secondary_to_secondary,
-            iso_primary_to_secondary=toml_transformer.insulation.iso_primary_to_secondary
-        )
-
-        # Initialize the material data source
-        material_data_sources = fmt.MaterialDataSources(
-            permeability_datasource=toml_transformer.material_data_sources.permeability_datasource,
-            permittivity_datasource=toml_transformer.material_data_sources.permittivity_datasource,
-        )
-
-        # Create fix part of io_config
-        sto_config = fmt.StoSingleInputConfig(
-            stacked_transformer_study_name=transformer_study_data.study_name,
-            # target parameters  initialized with default values
-            l_s12_target=0,
-            l_h_target=0,
-            n_target=0,
-            # operating point: current waveforms and temperature initialized with default values
-            time_current_1_vec=np.ndarray([]),
-            time_current_2_vec=np.ndarray([]),
-            temperature=toml_transformer.boundary_conditions.temperature,
-            # sweep parameters: geometry and materials
-            n_p_top_min_max_list=toml_transformer.design_space.n_p_top_min_max_list,
-            n_p_bot_min_max_list=toml_transformer.design_space.n_p_bot_min_max_list,
-            material_list=toml_transformer.design_space.material_name_list,
-            core_name_list=toml_transformer.design_space.core_name_list,
-            core_inner_diameter_min_max_list=toml_transformer.design_space.core_inner_diameter_min_max_list,
-            window_w_min_max_list=toml_transformer.design_space.window_w_min_max_list,
-            window_h_bot_min_max_list=toml_transformer.design_space.window_h_bot_min_max_list,
-            primary_litz_wire_list=toml_transformer.design_space.primary_litz_wire_list,
-            secondary_litz_wire_list=toml_transformer.design_space.secondary_litz_wire_list,
-            # maximum limitation for transformer total height and core volume
-            max_transformer_total_height=toml_transformer.boundary_conditions.max_transformer_total_height,
-            max_core_volume=toml_transformer.boundary_conditions.max_core_volume,
-            # fix parameters: insulations
-            insulations=act_insulation,
-            # misc
-            stacked_transformer_optimization_directory="",
-
-            fft_filter_value_factor=toml_transformer.settings.fft_filter_value_factor,
-            mesh_accuracy=toml_transformer.settings.mesh_accuracy,
-
-            # data sources
-            material_data_sources=material_data_sources
-        )
-
         # Create the io_config_list for all trials
         for transformer_requirements in transformer_requirements_list:
-            circuit_id = transformer_requirements.circuit_id
-            trial_directory = os.path.join(transformer_study_data.optimization_directory, circuit_id, transformer_study_data.study_name)
+            # Set index
+            transformer_number_in_circuit = transformer_requirements.transformer_number_in_circuit
 
-            # catch mypy type issue
-            if not isinstance(transformer_requirements, TransformerRequirements):
-                raise TypeError("circuit DTO file is incomplete.")
+            # Check, if transformer optimization is not to skip
+            if not configuration_data_list[transformer_number_in_circuit].study_data.calculation_mode == CalcModeEnum.skip_mode\
+                    or not configuration_data_list[transformer_number_in_circuit].simulation_calculation_mode == CalcModeEnum.skip_mode:
 
-            # Initialize the statistical data
-            stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
+                circuit_id = transformer_requirements.circuit_id
+                configuration_data = configuration_data_list[transformer_number_in_circuit]
+                trial_directory = os.path.join(configuration_data.study_data.optimization_directory,
+                                               circuit_id, configuration_data.study_data.study_name)
 
-            # Generate new sto_config
-            next_io_config = copy.deepcopy(sto_config)
-            # target parameters
-            next_io_config.l_s12_target = float(transformer_requirements.l_s12_target)
-            next_io_config.l_h_target = float(transformer_requirements.l_h_target)
-            next_io_config.n_target = float(transformer_requirements.n_target)
-            # operating point: current waveforms and temperature initialized with default values
-            next_io_config.time_current_1_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_1_vec])
-            next_io_config.time_current_2_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_2_vec])
-            # misc
-            next_io_config.stacked_transformer_optimization_directory = trial_directory
-            transformer_dto = TransformerOptimizationDto(circuit_id=circuit_id,
-                                                         progress_data=copy.deepcopy(stat_data_init),
-                                                         transformer_optimization_dto=next_io_config,
-                                                         transformer_requirements=transformer_requirements)
+                # Check if transformer_toml_data not initializes
+                if configuration_data.transformer_toml_data is None:
+                    raise ValueError("Serious programming error in transformer optimization. toml-data are not initialized.",
+                                     "Please write an issue!")
 
-            self._optimization_config_list.append(transformer_dto)
+                transformer_toml_data = configuration_data.transformer_toml_data
 
-    def get_progress_data(self, filtered_list_id: int) -> ProgressData:
+                # common parameters for all types of transformers
+                act_insulations = fmt.StoInsulation(
+                    # insulation for top core window
+                    iso_window_top_core_top=transformer_toml_data.insulation.iso_window_top_core_top,
+                    iso_window_top_core_bot=transformer_toml_data.insulation.iso_window_top_core_bot,
+                    iso_window_top_core_left=transformer_toml_data.insulation.iso_window_top_core_left,
+                    iso_window_top_core_right=transformer_toml_data.insulation.iso_window_top_core_right,
+                    # insulation for bottom core window
+                    iso_window_bot_core_top=transformer_toml_data.insulation.iso_window_bot_core_top,
+                    iso_window_bot_core_bot=transformer_toml_data.insulation.iso_window_bot_core_bot,
+                    iso_window_bot_core_left=transformer_toml_data.insulation.iso_window_bot_core_left,
+                    iso_window_bot_core_right=transformer_toml_data.insulation.iso_window_bot_core_right,
+                    # winding-to-winding insulation
+                    iso_primary_to_primary=transformer_toml_data.insulation.iso_primary_to_primary,
+                    iso_secondary_to_secondary=transformer_toml_data.insulation.iso_secondary_to_secondary,
+                    iso_primary_to_secondary=transformer_toml_data.insulation.iso_primary_to_secondary
+                )
+
+                # Initialize the material data source
+                material_data_sources = fmt.MaterialDataSources(
+                    permeability_datasource=transformer_toml_data.material_data_sources.permeability_datasource,
+                    permittivity_datasource=transformer_toml_data.material_data_sources.permittivity_datasource,
+                )
+
+                # Create fix part of io_config
+                sto_config = fmt.StoSingleInputConfig(
+                    stacked_transformer_study_name=configuration_data.study_data.study_name,
+                    # target parameters  initialized with default values
+                    l_s12_target=0,
+                    l_h_target=0,
+                    n_target=0,
+                    # operating point: current waveforms and temperature initialized with default values
+                    time_current_1_vec=np.ndarray([]),
+                    time_current_2_vec=np.ndarray([]),
+                    temperature=transformer_toml_data.boundary_conditions.temperature,
+                    # sweep parameters: geometry and materials
+                    n_p_top_min_max_list=transformer_toml_data.design_space.n_p_top_min_max_list,
+                    n_p_bot_min_max_list=transformer_toml_data.design_space.n_p_bot_min_max_list,
+                    material_list=transformer_toml_data.design_space.material_name_list,
+                    core_name_list=transformer_toml_data.design_space.core_name_list,
+                    core_inner_diameter_min_max_list=transformer_toml_data.design_space.core_inner_diameter_min_max_list,
+                    window_w_min_max_list=transformer_toml_data.design_space.window_w_min_max_list,
+                    window_h_bot_min_max_list=transformer_toml_data.design_space.window_h_bot_min_max_list,
+                    primary_litz_wire_list=transformer_toml_data.design_space.primary_litz_wire_list,
+                    secondary_litz_wire_list=transformer_toml_data.design_space.secondary_litz_wire_list,
+                    # maximum limitation for transformer total height and core volume
+                    max_transformer_total_height=transformer_toml_data.boundary_conditions.max_transformer_total_height,
+                    max_core_volume=transformer_toml_data.boundary_conditions.max_core_volume,
+                    # fix parameters: insulation
+                    insulations=act_insulations,
+                    # misc
+                    stacked_transformer_optimization_directory=configuration_data.study_data.optimization_directory,
+
+                    fft_filter_value_factor=transformer_toml_data.settings.fft_filter_value_factor,
+                    mesh_accuracy=transformer_toml_data.settings.mesh_accuracy,
+
+                    # data sources
+                    material_data_sources=material_data_sources
+                )
+
+                # Initialize the statistical data
+                stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
+
+                # Generate new sto_config
+                next_io_config = copy.deepcopy(sto_config)
+                # target parameters
+                next_io_config.l_s12_target = float(transformer_requirements.l_s12_target)
+                next_io_config.l_h_target = float(transformer_requirements.l_h_target)
+                next_io_config.n_target = float(transformer_requirements.n_target)
+                # operating point: current waveforms and temperature initialized with default values
+                next_io_config.time_current_1_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_1_vec])
+                next_io_config.time_current_2_vec = np.array([transformer_requirements.time_vec, transformer_requirements.current_2_vec])
+                # misc
+                # Get thermal data
+                thermal_data: ComponentCooling = ComponentCooling(
+                    tim_thickness=configuration_data.transformer_toml_data.thermal_data.thermal_cooling[0],
+                    tim_conductivity=configuration_data.transformer_toml_data.thermal_data.thermal_cooling[1])
+
+                next_io_config.stacked_transformer_optimization_directory = trial_directory
+                transformer_dto = TransformerOptimizationDto(
+                    trial_directory=trial_directory,
+                    circuit_id=circuit_id,
+                    transformer_number_in_circuit=transformer_number_in_circuit,
+                    progress_data=copy.deepcopy(stat_data_init),
+                    number_of_trails=configuration_data.study_data.number_of_trials,
+                    fmt_transformer_optimization_dto=next_io_config,
+                    thermal_data=thermal_data,
+                    factor_dc_losses_min_max_list=transformer_toml_data.filter_distance.factor_dc_losses_min_max_list,
+                    transformer_requirements=transformer_requirements)
+
+                # Check list size
+                while len(self._optimization_config_list) <= transformer_number_in_circuit:
+                    self._optimization_config_list.append([])
+
+                # Add transformer dto to the sub-list of assigned number in circuit
+                self._optimization_config_list[transformer_number_in_circuit].append(transformer_dto)
+
+    def get_progress_data(self, index: int, filtered_list_id: int) -> ProgressData:
         """Provide the progress data of the optimization.
 
+        :param index: Index within the list of component configurations
+        :type  index: int
         :param filtered_list_id: List index of the filtered operation point from circuit
         :type  filtered_list_id: int
-
         :return: Progress data: Processing start time, actual processing time, number of filtered transformer Pareto front points and status.
         :rtype: ProgressData
         """
@@ -302,16 +356,16 @@ class TransformerOptimization:
             progress_status=ProgressStatus.Idle)
 
         # Check for valid filtered_list_id
-        if len(self._optimization_config_list) > filtered_list_id:
+        if len(self._optimization_config_list[index]) > filtered_list_id:
             # Lock statistical performance data access (ASA: Possible Bug)
             with self._t_lock_stat:
                 # Check if list is in progress
-                if self._optimization_config_list[filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
+                if self._optimization_config_list[index][filtered_list_id].progress_data.progress_status == ProgressStatus.InProgress:
                     # Update statistical data
-                    self._optimization_config_list[filtered_list_id].progress_data.run_time = self._progress_run_time.get_runtime()
+                    self._optimization_config_list[index][filtered_list_id].progress_data.run_time = self._progress_run_time.get_runtime()
 
                 # Create a copy of actual data
-                ret_progress_data = copy.deepcopy(self._optimization_config_list[filtered_list_id].progress_data)
+                ret_progress_data = copy.deepcopy(self._optimization_config_list[index][filtered_list_id].progress_data)
 
         return ret_progress_data
 
@@ -324,18 +378,22 @@ class TransformerOptimization:
         return self._number_performed_calculations
 
     @staticmethod
-    def _optimize_reluctance_model(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
-                                   transformer_requirements: TransformerRequirements,
+    def _optimize_reluctance_model(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, circuit_study_name: str,
+                                   transformer_requirements: TransformerRequirements, thermal_data: ComponentCooling,
                                    target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> int:
         """
         Perform the optimization.
 
         :param circuit_id: Filename of the filtered optimal electrical circuit
         :type circuit_id: str
-        :param act_sto_config: stracked transformer optimization configuration
+        :param act_sto_config: stacked transformer optimization configuration
         :type act_sto_config: fmt.StoSingleInputConfig
-        :param filter_data: Information about the filtered circuit designs
-        :type filter_data: FilterData
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param transformer_requirements: Requirements for the transformer
+        :type  transformer_requirements: TransformerRequirements
+        :param thermal_data: Thermal data of the connection to heat sink
+        :type  thermal_data: ComponentCooling
         :param target_number_trials: Number of trials for the reluctance model optimization
         :type target_number_trials: int
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
@@ -397,7 +455,7 @@ class TransformerOptimization:
                     logger.debug(f"{current_waveform_1=}")
                     logger.debug("----------------------")
                     logger.debug("Re-simulation of:")
-                    logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                    logger.debug(f"   * Circuit study: {circuit_study_name}")
                     logger.debug(f"   * Circuit ID: {circuit_id}")
                     logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                     logger.debug(f"   * Transformer ID: {transformer_id}")
@@ -406,12 +464,18 @@ class TransformerOptimization:
                         df_transformer_id, current_waveform_1, current_waveform_2, config_filepath)
                     result_array[vec_vvp] = combined_losses
 
+                # Calculate thermal resistance
+                r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
+                    area_to_heat_sink, thermal_data)
+
                 transformer_results = StackedTransformerResults(
                     loss_array=result_array,
                     volume=volume,
                     area_to_heat_sink=area_to_heat_sink,
+                    r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
                     circuit_id=circuit_id,
-                    transformer_id=transformer_id
+                    transformer_id=transformer_id,
+                    transformer_number_in_circuit=transformer_requirements.transformer_number_in_circuit
                 )
 
                 pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
@@ -421,96 +485,104 @@ class TransformerOptimization:
         # returns the number of filtered results
         return quantity_transformer_id_pareto
 
+    def _generate_optimization_parameter(self, circuit_study_name: str, transformer_in_circuit: int, debug: dct.Debug) -> (
+            list[tuple[str, fmt.fmt.StoSingleInputConfig, str, TransformerRequirements, ComponentCooling, int, list[float], dct.Debug]]):
+        """
+        Generate the list of parameter sets for analytic and simulation optimization.
+
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param transformer_in_circuit: Number of transformer to optimize
+        :type  transformer_in_circuit: int
+        :param debug: True to use debug mode which stops earlier
+        :type debug: bool
+        :return: List of parameter sets for multi simulation processes
+        :rtype:  list[tuple[str, fmt.TransformerOptimizationDTO, FilterData, TransformerRequirements,
+                 ComponentCooling, int, list[float], dct.Debug]]
+        """
+        parameter_set_list = []
+        for act_optimization_configuration in self._optimization_config_list[transformer_in_circuit]:
+            parameter_set = (
+                act_optimization_configuration.circuit_id, act_optimization_configuration.fmt_transformer_optimization_dto,
+                circuit_study_name, act_optimization_configuration.transformer_requirements,
+                act_optimization_configuration.thermal_data,
+                act_optimization_configuration.number_of_trails,
+                act_optimization_configuration.factor_dc_losses_min_max_list,
+                debug)
+            # Add set to list
+            parameter_set_list.append(parameter_set)
+
+        return parameter_set_list
+
     # Simulation handler. Later the simulation handler starts a process per list entry.
-    def optimization_handler_reluctance_model(self, filter_data: FilterData, target_number_trials: int,
-                                              factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
+    def optimization_handler_reluctance_model(self, circuit_study_name: str, transformer_in_circuit: int, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
-        :param filter_data : Information about the filtered circuit designs
-        :type  filter_data : FilterData
-        :param target_number_trials: Number of trials for the optimization
-        :type  target_number_trials: int
-        :param factor_dc_losses_min_max_list: Filter factor for the offset, related to the minimum/maximum DC losses
-        :type  factor_dc_losses_min_max_list: float
-        :param debug: Debug DTO
-        :type  debug: dct.Debug
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param transformer_in_circuit: Number of transformer component in circuit
+        :type  transformer_in_circuit: int
+        :param debug: True to use debug mode which stops earlier
+        :type debug: bool
         """
-        if factor_dc_losses_min_max_list is None:
-            factor_dc_losses_min_max_list = [0.01, 100]
+        # Check if class is initialized and transformer_in_circuit is valid
+        if len(self._optimization_config_list) == 0:
+            raise ValueError("Transformer reluctance handler:Transformer selection class is no initialized")
+        elif len(self._optimization_config_list) <= transformer_in_circuit or transformer_in_circuit < 0:
+            raise ValueError(f"Transformer reluctance handler: Invalid parameter value 'transformer_in_circuit'={transformer_in_circuit}.\n"
+                             f"Value has to be between 0 and {len(self._optimization_config_list)-1}.")
 
         number_cpus = cpu_count()
 
+        parameter_set_list = self._generate_optimization_parameter(circuit_study_name, transformer_in_circuit, debug)
+
         with Pool(processes=number_cpus) as pool:
-            parameters = []
 
-            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
-                if debug.general.is_debug:
-                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
-                    if count == number_cpus:
-                        break
-                # Update statistical data
-                # with self._t_lock_stat:
-                #     self._progress_run_time.reset_start_trigger()
-                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.InProgress
+            if debug.general.is_debug:
+                # In debug mode, reduce the number of parameter sets to number of processor cores
+                if len(parameter_set_list) > number_cpus:
+                    parameter_set_list = parameter_set_list[0:(number_cpus-1)]
 
-                parameters.append((
-                    act_optimization_configuration.circuit_id,
-                    act_optimization_configuration.transformer_optimization_dto,
-                    filter_data,
-                    act_optimization_configuration.transformer_requirements,
-                    target_number_trials, factor_dc_losses_min_max_list,
-                    debug))
+            # Perform parallel calculation
+            pool.starmap(func=TransformerOptimization._optimize_reluctance_model, iterable=parameter_set_list)
 
-                # # Update statistical data
-                # with self._t_lock_stat:
-                #     self._progress_run_time.stop_trigger()
-                #     act_optimization_configuration.progress_data.run_time = self._progress_run_time.get_runtime()
-                #     act_optimization_configuration.progress_data.number_of_filtered_points = number_of_filtered_point
-                #     act_optimization_configuration.progress_data.progress_status = ProgressStatus.Done
-                #     # Increment performed calculation counter
-                #     self._number_performed_calculations = self._number_performed_calculations + 1
-
-            pool.starmap(func=TransformerOptimization._optimize_reluctance_model, iterable=parameters)
-
-    def fem_simulation_handler(self, filter_data: FilterData, factor_dc_losses_min_max_list: list[float] | None, debug: dct.Debug) -> None:
+    def fem_simulation_handler(self, circuit_study_name: str, transformer_in_circuit: int, debug: dct.Debug) -> None:
         """
         Control the multi simulation processes.
 
-        :param filter_data: Information about the filtered designs
-        :type  filter_data: FilterData
-        :param factor_dc_losses_min_max_list: Filter factor for min and max losses to use filter the results
-        :type  factor_dc_losses_min_max_list: float
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param transformer_in_circuit: Number of transformer component in circuit
+        :type  transformer_in_circuit: int
         :param debug: Debug DTO
         :type debug: dct.Debug
         """
-        if factor_dc_losses_min_max_list is None:
-            factor_dc_losses_min_max_list = [1.0, 100]
+        # Check if class is initialized and transformer_in_circuit is valid
+        if len(self._optimization_config_list) == 0:
+            raise ValueError("Transformer simulation handler:Transformer selection class is no initialized")
+        elif len(self._optimization_config_list) <= transformer_in_circuit or transformer_in_circuit < 0:
+            raise ValueError(f"Transformer simulation handler: Invalid parameter value 'transformer_in_circuit'={transformer_in_circuit}.\n"
+                             f"Value has to be between 0 and {len(self._optimization_config_list)-1}.")
 
         number_cpus = cpu_count()
 
+        parameter_set_list = self._generate_optimization_parameter(circuit_study_name, transformer_in_circuit, debug)
+
         with Pool(processes=number_cpus) as pool:
-            parameters = []
-            for count, act_optimization_configuration in enumerate(self._optimization_config_list):
-                if debug.general.is_debug:
-                    # in debug mode, stop when number of configuration parameters has reached the same as parallel cores are used
-                    if count == number_cpus:
-                        break
 
-                parameters.append((act_optimization_configuration.circuit_id,
-                                   act_optimization_configuration.transformer_optimization_dto,
-                                   filter_data,
-                                   act_optimization_configuration.transformer_requirements,
-                                   factor_dc_losses_min_max_list,
-                                   debug))
+            if debug.general.is_debug:
+                # In debug mode, reduce the number of parameter sets to number of processor cores
+                if len(parameter_set_list) > number_cpus:
+                    parameter_set_list = parameter_set_list[0:(number_cpus - 1)]
 
-            pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameters)
+            # Perform parallel calculation
+            pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameter_set_list)
 
     @staticmethod
-    def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, filter_data: FilterData,
-                        transformer_requirements: TransformerRequirements,
-                        factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
+    def _fem_simulation(circuit_id: str, act_sto_config: fmt.StoSingleInputConfig, circuit_study_name: str,
+                        transformer_requirements: TransformerRequirements, thermal_data: ComponentCooling,
+                        target_number_trials: int, factor_dc_losses_min_max_list: list[float], debug: dct.Debug) -> None:
         """
         Perform the optimization.
 
@@ -518,8 +590,14 @@ class TransformerOptimization:
         :type  circuit_id: str
         :param act_sto_config: stacked transformer configuration for the optimization
         :type  act_sto_config: fmt.StackedTransformerOptimizationDTO
-        :param filter_data: Contains information about filtered circuit designs
-        :type  filter_data: FilterData
+        :param circuit_study_name: Name of the circuit study
+        :type  circuit_study_name: str
+        :param transformer_requirements: Requirements for the transformer
+        :type  transformer_requirements: TransformerRequirements
+        :param thermal_data: Thermal data of the connection to heat sink
+        :type  thermal_data: ComponentCooling
+        :param target_number_trials: Number of trials for the reluctance model optimization (not used)
+        :type target_number_trials: int (not used)
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
@@ -576,7 +654,7 @@ class TransformerOptimization:
                         logger.debug(f"{current_1_waveform=}")
                         logger.debug("----------------------")
                         logger.debug("Re-simulation of:")
-                        logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
+                        logger.debug(f"   * Circuit study: {circuit_study_name}")
                         logger.debug(f"   * Circuit ID: {circuit_id}")
                         logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                         logger.debug(f"   * Transformer ID: {transformer_id}")
@@ -587,12 +665,18 @@ class TransformerOptimization:
 
                         result_array[vec_vvp] = combined_losses
 
+                    # Calculate thermal resistance
+                    r_th_xfmr_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
+                        area_to_heat_sink, thermal_data)
+
                     transformer_results = StackedTransformerResults(
                         loss_array=result_array,
                         volume=volume,
                         area_to_heat_sink=area_to_heat_sink,
+                        r_th_xfmr_heat_sink=r_th_xfmr_heat_sink,
                         circuit_id=circuit_id,
-                        transformer_id=transformer_id
+                        transformer_id=transformer_id,
+                        transformer_number_in_circuit=transformer_requirements.transformer_number_in_circuit
                     )
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
