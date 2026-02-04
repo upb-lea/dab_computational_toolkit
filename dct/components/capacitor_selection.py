@@ -21,7 +21,7 @@ from dct.datasets_dtos import FilterData, CapacitorConfiguration
 from dct.server_ctl_dtos import ProgressData, ProgressStatus
 from dct.components.component_dtos import CapacitorRequirements
 from dct.components.capacitor_optimization_dtos import CapacitorResults
-from dct.constant_path import CIRCUIT_CAPACITOR_LOSS_FOLDER
+from dct.constant_path import CIRCUIT_CAPACITOR_LOSS_FOLDER, CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED
 
 logger = logging.getLogger(__name__)
 
@@ -131,14 +131,14 @@ class CapacitorSelection:
 
         if not os.path.exists(act_config.capacitor_optimization_dto.results_directory):
             os.makedirs(act_config.capacitor_optimization_dto.results_directory)
-        c_db_df.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/results.csv")
+        c_db_df.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/{CAPACITOR_RESULTS}")
 
         df_filtered = pecst.filter_df(c_db_df)
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
             df_filtered = df_filtered.iloc[:debug.capacitor.number_working_point_max]
         # save Pareto front designs (reduced in case of active debugging)
-        df_filtered.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/results_filtered.csv")
+        df_filtered.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/{CAPACITOR_RESULTS_FILTERED}")
 
         all_operation_point_ordering_codes_list = df_filtered["ordering code"].to_numpy()
         all_operation_point_volume_list = df_filtered["volume_total"].to_numpy()

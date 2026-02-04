@@ -15,7 +15,8 @@ import hct
 import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
-from dct.constant_path import DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER
+from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
+                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, FEMMT_FEM_RESULTS_FOLDER)
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
 
 
@@ -116,6 +117,8 @@ class ParetoPlots:
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         """
+        volume_key = "values_0"
+        loss_key = "values_1"
         # Loop over all filtered circuit designs
         for circuit_number in filtered_list_files:
             # Assemble file path for actual circuit design
@@ -128,24 +131,24 @@ class ParetoPlots:
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(config)
 
             # m³ -> cm³
-            df["values_0"] = df["values_0"] * FACTOR_M3_TO_CM3
+            df[volume_key] = df[volume_key] * FACTOR_M3_TO_CM3
 
-            fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
+            fem_results_folder_path = os.path.join(file_path, FEMMT_FEM_RESULTS_FOLDER)
             df_filtered = fmt.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
             df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
             # all fem simulation points
             fem_loss_results = df_fem_reluctance["fem_p_loss_winding"] + df_fem_reluctance["fem_eddy_core"] + df_fem_reluctance["user_attrs_p_hyst"]
 
-            x_values_list = [df["values_0"], df_filtered["values_0"], df_fem_reluctance["values_0"]]
-            y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
+            x_values_list = [df[volume_key], df_filtered[volume_key], df_fem_reluctance[volume_key]]
+            y_values_list = [df[loss_key], df_filtered[loss_key], fem_loss_results]
             label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
-            x_scale_min = 0.9 * df_filtered["values_0"].min()
-            x_scale_max = 1.1 * df_filtered["values_0"].max()
+            x_scale_min = 0.9 * df_filtered[volume_key].min()
+            x_scale_max = 1.1 * df_filtered[volume_key].max()
 
-            y_scale_min = 0.9 * df_filtered["values_1"].min()
-            y_scale_max = 1.1 * df_filtered["values_1"].max()
+            y_scale_min = 0.9 * df_filtered[loss_key].min()
+            y_scale_max = 1.1 * df_filtered[loss_key].max()
 
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
@@ -166,6 +169,8 @@ class ParetoPlots:
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         """
+        volume_key = "values_0"
+        loss_key = "values_1"
         # Loop over all filtered circuit designs
         for circuit_number in filtered_list_files:
             # Assemble file path for actual circuit design
@@ -178,24 +183,24 @@ class ParetoPlots:
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(config)
 
             # m³ -> cm³
-            df["values_0"] = df["values_0"] * FACTOR_M3_TO_CM3
+            df[volume_key] = df[volume_key] * FACTOR_M3_TO_CM3
 
-            fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
+            fem_results_folder_path = os.path.join(file_path, FEMMT_FEM_RESULTS_FOLDER)
             df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=10)
             df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
             # all fem simulation points
             fem_loss_results = df_fem_reluctance["fem_p_loss_winding"] + df_fem_reluctance["fem_eddy_core"] + df_fem_reluctance["user_attrs_p_hyst"]
 
-            x_values_list = [df["values_0"], df_filtered["values_0"], df_fem_reluctance["values_0"]]
-            y_values_list = [df["values_1"], df_filtered["values_1"], fem_loss_results]
+            x_values_list = [df[volume_key], df_filtered[volume_key], df_fem_reluctance[volume_key]]
+            y_values_list = [df[loss_key], df_filtered[loss_key], fem_loss_results]
             label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
-            x_scale_min = 0.9 * df_filtered["values_0"].min()
-            x_scale_max = 1.1 * df_filtered["values_0"].max()
+            x_scale_min = 0.9 * df_filtered[volume_key].min()
+            x_scale_max = 1.1 * df_filtered[volume_key].max()
 
-            y_scale_min = 0.9 * df_filtered["values_1"].min()
-            y_scale_max = 1.1 * df_filtered["values_1"].max()
+            y_scale_min = 0.9 * df_filtered[loss_key].min()
+            y_scale_max = 1.1 * df_filtered[loss_key].max()
 
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}_{transformer_study_data.study_name}")
@@ -226,8 +231,8 @@ class ParetoPlots:
                                      capacitor_study_data.study_name)
 
             # Assemble pkl-file name
-            df_capacitors_directory = os.path.join(file_path, "results.csv")
-            df_capacitors_filtered_directory = os.path.join(file_path, "results_filtered.csv")
+            df_capacitors_directory = os.path.join(file_path, CAPACITOR_RESULTS)
+            df_capacitors_filtered_directory = os.path.join(file_path, CAPACITOR_RESULTS_FILTERED)
 
             df_capacitors = pd.read_csv(df_capacitors_directory)
             df_capacitors_filtered = pd.read_csv(df_capacitors_filtered_directory)
@@ -262,6 +267,9 @@ class ParetoPlots:
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         """
+        volume_key = "values_0"
+        loss_key = "values_1"
+        area_key = "values_2"
         # target color list and different heat sink areas to plot (split 3d plot into several 2d plots)
         color_list = [gps.colors()["black"], gps.colors()["red"], gps.colors()["blue"], gps.colors()["green"]]
         a_min_m2_list = [0.002, 0.003, 0.005]
@@ -273,8 +281,8 @@ class ParetoPlots:
         config = hct.Optimization.load_config(heat_sink_pkl_path)
         df_heat_sink = hct.Optimization.study_to_df(config)
 
-        df_heat_sink["values_0"] = df_heat_sink["values_0"] * FACTOR_M3_TO_CM3
-        df_heat_sink["values_2"] = df_heat_sink["values_2"] * FACTOR_M2_TO_CM2
+        df_heat_sink[volume_key] = df_heat_sink[volume_key] * FACTOR_M3_TO_CM3
+        df_heat_sink[area_key] = df_heat_sink[area_key] * FACTOR_M2_TO_CM2
 
         x_values_list = []
         y_values_list = []
@@ -283,10 +291,10 @@ class ParetoPlots:
         # filter for different heat sink surface areas
         for area_min in a_min_m2_list:
 
-            df_a_min = df_heat_sink.loc[df_heat_sink["values_2"] > area_min * FACTOR_M2_TO_CM2]
+            df_a_min = df_heat_sink.loc[df_heat_sink[area_key] > area_min * FACTOR_M2_TO_CM2]
 
-            x_values_list.append(df_a_min["values_0"])
-            y_values_list.append(df_a_min["values_1"])
+            x_values_list.append(df_a_min[volume_key])
+            y_values_list.append(df_a_min[loss_key])
             legend_list.append(f"{int(area_min * FACTOR_M2_TO_CM2)} cm²")
 
         # Set the target directory
