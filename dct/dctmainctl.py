@@ -323,7 +323,7 @@ class DctMainCtl:
                 with open(logging_config_file, "rb") as f:
                     try:
                         logging.config.fileConfig(logging_config_file)
-                        print("Existing logging.conf found. Read sucessfully read.")
+                        print("Existing logging.conf found. Loading of config was successful.")
                     except:
                         print(f"Logging configuration file {logging_config_file} is inconsistent.")
                     else:
