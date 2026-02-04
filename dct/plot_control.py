@@ -24,7 +24,7 @@ class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
 
     @staticmethod
-    def generate_pareto_plot(x_values_list: list, y_values_list: list, color_list: list, alpha: float,
+    def generate_pareto_plot(x_values_list: list, y_values_list: list, color_list: list, alpha_list: list[float],
                              x_label: str, y_label: str, label_list: list[str | None], fig_name_path: str,
                              xlim: list | None = None, ylim: list | None = None) -> None:
         """
@@ -35,8 +35,8 @@ class ParetoPlots:
         :param y_values_list: list of different Pareto plot y values
         :type y_values_list: list
         :param color_list:
-        :param alpha: The alpha blending value, between 0 (transparent) and 1 (opaque).
-        :type alpha: float
+        :param alpha_list: The alpha blending value, between 0 (transparent) and 1 (opaque) for each sequence in a list
+        :type alpha_list: list[float]
         :param x_label: x label of the Pareto plot
         :type x_label: str
         :param y_label: y label of the Pareto plot
@@ -60,7 +60,7 @@ class ParetoPlots:
             y_values = y_values_list[count]
             color = color_list[count]
             legend = label_list[count]
-            plt.scatter(x_values, y_values, color=color, alpha=alpha, label=legend)
+            plt.scatter(x_values, y_values, color=color, alpha=alpha_list[count], label=legend)
 
         plt.legend()
         plt.xlabel(x_label)
@@ -102,7 +102,7 @@ class ParetoPlots:
         plot_data: PlotData = circuit_optimization.get_circuit_plot_data(circuit_optimization.circuit_study_data)
 
         ParetoPlots.generate_pareto_plot(plot_data.x_values_list, plot_data.y_values_list, color_list=plot_data.color_list,
-                                         alpha=plot_data.alpha, x_label=plot_data.x_label, y_label=plot_data.y_label,
+                                         alpha_list=plot_data.alpha_list, x_label=plot_data.x_label, y_label=plot_data.y_label,
                                          label_list=plot_data.label_list, fig_name_path=fig_name)
 
     @staticmethod
@@ -153,8 +153,8 @@ class ParetoPlots:
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
 
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
-                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 0.5],
+                                             x_label=r'$V_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
@@ -205,8 +205,8 @@ class ParetoPlots:
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}_{transformer_study_data.study_name}")
 
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{tr}$ / cm³',
-                                             y_label=r'$P_\mathrm{tr}$ / W', label_list=label_list,
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 0.5],
+                                             x_label=r'$V_\mathrm{tr}$ / cm³', y_label=r'$P_\mathrm{tr}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
@@ -253,7 +253,7 @@ class ParetoPlots:
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"capacitor_c{circuit_number}_{capacitor_study_data.study_name}")
 
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red"], alpha=0.5, x_label=r'$V_\mathrm{tr}$ / cm³',
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red"], alpha_list=[0.5, 0.5], x_label=r'$V_\mathrm{tr}$ / cm³',
                                              y_label=r'$P_\mathrm{capacitor}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
@@ -301,13 +301,13 @@ class ParetoPlots:
         fig_name = os.path.join(summary_directory, "heat_sink")
 
         # plot all the different heat sink areas
-        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha=0.5,
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha_list=[0.5, 0.5, 0.5],
                                          x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
                                          label_list=legend_list,
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase) -> None:
+    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
@@ -315,30 +315,42 @@ class ParetoPlots:
         :type  summary_study_data: StudyData
         :param circuit_optimization: circuit optimization class
         :type  circuit_optimization: CircuitOptimizationBase
+        :param combination_id: combination ID to highlight in the Pareto plane
+        :type combination_id: int
         """
+        total_volume_key = "total_volume"
+        total_mean_loss_key = "total_mean_loss"
+
         # Assemble summary data csv-file name
         summary_data_csv_file = os.path.join(summary_study_data.optimization_directory, DF_SUMMARY_FINAL)
         # Load data frame from csv-file
         df = pd.read_csv(summary_data_csv_file)
 
-        df_filtered = circuit_optimization.filter_df(df, x="total_volume", y="total_mean_loss",
+        df_filtered = circuit_optimization.filter_df(df, x=total_volume_key, y=total_mean_loss_key,
                                                      factor_min_dc_losses=0.001, factor_max_dc_losses=10)
 
         gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
-        x_values_list = [df["total_volume"] * FACTOR_M3_TO_CM3, df_filtered["total_volume"] * FACTOR_M3_TO_CM3]
-        y_values_list = [df["total_mean_loss"], df_filtered["total_mean_loss"]]
+        x_values_list = [df[total_volume_key] * FACTOR_M3_TO_CM3, df_filtered[total_volume_key] * FACTOR_M3_TO_CM3]
+        y_values_list = [df[total_mean_loss_key], df_filtered[total_mean_loss_key]]
         label_list: list[str | None] = ["Design", "Best designs"]
+
+        if combination_id != 0:
+            volume = df.loc[df["combination_id"] == combination_id][total_volume_key].values[0] * FACTOR_M3_TO_CM3
+            loss = df.loc[df["combination_id"] == combination_id][total_mean_loss_key].values[0]
+            x_values_list.append(volume)
+            y_values_list.append(loss)
+            label_list.append(str(combination_id))
 
         # Set the target directory
         fig_name = os.path.join(summary_study_data.optimization_directory, "summary")
 
-        x_scale_min = 0.9 * df_filtered["total_volume"].min() * FACTOR_M3_TO_CM3
-        x_scale_max = 1.1 * df_filtered["total_volume"].max() * FACTOR_M3_TO_CM3
+        x_scale_min = 0.9 * df_filtered[total_volume_key].min() * FACTOR_M3_TO_CM3
+        x_scale_max = 1.1 * df_filtered[total_volume_key].max() * FACTOR_M3_TO_CM3
 
-        y_scale_min = 0.9 * df_filtered["total_mean_loss"].min()
-        y_scale_max = 1.1 * df_filtered["total_mean_loss"].max()
+        y_scale_min = 0.9 * df_filtered[total_mean_loss_key].min()
+        y_scale_max = 1.1 * df_filtered[total_mean_loss_key].max()
 
-        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["black", "red"], alpha=0.5,
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 1],
                                          x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])

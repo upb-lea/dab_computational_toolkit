@@ -1338,7 +1338,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Extract circuit plot data from data frame
         circuit_plot_data: PlotData = (
             PlotData(x_values_list=circuit_x_values_list, y_values_list=circuit_y_values_list,
-                     color_list=[gps.colors()["black"]], alpha=0.5,
+                     color_list=[gps.colors()["black"]], alpha_list=[0.5],
                      x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
                      label_list=[None], fig_name_path=act_study_data.study_name))
 

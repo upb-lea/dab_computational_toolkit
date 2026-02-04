@@ -12,6 +12,9 @@ import dct.toml_checker as tc
 from dct.dctmainctl import DctMainCtl
 from dct.constant_path import CIRCUIT_WAVEFORMS_FOLDER
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
+from dct.plot_control import ParetoPlots
+from dct.datasets_dtos import StudyData
+from dct.circuit_enums import CalcModeEnum
 
 def visualize_waveform_verification(working_directory: str) -> None:
     """
@@ -70,7 +73,14 @@ def visualize_waveform_verification(working_directory: str) -> None:
 
     # circuit_optimization.plot_compare_waveforms(dto_directory)
     # circuit_optimization.visualize_single_lab_data(summary_pre_processing_path, "c961_i38_t1071_cap1_B32714P8105+000_cap2_B32724A9805K000")
-    circuit_optimization.visualize_all_lab_data(summary_pre_processing_path)
+    # circuit_optimization.visualize_all_lab_data(summary_pre_processing_path)
+
+    pre_summary_data = StudyData(study_name="pre_summary",
+                                 optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory,
+                                                                     circuit_configuration_file.replace(".toml", "")),
+                                 calculation_mode=CalcModeEnum("new"))
+
+    ParetoPlots.plot_summary(pre_summary_data, circuit_optimization, combination_id=34286)
 
 
 if __name__ == "__main__":
