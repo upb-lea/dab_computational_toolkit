@@ -352,5 +352,5 @@ class ParetoPlots:
         y_scale_max = 1.1 * df_filtered[total_mean_loss_key].max()
 
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 1],
-                                         x_label=r"$V_\mathrm{DAB}$ / cm³", y_label=r"$P_\mathrm{DAB,mean}$ / W",
+                                         x_label=r"$V_\mathrm{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,mean}$ / W",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
