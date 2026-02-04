@@ -429,3 +429,19 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type filepath: str
         """
         pass
+
+    @abstractmethod
+    def add_time_domain_simulations(self) -> None:
+        """Add time domain simulations to the existing circuit DTOs."""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def plot_compare_waveforms(dto_directory: str) -> None:
+        """
+        Compare calculated waveforms with simulated waveforms (GeckoCIRCUITS).
+
+        :param dto_directory: Folder of circuit DTOs to read the values from
+        :type dto_directory: str
+        """
+        pass

@@ -7,9 +7,14 @@ import os
 # own libraries
 import dct
 
+# root directory
 DCT_ROOT = os.path.dirname(os.path.realpath(dct.__file__))
+
+# GECKO simulation
 GECKO_PATH = os.path.join(DCT_ROOT, "topology", "dab", "GeckoCIRCUITS")
 GECKO_COMPONENT_MODELS_DIRECTORY = "gecko_component_models"
+
+# directories
 CIRCUIT_CAPACITOR_LOSS_FOLDER = "01_capacitor_results"
 CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER = "08_reluctance_inductor_results"
 CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER = "09_fem_inductor_results"
@@ -18,6 +23,12 @@ CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER = "09_fem_transformer_results"
 SUMMARY_COMBINATION_FOLDER = "combination_results"
 SUMMARY_COMBINATION_PlOTS_FOLDER = "combination_plots"
 FILTERED_RESULTS_PATH = "filtered_results"
+CIRCUIT_WAVEFORMS_FOLDER = "filtered_results_waveforms"
+PARETO_PLOT_PDF_FOLDER = "pareto_plot_pdf"
+PARETO_PLOT_PNG_FOLDER = "pareto_plot_png"
+PARETO_PLOT_PKL_FOLDER = "pareto_plot_pkl"
+
+# processing status
 RELUCTANCE_COMPLETE_FILE = "reluctance_processing_complete.json"
 SIMULATION_COMPLETE_FILE = "simulation_processing_complete.json"
 PROCESSING_COMPLETE_FILE = "processing_complete.json"

@@ -1281,6 +1281,7 @@ class DctMainCtl:
             toml_debug = tc.Debug(**debug_dict)
         else:
             toml_debug = tc.Debug(general=tc.DebugGeneral(is_debug=False),
+                                  circuit=tc.DebugCircuit(is_waveform_validation=False),
                                   capacitor=tc.DebugCapacitor(number_working_point_max=1),
                                   inductor=tc.DebugInductor(number_reluctance_working_point_max=1,
                                                             number_fem_working_point_max=1),
@@ -1804,6 +1805,16 @@ class DctMainCtl:
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.circuit_filtered, "Filtered value of electric Pareto front calculated")
+
+        # --------------------------
+        # Time domain simulation
+        # --------------------------
+        if toml_debug.circuit.is_waveform_validation:
+            logger.info("Start time domain simulation")
+
+            self._circuit_optimization.add_time_domain_simulations()
+
+            logger.info("End time domain simulation")
 
         # --------------------------
         # Capacitor selection

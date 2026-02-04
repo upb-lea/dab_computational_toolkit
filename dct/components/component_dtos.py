@@ -156,6 +156,8 @@ class InductorResults:
 
     # pareto
     loss_array: np.ndarray
+    winding_loss_array: np.ndarray
+    core_loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
     r_th_ind_heat_sink: float
@@ -177,6 +179,9 @@ class StackedTransformerResults:
 
     # pareto
     loss_array: np.ndarray
+    core_loss_array: np.ndarray
+    winding_1_loss_array: np.ndarray
+    winding_2_loss_array: np.ndarray
     volume: float
     area_to_heat_sink: float
     r_th_xfmr_heat_sink: float

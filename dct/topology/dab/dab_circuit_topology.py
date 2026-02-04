@@ -38,7 +38,9 @@ from dct.components.component_dtos import (CapacitorRequirements, ComponentRequi
                                            TransformerRequirements, ComponentCooling)
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER,
+                               FILTERED_RESULTS_PATH)
+from dct.topology.dab.dab_plot_waveforms import plot_calc_vs_requirements, plot_calc_waveforms, plot_calc_i_hf_waveforms
 
 logger = logging.getLogger(__name__)
 
@@ -1612,6 +1614,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             raise ValueError("Incomplete dataset.")
         if combination_dto.capacitor_1_results is None:
             raise ValueError("Incomplete dataset.")
+        if combination_dto.capacitor_2_results is None:
+            raise ValueError("Incomplete dataset.")
         if combination_dto.inductor_results is None:
             raise ValueError("Incomplete dataset.")
         if combination_dto.stacked_transformer_results is None:
@@ -1621,20 +1625,23 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             "circuit b1": combination_dto.calc_losses.p_m1_conduction.flatten(),
             "circuit b2": combination_dto.calc_losses.p_m2_conduction.flatten(),
             "capacitor b1": combination_dto.capacitor_1_results.loss_total_array.flatten(),
-            "inductor": combination_dto.inductor_results.loss_array.flatten(),
-            "transformer": combination_dto.stacked_transformer_results.loss_array.flatten()
+            "capacitor b2": combination_dto.capacitor_2_results.loss_total_array.flatten(),
+            "inductor winding": combination_dto.inductor_results.winding_loss_array.flatten(),
+            "inductor core": combination_dto.inductor_results.core_loss_array.flatten(),
+            "transformer winding 1": combination_dto.stacked_transformer_results.winding_1_loss_array.flatten(),
+            "transformer winding 2": combination_dto.stacked_transformer_results.winding_2_loss_array.flatten(),
+            "transformer core": combination_dto.stacked_transformer_results.core_loss_array.flatten()
         }
 
         # set up operating point x-labels
         x_labels = []
+        fig, ax = plt.subplots()
         for count, _ in enumerate(combination_dto.input_config.mesh_v1.flatten()):
             v1 = int(combination_dto.input_config.mesh_v1.flatten()[count])
             v2 = int(combination_dto.input_config.mesh_v2.flatten()[count])
             power = int(combination_dto.input_config.mesh_p.flatten()[count])
             operating_point_str = f"{v1} V,\n{v2} V,\n{power} W"
             x_labels.append(operating_point_str)
-
-        fig, ax = plt.subplots()
 
         number_operating_points = len(np.array(combination_dto.calc_modulation.phi).flatten())
         operating_point_list = np.linspace(1, number_operating_points, number_operating_points).tolist()
@@ -1651,3 +1658,50 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         plt.legend()
         plt.tight_layout()
         fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
+        fig.clf()
+
+    def add_time_domain_simulations(self) -> None:
+        """Add time domain simulations to the existing circuit DTOs."""
+        dto_source_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+        dto_target_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+
+        _, circuit_id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(dto_source_directory)
+
+        if not os.path.exists(dto_target_directory):
+            os.makedirs(dto_target_directory)
+
+        for circuit_id in circuit_id_list:
+            # Assemble pkl-filename
+            circuit_source_id_filepath = os.path.join(dto_source_directory, f"{circuit_id}.pkl")
+            circuit_target_id_filepath = os.path.join(dto_target_directory, f"{circuit_id}.pkl")
+
+            # Get circuit results
+            with open(circuit_source_id_filepath, 'rb') as pickle_file_data:
+                combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+            combination_dto = HandleDabDto.add_gecko_simulation_results(combination_dto, get_waveforms=True)
+
+            with open(circuit_target_id_filepath, 'wb') as handle:
+                pickle.dump(combination_dto, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def plot_compare_waveforms(dto_directory: str) -> None:
+        """
+        Compare calculated waveforms with simulated waveforms (GeckoCIRCUITS).
+
+        :param dto_directory: Folder of circuit DTOs to read the values from
+        :type dto_directory: str
+        """
+        _, circuit_id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(dto_directory)
+
+        for circuit_id in circuit_id_list:
+            # Assemble pkl-filename
+            combination_id_filepath = os.path.join(dto_directory, f"{circuit_id}.pkl")
+
+            # Get circuit results
+            with open(combination_id_filepath, 'rb') as pickle_file_data:
+                combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+            plot_calc_waveforms(combination_dto, compare_gecko_waveforms=True)
+            plot_calc_i_hf_waveforms(combination_dto, compare_gecko_waveforms=True)
+            plot_calc_vs_requirements(combination_dto)
