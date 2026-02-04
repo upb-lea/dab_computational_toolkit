@@ -535,6 +535,8 @@ class InductorOptimization:
 
         # simulate all operating points
         for inductor_id in tqdm.tqdm(inductor_id_list_pareto):
+            new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
+                                                     CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
             try:
                 # generate a new df with only a single entry (with the geometry data)
                 df_geometry_re_simulation_number = df_inductor_pareto[df_inductor_pareto["number"] == float(inductor_id)]
@@ -546,14 +548,15 @@ class InductorOptimization:
                 winding_loss_array = np.full_like(inductor_requirements.time_array[..., 0], np.nan)
                 core_loss_array = np.full_like(inductor_requirements.time_array[..., 0], np.nan)
 
-                new_circuit_dto_directory = os.path.join(act_io_config.inductor_optimization_directory,
-                                                         CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
                 if not os.path.exists(new_circuit_dto_directory):
                     os.makedirs(new_circuit_dto_directory)
 
-                if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
-                    logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
+                # check if simulation already exists or has already failed in the past
+                if (os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")) \
+                        or os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}_failed.txt"))):
+                    logger.info(f"FEM-simulation of circuit {circuit_id}, inductor {inductor_id} already exists or has already failed in the past. Skip.")
                 else:
+                    logger.info(f"Start FEM-simulation of circuit {circuit_id}, inductor {inductor_id}.")
                     for vec_vvp in tqdm.tqdm(np.ndindex(combined_loss_array.shape),
                                              total=len(inductor_requirements.time_array[..., 0].flatten())):
                         time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
@@ -575,8 +578,7 @@ class InductorOptimization:
                         core_loss_array[vec_vvp] = core_loss
 
                     # Calculate thermal resistance
-                    r_th_ind_heat_sink = ThermalCalcSupport.calculate_r_th_tim(
-                        area_to_heat_sink, thermal_data)
+                    r_th_ind_heat_sink = ThermalCalcSupport.calculate_r_th_tim(area_to_heat_sink, thermal_data)
 
                     inductor_results = InductorResults(
                         loss_array=combined_loss_array,
@@ -595,3 +597,7 @@ class InductorOptimization:
                         pickle.dump(inductor_results, output, pickle.HIGHEST_PROTOCOL)
             except:
                 logger.warning(f"for number {inductor_id} an operation point exceeds the boundary!")
+                failed_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}_failed.txt")
+                print(f"{failed_file=}")
+                with open(failed_file, "a") as f:
+                    f.write("")
