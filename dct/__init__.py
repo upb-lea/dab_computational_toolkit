@@ -20,3 +20,4 @@ from dct.sampling import *
 from dct.server_ctl import *
 from dct.server_ctl_dtos import *
 from dct.visualization import *
+from dct.constants import *

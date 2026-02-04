@@ -2014,13 +2014,20 @@ class DctMainCtl:
                                                         self._transformer_study_configuration_list,
                                                         df_pareto_front, is_pre_summary=True)
 
-        self._circuit_optimization.visualize_lab_data(self._summary_pre_processing._summary_study_data.optimization_directory)
+        # self._circuit_optimization.visualize_lab_data(self._summary_pre_processing._summary_study_data.optimization_directory)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
+
+        # Plot results of all capacitors
+        for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+            ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
+                                               self._circuit_optimization.filter_data.filtered_list_files,
+                                               pre_summary_data.optimization_directory)
+
         # Plot results of all inductors
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
@@ -2125,6 +2132,13 @@ class DctMainCtl:
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
+
+        # Plot results of all capacitors
+        for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+            ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
+                                               self._circuit_optimization.filter_data.filtered_list_files,
+                                               summary_data.optimization_directory)
+
         # Plot results of all inductors
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,

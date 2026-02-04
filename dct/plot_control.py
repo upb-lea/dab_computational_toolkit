@@ -16,6 +16,7 @@ import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER
+from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
 
 
 class ParetoPlots:
@@ -127,8 +128,7 @@ class ParetoPlots:
             df = fmt.optimization.InductorOptimization.ReluctanceModel.study_to_df(config)
 
             # m³ -> cm³
-            factor_m3_cm3 = 1e6
-            df["values_0"] = df["values_0"] * factor_m3_cm3
+            df["values_0"] = df["values_0"] * FACTOR_M3_TO_CM3
 
             fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
             df_filtered = fmt.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
@@ -148,7 +148,7 @@ class ParetoPlots:
             y_scale_max = 1.1 * df_filtered["values_1"].max()
 
             # Set the target directory
-            fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}")
+            fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
 
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
                                              y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
@@ -178,8 +178,7 @@ class ParetoPlots:
             df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(config)
 
             # m³ -> cm³
-            factor_m3_cm3 = 1e6
-            df["values_0"] = df["values_0"] * factor_m3_cm3
+            df["values_0"] = df["values_0"] * FACTOR_M3_TO_CM3
 
             fem_results_folder_path = os.path.join(file_path, "02_fem_simulation_results")
             df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=10)
@@ -199,10 +198,58 @@ class ParetoPlots:
             y_scale_max = 1.1 * df_filtered["values_1"].max()
 
             # Set the target directory
-            fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}")
+            fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}_{transformer_study_data.study_name}")
 
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{ind}$ / cm³',
-                                             y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha=0.5, x_label=r'$V_\mathrm{tr}$ / cm³',
+                                             y_label=r'$P_\mathrm{tr}$ / W', label_list=label_list,
+                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+
+    @staticmethod
+    def plot_capacitor_results(capacitor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
+        """
+        Plot the results of the transformer optimization in the Pareto plane.
+
+        :param capacitor_study_data: Information about the capacitor study name and study path
+        :type  capacitor_study_data: StudyData
+        :param filtered_list_files: List of filtered circuit design names
+        :type  filtered_list_files: list[str]
+        :param summary_directory: Path of the summary directory (pre-summary or summary directory)
+        :type  summary_directory: str
+        """
+        volume_key = "volume_total"
+        loss_key = "power_loss_total"
+
+        # Loop over all filtered circuit designs
+        for circuit_number in filtered_list_files:
+            # Assemble file path for actual circuit design
+            file_path = os.path.join(capacitor_study_data.optimization_directory, circuit_number,
+                                     capacitor_study_data.study_name)
+
+            # Assemble pkl-file name
+            df_capacitors_directory = os.path.join(file_path, "results.csv")
+            df_capacitors_filtered_directory = os.path.join(file_path, "results_filtered.csv")
+
+            df_capacitors = pd.read_csv(df_capacitors_directory)
+            df_capacitors_filtered = pd.read_csv(df_capacitors_filtered_directory)
+
+            df_capacitors[volume_key] = df_capacitors[volume_key] * FACTOR_M3_TO_CM3
+            df_capacitors_filtered[volume_key] = df_capacitors_filtered[volume_key] * FACTOR_M3_TO_CM3
+
+            x_values_list = [df_capacitors[volume_key], df_capacitors_filtered[volume_key]]
+            y_values_list = [df_capacitors[loss_key], df_capacitors_filtered[loss_key]]
+            label_list: list[str | None] = ["all", "filtered"]
+
+            x_scale_min = 0.9 * df_capacitors_filtered[volume_key].min()
+            x_scale_max = 1.1 * df_capacitors_filtered[volume_key].max()
+
+            y_scale_min = 0.9 * df_capacitors_filtered[loss_key].min()
+            y_scale_max = 1.1 * df_capacitors_filtered[loss_key].max()
+
+            # Set the target directory
+            fig_name = os.path.join(summary_directory, f"capacitor_c{circuit_number}_{capacitor_study_data.study_name}")
+
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red"], alpha=0.5, x_label=r'$V_\mathrm{tr}$ / cm³',
+                                             y_label=r'$P_\mathrm{capacitor}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
@@ -215,10 +262,6 @@ class ParetoPlots:
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         """
-        # factor definitions
-        factor_m2_cm2 = 10000
-        factor_m3_cm3 = 1e6
-
         # target color list and different heat sink areas to plot (split 3d plot into several 2d plots)
         color_list = [gps.colors()["black"], gps.colors()["red"], gps.colors()["blue"], gps.colors()["green"]]
         a_min_m2_list = [0.002, 0.003, 0.005]
@@ -230,8 +273,8 @@ class ParetoPlots:
         config = hct.Optimization.load_config(heat_sink_pkl_path)
         df_heat_sink = hct.Optimization.study_to_df(config)
 
-        df_heat_sink["values_0"] = df_heat_sink["values_0"] * factor_m3_cm3
-        df_heat_sink["values_2"] = df_heat_sink["values_2"] * factor_m2_cm2
+        df_heat_sink["values_0"] = df_heat_sink["values_0"] * FACTOR_M3_TO_CM3
+        df_heat_sink["values_2"] = df_heat_sink["values_2"] * FACTOR_M2_TO_CM2
 
         x_values_list = []
         y_values_list = []
@@ -240,11 +283,11 @@ class ParetoPlots:
         # filter for different heat sink surface areas
         for area_min in a_min_m2_list:
 
-            df_a_min = df_heat_sink.loc[df_heat_sink["values_2"] > area_min * factor_m2_cm2]
+            df_a_min = df_heat_sink.loc[df_heat_sink["values_2"] > area_min * FACTOR_M2_TO_CM2]
 
             x_values_list.append(df_a_min["values_0"])
             y_values_list.append(df_a_min["values_1"])
-            legend_list.append(f"{int(area_min * factor_m2_cm2)} cm²")
+            legend_list.append(f"{int(area_min * FACTOR_M2_TO_CM2)} cm²")
 
         # Set the target directory
         fig_name = os.path.join(summary_directory, "heat_sink")
@@ -275,15 +318,15 @@ class ParetoPlots:
 
         gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
-        x_values_list = [df["total_volume"] * 1e6, df_filtered["total_volume"] * 1e6]
+        x_values_list = [df["total_volume"] * FACTOR_M3_TO_CM3, df_filtered["total_volume"] * FACTOR_M3_TO_CM3]
         y_values_list = [df["total_mean_loss"], df_filtered["total_mean_loss"]]
         label_list: list[str | None] = ["Design", "Best designs"]
 
         # Set the target directory
         fig_name = os.path.join(summary_study_data.optimization_directory, "summary")
 
-        x_scale_min = 0.9 * df_filtered["total_volume"].min() * 1e6
-        x_scale_max = 1.1 * df_filtered["total_volume"].max() * 1e6
+        x_scale_min = 0.9 * df_filtered["total_volume"].min() * FACTOR_M3_TO_CM3
+        x_scale_max = 1.1 * df_filtered["total_volume"].max() * FACTOR_M3_TO_CM3
 
         y_scale_min = 0.9 * df_filtered["total_mean_loss"].min()
         y_scale_max = 1.1 * df_filtered["total_mean_loss"].max()
