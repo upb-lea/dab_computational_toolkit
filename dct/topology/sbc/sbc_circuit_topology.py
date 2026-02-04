@@ -1693,7 +1693,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                                      directory=results_folder, timestamp=False)
 
     @staticmethod
-    def visualize_lab_data(filepath: str) -> None:
+    def visualize_all_lab_data(filepath: str) -> None:
         """
         Generate plots or tables for the practical operation in the lab.
 
@@ -1701,6 +1701,19 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :type filepath: str
         """
         print(filepath)
+
+    @staticmethod
+    def visualize_single_lab_data(filepath: str, combination_id: str) -> None:
+        """
+        Generate plots or tables for the practical operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
+        :param combination_id: combination ID of object to plot
+        :type combination_id: str
+        """
+        print(filepath)
+        print(combination_id)
 
     def add_time_domain_simulations(self) -> None:
         """Add time domain simulations to the existing circuit DTOs."""

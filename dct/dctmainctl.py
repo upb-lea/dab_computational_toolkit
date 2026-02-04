@@ -2014,8 +2014,6 @@ class DctMainCtl:
                                                         self._transformer_study_configuration_list,
                                                         df_pareto_front, is_pre_summary=True)
 
-        # self._circuit_optimization.visualize_lab_data(self._summary_pre_processing._summary_study_data.optimization_directory)
-
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)

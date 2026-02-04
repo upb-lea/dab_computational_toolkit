@@ -14,10 +14,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 import deepdiff
-import dct.sampling as sampling
-from dct.components.component_dtos import InductorRequirements
 
 # own libraries
+import dct.sampling as sampling
+from dct.components.component_dtos import InductorRequirements
+from dct.generalplotsettings import colors
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
 from dct.topology.dab import dab_datasets_dtos as d_dtos
 from dct.topology.dab import dab_circuit_topology_dtos as circuit_dtos
@@ -1548,7 +1549,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                               directory=results_folder, timestamp=False)
 
     @staticmethod
-    def visualize_lab_data(filepath: str) -> None:
+    def visualize_all_lab_data(filepath: str) -> None:
         """
         Generate plots or tables for the practical operation in the lab.
 
@@ -1559,6 +1560,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         plot_results_path = os.path.join(filepath, SUMMARY_COMBINATION_PlOTS_FOLDER)
         _, id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(result_dto_path)
 
+        # generate the empty figures objects for the following loop to avoid high memory consumption
+        single_design_fig, single_design_ax = plt.subplots()
+
         for combination_id in id_list:
             # Assemble pkl-filename
             combination_id_filepath = os.path.join(result_dto_path, f"{combination_id}.pkl")
@@ -1567,8 +1571,36 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             with open(combination_id_filepath, 'rb') as pickle_file_data:
                 combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
-            DabCircuitOptimization.plot_single_design_operating_points_from_dto(combination_dto, plot_results_path, combination_id)
+            DabCircuitOptimization.plot_single_design_operating_points_from_dto(combination_dto, plot_results_path, combination_id,
+                                                                                single_design_fig, single_design_ax)
             DabCircuitOptimization.generate_operating_point_table(combination_dto, plot_results_path, combination_id)
+
+    @staticmethod
+    def visualize_single_lab_data(filepath: str, combination_id: str) -> None:
+        """
+        Generate plots or tables for the practical operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
+        :param combination_id: combination ID of object to plot
+        :type combination_id: str
+        """
+        result_dto_path = os.path.join(filepath, SUMMARY_COMBINATION_FOLDER)
+        plot_results_path = os.path.join(filepath, SUMMARY_COMBINATION_PlOTS_FOLDER)
+
+        # generate the empty figures objects for the following loop to avoid high memory consumption
+        single_design_fig, single_design_ax = plt.subplots()
+
+        # Assemble pkl-filename
+        combination_id_filepath = os.path.join(result_dto_path, f"{combination_id}.pkl")
+
+        # Get circuit results
+        with open(combination_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+        DabCircuitOptimization.plot_single_design_operating_points_from_dto(combination_dto, plot_results_path, combination_id, single_design_fig,
+                                                                            single_design_ax)
+        DabCircuitOptimization.generate_operating_point_table(combination_dto, plot_results_path, combination_id)
 
     @staticmethod
     def generate_operating_point_table(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str) -> None:
@@ -1596,7 +1628,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         df.to_csv(f"{plot_results_path}/{combination_id}.csv")
 
     @staticmethod
-    def plot_single_design_operating_points_from_dto(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str) -> None:
+    def plot_single_design_operating_points_from_dto(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str,
+                                                     fig: plt.Figure, ax: plt.Axes) -> None:
         """
         Generate plot outputs to show the operating points and compare the converters.
 
@@ -1606,6 +1639,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         :type plot_results_path: str
         :param combination_id: combination ID
         :type combination_id: int
+        :param fig: matplotlib figure object
+        :type fig: Figure
+        :param ax: matplotlib axes object
+        :type ax: Axes
         """
         if not os.path.exists(plot_results_path):
             os.makedirs(plot_results_path)
@@ -1633,9 +1670,32 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             "transformer core": combination_dto.stacked_transformer_results.core_loss_array.flatten()
         }
 
+        bar_colors = {
+            "circuit b1": colors()["blue"],
+            "circuit b2": colors()["blue"],
+            "capacitor b1": colors()["orange"],
+            "capacitor b2": colors()["orange"],
+            "inductor winding": colors()["red"],
+            "inductor core": colors()["red"],
+            "transformer winding 1": colors()["gray"],
+            "transformer winding 2": colors()["gray"],
+            "transformer core": colors()["gray"]
+        }
+
+        textures = {
+            "circuit b1": "",
+            "circuit b2": ".",
+            "capacitor b1": "",
+            "capacitor b2": ".",
+            "inductor winding": "",
+            "inductor core": ".",
+            "transformer winding 1": "",
+            "transformer winding 2": "o",
+            "transformer core": "."
+        }
+
         # set up operating point x-labels
         x_labels = []
-        fig, ax = plt.subplots()
         for count, _ in enumerate(combination_dto.input_config.mesh_v1.flatten()):
             v1 = int(combination_dto.input_config.mesh_v1.flatten()[count])
             v2 = int(combination_dto.input_config.mesh_v2.flatten()[count])
@@ -1649,16 +1709,16 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # generate bar graph
         bottom = np.zeros(number_operating_points)
         for label, data_count in data.items():
-            ax.bar(operating_point_list, data_count, bottom=bottom, label=label)
+            ax.bar(operating_point_list, data_count, bottom=bottom, label=label, color=bar_colors[label], hatch=textures[label], edgecolor="black")
             bottom += data_count
-        plt.xticks(operating_point_list, labels=x_labels)
-        plt.xlabel("Operating points")
-        plt.ylabel("Loss / W")
-        plt.grid()
-        plt.legend()
-        plt.tight_layout()
+        ax.set_xticks(operating_point_list, labels=x_labels)
+        ax.set_xlabel("Operating points")
+        ax.set_ylabel("Loss / W")
+        ax.grid(axis="y")
+        ax.legend()
+        fig.tight_layout()
         fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
-        fig.clf()
+        plt.cla()
 
     def add_time_domain_simulations(self) -> None:
         """Add time domain simulations to the existing circuit DTOs."""
