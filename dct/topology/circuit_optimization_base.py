@@ -421,12 +421,25 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
     @staticmethod
     @abstractmethod
-    def visualize_lab_data(filepath: str) -> None:
+    def visualize_all_lab_data(filepath: str) -> None:
         """
         Generate plots or tables for the practical operation in the lab.
 
         :param filepath: filepath
         :type filepath: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def visualize_single_lab_data(filepath: str, combination_id: str) -> None:
+        """
+        Generate plots or tables for a single operation in the lab.
+
+        :param filepath: filepath
+        :type filepath: str
+        :param combination_id: combination ID of object to plot
+        :type combination_id: str
         """
         pass
 

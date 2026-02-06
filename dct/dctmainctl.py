@@ -323,8 +323,9 @@ class DctMainCtl:
                 with open(logging_config_file, "rb") as f:
                     try:
                         logging.config.fileConfig(logging_config_file)
+                        logger.info("Existing logging.conf found. Loading of config was successful.")
                     except:
-                        logger.warning(f"Logging configuration file {logging_config_file} is inconsistent.")
+                        logger.info(f"Logging configuration file {logging_config_file} is inconsistent.")
                     else:
                         logger.info(f"Found existing logging configuration {logging_config_file}.")
             else:
@@ -333,12 +334,14 @@ class DctMainCtl:
                 # Reset to standard file name
                 logging_config_file = os.path.join(logging_conf_file_directory, "logging.conf")
                 if os.path.isfile(logging_config_file):
+                    logger.info("Read new generated logging.conf")
                     with open(logging_config_file, "rb") as f:
                         logging.config.fileConfig(logging_config_file)
+                    logger.info("Finished read new generated logging.conf")
                 else:
                     raise ValueError("logging.conf can not be generated.")
         else:
-            logger.warning(f"Path {logging_conf_file_directory} does not exists!")
+            logger.info(f"Path {logging_conf_file_directory} does not exists!")
 
     def generate_conf_file(self, path: str) -> bool:
         """
@@ -2014,13 +2017,18 @@ class DctMainCtl:
                                                         self._transformer_study_configuration_list,
                                                         df_pareto_front, is_pre_summary=True)
 
-        self._circuit_optimization.visualize_lab_data(self._summary_pre_processing._summary_study_data.optimization_directory)
-
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
+
+        # Plot results of all capacitors
+        for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+            ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
+                                               self._circuit_optimization.filter_data.filtered_list_files,
+                                               pre_summary_data.optimization_directory)
+
         # Plot results of all inductors
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
@@ -2125,6 +2133,13 @@ class DctMainCtl:
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
+
+        # Plot results of all capacitors
+        for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+            ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
+                                               self._circuit_optimization.filter_data.filtered_list_files,
+                                               summary_data.optimization_directory)
+
         # Plot results of all inductors
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,

@@ -97,7 +97,7 @@ class PlotData:
     x_values_list: list[list[float]]
     y_values_list: list[list[float]]
     color_list: list[str]
-    alpha: float
+    alpha_list: list[float]
     x_label: str
     y_label: str
     label_list: list[str | None]

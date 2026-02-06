@@ -707,12 +707,13 @@ class SummaryProcessing:
         df_hs = hct.Optimization.study_to_df(hs_config)
 
         # generate full summary as panda database operation
-        logger.info(df_hs.loc[df_hs["values_1"] < 1]["values_0"].nsmallest(n=1).values[0])
+        logger.info("Select smallest heat sink volume")
         act_df_for_hs["heat_sink_volume"] = act_df_for_hs["r_th_heat_sink"].apply(
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
 
         # add heat sink ID
+        logger.info("Add heat sink ID for smallest heat sink volume")
         act_df_for_hs["heat_sink_id"] = act_df_for_hs["r_th_heat_sink"].apply(
             lambda r_th_max: df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).index[0] \
             if np.any(df_hs.loc[df_hs["values_1"] < r_th_max]["values_0"].nsmallest(n=1).values) else None)
