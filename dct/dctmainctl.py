@@ -323,25 +323,25 @@ class DctMainCtl:
                 with open(logging_config_file, "rb") as f:
                     try:
                         logging.config.fileConfig(logging_config_file)
-                        print("Existing logging.conf found. Loading of config was successful.")
+                        logger.info("Existing logging.conf found. Loading of config was successful.")
                     except:
-                        print(f"Logging configuration file {logging_config_file} is inconsistent.")
+                        logger.info(f"Logging configuration file {logging_config_file} is inconsistent.")
                     else:
-                        print(f"Found existing logging configuration {logging_config_file}.")
+                        logger.info(f"Found existing logging configuration {logging_config_file}.")
             else:
-                print("Generate a new logging.conf file.")
+                logger.info("Generate a new logging.conf file.")
                 generate_logging_config(logging_conf_file_directory)
                 # Reset to standard file name
                 logging_config_file = os.path.join(logging_conf_file_directory, "logging.conf")
                 if os.path.isfile(logging_config_file):
-                    print("Read new generated logging.conf")
+                    logger.info("Read new generated logging.conf")
                     with open(logging_config_file, "rb") as f:
                         logging.config.fileConfig(logging_config_file)
-                    print("Finished read new generated logging.conf")
+                    logger.info("Finished read new generated logging.conf")
                 else:
                     raise ValueError("logging.conf can not be generated.")
         else:
-            print(f"Path {logging_conf_file_directory} does not exists!")
+            logger.info(f"Path {logging_conf_file_directory} does not exists!")
 
     def generate_conf_file(self, path: str) -> bool:
         """

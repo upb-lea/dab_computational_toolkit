@@ -1618,9 +1618,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             "v1": np.array(combination_dto.input_config.mesh_v1).flatten(),
             "v2": np.array(combination_dto.input_config.mesh_v2).flatten(),
             "p": np.array(combination_dto.input_config.mesh_p).flatten(),
-            "phi": np.array(combination_dto.calc_modulation.phi).flatten(),
-            "tau_1": np.array(combination_dto.calc_modulation.tau1).flatten(),
-            "tau_2": np.array(combination_dto.calc_modulation.tau2).flatten()}
+            "phi / rad": np.array(combination_dto.calc_modulation.phi).flatten(),
+            "tau_1 / rad": np.array(combination_dto.calc_modulation.tau1).flatten(),
+            "tau_2 / rad": np.array(combination_dto.calc_modulation.tau2).flatten(),
+            "phi / deg": np.array(np.rad2deg(combination_dto.calc_modulation.phi)).flatten(),
+            "tau_1 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau1)).flatten(),
+            "tau_2 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau2)).flatten()}
 
         df = pd.DataFrame(data)
 
