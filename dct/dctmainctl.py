@@ -227,8 +227,8 @@ class DctMainCtl:
     def _verify_program_flow_parameter(act_toml_prog_flow: tc.FlowControl) -> tuple[bool, str]:
         """Verify the program flow configuration.
 
-        :param toml_prog_flow: toml program flow configuration
-        :type toml_prog_flow: tc.FlowControl
+        :param act_toml_prog_flow: toml program flow configuration
+        :type act_toml_prog_flow: tc.FlowControl
         :return: True, if the configuration was consistent and empty string or False and report of the issues
         :rtype: tuple[bool, str]
         """

@@ -672,11 +672,22 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             steps_per_dimension = int(np.ceil(np.power(act_dab_config.sampling.sampling_points, 1 / 3)))
             logger.info(f"Number of sampling points has been updated from {act_dab_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
-            v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(
-                np.linspace(act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1], steps_per_dimension),
-                np.linspace(act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1], steps_per_dimension),
-                np.linspace(act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1], steps_per_dimension),
-                sparse=False)
+            if act_dab_config.output_range.v1_min_max_list[0] == act_dab_config.output_range.v1_min_max_list[1]:
+                v1_dimension = np.array([act_dab_config.output_range.v1_min_max_list[0]])
+                logger.info(f"Reducing v1 dimension to {act_dab_config.output_range.v1_min_max_list[0]} V.")
+            else:
+                v1_dimension = np.linspace(act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1], steps_per_dimension)
+            if act_dab_config.output_range.v2_min_max_list[0] == act_dab_config.output_range.v2_min_max_list[1]:
+                v2_dimension = np.array(act_dab_config.output_range.v2_min_max_list[0])
+                logger.info(f"Reducing v2 dimension to {act_dab_config.output_range.v2_min_max_list[0]} V.")
+            else:
+                v2_dimension = np.linspace(act_dab_config.output_range.v2_min_max_list[0], act_dab_config.output_range.v2_min_max_list[1], steps_per_dimension)
+            if act_dab_config.output_range.p_min_max_list[0] == act_dab_config.output_range.p_min_max_list[1]:
+                p_dimension = np.array(act_dab_config.output_range.p_min_max_list[0])
+                logger.info(f"Reducing p dimension to {act_dab_config.output_range.p_min_max_list[0]} W.")
+            else:
+                p_dimension = np.linspace(act_dab_config.output_range.p_min_max_list[0], act_dab_config.output_range.p_min_max_list[1], steps_per_dimension)
+            v1_operating_points, v2_operating_points, p_operating_points = np.meshgrid(v1_dimension, v2_dimension, p_dimension, sparse=False)
         elif act_dab_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
             v1_operating_points, v2_operating_points, p_operating_points = sampling.latin_hypercube(
                 act_dab_config.output_range.v1_min_max_list[0], act_dab_config.output_range.v1_min_max_list[1],
@@ -703,7 +714,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         logger.debug(f"{v1_operating_points=}")
 
         # calculate weighting
-
         if act_dab_config.sampling.sampling_method == SamplingEnum.meshgrid:
             weight_sum = 0
             given_user_points = 0
