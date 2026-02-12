@@ -242,6 +242,8 @@ class GeckoWaveforms:
     i_Lc2: np.ndarray
     i_HF1: np.ndarray
     i_HF2: np.ndarray
+    v1: np.ndarray
+    v2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

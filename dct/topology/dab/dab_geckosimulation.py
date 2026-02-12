@@ -110,7 +110,7 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
                    'zvs_coverage_notnan', 'zvs_coverage1_notnan', 'zvs_coverage2_notnan',
                    'i_HF1_total_mean', 'I1_squared_total_mean']
 
-    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2', 'i_HF1', 'i_HF2']
+    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2', 'i_HF1', 'i_HF2', 'v1', 'v2']
 
     # Set a reasonable low zvs voltage limit below we assume zvs operation
     zvs_vlimit = 50
