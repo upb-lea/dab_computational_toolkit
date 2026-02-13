@@ -126,6 +126,8 @@ class CalcModulation:
     mask_zvs_coverage_notnan: np.ndarray
     mask_m1n: np.ndarray
     mask_m1p: np.ndarray
+    q_ab_req1: np.ndarray
+    q_ab_req2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

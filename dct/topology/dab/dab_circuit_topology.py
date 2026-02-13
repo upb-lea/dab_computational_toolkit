@@ -41,6 +41,7 @@ from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUI
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER,
                                FILTERED_RESULTS_PATH)
+from dct.constants import FACTOR_SECONDS_TO_NANOSECONDS
 from dct.topology.dab.dab_plot_waveforms import plot_calc_vs_requirements, plot_calc_waveforms, plot_calc_i_hf_waveforms
 
 logger = logging.getLogger(__name__)
@@ -1628,17 +1629,25 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             "v1": np.array(combination_dto.input_config.mesh_v1).flatten(),
             "v2": np.array(combination_dto.input_config.mesh_v2).flatten(),
             "p": np.array(combination_dto.input_config.mesh_p).flatten(),
-            "phi / rad": np.array(combination_dto.calc_modulation.phi).flatten(),
-            "tau_1 / rad": np.array(combination_dto.calc_modulation.tau1).flatten(),
-            "tau_2 / rad": np.array(combination_dto.calc_modulation.tau2).flatten(),
             "phi / deg": np.array(np.rad2deg(combination_dto.calc_modulation.phi)).flatten(),
             "tau_1 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau1)).flatten(),
-            "tau_2 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau2)).flatten()}
+            "tau_2 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau2)).flatten(),
+            "t_dead_1 / ns": np.array(combination_dto.gecko_additional_params.t_dead1).flatten() * FACTOR_SECONDS_TO_NANOSECONDS,
+            "t_dead_2 / ns": np.array(combination_dto.gecko_additional_params.t_dead2).flatten() * FACTOR_SECONDS_TO_NANOSECONDS}
 
         df = pd.DataFrame(data)
 
         logger.debug(df.head())
         df.to_csv(f"{plot_results_path}/{combination_id}.csv")
+
+        parameters_microcontroller = ""
+        for _, row in df.iterrows():
+            line = "{" + (f'{row["v1"]}, {row["v2"]}, {row["p"]}, {row["phi / deg"]}, {row["tau_1 / deg"]}, {row["tau_2 / deg"]}, '
+                          f'{int(row["t_dead_1 / ns"])}, {int(row["t_dead_2 / ns"])}') + "},\n"
+            parameters_microcontroller = parameters_microcontroller + line
+
+        with open(f"{plot_results_path}/{combination_id}.txt", "w") as f:
+            f.write(parameters_microcontroller)
 
     @staticmethod
     def plot_single_design_operating_points_from_dto(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str,
