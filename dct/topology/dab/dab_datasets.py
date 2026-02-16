@@ -20,7 +20,8 @@ from dct.topology.dab import dab_currents as dct_currents
 from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
-from dct.topology.dab.dab_functions_waveforms import full_current_waveform_from_currents, full_angle_waveform_from_angles
+from dct.topology.dab.dab_functions_waveforms import (full_current_waveform_from_currents, full_angle_waveform_from_angles,
+                                                      full_time_waveforms_from_angles_currents)
 from dct.components.component_dtos import (CircuitThermal, CapacitorRequirements, InductorRequirements, TransformerRequirements,
                                            InductorResults, StackedTransformerResults, ComponentCooling)
 from dct.components.heat_sink_optimization import ThermalCalcSupport
@@ -63,7 +64,7 @@ class HandleDabDto:
     def init_config(name: str, mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                     sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO,
-                    lossfilepath: str, c_par_1: float, c_par_2: float) -> d_dtos.DabCircuitDTO:
+                    lossfilepath: str, c_par_1: float, c_par_2: float, t_dead_1_max: float, t_dead_2_max: float) -> d_dtos.DabCircuitDTO:
         """
         Initialize the DAB structure.
 
@@ -97,6 +98,10 @@ class HandleDabDto:
         :type c_par_1: float
         :param c_par_2: Parasitic PCB capacitance per transistor footprint of bridge 2
         :type c_par_2: float
+        :param t_dead_1_max: maximum dead time for bridge 1
+        :type t_dead_1_max: float
+        :param t_dead_2_max: maximum dead time for bridge 2
+        :type t_dead_2_max: float
         :return: Configuration data for the actual design
         :rtype:  d_dtos.DabCircuitDTO
         """
@@ -114,6 +119,8 @@ class HandleDabDto:
                                                    lossfilepath=lossfilepath,
                                                    c_par_1=c_par_1,
                                                    c_par_2=c_par_2,
+                                                   t_dead_1_max=t_dead_1_max,
+                                                   t_dead_2_max=t_dead_2_max
                                                    )
         calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
         modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
@@ -138,29 +145,8 @@ class HandleDabDto:
                                            'p_m2_conduction': p_m2_cond,
                                            'p_dab_conduction': 4 * (p_m1_cond + p_m2_cond)})
 
-        t_dead_1 = np.full_like(modulation_parameters.phi, np.nan)
-        t_dead_2 = np.full_like(modulation_parameters.phi, np.nan)
-
-        for vec_vvp in np.ndindex(modulation_parameters.phi.shape):
-
-            i_lc1_time_current = np.asarray(d_waveforms.full_time_waveforms_from_angles_currents(
-                fs, np.transpose(angles_rad_sorted, (1, 2, 3, 0))[vec_vvp], np.transpose(i_l_1_sorted, (1, 2, 3, 0))[vec_vvp]))
-            i_hf1_time_current = np.asarray(d_waveforms.full_time_waveforms_from_angles_currents(
-                fs, np.transpose(angles_rad_sorted, (1, 2, 3, 0))[vec_vvp], np.transpose(i_hf_1_sorted, (1, 2, 3, 0))[vec_vvp]))
-            i_lc2_time_current = np.asarray(d_waveforms.full_time_waveforms_from_angles_currents(
-                fs, np.transpose(angles_rad_sorted, (1, 2, 3, 0))[vec_vvp], np.transpose(i_l_2_sorted, (1, 2, 3, 0))[vec_vvp]))
-            i_hf2_time_current = np.asarray(d_waveforms.full_time_waveforms_from_angles_currents(
-                fs, np.transpose(angles_rad_sorted, (1, 2, 3, 0))[vec_vvp], np.transpose(i_hf_2_sorted, (1, 2, 3, 0))[vec_vvp]))
-
-            t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(modulation_parameters.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current)
-            t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(modulation_parameters.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current)
-
-            print(f"t_dead_1 = {t_dead_1[vec_vvp]*1e9} ns")
-            print(f"t_dead_2 = {t_dead_2[vec_vvp]*1e9} ns")
-
         gecko_additional_params = d_dtos.GeckoAdditionalParameters(
-            t_dead1=t_dead_1, t_dead2=t_dead_2, timestep=1e-9,
-            number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
+            timestep=1e-9, number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
             simfilepath=os.path.join(GECKO_PATH, 'DAB_MOSFET_Modulation_v8.ipes'),
             lossfilepath=lossfilepath)
 
@@ -172,6 +158,7 @@ class HandleDabDto:
             calc_config=calc_config,
             calc_modulation=modulation_parameters,
             calc_currents=calc_currents,
+            calc_dead_time=None,
             calc_losses=calc_losses,
             component_requirements=None,
             gecko_additional_params=gecko_additional_params,
@@ -195,11 +182,14 @@ class HandleDabDto:
         :type get_waveforms: bool
         :return: DabDTO
         """
+        if dab_dto.calc_dead_time is None:
+            raise ValueError("Incomplete calculation as dead time is missing.")
+
         gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
             mesh_v1=dab_dto.input_config.mesh_v1, mesh_v2=dab_dto.input_config.mesh_v2,
             mesh_p=dab_dto.input_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
             mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,
-            mesh_t_dead1=dab_dto.gecko_additional_params.t_dead1, mesh_t_dead2=dab_dto.gecko_additional_params.t_dead2,
+            mesh_t_dead1=dab_dto.calc_dead_time.t_dead_1, mesh_t_dead2=dab_dto.calc_dead_time.t_dead_2,
             fs=dab_dto.input_config.fs, ls=dab_dto.input_config.Ls, lc1=dab_dto.input_config.Lc1,
             lc2=dab_dto.input_config.Lc2, n=dab_dto.input_config.n,
             t_j_1=dab_dto.calc_config.t_j_1, t_j_2=dab_dto.calc_config.t_j_2,
@@ -263,6 +253,37 @@ class HandleDabDto:
         return d_dtos.CalcModulation(**result_dict)
 
     @staticmethod
+    def add_dead_time(dab_calc: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
+        """
+        Add the required minimum dead time for bridge 1 and bridge 2 to the DabCircuitDTO.
+
+        :param dab_calc: DAB circuit DTO
+        :type dab_calc: d_dtos.DabCircuitDTO
+
+        """
+        # Calculate the required dead time
+        t_dead_1 = np.full_like(dab_calc.calc_modulation.phi, np.nan)
+        t_dead_2 = np.full_like(dab_calc.calc_modulation.phi, np.nan)
+        for vec_vvp in np.ndindex(dab_calc.calc_modulation.phi.shape):
+            i_lc1_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dab_calc.calc_currents.i_l_1_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_hf1_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dab_calc.calc_currents.i_hf_1_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_lc2_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dab_calc.calc_currents.i_l_2_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_hf2_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dab_calc.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))[vec_vvp]))
+            t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current)
+            t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current)
+
+        dab_calc.calc_dead_time = d_dtos.CalcDeadTimes(t_dead_1=t_dead_1, t_dead_2=t_dead_2)
+        return dab_calc
+
+    @staticmethod
     def calculate_dead_time(q_ab_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray,
                             is_plot: bool = False) -> float:
         """
@@ -323,13 +344,14 @@ class HandleDabDto:
                 time_b = time_value
                 break
         if is_plot:
-            fig, axs = plt.subplots(2,1)
-            axs[0].plot(i_hf_full_time_current_waveform[0], i_hf_full_time_current_waveform[1], label="i_hf")
-            axs[1].plot(i_lc_full_time_current_waveform[0], i_lc_full_time_current_waveform[1], label="i_lc", linestyle="--")
+            fig, axs = plt.subplots(2, 1)
+            axs[0].plot(i_lc_full_time_current_waveform[0], i_lc_full_time_current_waveform[1], label="i_lc", linestyle="--")
+            axs[1].plot(i_hf_full_time_current_waveform[0], i_hf_full_time_current_waveform[1], label="i_hf")
             axs[1].plot(time_high_resolution, i_hf_high_resolution, label="i_hf interpolated")
             axs[1].plot(part_b_shifted_time, part_b_shifted_current, label="part B current", linestyle="--")
             axs[1].plot(part_a_shifted_time, part_a_shifted_current, label="part A current", linestyle="--")
             axs[1].plot([t_switching, t_switching], [-1.1 * np.max(i_hf_full_time_current_waveform[1]), 1.1 * np.max(i_hf_full_time_current_waveform[1])])
+            axs[0].legend()
             axs[1].legend()
             plt.show()
 

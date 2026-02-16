@@ -63,6 +63,8 @@ class CircuitConfig:
     transistor_dto_2: TransistorDTO
     c_par_1: np.float64
     c_par_2: np.float64
+    t_dead_1_max: np.float64
+    t_dead_2_max: np.float64
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -75,8 +77,6 @@ class CircuitConfig:
 class GeckoAdditionalParameters:
     """Additional parameters for the GeckoCIRCUITS simulation, like simulation time or some file paths."""
 
-    t_dead1: np.ndarray
-    t_dead2: np.ndarray
     timestep: np.float64
     number_sim_periods: int
     timestep_pre: np.float64
@@ -157,6 +157,19 @@ class CalcCurrents:
     i_l_2_sorted: np.ndarray
     i_hf_1_sorted: np.ndarray
     i_hf_2_sorted: np.ndarray
+
+    def __init__(self, **kwargs):
+        names = set([f.name for f in dataclasses.fields(self)])
+        for k, v in kwargs.items():
+            if k in names:
+                setattr(self, k, v)
+
+@dataclasses.dataclass(init=False)
+class CalcDeadTimes:
+    """DTO contains calculated dead times."""
+
+    t_dead_1: np.ndarray
+    t_dead_2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -264,6 +277,7 @@ class DabCircuitDTO:
     calc_config: CalcFromCircuitConfig
     calc_modulation: CalcModulation
     calc_currents: CalcCurrents
+    calc_dead_time: CalcDeadTimes | None
     calc_losses: CalcLosses | None
     component_requirements: ComponentRequirements | None
     gecko_additional_params: GeckoAdditionalParameters

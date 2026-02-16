@@ -479,7 +479,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             transistor_1_name_list=self._toml_circuit.design_space.transistor_1_name_list,
             transistor_2_name_list=self._toml_circuit.design_space.transistor_2_name_list,
             c_par_1=self._toml_circuit.design_space.c_par_1,
-            c_par_2=self._toml_circuit.design_space.c_par_2
+            c_par_2=self._toml_circuit.design_space.c_par_2,
+            t_dead_1_max=self._toml_circuit.design_space.t_dead_1_max,
+            t_dead_2_max=self._toml_circuit.design_space.t_dead_2_max
         )
 
         output_range = circuit_dtos.CircuitOutputRange(
@@ -632,13 +634,29 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             c_par_1=dab_config.design_space.c_par_1,
             c_par_2=dab_config.design_space.c_par_2,
             transistor_dto_1=transistor_1_dto,
-            transistor_dto_2=transistor_2_dto
+            transistor_dto_2=transistor_2_dto,
+            t_dead_1_max=dab_config.design_space.t_dead_1_max,
+            t_dead_2_max=dab_config.design_space.t_dead_2_max
         )
 
         if (np.any(np.isnan(dab_calc.calc_modulation.phi)) or np.any(np.isnan(dab_calc.calc_modulation.tau1)) \
                 or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
+        dab_calc = HandleDabDto.add_dead_time(dab_calc)
+        if dab_calc.calc_dead_time is None:
+            raise ValueError("Incomplete calculation, as dead time is missing.")
+
+        # check if the minimum dead time in all operating points is less equal than the maximum allowed dead time
+        dead_time_1_less_maximum = np.less_equal(dab_calc.calc_dead_time.t_dead_1, dab_calc.input_config.t_dead_1_max)
+        dead_time_2_less_maximum = np.less_equal(dab_calc.calc_dead_time.t_dead_2, dab_calc.input_config.t_dead_2_max)
+
+        if not np.all(dead_time_1_less_maximum):
+            print(f"Needed dead time of bridge 1 exceeds maximum dead time of {dab_calc.input_config.t_dead_1_max}.")
+            return float('nan'), float('nan')
+        if not np.all(dead_time_2_less_maximum):
+            print(f"Needed dead time of bridge 2 exceeds maximum dead time of {dab_calc.input_config.t_dead_2_max}.")
+            return float('nan'), float('nan')
         # Calculate the cost function.
         i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
         # consider weighting
@@ -1010,8 +1028,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             c_par_2=dab_config.design_space.c_par_2,
             transistor_dto_1=trials_dict["transistor_1_name_suggest"],
             transistor_dto_2=trials_dict["transistor_2_name_suggest"],
-            lossfilepath=fix_parameters.transistorlosses_filepath
+            lossfilepath=fix_parameters.transistorlosses_filepath,
+            t_dead_1_max=dab_config.design_space.t_dead_1_max,
+            t_dead_2_max=dab_config.design_space.t_dead_2_max,
         )
+
+        dab_dto = HandleDabDto.add_dead_time(dab_dto)
 
         return dab_dto
 
@@ -1056,8 +1078,12 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 c_par_2=self._dab_config.design_space.c_par_2,
                 transistor_dto_1=transistor_dto_1,
                 transistor_dto_2=transistor_dto_2,
-                lossfilepath=self._fixed_parameters.transistorlosses_filepath
+                lossfilepath=self._fixed_parameters.transistorlosses_filepath,
+                t_dead_1_max=self._dab_config.design_space.t_dead_1_max,
+                t_dead_2_max=self._dab_config.design_space.t_dead_2_max,
             )
+
+            dab_dto = HandleDabDto.add_dead_time(dab_dto)
 
             dab_dto_list.append(dab_dto)
 
@@ -1625,6 +1651,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         :param combination_id: combination ID
         :type combination_id: int
         """
+        if combination_dto.calc_dead_time is None:
+            raise TypeError("Incomplete DTO, as dead time is missing.")
+
         data = {
             "v1": np.array(combination_dto.input_config.mesh_v1).flatten(),
             "v2": np.array(combination_dto.input_config.mesh_v2).flatten(),
@@ -1632,8 +1661,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             "phi / deg": np.array(np.rad2deg(combination_dto.calc_modulation.phi)).flatten(),
             "tau_1 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau1)).flatten(),
             "tau_2 / deg": np.array(np.rad2deg(combination_dto.calc_modulation.tau2)).flatten(),
-            "t_dead_1 / ns": np.array(combination_dto.gecko_additional_params.t_dead1).flatten() * FACTOR_SECONDS_TO_NANOSECONDS,
-            "t_dead_2 / ns": np.array(combination_dto.gecko_additional_params.t_dead2).flatten() * FACTOR_SECONDS_TO_NANOSECONDS}
+            "t_dead_1 / ns": np.array(combination_dto.calc_dead_time.t_dead_1).flatten() * FACTOR_SECONDS_TO_NANOSECONDS,
+            "t_dead_2 / ns": np.array(combination_dto.calc_dead_time.t_dead_2).flatten() * FACTOR_SECONDS_TO_NANOSECONDS}
 
         df = pd.DataFrame(data)
 

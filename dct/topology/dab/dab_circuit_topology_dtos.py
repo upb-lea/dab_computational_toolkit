@@ -21,6 +21,8 @@ class CircuitParetoDesignSpace:
     transistor_2_name_list: list[str]
     c_par_1: float
     c_par_2: float
+    t_dead_1_max: float
+    t_dead_2_max: float
 
 @dataclasses.dataclass
 class CircuitOutputRange:

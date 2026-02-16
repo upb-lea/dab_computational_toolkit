@@ -8,6 +8,8 @@
     transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J']
     c_par_1=16e-12
     c_par_2=16e-12
+    t_dead_1_max = 500e-9
+    t_dead_2_max = 500e-9
 
 [filter_distance]
     number_filtered_designs = 2
