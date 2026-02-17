@@ -179,7 +179,9 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
         transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J'],
         transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J'],
         c_par_1=1e-12,
-        c_par_2=1e-12)
+        c_par_2=1e-12,
+        t_dead_1_max=100e-9,
+        t_dead_2_max=100e-9)
 
     output_range = d_dtos.CircuitOutputRange(
         v1_min_max_list=[690, 710],
@@ -624,7 +626,9 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
             transistor_1_name_list=transistor_name_list_configuration[test_index],
             transistor_2_name_list=transistor_name_list_configuration[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
-            c_par_2=float_value_gt0_lt1em3[test_index]),
+            c_par_2=float_value_gt0_lt1em3[test_index],
+            t_dead_1_max=100e-9,
+            t_dead_2_max=100e-9),
         thermal_data=dab_tc.TomlDabThermalResistanceData(
             transistor_b1_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
             transistor_b2_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
@@ -823,7 +827,9 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             transistor_1_name_list=transistor_name_list_configuration[test_index],
             transistor_2_name_list=transistor_name_list_configuration[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
-            c_par_2=float_value_gt0_lt1em3[test_index]),
+            c_par_2=float_value_gt0_lt1em3[test_index],
+            t_dead_1_max=100e-9,
+            t_dead_2_max=100e-9),
         thermal_data=dab_tc.TomlDabThermalResistanceData(
             transistor_b1_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index],
             transistor_b2_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),

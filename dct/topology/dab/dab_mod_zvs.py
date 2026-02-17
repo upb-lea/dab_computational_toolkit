@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 # The dict keys this modulation will return
 MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
-            'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p']
+            'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p', 'q_ab_req1', 'q_ab_req2']
 
 def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: np.float64, fs: np.ndarray | int | float,
                            c_oss_1: np.ndarray, c_oss_2: np.ndarray,
@@ -175,6 +175,10 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     da_mod_results[MOD_KEYS[9]] = np.bitwise_and(_negative_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
     # positive high power mode 1+
     da_mod_results[MOD_KEYS[10]] = np.bitwise_and(_positive_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
+
+    # add required charge
+    da_mod_results[MOD_KEYS[11]] = Q_AB_req1
+    da_mod_results[MOD_KEYS[12]] = Q_AB_req2
 
     return da_mod_results
 

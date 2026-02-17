@@ -16,7 +16,7 @@ import pandas as pd
 
 def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                            mod_phi: np.ndarray, mod_tau1: np.ndarray, mod_tau2: np.ndarray,
-                           t_dead1: float | np.ndarray, t_dead2: float | np.ndarray, fs: int | np.ndarray | np.float64,
+                           mesh_t_dead1: np.ndarray, mesh_t_dead2: np.ndarray, fs: int | np.ndarray | np.float64,
                            ls: float, lc1: float, lc2: float, n: float,
                            t_j_1: float, t_j_2: float,
                            simfilepath: str, timestep: float, number_sim_periods: int, transistor_1_name: str, transistor_2_name: str, lossfilepath: str,
@@ -39,10 +39,10 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
     :type mod_tau1: np.array
     :param mod_tau2: matrix with modulation parameter tau_2
     :type mod_tau2: np.array
-    :param t_dead1: dead time for bridge 1 in seconds
-    :type t_dead1: float
-    :param t_dead2: dead time for bridge 2 in seconds
-    :type t_dead2: float
+    :param mesh_t_dead1: dead time for bridge 1 in seconds
+    :type mesh_t_dead1: float
+    :param mesh_t_dead2: dead time for bridge 2 in seconds
+    :type mesh_t_dead2: float
     :param fs: switching frequency in Hz
     :type fs: float
     :param ls: series inductance in H
@@ -90,8 +90,6 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
     """
     # Broadcast possible scalar values to mesh size
     _ones = np.ones_like(mod_phi)
-    mesh_t_dead1 = _ones * t_dead1
-    mesh_t_dead2 = _ones * t_dead2
     mesh_fs = _ones * fs
 
     # Transform Lc2 to side 1
@@ -110,7 +108,7 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
                    'zvs_coverage_notnan', 'zvs_coverage1_notnan', 'zvs_coverage2_notnan',
                    'i_HF1_total_mean', 'I1_squared_total_mean']
 
-    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2', 'i_HF1', 'i_HF2']
+    waveform_keys = ['i_Ls', 'i_Lc1', 'i_Lc2', 'i_HF1', 'i_HF2', 'v1', 'v2']
 
     # Set a reasonable low zvs voltage limit below we assume zvs operation
     zvs_vlimit = 50
@@ -139,8 +137,9 @@ def start_gecko_simulation(mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.
     simtime_pre = number_pre_sim_periods / fs
     simtime = number_sim_periods / fs
 
+    # TODO: simulation time = simulation time + t_dead1
     gecko_dab_converter = pgc.GeckoSimulation(simfilepath=simfilepath, geckoport=geckoport, timestep=timestep,
-                                              simtime=simtime + t_dead1, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
+                                              simtime=simtime, timestep_pre=timestep_pre, simtime_pre=simtime_pre)
 
     for vec_vvp in np.ndindex(mod_phi.shape):
         # set simulation parameters and convert tau to degree for Gecko

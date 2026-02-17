@@ -20,6 +20,8 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
     """
     if not isinstance(dab_dto.gecko_waveforms, d_dtos.GeckoWaveforms):
         raise TypeError(f"{dab_dto.gecko_waveforms} is not of Type GeckoWaveforms.")
+    if dab_dto.calc_dead_time is None:
+        raise ValueError("Incomplete calculation as dead time is missing.")
 
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
 
@@ -44,16 +46,16 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
                 if timebase == '2pi':
                     gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
                                   dab_dto.gecko_additional_params.number_pre_sim_periods * 2 * np.pi - \
-                                  dab_dto.gecko_additional_params.t_dead1 * 2 * np.pi * dab_dto.input_config.fs)
+                                  dab_dto.calc_dead_time.t_dead_1 * 2 * np.pi * dab_dto.input_config.fs)
                 elif timebase == 'time':
                     gecko_time = dab_dto.gecko_waveforms.time - dab_dto.gecko_additional_params.number_pre_sim_periods / dab_dto.input_config.fs - \
-                        dab_dto.gecko_additional_params.t_dead1
+                        dab_dto.calc_dead_time.t_dead_1
                     sorted_total_angles = sorted_total_angles / 2 / np.pi / dab_dto.input_config.fs
 
                 # this index corrects the display of the waveforms
                 # so waveforms start at zero and will end exactly at the end of the period.
                 # without, there is a small shift of the dead time (e.g. 50 ns)
-                corr_index = int(np.round(dab_dto.gecko_additional_params.t_dead1 / dab_dto.gecko_additional_params.timestep, decimals=0))
+                corr_index = int(np.round(dab_dto.calc_dead_time.t_dead_1 / dab_dto.gecko_additional_params.timestep, decimals=0))
 
             ax1 = plt.subplot(311)
             plt.plot(sorted_total_angles, sorted_i_l_s_total, label='Calculation')
@@ -112,6 +114,8 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_wavefo
     """
     if not isinstance(dab_dto.gecko_waveforms, d_dtos.GeckoWaveforms):
         raise TypeError(f"{dab_dto.gecko_waveforms} is not of Type GeckoWaveforms.")
+    if dab_dto.calc_dead_time is None:
+        raise ValueError("Incomplete calculation as dead time is missing.")
 
     for vec_vvp in np.ndindex(dab_dto.calc_modulation.phi.shape):
         # set simulation parameters and convert tau to degree for Gecko
@@ -133,16 +137,16 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_wavefo
                 if timebase == '2pi':
                     gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
                                   dab_dto.gecko_additional_params.number_pre_sim_periods * 2 * np.pi - \
-                                  dab_dto.gecko_additional_params.t_dead1 * 2 * np.pi * dab_dto.input_config.fs)
+                                  dab_dto.calc_dead_time.t_dead_1 * 2 * np.pi * dab_dto.input_config.fs)
                 elif timebase == 'time':
                     gecko_time = dab_dto.gecko_waveforms.time - dab_dto.gecko_additional_params.number_pre_sim_periods / dab_dto.input_config.fs - \
-                        dab_dto.gecko_additional_params.t_dead1
+                        dab_dto.calc_dead_time.t_dead_1
                     sorted_total_angles = sorted_total_angles / 2 / np.pi / dab_dto.input_config.fs
 
                 # this index corrects the display of the waveforms
                 # so waveforms start at zero and will end exactly at the end of the period.
                 # without, there is a small shift of the dead time (e.g. 50 ns)
-                corr_index = int(np.round(dab_dto.gecko_additional_params.t_dead1 / dab_dto.gecko_additional_params.timestep, decimals=0))
+                corr_index = int(np.round(dab_dto.calc_dead_time.t_dead_1 / dab_dto.gecko_additional_params.timestep, decimals=0))
 
             ax1 = plt.subplot(211)
             plt.plot(sorted_total_angles, sorted_i_hf_1_total, label='Calculation')
