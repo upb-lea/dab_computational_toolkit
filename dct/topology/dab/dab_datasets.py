@@ -172,7 +172,7 @@ class HandleDabDto:
         )
 
         # add minimum dead time in case of design is useful
-        if not((np.any(np.isnan(dab_dto.calc_modulation.phi)) or np.any(np.isnan(dab_dto.calc_modulation.tau1)) \
+        if not ((np.any(np.isnan(dab_dto.calc_modulation.phi)) or np.any(np.isnan(dab_dto.calc_modulation.tau1)) \
                 or np.any(np.isnan(dab_dto.calc_modulation.tau2)))):
             HandleDabDto.add_calculated_dead_time(dab_dto)
 
