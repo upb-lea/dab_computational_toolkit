@@ -659,7 +659,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
-        dab_calc = HandleDabDto.add_calculated_dead_time(dab_calc)
         if dab_calc.calc_dead_time is None:
             raise ValueError("Incomplete calculation, as dead time is missing.")
 
@@ -1048,9 +1047,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             t_dead_1_max=dab_config.design_space.t_dead_1_max,
             t_dead_2_max=dab_config.design_space.t_dead_2_max,
         )
-
-        dab_dto = HandleDabDto.add_calculated_dead_time(dab_dto)
-
         return dab_dto
 
     def df_to_dab_dto_list(self, df: pd.DataFrame) -> list[d_dtos.DabCircuitDTO]:
@@ -1098,8 +1094,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 t_dead_1_max=self._dab_config.design_space.t_dead_1_max,
                 t_dead_2_max=self._dab_config.design_space.t_dead_2_max,
             )
-
-            dab_dto = HandleDabDto.add_calculated_dead_time(dab_dto)
 
             dab_dto_list.append(dab_dto)
 
