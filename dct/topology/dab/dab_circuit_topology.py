@@ -316,6 +316,21 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
+        # Check the maximum dead time for deat_time_1_max
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
+            1e-9, 10e-6, [toml_circuit.design_space.t_dead_1_max, toml_circuit.design_space.t_dead_1_max], "t_dead_1_max", c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+        # Check the maximum dead time for deat_time_2_max
+        is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
+            1e-9, 10e-6, [toml_circuit.design_space.t_dead_2_max, toml_circuit.design_space.t_dead_2_max], "t_dead_2_max", c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
+
         # Check l_s_min_max_list, l_1_min_max_list and l_2__min_max_list
         toml_check_min_max_values_list = (
             [(toml_circuit.design_space.l_s_min_max_list, "l_s_min_max_list"),
@@ -643,7 +658,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 or np.any(np.isnan(dab_calc.calc_modulation.tau2))):
             return float('nan'), float('nan')
 
-        dab_calc = HandleDabDto.add_dead_time(dab_calc)
+        dab_calc = HandleDabDto.add_calculated_dead_time(dab_calc)
         if dab_calc.calc_dead_time is None:
             raise ValueError("Incomplete calculation, as dead time is missing.")
 
@@ -652,10 +667,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         dead_time_2_less_maximum = np.less_equal(dab_calc.calc_dead_time.t_dead_2, dab_calc.input_config.t_dead_2_max)
 
         if not np.all(dead_time_1_less_maximum):
-            print(f"Needed dead time of bridge 1 exceeds maximum dead time of {dab_calc.input_config.t_dead_1_max}.")
+            logger.info(f"Needed dead time of bridge 1 exceeds maximum dead time of {dab_calc.input_config.t_dead_1_max}.")
             return float('nan'), float('nan')
         if not np.all(dead_time_2_less_maximum):
-            print(f"Needed dead time of bridge 2 exceeds maximum dead time of {dab_calc.input_config.t_dead_2_max}.")
+            logger.info(f"Needed dead time of bridge 2 exceeds maximum dead time of {dab_calc.input_config.t_dead_2_max}.")
             return float('nan'), float('nan')
         # Calculate the cost function.
         i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
@@ -1033,7 +1048,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             t_dead_2_max=dab_config.design_space.t_dead_2_max,
         )
 
-        dab_dto = HandleDabDto.add_dead_time(dab_dto)
+        dab_dto = HandleDabDto.add_calculated_dead_time(dab_dto)
 
         return dab_dto
 
@@ -1083,7 +1098,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 t_dead_2_max=self._dab_config.design_space.t_dead_2_max,
             )
 
-            dab_dto = HandleDabDto.add_dead_time(dab_dto)
+            dab_dto = HandleDabDto.add_calculated_dead_time(dab_dto)
 
             dab_dto_list.append(dab_dto)
 

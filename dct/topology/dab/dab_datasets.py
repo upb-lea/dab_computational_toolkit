@@ -253,7 +253,7 @@ class HandleDabDto:
         return d_dtos.CalcModulation(**result_dict)
 
     @staticmethod
-    def add_dead_time(dab_calc: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
+    def add_calculated_dead_time(dab_calc: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
         """
         Add the required minimum dead time for bridge 1 and bridge 2 to the DabCircuitDTO.
 
@@ -315,7 +315,7 @@ class HandleDabDto:
         dead_time_resolution = 1e-9
 
         # generate small sized integration parts
-        # linspace instead of arange is used, as linspace considers the end point
+        # linspace is used, as it considers the end point
         number_of_points = int((i_hf_full_time_current_waveform[0][-1] - i_hf_full_time_current_waveform[0][0]) / dead_time_resolution + 1)
         time_high_resolution = np.linspace(i_hf_full_time_current_waveform[0][0], i_hf_full_time_current_waveform[0][-1], number_of_points)
         i_hf_high_resolution = np.interp(time_high_resolution, i_hf_full_time_current_waveform[0], i_hf_full_time_current_waveform[1])
