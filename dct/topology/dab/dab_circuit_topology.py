@@ -316,20 +316,21 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
-        # Check the maximum dead time for deat_time_1_max
+        # Check the maximum dead time for dead_time_1_max
         is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
-            1e-9, 10e-6, [toml_circuit.design_space.t_dead_1_max, toml_circuit.design_space.t_dead_1_max], "t_dead_1_max", c_flag.check_exclusive, c_flag.check_exclusive)
+            1e-9, 10e-6, [toml_circuit.design_space.t_dead_1_max, toml_circuit.design_space.t_dead_1_max],
+            "t_dead_1_max", c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
-        # Check the maximum dead time for deat_time_2_max
+        # Check the maximum dead time for dead_time_2_max
         is_check_passed, issue_report = BoundaryCheck.check_float_min_max_values(
-            1e-9, 10e-6, [toml_circuit.design_space.t_dead_2_max, toml_circuit.design_space.t_dead_2_max], "t_dead_2_max", c_flag.check_exclusive, c_flag.check_exclusive)
+            1e-9, 10e-6, [toml_circuit.design_space.t_dead_2_max, toml_circuit.design_space.t_dead_2_max],
+            "t_dead_2_max", c_flag.check_exclusive, c_flag.check_exclusive)
         if not is_check_passed:
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
-
 
         # Check l_s_min_max_list, l_1_min_max_list and l_2__min_max_list
         toml_check_min_max_values_list = (
