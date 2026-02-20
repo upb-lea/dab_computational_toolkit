@@ -1680,8 +1680,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         df.to_csv(f"{plot_results_path}/{combination_id}.csv")
 
         parameters_microcontroller = ""
-        for _, row in df.iterrows():
-            line = "{" + (f'{row["v1"]}, {row["v2"]}, {row["p"]}, {row["phi / deg"]}, {row["tau_1 / deg"]}, {row["tau_2 / deg"]}, '
+        for count, row in df.iterrows():
+            line = "{" + (f'{count}, {row["v1"]}, {row["v2"]}, {row["p"]}, {row["phi / deg"]}, {row["tau_1 / deg"]}, {row["tau_2 / deg"]}, '
                           f'{int(row["t_dead_1 / ns"])}, {int(row["t_dead_2 / ns"])}') + "},\n"
             parameters_microcontroller = parameters_microcontroller + line
 
