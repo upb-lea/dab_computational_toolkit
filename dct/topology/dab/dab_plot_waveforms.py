@@ -46,18 +46,18 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
                 if timebase == '2pi':
                     gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
                                   dab_dto.gecko_additional_params.number_pre_sim_periods * 2 * np.pi - \
-                                  dab_dto.calc_dead_time.t_dead_1 * 2 * np.pi * dab_dto.input_config.fs)
+                                  dab_dto.calc_dead_time.t_dead_1[vec_vvp] * 2 * np.pi * dab_dto.input_config.fs)
                 elif timebase == 'time':
                     gecko_time = dab_dto.gecko_waveforms.time - dab_dto.gecko_additional_params.number_pre_sim_periods / dab_dto.input_config.fs - \
-                        dab_dto.calc_dead_time.t_dead_1
+                        dab_dto.calc_dead_time.t_dead_1[vec_vvp]
                     sorted_total_angles = sorted_total_angles / 2 / np.pi / dab_dto.input_config.fs
 
                 # this index corrects the display of the waveforms
                 # so waveforms start at zero and will end exactly at the end of the period.
                 # without, there is a small shift of the dead time (e.g. 50 ns)
-                corr_index = int(np.round(dab_dto.calc_dead_time.t_dead_1 / dab_dto.gecko_additional_params.timestep, decimals=0))
+                corr_index = int(np.round(dab_dto.calc_dead_time.t_dead_1[vec_vvp] / dab_dto.gecko_additional_params.timestep, decimals=0))
 
-            ax1 = plt.subplot(311)
+            ax1 = plt.subplot(411)
             plt.plot(sorted_total_angles, sorted_i_l_s_total, label='Calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.i_Ls[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
@@ -66,7 +66,7 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
             plt.legend()
             plot_info = (f", P= {dab_dto.input_config.mesh_p[vec_vvp]} W "
                          f"v1={dab_dto.input_config.mesh_v1[vec_vvp]} V, v2={dab_dto.input_config.mesh_v2[vec_vvp]} V,"
-                         f"f={dab_dto.input_config.fs=}")
+                         f"f={dab_dto.input_config.fs} Hz")
 
             if dab_dto.calc_modulation.mask_zvs[vec_vvp]:
                 color = "green"
@@ -80,7 +80,7 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
             if dab_dto.calc_modulation.mask_Im2[vec_vvp]:
                 plt.title("Im2" + plot_info, color=color)
 
-            plt.subplot(312, sharex=ax1)
+            plt.subplot(412, sharex=ax1)
             plt.plot(sorted_total_angles, sorted_i_l_1_total, label='calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.i_Lc1[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
@@ -88,15 +88,27 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
             plt.grid()
             plt.ylabel('i_L_1 in A')
 
-            plt.subplot(313, sharex=ax1)
+            plt.subplot(413, sharex=ax1)
             plt.plot(sorted_total_angles, sorted_i_l_2_total, label='calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.i_Lc2[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
             plt.ylabel('i_L_2 in A')
             if timebase == '2pi':
-                plt.xlabel('t in rad')
+                plt.xlabel('time / rad')
             elif timebase == 'time':
-                plt.xlabel('time in s')
+                plt.xlabel('time / s')
+
+            plt.subplot(414, sharex=ax1)
+            if compare_gecko_waveforms:
+                plt.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.v1[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
+                plt.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.v2[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
+            plt.ylabel('v in V')
+            if timebase == '2pi':
+                plt.xlabel('time / rad')
+            elif timebase == 'time':
+                plt.xlabel('time / s')
+
+
             plt.legend()
             plt.grid()
 
@@ -137,27 +149,34 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_wavefo
                 if timebase == '2pi':
                     gecko_time = (dab_dto.gecko_waveforms.time * 2 * np.pi * dab_dto.input_config.fs - \
                                   dab_dto.gecko_additional_params.number_pre_sim_periods * 2 * np.pi - \
-                                  dab_dto.calc_dead_time.t_dead_1 * 2 * np.pi * dab_dto.input_config.fs)
+                                  dab_dto.calc_dead_time.t_dead_1[vec_vvp] * 2 * np.pi * dab_dto.input_config.fs)
                 elif timebase == 'time':
                     gecko_time = dab_dto.gecko_waveforms.time - dab_dto.gecko_additional_params.number_pre_sim_periods / dab_dto.input_config.fs - \
-                        dab_dto.calc_dead_time.t_dead_1
+                        dab_dto.calc_dead_time.t_dead_1[vec_vvp]
                     sorted_total_angles = sorted_total_angles / 2 / np.pi / dab_dto.input_config.fs
 
                 # this index corrects the display of the waveforms
                 # so waveforms start at zero and will end exactly at the end of the period.
                 # without, there is a small shift of the dead time (e.g. 50 ns)
-                corr_index = int(np.round(dab_dto.calc_dead_time.t_dead_1 / dab_dto.gecko_additional_params.timestep, decimals=0))
+                corr_index = int(np.round(dab_dto.calc_dead_time.t_dead_1[vec_vvp] / dab_dto.gecko_additional_params.timestep, decimals=0))
 
-            ax1 = plt.subplot(211)
+            ax1 = plt.subplot(311)
             plt.plot(sorted_total_angles, sorted_i_hf_1_total, label='Calculation')
             if compare_gecko_waveforms:
                 plt.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.i_HF1[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
             plt.ylabel('i_hf_1 in A')
             plt.grid()
             plt.legend()
-            plot_info = (f", P= {dab_dto.input_config.mesh_p[vec_vvp]} W "
-                         f"v1={dab_dto.input_config.mesh_v1[vec_vvp]} V, v2={dab_dto.input_config.mesh_v2[vec_vvp]} V,"
-                         f"f={dab_dto.input_config.fs=}")
+            if compare_gecko_waveforms:
+                gecko_str = (f"P_gecko_in= {int(dab_dto.gecko_results.p_dc1[vec_vvp])} W "
+                             f"P_gecko_out= {int(dab_dto.gecko_results.p_dc2[vec_vvp])} W ")
+            else:
+                gecko_str = ""
+
+            plot_info = (f", P_calc= {int(dab_dto.input_config.mesh_p[vec_vvp])} W "
+                         + gecko_str +
+                         f"v1={int(dab_dto.input_config.mesh_v1[vec_vvp])} V, v2={int(dab_dto.input_config.mesh_v2[vec_vvp])} V,"
+                         f"f={int(dab_dto.input_config.fs)}")
 
             if dab_dto.calc_modulation.mask_zvs[vec_vvp]:
                 color = "green"
@@ -171,17 +190,27 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_wavefo
             if dab_dto.calc_modulation.mask_Im2[vec_vvp]:
                 plt.title("Im2" + plot_info, color=color)
 
-            ax2 = plt.subplot(212, sharex=ax1)
+            ax2 = plt.subplot(312, sharex=ax1)
             ax2.plot(sorted_total_angles, sorted_i_hf_2_total, label='calculation')
             if compare_gecko_waveforms:
                 ax2.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.i_HF2[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
             ax2.set_ylabel('i_hf_2 in A')
             if timebase == '2pi':
-                ax2.set_xlabel('t in rad')
+                ax2.set_xlabel('time / rad')
             elif timebase == 'time':
-                ax2.set_xlabel('time in s')
+                ax2.set_xlabel('time / s')
             ax2.legend()
             ax2.grid()
+
+            ax3 = plt.subplot(313, sharex=ax1)
+            if compare_gecko_waveforms:
+                ax3.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.v1[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
+                ax3.plot(gecko_time[corr_index:-corr_index], dab_dto.gecko_waveforms.v2[vec_vvp][corr_index:-corr_index], label='GeckoCIRCUITS')
+            ax3.set_ylabel('voltage / V')
+            if timebase == '2pi':
+                ax3.set_xlabel('time / rad')
+            elif timebase == 'time':
+                ax3.set_xlabel('time / s')
 
             plt.tight_layout()
             plt.show()

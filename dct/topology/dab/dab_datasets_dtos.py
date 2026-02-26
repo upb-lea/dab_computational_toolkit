@@ -170,6 +170,9 @@ class CalcDeadTimes:
 
     t_dead_1: np.ndarray
     t_dead_2: np.ndarray
+    is_zvs_1: np.ndarray
+    is_zvs_2: np.ndarray
+    zvs_coverage: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

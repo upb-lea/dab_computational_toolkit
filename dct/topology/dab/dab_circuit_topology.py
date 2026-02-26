@@ -672,6 +672,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         if not np.all(dead_time_2_less_maximum):
             logger.info(f"Needed dead time of bridge 2 exceeds maximum dead time of {dab_calc.input_config.t_dead_2_max}.")
             return float('nan'), float('nan')
+
         # Calculate the cost function.
         i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
         # consider weighting
@@ -680,7 +681,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Mean for not-NaN values, as there will be too many NaN results.
         i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
+        # return zvs coverage based on calculation
         return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
+        # return dab_calc.calc_dead_time.zvs_coverage * 100, i_cost
 
     @staticmethod
     def calculate_fixed_parameters(act_dab_config: circuit_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:

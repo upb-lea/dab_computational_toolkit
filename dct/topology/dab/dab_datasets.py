@@ -21,10 +21,11 @@ from dct.topology.dab import dab_geckosimulation as dct_gecko
 from dct.topology.dab import dab_losses as dct_loss
 from dct.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from dct.topology.dab.dab_functions_waveforms import (full_current_waveform_from_currents, full_angle_waveform_from_angles,
-                                                      full_time_waveforms_from_angles_currents)
+                                                      full_time_waveforms_from_angles_currents, double_waveform)
 from dct.components.component_dtos import (CircuitThermal, CapacitorRequirements, InductorRequirements, TransformerRequirements,
                                            InductorResults, StackedTransformerResults, ComponentCooling)
 from dct.components.heat_sink_optimization import ThermalCalcSupport
+from dct.trial import is_zvs_1
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +271,8 @@ class HandleDabDto:
         # Calculate the required dead time
         t_dead_1 = np.full_like(dab_calc.calc_modulation.phi, np.nan)
         t_dead_2 = np.full_like(dab_calc.calc_modulation.phi, np.nan)
+        is_zvs_1 = np.full_like(dab_calc.calc_modulation.phi, False)
+        is_zvs_2 = np.full_like(dab_calc.calc_modulation.phi, False)
         for vec_vvp in np.ndindex(dab_calc.calc_modulation.phi.shape):
             i_lc1_time_current = np.asarray(full_time_waveforms_from_angles_currents(
                 dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
@@ -283,19 +286,69 @@ class HandleDabDto:
             i_hf2_time_current = np.asarray(full_time_waveforms_from_angles_currents(
                 dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
                 np.transpose(dab_calc.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))[vec_vvp]))
-            t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current)
-            t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current)
+            is_zvs_1[vec_vvp], t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(
+                dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
+            is_zvs_2[vec_vvp], t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(
+                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=True)
 
-        dab_calc.calc_dead_time = d_dtos.CalcDeadTimes(t_dead_1=t_dead_1, t_dead_2=t_dead_2)
+        is_zvs = np.logical_and(is_zvs_1, is_zvs_2)
+        zvs_coverage = np.count_nonzero(is_zvs) / np.size(is_zvs)
+
+        dab_calc.calc_dead_time = d_dtos.CalcDeadTimes(t_dead_1=t_dead_1, t_dead_2=t_dead_2, is_zvs_1=is_zvs_1, is_zvs_2=is_zvs_2, zvs_coverage=zvs_coverage)
         return dab_calc
 
     @staticmethod
-    def calculate_dead_time(q_ab_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray,
-                            is_plot: bool = False) -> float:
+    def _integrate_part_a_leftwards(q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching,
+                                    number_of_points, dead_time_resolution: float = 1e-9) -> (bool, float):
+        is_zvs = True
+        # integrate part A (from switching point backwards to get Q_A_req). Therefore, the array is flipped.
+        part_a_shifted_time = np.linspace(0, time_high_resolution[-1], number_of_points)
+        part_a_shifted_current = np.flip(np.roll(i_hf_high_resolution, -t_interp_index_switching))
+        current_sign_at_switching_point = np.sign(part_a_shifted_current[0])
+        for count, time_value in enumerate(part_a_shifted_time):
+            current_vector_to_integrate = part_a_shifted_current[0:count]
+            q_a = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
+            current_sign_at_dead_time = np.sign(part_a_shifted_current[count])
+            if np.abs(q_a) > q_ab_req:
+                break
+            elif current_sign_at_dead_time != current_sign_at_switching_point:
+                is_zvs = False
+                break
+        return is_zvs, time_value
+
+    @staticmethod
+    def _integrate_part_b_rightwards(q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching,
+                                     number_of_points, dead_time_resolution: float = 1e-9) -> (bool, float):
+        is_zvs = True
+        # integrate part B (from switching point to get Q_B_req)
+        part_b_shifted_time = np.linspace(0, time_high_resolution[-1], number_of_points)
+        part_b_shifted_current = np.roll(i_hf_high_resolution, -t_interp_index_switching)
+        current_sign_at_switching_point = np.sign(part_b_shifted_current[0])
+        for count, time_value in enumerate(part_b_shifted_time):
+            current_vector_to_integrate = part_b_shifted_current[0:count]
+            q_b = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
+            current_sign_at_dead_time = np.sign(part_b_shifted_current[count])
+            if np.abs(q_b) > q_ab_req:
+                break
+            elif current_sign_at_dead_time != current_sign_at_switching_point:
+                is_zvs = False
+                break
+        return is_zvs, time_value
+
+    @staticmethod
+    def _index_of_nearest_value(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    @staticmethod
+    def calculate_dead_time(q_ab_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray, tau_deg: float,
+                            is_plot: bool = False) -> (bool, float):
         """
         Minimum dead time estimation based on required charge Q_AB_req and i_hf currents.
 
         The i_lc current is needed to estimate the switching point of the corresponding bridge.
+        This function is independent of the bridge, so there is no _1 or _2 variable name index.
         :param q_ab_req: required charge in Q
         :type q_ab_req: float
         :param i_lc_full_time_current_waveform: i_lc1 or i_lc2 in format [[time], [current]]
@@ -305,63 +358,130 @@ class HandleDabDto:
         :param is_plot: True to show a plot for debugging
         :type is_plot: bool
         """
-        def index_of_nearest_value(array, value):
-            array = np.asarray(array)
-            idx = (np.abs(array - value)).argmin()
-            return idx
+        # figure out the maximum current points to determine the first switching event
+        indexes_ilc_max = np.where(i_lc_full_time_current_waveform[1] == np.max(i_lc_full_time_current_waveform[1]))[0]
+        first_switching_index = indexes_ilc_max[0]
 
-        # take the index at the maximum of i_lc (not the beginning and not the end, as we are integrating in both directions)
-        # remove first and last value to make sure not to get a value at the beginning/end due to integration in both directions
-        i_lc_shorted = np.delete(i_lc_full_time_current_waveform[1], [0, -1])
-        # figure out the index of the maximum, and correct it by one due to the removed first value
-        index_ilc_max = np.argmax(np.abs(i_lc_shorted)) + 1
-        # start integrating of i_hf currents in both directions
-        t_switching = i_lc_full_time_current_waveform[0][index_ilc_max]
+        # always double the waveforms, as nothing can go wrong. This avoids a few if/else statements.
+        i_lc_full_time_current_waveform_doubled = double_waveform(time_current_waveform=i_lc_full_time_current_waveform)
+        i_hf_full_time_current_waveform_doubled = double_waveform(time_current_waveform=i_hf_full_time_current_waveform)
 
-        dead_time_resolution = 1e-9
-
-        # generate small sized integration parts
+        # generate high resolution current waveforms for integration
         # linspace is used, as it considers the end point
-        number_of_points = int((i_hf_full_time_current_waveform[0][-1] - i_hf_full_time_current_waveform[0][0]) / dead_time_resolution + 1)
-        time_high_resolution = np.linspace(i_hf_full_time_current_waveform[0][0], i_hf_full_time_current_waveform[0][-1], number_of_points)
-        i_hf_high_resolution = np.interp(time_high_resolution, i_hf_full_time_current_waveform[0], i_hf_full_time_current_waveform[1])
-        t_interp_index_switching = index_of_nearest_value(time_high_resolution, t_switching)
+        dead_time_resolution = 1e-9
+        number_of_points = int((i_hf_full_time_current_waveform_doubled[0][-1] - i_hf_full_time_current_waveform_doubled[0][0]) / dead_time_resolution + 1)
+        time_high_resolution = np.linspace(i_hf_full_time_current_waveform_doubled[0][0], i_hf_full_time_current_waveform_doubled[0][-1], number_of_points)
+        i_hf_high_resolution = np.interp(time_high_resolution, i_hf_full_time_current_waveform_doubled[0], i_hf_full_time_current_waveform_doubled[1])
 
-        time_a = 0.0
-        time_b = 0.0
+        # consider the first switching event
+        if first_switching_index == 0:
+            logger.info(f"Curve at very beginning. Shift index.")
+            # curve is at the very beginning. Integration will fail due to the shift.
+            index_switching = len(i_lc_full_time_current_waveform_doubled[0]) - 1
+            t_switching_1 = i_lc_full_time_current_waveform_doubled[0][index_switching]
+        else:
+            t_switching_1 = i_lc_full_time_current_waveform_doubled[0][first_switching_index]
 
-        # integrate part A (from switching point backwards to get Q_A_req). Therefore, the array is flipped.
-        part_a_shifted_time = np.linspace(0, time_high_resolution[-1], number_of_points)
-        part_a_shifted_current = np.flip(np.roll(i_hf_high_resolution, -t_interp_index_switching))
-        for count, time_value in enumerate(part_a_shifted_time):
-            current_vector_to_integrate = part_a_shifted_current[0:count]
-            q_a = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
-            if np.abs(q_a) > q_ab_req:
-                time_a = time_value
-                break
+        t_interp_index_switching = HandleDabDto._index_of_nearest_value(time_high_resolution, t_switching_1)
 
-        # integrate part B (from switching point to get Q_B_req)
-        part_b_shifted_time = np.linspace(0, time_high_resolution[-1], number_of_points)
-        part_b_shifted_current = np.roll(i_hf_high_resolution, -t_interp_index_switching)
-        for count, time_value in enumerate(part_b_shifted_time):
-            current_vector_to_integrate = part_b_shifted_current[0:count]
-            q_b = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
-            if np.abs(q_b) > q_ab_req:
-                time_b = time_value
-                break
+        is_zvs_1_a, time_a_first_switching_event = HandleDabDto._integrate_part_a_leftwards(
+            q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+        is_zvs_1_b, time_b_first_switching_event = HandleDabDto._integrate_part_b_rightwards(
+            q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+
+        print(f"##### {time_b_first_switching_event=}")
+
+        # check if ZVS condition is for switching event 1 fulfilled
+        is_zvs_1 = is_zvs_1_a & is_zvs_1_b
+
+        minimum_dead_time_first_switching_event = time_a_first_switching_event + time_b_first_switching_event
+        logger.info(f"{minimum_dead_time_first_switching_event=}")
+
+        # in case of tau_deg is not 180°, two maximum in i_lc appear (three different voltage levels on the bridge output)
+        # but i_hf has two different current values at the switching points. The integration must be done on the second switching point also.
+        # In the end, it must be checked which dead time is greater.
+        is_zvs_2 = True
+        if tau_deg != 180:
+            # Note: It is important to take the second index, not the last.
+            # In case of taking the last index, the current could be the same as the first (in case of the first index is the maximum),
+            # as the waveform is symmetric. The second needs to be taken!
+            second_switching_index = indexes_ilc_max[1]
+
+            # consider the first switching event
+            if second_switching_index == 0:
+                logger.info(f"Curve at very beginning. Shift index.")
+                # curve is at the very beginning. Integration will fail due to the shift.
+                index_switching = len(i_lc_full_time_current_waveform_doubled[0]) - 1
+                t_switching_2 = i_lc_full_time_current_waveform_doubled[0][index_switching]
+            else:
+                t_switching_2 = i_lc_full_time_current_waveform_doubled[0][second_switching_index]
+
+            t_interp_index_switching = HandleDabDto._index_of_nearest_value(time_high_resolution, t_switching_2)
+
+            is_zvs_2_a, time_a_second_switching_event = HandleDabDto._integrate_part_a_leftwards(
+                q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+            is_zvs_2_b, time_b_second_switching_event = HandleDabDto._integrate_part_b_rightwards(
+                q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+
+            # check if ZVS condition is for switching event 2 fulfilled
+            is_zvs_2 = is_zvs_2_a & is_zvs_2_b
+
+            minimum_dead_time_second_switching_event = time_a_second_switching_event + time_b_second_switching_event
+            logger.info(f"{minimum_dead_time_second_switching_event=}")
+
+            # overwrite dead time for the first switching event with greater secondary event switching time
+            if minimum_dead_time_second_switching_event > minimum_dead_time_first_switching_event:
+                logger.info(
+                    f"Second switching time {minimum_dead_time_second_switching_event} > first switching time {minimum_dead_time_first_switching_event}.")
+                minimum_dead_time_first_switching_event = minimum_dead_time_second_switching_event
+
+        is_zvs = is_zvs_1 & is_zvs_2
+
         if is_plot:
-            fig, axs = plt.subplots(2, 1)
-            axs[0].plot(i_lc_full_time_current_waveform[0], i_lc_full_time_current_waveform[1], label="i_lc", linestyle="--")
-            axs[1].plot(i_hf_full_time_current_waveform[0], i_hf_full_time_current_waveform[1], label="i_hf")
+            # triangular shape
+            fig, axs = plt.subplots(2, 1, sharex=True)
+            axs[0].plot(i_lc_full_time_current_waveform_doubled[0], i_lc_full_time_current_waveform_doubled[1], label="i_lc", linestyle="--")
+            # plot first switching event
+            axs[0].plot([t_switching_1 - time_a_first_switching_event, t_switching_1 - time_a_first_switching_event], [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], linestyle="--", color="red")
+            axs[0].plot([t_switching_1, t_switching_1], [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], color="red")
+            axs[0].plot([t_switching_1 + time_b_first_switching_event, t_switching_1 + time_b_first_switching_event], [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], linestyle="--", color="red")
+
+            if tau_deg != 180:
+                # plot second switching event
+                axs[0].plot([t_switching_2 - time_a_second_switching_event, t_switching_2 - time_a_second_switching_event],
+                            [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], linestyle="--", color="gray")
+                axs[0].plot([t_switching_2, t_switching_2],
+                            [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], color="gray")
+                axs[0].plot([t_switching_2 + time_b_second_switching_event, t_switching_2 + time_b_second_switching_event],
+                            [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], linestyle="--", color="gray")
+
+
+
+
+            axs[1].plot(i_hf_full_time_current_waveform_doubled[0], i_hf_full_time_current_waveform_doubled[1], label="i_hf")
             axs[1].plot(time_high_resolution, i_hf_high_resolution, label="i_hf interpolated")
-            axs[1].plot(part_b_shifted_time, part_b_shifted_current, label="part B current", linestyle="--")
-            axs[1].plot(part_a_shifted_time, part_a_shifted_current, label="part A current", linestyle="--")
-            axs[1].plot([t_switching, t_switching], [-1.1 * np.max(i_hf_full_time_current_waveform[1]), 1.1 * np.max(i_hf_full_time_current_waveform[1])])
+
+            # plot first switching event
+            axs[1].plot([t_switching_1 - time_a_first_switching_event, t_switching_1 - time_a_first_switching_event], [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], linestyle="--", color="red")
+            axs[1].plot([t_switching_1, t_switching_1], [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], color="red")
+            axs[1].plot([t_switching_1 + time_b_first_switching_event, t_switching_1 + time_b_first_switching_event], [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], linestyle="--", color="red")
+
+            if tau_deg != 180:
+                # plot second switching event
+                axs[1].plot([t_switching_2 - time_a_second_switching_event, t_switching_2 - time_a_second_switching_event],
+                            [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], linestyle="--", color="gray")
+                axs[1].plot([t_switching_2, t_switching_2],
+                            [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], color="gray")
+                axs[1].plot([t_switching_2 + time_b_second_switching_event, t_switching_2 + time_b_second_switching_event],
+                            [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], linestyle="--", color="gray")
+
             axs[0].legend()
+            axs[0].grid()
             axs[1].legend()
+            axs[1].grid()
             plt.show()
 
-        return time_a + time_b
+        return is_zvs, minimum_dead_time_first_switching_event
 
     @staticmethod
     def get_c_oss_from_tdb(transistor: tdb.Transistor, margin_factor: float = 1.2) -> tuple:

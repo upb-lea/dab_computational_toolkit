@@ -72,3 +72,15 @@ def full_time_waveforms_from_angles_currents(frequency: float, angles_rad_sorted
     full_current_waveform = full_current_waveform_from_currents(sorted_currents)
 
     return [full_time_waveform, full_current_waveform]
+
+def double_waveform(time_current_waveform: np.ndarray) -> np.ndarray:
+    """
+    Convert a single period waveform to a two-period waveform
+
+    :param time_current_waveform: [[time],[current]
+    :type time_current_waveform: np.ndarray
+    """
+    time_period = time_current_waveform[0][-1]
+    new_time = np.concat((time_current_waveform[0], [time_period + time for time in time_current_waveform[0][1:]]), axis=None)
+    new_current = np.concat((time_current_waveform[1], [current for current in time_current_waveform[1][1:]]), axis=None)
+    return np.array([new_time, new_current])
