@@ -25,7 +25,6 @@ from dct.topology.dab.dab_functions_waveforms import (full_current_waveform_from
 from dct.components.component_dtos import (CircuitThermal, CapacitorRequirements, InductorRequirements, TransformerRequirements,
                                            InductorResults, StackedTransformerResults, ComponentCooling)
 from dct.components.heat_sink_optimization import ThermalCalcSupport
-from dct.trial import is_zvs_1
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +341,7 @@ class HandleDabDto:
         return idx
 
     @staticmethod
-    def calculate_dead_time(q_ab_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray, tau_deg: float,
+    def calculate_dead_time(q_ab_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray, tau_rad: float,
                             is_plot: bool = False) -> (bool, float):
         """
         Minimum dead time estimation based on required charge Q_AB_req and i_hf currents.
@@ -389,23 +388,38 @@ class HandleDabDto:
         is_zvs_1_b, time_b_first_switching_event = HandleDabDto._integrate_part_b_rightwards(
             q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
 
-        print(f"##### {time_b_first_switching_event=}")
-
         # check if ZVS condition is for switching event 1 fulfilled
         is_zvs_1 = is_zvs_1_a & is_zvs_1_b
 
         minimum_dead_time_first_switching_event = time_a_first_switching_event + time_b_first_switching_event
         logger.info(f"{minimum_dead_time_first_switching_event=}")
 
-        # in case of tau_deg is not 180°, two maximum in i_lc appear (three different voltage levels on the bridge output)
+        # in case of tau_rad is not 180°, two maximum in i_lc appear (three different voltage levels on the bridge output)
         # but i_hf has two different current values at the switching points. The integration must be done on the second switching point also.
         # In the end, it must be checked which dead time is greater.
         is_zvs_2 = True
-        if tau_deg != 180:
+        if tau_rad != np.pi:
             # Note: It is important to take the second index, not the last.
             # In case of taking the last index, the current could be the same as the first (in case of the first index is the maximum),
             # as the waveform is symmetric. The second needs to be taken!
-            second_switching_index = indexes_ilc_max[1]
+            # Update: It is important to choose the last index following after the first of the doubled waveform!
+            indexes_ilc_doubled_max = np.where(i_lc_full_time_current_waveform_doubled[1] == np.max(i_lc_full_time_current_waveform_doubled[1]))[0]
+            print(f"{indexes_ilc_doubled_max=}")
+
+            # get the index beginning from zero
+            high = False
+            for count in range(1, len(indexes_ilc_doubled_max)):
+                if indexes_ilc_doubled_max[count - 1] == count - 1:
+                    high = True
+                else:
+                    if high == True:
+                        last_high_index = count
+                    else:
+                        high = False
+
+            print(f"Result index = {indexes_ilc_doubled_max[count]}")
+
+            second_switching_index = indexes_ilc_doubled_max[count]
 
             # consider the first switching event
             if second_switching_index == 0:
@@ -446,7 +460,7 @@ class HandleDabDto:
             axs[0].plot([t_switching_1, t_switching_1], [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], color="red")
             axs[0].plot([t_switching_1 + time_b_first_switching_event, t_switching_1 + time_b_first_switching_event], [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], linestyle="--", color="red")
 
-            if tau_deg != 180:
+            if tau_rad != np.pi:
                 # plot second switching event
                 axs[0].plot([t_switching_2 - time_a_second_switching_event, t_switching_2 - time_a_second_switching_event],
                             [-1.1 * np.max(i_lc_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_lc_full_time_current_waveform_doubled[1])], linestyle="--", color="gray")
@@ -466,7 +480,7 @@ class HandleDabDto:
             axs[1].plot([t_switching_1, t_switching_1], [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], color="red")
             axs[1].plot([t_switching_1 + time_b_first_switching_event, t_switching_1 + time_b_first_switching_event], [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], linestyle="--", color="red")
 
-            if tau_deg != 180:
+            if tau_rad != np.pi:
                 # plot second switching event
                 axs[1].plot([t_switching_2 - time_a_second_switching_event, t_switching_2 - time_a_second_switching_event],
                             [-1.1 * np.max(i_hf_full_time_current_waveform_doubled[1]), 1.1 * np.max(i_hf_full_time_current_waveform_doubled[1])], linestyle="--", color="gray")
@@ -479,6 +493,7 @@ class HandleDabDto:
             axs[0].grid()
             axs[1].legend()
             axs[1].grid()
+            plt.title(f"{tau_rad=}")
             plt.show()
 
         return is_zvs, minimum_dead_time_first_switching_event
