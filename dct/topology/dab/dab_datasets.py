@@ -174,8 +174,18 @@ class HandleDabDto:
         # add minimum dead time in case of design is useful
         if not ((np.any(np.isnan(dab_dto.calc_modulation.phi)) or np.any(np.isnan(dab_dto.calc_modulation.tau1)) \
                 or np.any(np.isnan(dab_dto.calc_modulation.tau2)))):
-            HandleDabDto.add_calculated_dead_time(dab_dto)
+            # print(f"{dab_dto.calc_modulation.phi=}")
+            # print(f"{dab_dto.calc_modulation.tau1=}")
+            # print(f"{dab_dto.calc_modulation.tau2=}")
+            # print(f"{dab_dto.calc_currents.i_l_1_sorted=}")
+            # print(f"{dab_dto.calc_modulation.mask_m1=}")
+            # print(f"{dab_dto.calc_modulation.mask_m2p=}")
+            # print(f"{dab_dto.calc_modulation.mask_m2n=}")
+            # print(f"{dab_dto.calc_modulation.mask_zvs=}")
+            # print(f"{dab_dto.calc_modulation.mask_zvs_coverage=}")
 
+            HandleDabDto.add_calculated_dead_time(dab_dto)
+            # print(f"{dab_dto.calc_dead_time.zvs_coverage=}")
         return dab_dto
 
     @staticmethod
@@ -288,7 +298,7 @@ class HandleDabDto:
             is_zvs_1[vec_vvp], t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(
                 dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
             is_zvs_2[vec_vvp], t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(
-                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=True)
+                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=False)
 
         is_zvs = np.logical_and(is_zvs_1, is_zvs_2)
         zvs_coverage = np.count_nonzero(is_zvs) / np.size(is_zvs)
@@ -374,7 +384,7 @@ class HandleDabDto:
 
         # consider the first switching event
         if first_switching_index == 0:
-            logger.info(f"Curve at very beginning. Shift index.")
+            logger.debug(f"Curve at very beginning. Shift index.")
             # curve is at the very beginning. Integration will fail due to the shift.
             index_switching = len(i_lc_full_time_current_waveform_doubled[0]) - 1
             t_switching_1 = i_lc_full_time_current_waveform_doubled[0][index_switching]
@@ -392,7 +402,7 @@ class HandleDabDto:
         is_zvs_1 = is_zvs_1_a & is_zvs_1_b
 
         minimum_dead_time_first_switching_event = time_a_first_switching_event + time_b_first_switching_event
-        logger.info(f"{minimum_dead_time_first_switching_event=}")
+        logger.debug(f"{minimum_dead_time_first_switching_event=}")
 
         # in case of tau_rad is not 180°, two maximum in i_lc appear (three different voltage levels on the bridge output)
         # but i_hf has two different current values at the switching points. The integration must be done on the second switching point also.
@@ -404,7 +414,6 @@ class HandleDabDto:
             # as the waveform is symmetric. The second needs to be taken!
             # Update: It is important to choose the last index following after the first of the doubled waveform!
             indexes_ilc_doubled_max = np.where(i_lc_full_time_current_waveform_doubled[1] == np.max(i_lc_full_time_current_waveform_doubled[1]))[0]
-            print(f"{indexes_ilc_doubled_max=}")
 
             # get the index beginning from zero
             high = False
@@ -416,14 +425,11 @@ class HandleDabDto:
                         last_high_index = count
                     else:
                         high = False
-
-            print(f"Result index = {indexes_ilc_doubled_max[count]}")
-
             second_switching_index = indexes_ilc_doubled_max[count]
 
             # consider the first switching event
             if second_switching_index == 0:
-                logger.info(f"Curve at very beginning. Shift index.")
+                logger.debug(f"Curve at very beginning. Shift index.")
                 # curve is at the very beginning. Integration will fail due to the shift.
                 index_switching = len(i_lc_full_time_current_waveform_doubled[0]) - 1
                 t_switching_2 = i_lc_full_time_current_waveform_doubled[0][index_switching]
@@ -441,11 +447,11 @@ class HandleDabDto:
             is_zvs_2 = is_zvs_2_a & is_zvs_2_b
 
             minimum_dead_time_second_switching_event = time_a_second_switching_event + time_b_second_switching_event
-            logger.info(f"{minimum_dead_time_second_switching_event=}")
+            logger.debug(f"{minimum_dead_time_second_switching_event=}")
 
             # overwrite dead time for the first switching event with greater secondary event switching time
             if minimum_dead_time_second_switching_event > minimum_dead_time_first_switching_event:
-                logger.info(
+                logger.debug(
                     f"Second switching time {minimum_dead_time_second_switching_event} > first switching time {minimum_dead_time_first_switching_event}.")
                 minimum_dead_time_first_switching_event = minimum_dead_time_second_switching_event
 

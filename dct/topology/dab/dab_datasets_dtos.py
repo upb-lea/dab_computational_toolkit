@@ -119,13 +119,14 @@ class CalcModulation:
     tau1: np.ndarray
     tau2: np.ndarray
     mask_zvs: np.ndarray
-    mask_Im2: np.ndarray
-    mask_IIm2: np.ndarray
-    mask_IIIm1: np.ndarray
+    mask_mode_1_interval_I: np.ndarray
+    mask_mode_1_interval_II: np.ndarray
+    mask_mode_2p_interval_III: np.ndarray
     mask_zvs_coverage: np.ndarray
     mask_zvs_coverage_notnan: np.ndarray
-    mask_m1n: np.ndarray
-    mask_m1p: np.ndarray
+    mask_m1: np.ndarray
+    mask_m2n: np.ndarray
+    mask_m2p: np.ndarray
     q_ab_req1: np.ndarray
     q_ab_req2: np.ndarray
 

@@ -10,8 +10,10 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # The dict keys this modulation will return
-MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_Im2', 'mask_IIm2',
-            'mask_IIIm1', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1n', 'mask_m1p', 'q_ab_req1', 'q_ab_req2']
+MOD_KEYS = ['phi', 'tau1', 'tau2', 'mask_zvs', 'mask_mode_1_interval_I', 'mask_mode_1_interval_II',
+            'mask_mode_2p_interval_III', 'mask_zvs_coverage', 'mask_zvs_coverage_notnan', 'mask_m1', 'mask_m2n', 'mask_m2p', 'q_ab_req1', 'q_ab_req2']
+
+
 
 def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: np.float64, fs: np.ndarray | int | float,
                            c_oss_1: np.ndarray, c_oss_2: np.ndarray,
@@ -51,9 +53,9 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     tau1 = np.full_like(v1, np.nan)
     tau2 = np.full_like(v1, np.nan)
     zvs = np.full_like(v1, np.nan)
-    _Im2_mask = np.full_like(v1, False)
-    _IIm2_mask = np.full_like(v1, False)
-    _IIIm1_mask = np.full_like(v1, False)
+    _mask_mode_1_interval_I = np.full_like(v1, False)
+    _mask_mode_1_interval_II = np.full_like(v1, False)
+    _mask_mode_2_interval_III = np.full_like(v1, False)
 
     # Calculate all required values
     # Transform Lc2 to side 1
@@ -82,72 +84,73 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # all the modulations are calculated first even for useless areas, and we decide later which part is useful.
     # This should be faster and easier.
 
-    # Int. I (mode 2): calculate phi, tau1 and tau2
+    # Int. I (mode 1): calculate phi, tau1 and tau2
     phi_I, tau1_I, tau2_I = _calc_interval_1(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
-    # Int. II (mode 2): calculate phi, tau1 and tau2
+    # Int. II (mode 1): calculate phi, tau1 and tau2
     phi_II, tau1_II, tau2_II = _calc_interval_2(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
-    # Int. III (mode 1): calculate phi, tau1 and tau2
-    phi_III, tau1_III, tau2_III, additional_mask = _calc_interval_3(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
+    # Int. III (mode 2+/-): calculate phi, tau1 and tau2
+    phi_III, tau1_III, tau2_III = _calc_interval_3(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
     # Decision Logic
-    # Interval I (mode 2):
+    # Interval I (mode 1):
     # if phi <= 0:
     _phi_I_leq_zero_mask = np.less_equal(phi_I, 0)
-    # debug('_phi_I_leq_zero_mask', _phi_I_leq_zero_mask)
     # if tau1 <= pi:
     _tau1_I_leq_pi_mask = np.less_equal(tau1_I, np.pi)
-    # debug('_tau1_I_leq_pi_mask', _tau1_I_leq_pi_mask)
     # if phi > 0:
     _phi_I_g_zero_mask = np.greater(phi_I, 0)
-    _Im2_mask = np.bitwise_and(_phi_I_leq_zero_mask, _tau1_I_leq_pi_mask)
+    _mask_mode_1_interval_I = np.bitwise_and(_phi_I_leq_zero_mask, _tau1_I_leq_pi_mask)
 
-    # Interval II (mode 2):
+    # ZVS impossible mask
+    _mask_zvs_impossible = np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))
+
+    # Interval II (mode 1):
     # if tau1 <= pi:
     _tau1_II_leq_pi_mask = np.less_equal(tau1_II, np.pi)
-    # debug('_tau1_II_leq_pi_mask', _tau1_II_leq_pi_mask)
     # if tau1 > pi:
     _tau1_II_g_pi_mask = np.greater(tau1_II, np.pi)
+    _mask_mode_1_interval_II = np.bitwise_and(_phi_I_g_zero_mask, _tau1_II_leq_pi_mask)
 
-    # Int. III (mode 1):
+    # Int. III (mode 2+):
     # if tau2 <= pi:
     _tau2_III_leq_pi_mask = np.less_equal(tau2_III, np.pi)
+    _tau2_III_g_pi_mask = np.greater(tau2_III, np.pi)
+    # Mask for Mode 2+ Interval III Part 1 and Part 2
+    _mask_mode_2_interval_III_part_1 = np.bitwise_and(_tau2_III_leq_pi_mask, _tau1_II_g_pi_mask, _phi_I_g_zero_mask)
+    _mask_mode_2_interval_III_part_2 = np.bitwise_and(_tau2_III_g_pi_mask, _tau1_II_g_pi_mask, _phi_I_g_zero_mask)
+    _mask_mode_2_interval_III = np.bitwise_or(_mask_mode_2_interval_III_part_1, _mask_mode_2_interval_III_part_2)
 
-    # fix white area
-    phi[additional_mask] = phi_III[additional_mask]
-    tau1[additional_mask] = tau1_III[additional_mask]
-    tau2[additional_mask] = tau2_III[additional_mask]
-    zvs[additional_mask] = True
+    # Mode 2+ / Interval III / part 2 (update for tau2 > pi)
+    phi[_mask_mode_2_interval_III_part_2] = phi_III[_mask_mode_2_interval_III_part_2]
+    tau1[_mask_mode_2_interval_III_part_2] = tau1_III[_mask_mode_2_interval_III_part_2]
+    tau2[_mask_mode_2_interval_III_part_2] = tau2_III[_mask_mode_2_interval_III_part_2]
+    zvs[_mask_mode_2_interval_III_part_2] = True
 
-    _IIIm1_mask = np.bitwise_and(_tau2_III_leq_pi_mask, _tau1_II_g_pi_mask)
-    phi[_IIIm1_mask] = phi_III[_IIIm1_mask]
-    tau1[_IIIm1_mask] = tau1_III[_IIIm1_mask]
-    tau2[_IIIm1_mask] = tau2_III[_IIIm1_mask]
-    zvs[_IIIm1_mask] = True
+    # Mode 2+ / Interval III / part 1
+    phi[_mask_mode_2_interval_III_part_1] = phi_III[_mask_mode_2_interval_III_part_1]
+    tau1[_mask_mode_2_interval_III_part_1] = tau1_III[_mask_mode_2_interval_III_part_1]
+    tau2[_mask_mode_2_interval_III_part_1] = tau2_III[_mask_mode_2_interval_III_part_1]
+    zvs[_mask_mode_2_interval_III_part_1] = True
 
-    _IIm2_mask = np.bitwise_and(_tau1_II_leq_pi_mask, _phi_I_g_zero_mask)
-    phi[_IIm2_mask] = phi_II[_IIm2_mask]
-    tau1[_IIm2_mask] = tau1_II[_IIm2_mask]
-    tau2[_IIm2_mask] = tau2_II[_IIm2_mask]
-    zvs[_IIm2_mask] = True
+    # Mode 1 / Interval II
+    phi[_mask_mode_1_interval_II] = phi_II[_mask_mode_1_interval_II]
+    tau1[_mask_mode_1_interval_II] = tau1_II[_mask_mode_1_interval_II]
+    tau2[_mask_mode_1_interval_II] = tau2_II[_mask_mode_1_interval_II]
+    zvs[_mask_mode_1_interval_II] = True
 
-    # Int. I (mode 2): ZVS is analytically IMPOSSIBLE!
-    zvs[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = False
-    phi[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
-        phi_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    tau1[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
-        tau1_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    tau2[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
-        tau2_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    # debug('zvs', zvs)
-    # zvs = np.bitwise_not(np.bitwise_and(_phi_leq_zero_mask, np.bitwise_not(_tau1_leq_pi_mask)))
-    # debug('zvs bitwise not', zvs)
+    # Int. I (mode 1): ZVS is analytically IMPOSSIBLE!
+    zvs[_mask_zvs_impossible] = False
+    phi[_mask_zvs_impossible] = np.nan
+    tau1[_mask_zvs_impossible] = np.nan
+    tau2[_mask_zvs_impossible] = np.nan
 
-    phi[_Im2_mask] = phi_I[_Im2_mask]
-    tau1[_Im2_mask] = tau1_I[_Im2_mask]
-    tau2[_Im2_mask] = tau2_I[_Im2_mask]
-    zvs[_Im2_mask] = True
+    # Mode 1 / Interval I
+    phi[_mask_mode_1_interval_I] = phi_I[_mask_mode_1_interval_I]
+    tau1[_mask_mode_1_interval_I] = tau1_I[_mask_mode_1_interval_I]
+    tau2[_mask_mode_1_interval_I] = tau2_I[_mask_mode_1_interval_I]
+    zvs[_mask_mode_1_interval_I] = True
 
     # Recalculate phi for negative power
     phi_nP = -(tau1 + phi - tau2)
@@ -161,24 +164,25 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     da_mod_results[MOD_KEYS[1]] = tau1
     da_mod_results[MOD_KEYS[2]] = tau2
     da_mod_results[MOD_KEYS[3]] = zvs
-    da_mod_results[MOD_KEYS[4]] = _Im2_mask
-    da_mod_results[MOD_KEYS[5]] = _IIm2_mask
-    da_mod_results[MOD_KEYS[6]] = np.bitwise_or(_IIIm1_mask, additional_mask)
+    da_mod_results[MOD_KEYS[4]] = _mask_mode_1_interval_I
+    da_mod_results[MOD_KEYS[5]] = _mask_mode_1_interval_II
+    da_mod_results[MOD_KEYS[6]] = _mask_mode_2_interval_III
 
     # ZVS coverage based on calculation: Percentage ZVS based on all points (full operating range)
     da_mod_results[MOD_KEYS[7]] = np.count_nonzero(zvs) / np.size(zvs)
-
     # ZVS coverage based on calculation: Percentage ZVS based on all points where the converter can be operated (not full operating range)
     da_mod_results[MOD_KEYS[8]] = np.count_nonzero(zvs[~np.isnan(tau1)]) / np.size(zvs[~np.isnan(tau1)])
 
-    # negative high power mode 1-
-    da_mod_results[MOD_KEYS[9]] = np.bitwise_and(_negative_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
-    # positive high power mode 1+
-    da_mod_results[MOD_KEYS[10]] = np.bitwise_and(_positive_power_mask, np.bitwise_or(_IIIm1_mask, additional_mask))
+    # low / medium power mode 1
+    da_mod_results[MOD_KEYS[9]] = np.bitwise_or(_mask_mode_1_interval_I, _mask_mode_1_interval_II)
+    # negative high power mode 2-
+    da_mod_results[MOD_KEYS[10]] = np.bitwise_and(_negative_power_mask, _mask_mode_2_interval_III)
+    # positive high power mode 2+
+    da_mod_results[MOD_KEYS[11]] = np.bitwise_and(_positive_power_mask, _mask_mode_2_interval_III)
 
     # add required charge
-    da_mod_results[MOD_KEYS[11]] = Q_AB_req1
-    da_mod_results[MOD_KEYS[12]] = Q_AB_req2
+    da_mod_results[MOD_KEYS[12]] = Q_AB_req1
+    da_mod_results[MOD_KEYS[13]] = Q_AB_req2
 
     return da_mod_results
 
@@ -286,7 +290,7 @@ def _calc_interval_2(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
 
 def _calc_interval_3(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_: np.float64,
                      omega_s: np.ndarray | int | float, q_ab_req_b1: np.ndarray, q_ab_req_b2: np.ndarray,
-                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                     v_b1: np.ndarray, v_b2_: np.ndarray, i_b1: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Mode 1 Modulation (interval III) calculation, which will return phi_rad, tau_1_rad and tau_2_rad.
 
@@ -336,14 +340,14 @@ def _calc_interval_3(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
 
     # if tau_2_rad > pi:
     tau2_III_g_pi_mask = np.greater(tau_2_rad, np.pi)
-    # debug('tau2_III_g_pi_mask', tau2_III_g_pi_mask)
+    # tau2 = pi, recalculate phi
     tau2_ = np.full_like(v_b1, np.pi)
     phi_ = (- tau_1_rad + tau2_ + np.pi) / 2 - np.sqrt(
         (- np.power((tau2_ - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2_)
     tau_2_rad[tau2_III_g_pi_mask] = tau2_[tau2_III_g_pi_mask]
     phi_rad[tau2_III_g_pi_mask] = phi_[tau2_III_g_pi_mask]
 
-    return phi_rad, tau_1_rad, tau_2_rad, tau2_III_g_pi_mask
+    return phi_rad, tau_1_rad, tau_2_rad
 
 
 def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
