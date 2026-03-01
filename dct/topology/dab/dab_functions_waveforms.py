@@ -75,7 +75,7 @@ def full_time_waveforms_from_angles_currents(frequency: float, angles_rad_sorted
 
 def double_waveform(time_current_waveform: np.ndarray) -> np.ndarray:
     """
-    Convert a single period waveform to a two-period waveform
+    Convert a single period waveform to a two-period waveform.
 
     :param time_current_waveform: [[time],[current]
     :type time_current_waveform: np.ndarray

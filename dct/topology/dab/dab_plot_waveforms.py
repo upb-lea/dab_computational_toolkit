@@ -108,10 +108,8 @@ def plot_calc_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_waveforms: 
             elif timebase == 'time':
                 plt.xlabel('time / s')
 
-
             plt.legend()
             plt.grid()
-
             plt.tight_layout()
             plt.show()
 
@@ -167,14 +165,14 @@ def plot_calc_i_hf_waveforms(dab_dto: d_dtos.DabCircuitDTO, compare_gecko_wavefo
             plt.ylabel('i_hf_1 in A')
             plt.grid()
             plt.legend()
-            if compare_gecko_waveforms:
+            if compare_gecko_waveforms and dab_dto.gecko_results is not None:
                 gecko_str = (f"P_gecko_in= {int(dab_dto.gecko_results.p_dc1[vec_vvp])} W "
                              f"P_gecko_out= {int(dab_dto.gecko_results.p_dc2[vec_vvp])} W ")
             else:
                 gecko_str = ""
 
-            plot_info = (f", P_calc= {int(dab_dto.input_config.mesh_p[vec_vvp])} W "
-                         + gecko_str +
+            plot_info = (f", P_calc= {int(dab_dto.input_config.mesh_p[vec_vvp])} W " + \
+                         gecko_str + \
                          f"v1={int(dab_dto.input_config.mesh_v1[vec_vvp])} V, v2={int(dab_dto.input_config.mesh_v2[vec_vvp])} V,"
                          f"f={int(dab_dto.input_config.fs)}")
 
