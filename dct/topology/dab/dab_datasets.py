@@ -288,7 +288,7 @@ class HandleDabDto:
             is_zvs_1[vec_vvp], t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(
                 dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
             is_zvs_2[vec_vvp], t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(
-                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=True)
+                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=False)
 
         is_zvs = np.logical_and(is_zvs_1, is_zvs_2)
         zvs_coverage = np.count_nonzero(is_zvs) / np.size(is_zvs)
@@ -404,7 +404,6 @@ class HandleDabDto:
             # as the waveform is symmetric. The second needs to be taken!
             # Update: It is important to choose the last index following after the first of the doubled waveform!
             indexes_ilc_doubled_max = np.where(i_lc_full_time_current_waveform_doubled[1] == np.max(i_lc_full_time_current_waveform_doubled[1]))[0]
-            print(f"{indexes_ilc_doubled_max=}")
 
             # get the index beginning from zero
             high = False
@@ -416,8 +415,6 @@ class HandleDabDto:
                         last_high_index = count
                     else:
                         high = False
-
-            print(f"Result index = {indexes_ilc_doubled_max[count]}")
 
             second_switching_index = indexes_ilc_doubled_max[count]
 
