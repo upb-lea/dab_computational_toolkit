@@ -296,9 +296,9 @@ class HandleDabDto:
                 dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
                 np.transpose(dab_calc.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))[vec_vvp]))
             is_zvs_1[vec_vvp], t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(
-                dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
+                dab_calc.calc_modulation.q_ab_req1[vec_vvp] / 2, i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
             is_zvs_2[vec_vvp], t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(
-                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=False)
+                dab_calc.calc_modulation.q_ab_req2[vec_vvp] / 2, i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=False)
 
         is_zvs = np.logical_and(is_zvs_1, is_zvs_2)
         zvs_coverage = np.count_nonzero(is_zvs) / np.size(is_zvs)
