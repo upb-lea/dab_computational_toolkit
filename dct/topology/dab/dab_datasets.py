@@ -435,7 +435,7 @@ class HandleDabDto:
 
             is_zvs_2_a, time_a_second_switching_event = HandleDabDto._integrate_part_a_leftwards(
                 q_ab_half_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
-            is_zvs_2_b, time_b_second_switching_event, percent_2 = HandleDabDto._integrate_part_b_rightwards(
+            is_zvs_2_b, time_b_second_switching_event = HandleDabDto._integrate_part_b_rightwards(
                 q_ab_half_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
 
             # check if ZVS condition is for switching event 2 fulfilled
