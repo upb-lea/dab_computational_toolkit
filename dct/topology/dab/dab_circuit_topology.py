@@ -684,8 +684,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         trial.set_user_attr('dead_time_zvs_coverage', dab_calc.calc_dead_time.zvs_coverage * 100)
         trial.set_user_attr('zvs_coverage', dab_calc.calc_modulation.mask_zvs_coverage * 100)
 
-        # return zvs coverage based on calculation
-        # return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
         return dab_calc.calc_dead_time.zvs_coverage * 100, i_cost
 
     @staticmethod

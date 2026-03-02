@@ -299,6 +299,22 @@ class HandleDabDto:
     @staticmethod
     def _integrate_part_a_leftwards(q_ab_half_req: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
                                     t_interp_index_switching: int, number_of_points: int, dead_time_resolution: float = 1e-9) -> tuple[bool, float]:
+        """
+        Integrate the current i_hf part A (from start of the dead time until the middle of the dead time) until the charge q_ab_half_req is reached.
+
+        :param q_ab_half_req: Required charge Q_AB_required / 2 to charge/discharge for half of the DC voltage
+        :type q_ab_half_req: np.ndarray
+        :param time_high_resolution: time vector
+        :type time_high_resolution: np.ndarray
+        :param i_hf_high_resolution: i_hf vector
+        :type i_hf_high_resolution: np.ndarray
+        :param t_interp_index_switching: time index when the switching event happens
+        :type t_interp_index_switching: int
+        :param number_of_points: sampling points for the high resolution
+        :type number_of_points: int
+        :param dead_time_resolution: dead time resolution
+        :type dead_time_resolution: float
+        """
         is_zvs = True
         # integrate part A (from switching point backwards to get Q_A_req). Therefore, the array is flipped.
         part_a_shifted_time = np.linspace(0, time_high_resolution[-1], number_of_points)
@@ -319,6 +335,22 @@ class HandleDabDto:
     @staticmethod
     def _integrate_part_b_rightwards(q_ab_req: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
                                      t_interp_index_switching: int, number_of_points: int, dead_time_resolution: float = 1e-9) -> tuple[bool, float]:
+        """
+        Integrate the current i_hf part B (from middle of the dead time until the end of the dead time) until the charge q_ab_half_req is reached.
+
+        :param q_ab_half_req: Required charge Q_AB_required / 2 to charge/discharge for half of the DC voltage
+        :type q_ab_half_req: np.ndarray
+        :param time_high_resolution: time vector
+        :type time_high_resolution: np.ndarray
+        :param i_hf_high_resolution: i_hf vector
+        :type i_hf_high_resolution: np.ndarray
+        :param t_interp_index_switching: time index when the switching event happens
+        :type t_interp_index_switching: int
+        :param number_of_points: sampling points for the high resolution
+        :type number_of_points: int
+        :param dead_time_resolution: dead time resolution
+        :type dead_time_resolution: float
+        """
         is_zvs = True
         # integrate part B (from switching point to get Q_B_req)
         part_b_shifted_time = np.linspace(0, time_high_resolution[-1], number_of_points)
