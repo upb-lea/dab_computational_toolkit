@@ -286,9 +286,9 @@ class HandleDabDto:
                 dab_calc.input_config.fs, np.transpose(dab_calc.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
                 np.transpose(dab_calc.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))[vec_vvp]))
             is_zvs_1[vec_vvp], t_dead_1[vec_vvp] = HandleDabDto.calculate_dead_time(
-                dab_calc.calc_modulation.q_ab_req1[vec_vvp], i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
+                dab_calc.calc_modulation.q_ab_req1[vec_vvp] / 2, i_lc1_time_current, i_hf1_time_current, dab_calc.calc_modulation.tau1[vec_vvp])
             is_zvs_2[vec_vvp], t_dead_2[vec_vvp] = HandleDabDto.calculate_dead_time(
-                dab_calc.calc_modulation.q_ab_req2[vec_vvp], i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=False)
+                dab_calc.calc_modulation.q_ab_req2[vec_vvp] / 2, i_lc2_time_current, i_hf2_time_current, dab_calc.calc_modulation.tau2[vec_vvp], is_plot=False)
 
         is_zvs = np.logical_and(is_zvs_1, is_zvs_2)
         zvs_coverage = np.count_nonzero(is_zvs) / np.size(is_zvs)
@@ -297,7 +297,7 @@ class HandleDabDto:
         return dab_calc
 
     @staticmethod
-    def _integrate_part_a_leftwards(q_ab_req: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
+    def _integrate_part_a_leftwards(q_ab_half_req: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
                                     t_interp_index_switching: int, number_of_points: int, dead_time_resolution: float = 1e-9) -> tuple[bool, float]:
         is_zvs = True
         # integrate part A (from switching point backwards to get Q_A_req). Therefore, the array is flipped.
@@ -309,7 +309,7 @@ class HandleDabDto:
             q_a = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
             current_sign_at_dead_time = np.sign(part_a_shifted_current[count])
             dead_time_part_a = time_value
-            if np.abs(q_a) > q_ab_req:
+            if np.abs(q_a) >= q_ab_half_req:
                 break
             elif current_sign_at_dead_time != current_sign_at_switching_point:
                 is_zvs = False
@@ -329,7 +329,7 @@ class HandleDabDto:
             q_b = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
             current_sign_at_dead_time = np.sign(part_b_shifted_current[count])
             dead_time_part_b = time_value
-            if np.abs(q_b) > q_ab_req:
+            if np.abs(q_b) >= q_ab_req:
                 break
             elif current_sign_at_dead_time != current_sign_at_switching_point:
                 is_zvs = False
@@ -343,15 +343,15 @@ class HandleDabDto:
         return idx
 
     @staticmethod
-    def calculate_dead_time(q_ab_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray, tau_rad: np.ndarray,
-                            is_plot: bool = False) -> tuple[bool, float]:
+    def calculate_dead_time(q_ab_half_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray,
+                            tau_rad: np.ndarray, is_plot: bool = False) -> tuple[bool, float]:
         """
         Minimum dead time estimation based on required charge Q_AB_req and i_hf currents.
 
         The i_lc current is needed to estimate the switching point of the corresponding bridge.
         This function is independent of the bridge, so there is no _1 or _2 variable name index.
-        :param q_ab_req: required charge in Q
-        :type q_ab_req: float
+        :param q_ab_half_req: required charge in Q. We need the half of Q_AB_req -> Q_A_req or Q_B_req
+        :type q_ab_half_req: float
         :param i_lc_full_time_current_waveform: i_lc1 or i_lc2 in format [[time], [current]]
         :type i_lc_full_time_current_waveform: np.ndarray
         :param i_hf_full_time_current_waveform: i_hf1 or i_hf2 in format [[time], [current]]
@@ -388,9 +388,9 @@ class HandleDabDto:
         t_interp_index_switching = HandleDabDto._index_of_nearest_value(time_high_resolution, t_switching_1)
 
         is_zvs_1_a, time_a_first_switching_event = HandleDabDto._integrate_part_a_leftwards(
-            q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+            q_ab_half_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
         is_zvs_1_b, time_b_first_switching_event = HandleDabDto._integrate_part_b_rightwards(
-            q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+            q_ab_half_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
 
         # check if ZVS condition is for switching event 1 fulfilled
         is_zvs_1 = is_zvs_1_a & is_zvs_1_b
@@ -434,9 +434,9 @@ class HandleDabDto:
             t_interp_index_switching = HandleDabDto._index_of_nearest_value(time_high_resolution, t_switching_2)
 
             is_zvs_2_a, time_a_second_switching_event = HandleDabDto._integrate_part_a_leftwards(
-                q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
-            is_zvs_2_b, time_b_second_switching_event = HandleDabDto._integrate_part_b_rightwards(
-                q_ab_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+                q_ab_half_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
+            is_zvs_2_b, time_b_second_switching_event, percent_2 = HandleDabDto._integrate_part_b_rightwards(
+                q_ab_half_req, time_high_resolution, i_hf_high_resolution, t_interp_index_switching, number_of_points, dead_time_resolution)
 
             # check if ZVS condition is for switching event 2 fulfilled
             is_zvs_2 = is_zvs_2_a & is_zvs_2_b

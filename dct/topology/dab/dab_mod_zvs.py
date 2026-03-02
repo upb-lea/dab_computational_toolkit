@@ -67,7 +67,8 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # Convert fs into omega_s
     ws = 2 * np.pi * fs
     # Calculate required Q for each voltage
-    # FIXME Check if factor 2 is right here!
+    # Q_AB_req_1 is the charge required for the whole switching event (Q_A_req_1 + Q_B_req_1)
+    # Q_AB_req_2 is the charge required for the whole switching event (Q_A_req_2 + Q_B_req_2)
     Q_AB_req1 = _integrate_c_oss(c_oss_1 * 2, v1)
     Q_AB_req2 = _integrate_c_oss(c_oss_2 * 2, v2)
 
