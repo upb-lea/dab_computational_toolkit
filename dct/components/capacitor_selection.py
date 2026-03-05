@@ -96,7 +96,7 @@ class CapacitorSelection:
                     v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
                     temperature_ambient=capacitor_toml_data.temperature_ambient,
                     voltage_safety_margin_percentage=capacitor_toml_data.voltage_safety_margin_percentage,
-                    capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
+                    capacitor_type_list=[pecst.CapacitorType.FilmCapacitor, pecst.CapacitorType.ElectrolyticCapacitor],
                     maximum_number_series_capacitors=capacitor_toml_data.maximum_number_series_capacitors,
                     capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
                     lifetime_h=capacitor_toml_data.lifetime_h,

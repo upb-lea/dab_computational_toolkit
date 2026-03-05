@@ -67,7 +67,8 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # Convert fs into omega_s
     ws = 2 * np.pi * fs
     # Calculate required Q for each voltage
-    # FIXME Check if factor 2 is right here!
+    # Q_AB_req_1 is the charge required for the whole switching event (Q_A_req_1 + Q_B_req_1)
+    # Q_AB_req_2 is the charge required for the whole switching event (Q_A_req_2 + Q_B_req_2)
     Q_AB_req1 = _integrate_c_oss(c_oss_1 * 2, v1)
     Q_AB_req2 = _integrate_c_oss(c_oss_2 * 2, v2)
 
@@ -95,10 +96,8 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # Interval I (mode 2):
     # if phi <= 0:
     _phi_I_leq_zero_mask = np.less_equal(phi_I, 0)
-    # debug('_phi_I_leq_zero_mask', _phi_I_leq_zero_mask)
     # if tau1 <= pi:
     _tau1_I_leq_pi_mask = np.less_equal(tau1_I, np.pi)
-    # debug('_tau1_I_leq_pi_mask', _tau1_I_leq_pi_mask)
     # if phi > 0:
     _phi_I_g_zero_mask = np.greater(phi_I, 0)
     _Im2_mask = np.bitwise_and(_phi_I_leq_zero_mask, _tau1_I_leq_pi_mask)
@@ -106,7 +105,6 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # Interval II (mode 2):
     # if tau1 <= pi:
     _tau1_II_leq_pi_mask = np.less_equal(tau1_II, np.pi)
-    # debug('_tau1_II_leq_pi_mask', _tau1_II_leq_pi_mask)
     # if tau1 > pi:
     _tau1_II_g_pi_mask = np.greater(tau1_II, np.pi)
 
@@ -134,15 +132,9 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
 
     # Int. I (mode 2): ZVS is analytically IMPOSSIBLE!
     zvs[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = False
-    phi[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
-        phi_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    tau1[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
-        tau1_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    tau2[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = (
-        tau2_I)[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))]
-    # debug('zvs', zvs)
-    # zvs = np.bitwise_not(np.bitwise_and(_phi_leq_zero_mask, np.bitwise_not(_tau1_leq_pi_mask)))
-    # debug('zvs bitwise not', zvs)
+    phi[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = np.nan
+    tau1[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = np.nan
+    tau2[np.bitwise_and(_phi_I_leq_zero_mask, np.bitwise_not(_tau1_I_leq_pi_mask))] = np.nan
 
     phi[_Im2_mask] = phi_I[_Im2_mask]
     tau1[_Im2_mask] = tau1_I[_Im2_mask]

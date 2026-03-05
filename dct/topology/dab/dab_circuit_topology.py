@@ -672,6 +672,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         if not np.all(dead_time_2_less_maximum):
             logger.info(f"Needed dead time of bridge 2 exceeds maximum dead time of {dab_calc.input_config.t_dead_2_max}.")
             return float('nan'), float('nan')
+
         # Calculate the cost function.
         i_cost_matrix = dab_calc.calc_currents.i_hf_1_rms ** 2 + dab_calc.calc_currents.i_hf_2_rms ** 2
         # consider weighting
@@ -680,7 +681,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # Mean for not-NaN values, as there will be too many NaN results.
         i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
-        return dab_calc.calc_modulation.mask_zvs_coverage * 100, i_cost
+        trial.set_user_attr('dead_time_zvs_coverage', dab_calc.calc_dead_time.zvs_coverage * 100)
+        trial.set_user_attr('zvs_coverage', dab_calc.calc_modulation.mask_zvs_coverage * 100)
+
+        return dab_calc.calc_dead_time.zvs_coverage * 100, i_cost
 
     @staticmethod
     def calculate_fixed_parameters(act_dab_config: circuit_dtos.CircuitParetoDabDesign) -> d_dtos.FixedParameters:
@@ -1680,8 +1684,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         df.to_csv(f"{plot_results_path}/{combination_id}.csv")
 
         parameters_microcontroller = ""
-        for _, row in df.iterrows():
-            line = "{" + (f'{row["v1"]}, {row["v2"]}, {row["p"]}, {row["phi / deg"]}, {row["tau_1 / deg"]}, {row["tau_2 / deg"]}, '
+        for count, row in df.iterrows():
+            line = "{" + (f'{count}, {row["v1"]}, {row["v2"]}, {row["p"]}, {row["phi / deg"]}, {row["tau_1 / deg"]}, {row["tau_2 / deg"]}, '
                           f'{int(row["t_dead_1 / ns"])}, {int(row["t_dead_2 / ns"])}') + "},\n"
             parameters_microcontroller = parameters_microcontroller + line
 
