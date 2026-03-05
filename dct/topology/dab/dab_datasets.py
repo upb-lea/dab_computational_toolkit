@@ -265,7 +265,6 @@ class HandleDabDto:
 
         :param dab_calc: DAB circuit DTO
         :type dab_calc: d_dtos.DabCircuitDTO
-
         """
         # Calculate the required dead time
         t_dead_1 = np.full_like(dab_calc.calc_modulation.phi, np.nan)
@@ -333,7 +332,7 @@ class HandleDabDto:
         return is_zvs, dead_time_part_a
 
     @staticmethod
-    def _integrate_part_b_rightwards(q_ab_req: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
+    def _integrate_part_b_rightwards(q_ab_req_half: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
                                      t_interp_index_switching: int, number_of_points: int, dead_time_resolution: float = 1e-9) -> tuple[bool, float]:
         """
         Integrate the current i_hf part B (from middle of the dead time until the end of the dead time) until the charge q_ab_half_req is reached.
@@ -361,7 +360,7 @@ class HandleDabDto:
             q_b = dead_time_resolution * np.trapezoid(current_vector_to_integrate)
             current_sign_at_dead_time = np.sign(part_b_shifted_current[count])
             dead_time_part_b = time_value
-            if np.abs(q_b) >= q_ab_req:
+            if np.abs(q_b) >= q_ab_req_half:
                 break
             elif current_sign_at_dead_time != current_sign_at_switching_point:
                 is_zvs = False
@@ -369,10 +368,19 @@ class HandleDabDto:
         return is_zvs, dead_time_part_b
 
     @staticmethod
-    def _index_of_nearest_value(array, value):
+    def _index_of_nearest_value(array: np.ndarray, value: float) -> int:
+        """
+        Search for the nearest value in an array and return its index.
+
+        :param array: Array to search for the closest value
+        :type array: np.ndarray
+        :param value: value to search for (which element in array is closest)
+        :type value: float
+        :return: index of closest value
+        """
         array = np.asarray(array)
         idx = (np.abs(array - value)).argmin()
-        return idx
+        return int(idx)
 
     @staticmethod
     def calculate_dead_time(q_ab_half_req: np.ndarray, i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray,
