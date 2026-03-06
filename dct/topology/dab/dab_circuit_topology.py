@@ -682,7 +682,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
         trial.set_user_attr('dead_time_zvs_coverage', dab_calc.calc_dead_time.zvs_coverage * 100)
-        trial.set_user_attr('zvs_coverage', dab_calc.calc_modulation.mask_zvs_coverage * 100)
+        trial.set_user_attr('zvs_coverage', dab_calc.calc_modulation.zvs_coverage * 100)
 
         return dab_calc.calc_dead_time.zvs_coverage * 100, i_cost
 

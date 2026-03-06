@@ -351,9 +351,6 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
     gamma_rad = np.full_like(alpha_rad, np.pi)
     delta_rad = np.pi + calc_modulation.phi
 
-    # define the full mask for mode 2, made of interval 1 and interval 2
-    mode_2_mask = np.bitwise_or(calc_modulation.mask_Im2, calc_modulation.mask_IIm2)
-
     # calculate current values for l_s depend on angles. Modulation modes are taken into account
     d = config.n * config.mesh_v2 / config.mesh_v1
 
@@ -384,64 +381,64 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
     # generate the output current for l_s, distinguish between mode 1+, mode 2 and mode 1-
     i_l_s_alpha = np.full_like(m1p_i_l_s_alpha, np.nan)
     i_l_s_alpha[calc_modulation.mask_m1p] = m1p_i_l_s_alpha[calc_modulation.mask_m1p]
-    i_l_s_alpha[mode_2_mask] = m2_i_l_s_alpha[mode_2_mask]
+    i_l_s_alpha[calc_modulation.mask_m2] = m2_i_l_s_alpha[calc_modulation.mask_m2]
     i_l_s_alpha[calc_modulation.mask_m1n] = m1n_i_l_s_alpha[calc_modulation.mask_m1n]
 
     i_l_s_beta = np.full_like(m1p_i_l_s_beta, np.nan)
     i_l_s_beta[calc_modulation.mask_m1p] = m1p_i_l_s_beta[calc_modulation.mask_m1p]
-    i_l_s_beta[mode_2_mask] = m2_i_l_s_beta[mode_2_mask]
+    i_l_s_beta[calc_modulation.mask_m2] = m2_i_l_s_beta[calc_modulation.mask_m2]
     i_l_s_beta[calc_modulation.mask_m1n] = m1n_i_l_s_beta[calc_modulation.mask_m1n]
 
     i_l_s_gamma = np.full_like(m1p_i_l_s_gamma, np.nan)
     i_l_s_gamma[calc_modulation.mask_m1p] = m1p_i_l_s_gamma[calc_modulation.mask_m1p]
-    i_l_s_gamma[mode_2_mask] = m2_i_l_s_gamma[mode_2_mask]
+    i_l_s_gamma[calc_modulation.mask_m2] = m2_i_l_s_gamma[calc_modulation.mask_m2]
     i_l_s_gamma[calc_modulation.mask_m1n] = m1n_i_l_s_gamma[calc_modulation.mask_m1n]
 
     i_l_s_delta = np.full_like(m1p_i_l_s_delta, np.nan)
     i_l_s_delta[calc_modulation.mask_m1p] = m1p_i_l_s_delta[calc_modulation.mask_m1p]
-    i_l_s_delta[mode_2_mask] = m2_i_l_s_delta[mode_2_mask]
+    i_l_s_delta[calc_modulation.mask_m2] = m2_i_l_s_delta[calc_modulation.mask_m2]
     i_l_s_delta[calc_modulation.mask_m1n] = m1n_i_l_s_delta[calc_modulation.mask_m1n]
 
     # generate the output current for l_1, distinguish between mode 2 and mode 1+
     i_l_1_alpha = np.full_like(m1p_i_l_1_alpha, np.nan)
     i_l_1_alpha[calc_modulation.mask_m1p] = m1p_i_l_1_alpha[calc_modulation.mask_m1p]
-    i_l_1_alpha[mode_2_mask] = m2_i_l_1_alpha[mode_2_mask]
+    i_l_1_alpha[calc_modulation.mask_m2] = m2_i_l_1_alpha[calc_modulation.mask_m2]
     i_l_1_alpha[calc_modulation.mask_m1n] = m1n_i_l_1_alpha[calc_modulation.mask_m1n]
 
     i_l_1_beta = np.full_like(m1p_i_l_1_beta, np.nan)
     i_l_1_beta[calc_modulation.mask_m1p] = m1p_i_l_1_beta[calc_modulation.mask_m1p]
-    i_l_1_beta[mode_2_mask] = m2_i_l_1_beta[mode_2_mask]
+    i_l_1_beta[calc_modulation.mask_m2] = m2_i_l_1_beta[calc_modulation.mask_m2]
     i_l_1_beta[calc_modulation.mask_m1n] = m1n_i_l_1_beta[calc_modulation.mask_m1n]
 
     i_l_1_gamma = np.full_like(m1p_i_l_1_gamma, np.nan)
     i_l_1_gamma[calc_modulation.mask_m1p] = m1p_i_l_1_gamma[calc_modulation.mask_m1p]
-    i_l_1_gamma[mode_2_mask] = m2_i_l_1_gamma[mode_2_mask]
+    i_l_1_gamma[calc_modulation.mask_m2] = m2_i_l_1_gamma[calc_modulation.mask_m2]
     i_l_1_gamma[calc_modulation.mask_m1n] = m1n_i_l_1_gamma[calc_modulation.mask_m1n]
 
     i_l_1_delta = np.full_like(m1p_i_l_1_delta, np.nan)
     i_l_1_delta[calc_modulation.mask_m1p] = m1p_i_l_1_delta[calc_modulation.mask_m1p]
-    i_l_1_delta[mode_2_mask] = m2_i_l_1_delta[mode_2_mask]
+    i_l_1_delta[calc_modulation.mask_m2] = m2_i_l_1_delta[calc_modulation.mask_m2]
     i_l_1_delta[calc_modulation.mask_m1n] = m1n_i_l_1_delta[calc_modulation.mask_m1n]
 
     # generate the output current for l_2, distinguish between mode 2 and mode 1+
     i_l_2_alpha = np.full_like(m1p_i_l_2_alpha, np.nan)
     i_l_2_alpha[calc_modulation.mask_m1p] = m1p_i_l_2_alpha[calc_modulation.mask_m1p]
-    i_l_2_alpha[mode_2_mask] = m2_i_l_2_alpha[mode_2_mask]
+    i_l_2_alpha[calc_modulation.mask_m2] = m2_i_l_2_alpha[calc_modulation.mask_m2]
     i_l_2_alpha[calc_modulation.mask_m1n] = m1n_i_l_2_alpha[calc_modulation.mask_m1n]
 
     i_l_2_beta = np.full_like(m1p_i_l_2_beta, np.nan)
     i_l_2_beta[calc_modulation.mask_m1p] = m1p_i_l_2_beta[calc_modulation.mask_m1p]
-    i_l_2_beta[mode_2_mask] = m2_i_l_2_beta[mode_2_mask]
+    i_l_2_beta[calc_modulation.mask_m2] = m2_i_l_2_beta[calc_modulation.mask_m2]
     i_l_2_beta[calc_modulation.mask_m1n] = m1n_i_l_2_beta[calc_modulation.mask_m1n]
 
     i_l_2_gamma = np.full_like(m1p_i_l_2_gamma, np.nan)
     i_l_2_gamma[calc_modulation.mask_m1p] = m1p_i_l_2_gamma[calc_modulation.mask_m1p]
-    i_l_2_gamma[mode_2_mask] = m2_i_l_2_gamma[mode_2_mask]
+    i_l_2_gamma[calc_modulation.mask_m2] = m2_i_l_2_gamma[calc_modulation.mask_m2]
     i_l_2_gamma[calc_modulation.mask_m1n] = m1n_i_l_2_gamma[calc_modulation.mask_m1n]
 
     i_l_2_delta = np.full_like(m1p_i_l_2_delta, np.nan)
     i_l_2_delta[calc_modulation.mask_m1p] = m1p_i_l_2_delta[calc_modulation.mask_m1p]
-    i_l_2_delta[mode_2_mask] = m2_i_l_2_delta[mode_2_mask]
+    i_l_2_delta[calc_modulation.mask_m2] = m2_i_l_2_delta[calc_modulation.mask_m2]
     i_l_2_delta[calc_modulation.mask_m1n] = m1n_i_l_2_delta[calc_modulation.mask_m1n]
 
     # calculate rms currents for l_s, l_1, l_2
