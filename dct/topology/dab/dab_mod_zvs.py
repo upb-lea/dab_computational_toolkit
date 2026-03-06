@@ -91,7 +91,7 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     phi_II, tau1_II, tau2_II = _calc_interval_2(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
     # Int. III (mode 2+/-): calculate phi, tau1 and tau2
-    phi_III, tau1_III, tau2_III = _calc_interval_3(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
+    phi_III, tau1_III, tau2_III, _mask_mode_2_interval_III_part_2 = _calc_interval_3(n, ls, lc1, Lc2_, ws, Q_AB_req1, Q_AB_req2, v1, V2_, I1)
 
     # Decision Logic
     # Interval I (mode 1):
@@ -119,7 +119,6 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     _tau2_III_g_pi_mask = np.greater(tau2_III, np.pi)
     # Mask for Mode 2+ Interval III Part 1 and Part 2
     _mask_mode_2_interval_III_part_1 = np.bitwise_and(_tau2_III_leq_pi_mask, _tau1_II_g_pi_mask, _phi_I_g_zero_mask)
-    _mask_mode_2_interval_III_part_2 = np.bitwise_and(_tau2_III_g_pi_mask, _tau1_II_g_pi_mask, _phi_I_g_zero_mask)
     _mask_mode_2_interval_III = np.bitwise_or(_mask_mode_2_interval_III_part_1, _mask_mode_2_interval_III_part_2)
 
     # Mode 2+ / Interval III / part 2 (update for tau2 > pi)
@@ -347,7 +346,7 @@ def _calc_interval_3(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
     tau_2_rad[tau2_III_g_pi_mask] = tau2_[tau2_III_g_pi_mask]
     phi_rad[tau2_III_g_pi_mask] = phi_[tau2_III_g_pi_mask]
 
-    return phi_rad, tau_1_rad, tau_2_rad
+    return phi_rad, tau_1_rad, tau_2_rad, tau2_III_g_pi_mask
 
 
 def _integrate_c_oss(coss: np.ndarray, voltage: np.ndarray) -> np.ndarray:
