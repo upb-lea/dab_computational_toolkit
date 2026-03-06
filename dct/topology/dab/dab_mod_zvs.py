@@ -167,7 +167,7 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     # ZVS coverage based on calculation: Percentage ZVS based on all points where the converter can be operated (not full operating range)
     da_mod_results[MOD_KEYS[8]] = np.count_nonzero(zvs[~np.isnan(tau1)]) / np.size(zvs[~np.isnan(tau1)])
 
-    # lower power pos/neg mode 2
+    # lower power positive/negative mode 2
     da_mod_results[MOD_KEYS[9]] = np.bitwise_or(_Im2_mask, _IIm2_mask)
     # negative high power mode 1-
     da_mod_results[MOD_KEYS[10]] = np.bitwise_and(_negative_power_mask, np.bitwise_or(_IIIm1_part_1_mask, _IIIm1_part_2_mask))
