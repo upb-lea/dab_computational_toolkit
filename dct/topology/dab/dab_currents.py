@@ -333,7 +333,7 @@ def calc_rms(alpha_rad: np.ndarray, beta_rad: np.ndarray, gamma_rad: np.ndarray,
 
     return rms, angles_sorted, currents_sorted
 
-def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitConfig, calc_modulation: CalcModulation) -> tuple:
+def calc_rms_currents(config: CircuitConfig, calc_modulation: CalcModulation) -> tuple:
     """
     Calculate the RMS currents in l_s, l_1 and l_2 for the given input values.
 
@@ -341,7 +341,6 @@ def calc_rms_currents(config: CircuitConfig, calc_from_config: CalcFromCircuitCo
     everything must be numpy!
 
     :param config: design configuration DTO
-    :param calc_from_config: Additional input parameters calculated once from the input configuration
     :param calc_modulation: Calculated modulation parameters DTO
     :return: i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_unsorted
     :rtype: tuple

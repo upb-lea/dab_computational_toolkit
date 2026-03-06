@@ -126,7 +126,7 @@ class HandleDabDto:
         modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
 
         i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct_currents.calc_rms_currents(
-            input_configuration, calc_config, modulation_parameters)
+            input_configuration, modulation_parameters)
 
         i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted = dct_currents.calc_hf_currents(
             angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
