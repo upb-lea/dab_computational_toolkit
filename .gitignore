@@ -23,3 +23,5 @@ trial*.py
 dictionary.dic
 examples/
 workspace/
+logging.conf
+log_file.log

@@ -122,8 +122,9 @@ class CalcModulation:
     mask_Im2: np.ndarray
     mask_IIm2: np.ndarray
     mask_IIIm1: np.ndarray
-    mask_zvs_coverage: np.ndarray
-    mask_zvs_coverage_notnan: np.ndarray
+    zvs_coverage: np.ndarray
+    zvs_coverage_notnan: np.ndarray
+    mask_m2: np.ndarray
     mask_m1n: np.ndarray
     mask_m1p: np.ndarray
     q_ab_req1: np.ndarray
