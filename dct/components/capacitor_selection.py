@@ -125,7 +125,7 @@ class CapacitorSelection:
     def _start_optimization(capacitor_number_in_circuit: int, act_config: CapacitorOptimizationDto, filter_data: FilterData,
                             factor_dc_losses_min_max_list: list[float], debug: Debug) -> int:
         """
-        Start the capacitor optimization / selection:
+        Start the capacitor optimization / selection.
 
         :param capacitor_number_in_circuit: functional capacitor number in the circuit. Commonly 0 for the input capacitor, 1 for the output capacitor
         :type capacitor_number_in_circuit: int
@@ -138,7 +138,6 @@ class CapacitorSelection:
         :param debug: Debug class
         :type debug: Debug
         """
-
         # capacitor requirements
         _, c_db_df_list = pecst.select_capacitors(act_config.capacitor_optimization_dto)
 
