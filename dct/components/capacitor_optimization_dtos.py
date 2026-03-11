@@ -20,6 +20,7 @@ class CapacitorOptimizationDto:
     capacitor_number_in_circuit: int
     time_array: np.ndarray
     current_array: np.ndarray
+    factor_dc_losses_min_max_list: list[float]
 
 @dataclasses.dataclass(init=False)
 class CapacitorResults:

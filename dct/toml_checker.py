@@ -147,6 +147,14 @@ class FlowControl(BaseModel):
     summary: Summary
     configuration_data_files: ConfigurationDataFiles
 
+# ######################################################
+# used by multiple components
+# ######################################################
+
+class TomlFilterDistance(BaseModel):
+    """Toml checker class for FilterDistance."""
+
+    factor_dc_losses_min_max_list: list[float]
 
 # ######################################################
 # capacitor
@@ -160,6 +168,7 @@ class TomlCapacitorSelection(BaseModel):
     voltage_safety_margin_percentage: float
     maximum_number_series_capacitors: int
     lifetime_h: float
+    filter_distance: TomlFilterDistance
 
 # ######################################################
 # inductor and transformer
@@ -205,11 +214,6 @@ class TomlInductorBoundaryConditions(BaseModel):
 
     # Temperature
     temperature: float
-
-class TomlFilterDistance(BaseModel):
-    """Toml checker class for FilterDistance."""
-
-    factor_dc_losses_min_max_list: list[float]
 
 class TomlInductor(BaseModel):
     """Toml checker class for Inductor."""
