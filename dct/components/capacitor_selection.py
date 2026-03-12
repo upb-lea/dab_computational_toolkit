@@ -111,7 +111,8 @@ class CapacitorSelection:
                     capacitor_optimization_dto=capacitor_requirements_dto,
                     capacitor_number_in_circuit=capacitor_requirements.capacitor_number_in_circuit,
                     current_array=capacitor_requirements.current_array,
-                    time_array=capacitor_requirements.time_array)
+                    time_array=capacitor_requirements.time_array,
+                    factor_dc_losses_min_max_list=capacitor_toml_data.filter_distance.factor_dc_losses_min_max_list)
 
                 # Check list size
                 while len(self._optimization_config_list) <= capacitor_number_in_circuit:
@@ -122,8 +123,21 @@ class CapacitorSelection:
 
     @staticmethod
     def _start_optimization(capacitor_number_in_circuit: int, act_config: CapacitorOptimizationDto, filter_data: FilterData,
-                            debug: Debug) -> int:
+                            factor_dc_losses_min_max_list: list[float], debug: Debug) -> int:
+        """
+        Start the capacitor optimization / selection.
 
+        :param capacitor_number_in_circuit: functional capacitor number in the circuit. Commonly 0 for the input capacitor, 1 for the output capacitor
+        :type capacitor_number_in_circuit: int
+        :param act_config: capacitor optimization DTO
+        :type act_config: CapacitorOptimizationDto
+        :param filter_data: filtered circuit data
+        :type filter_data: FilterData
+        :param factor_dc_losses_min_max_list: minimum and maximum filter factor to filter suitable designs for the Pareto front
+        :type factor_dc_losses_min_max_list: list[float]
+        :param debug: Debug class
+        :type debug: Debug
+        """
         # capacitor requirements
         _, c_db_df_list = pecst.select_capacitors(act_config.capacitor_optimization_dto)
 
@@ -133,7 +147,7 @@ class CapacitorSelection:
             os.makedirs(act_config.capacitor_optimization_dto.results_directory)
         c_db_df.to_csv(f"{act_config.capacitor_optimization_dto.results_directory}/{CAPACITOR_RESULTS}")
 
-        df_filtered = pecst.filter_df(c_db_df)
+        df_filtered = pecst.filter_df(c_db_df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
             df_filtered = df_filtered.iloc[:debug.capacitor.number_working_point_max]
@@ -181,7 +195,7 @@ class CapacitorSelection:
                     logger.debug("All operating point simulation of:")
                     logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
                     logger.debug(f"   * Circuit trial: {act_config.circuit_id}")
-                    logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
+                    logger.debug(f"   * Capacitor re-simulation trial: {ordering_code}")
 
                     [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='fft input current')
 
@@ -241,6 +255,7 @@ class CapacitorSelection:
                     capacitor_in_circuit,
                     act_optimization_configuration,
                     filter_data,
+                    act_optimization_configuration.factor_dc_losses_min_max_list,
                     debug
                 ))
 
