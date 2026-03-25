@@ -1508,7 +1508,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         circuit_plot_data: PlotData = (
             PlotData(x_values_list=circuit_x_values_list, y_values_list=circuit_y_values_list,
                      color_list=[gps.colors()["black"]], alpha_list=[0.5],
-                     x_label=r"$\mathcal{L}_\mathrm{v}$ / \%", y_label=r"$\mathcal{L}_\mathrm{i}$ / A²",
+                     x_label=r'$V_\mathrm{proxi}$', y_label=r'$P_\mathrm{tran}$ / W',
                      label_list=[None], fig_name_path=act_study_data.study_name))
 
         return circuit_plot_data

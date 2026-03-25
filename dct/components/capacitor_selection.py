@@ -166,6 +166,9 @@ class CapacitorSelection:
 
         logger.info(f"Full-operating point simulation list: {all_operation_point_ordering_codes_list}")
 
+        # Initialize volume_total_minimum
+        volume_total_minimum = all_operation_point_volume_list[0]
+
         # simulate all operating points
         for count, ordering_code in enumerate(tqdm.tqdm(all_operation_point_ordering_codes_list)):
 
@@ -196,7 +199,7 @@ class CapacitorSelection:
                     logger.debug("All operating point simulation of:")
                     logger.debug(f"   * Circuit study: {filter_data.circuit_study_name}")
                     logger.debug(f"   * Circuit trial: {act_config.circuit_id}")
-                    logger.debug(f"   * Capacitor re-simulation trial: {ordering_code}")
+                    logger.debug(f"   * Inductor re-simulation trial: {ordering_code}")
 
                     [frequency_list, current_amplitude_list, _] = pecst.fft(current_waveform, plot='no', mode='time', title='fft input current')
 
@@ -216,9 +219,14 @@ class CapacitorSelection:
                     capacitor_number_in_circuit=capacitor_number_in_circuit
                 )
 
-                pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
-                with open(pickle_file, 'wb') as output:
-                    pickle.dump(capacitor_results, output, pickle.HIGHEST_PROTOCOL)
+                # Get capacitor with smallest volume (power loss can be ignored due to very small impact)
+                if volume_total <= volume_total_minimum:
+                    capacitor_final_result = copy.deepcopy(capacitor_results)
+                    volume_total_minimum = volume_total
+
+        pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
+        with open(pickle_file, 'wb') as output:
+            pickle.dump(capacitor_final_result, output, pickle.HIGHEST_PROTOCOL)
 
         # returns the number of filtered results
         return number_of_filtered_points

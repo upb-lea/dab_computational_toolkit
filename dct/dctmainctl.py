@@ -2017,10 +2017,6 @@ class DctMainCtl:
                                                         self._transformer_study_configuration_list,
                                                         df_pareto_front, is_pre_summary=True)
 
-        # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
-        self.generate_zip_archive(toml_prog_flow)
-
         ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
 
         # Plot results of all capacitors
@@ -2041,6 +2037,10 @@ class DctMainCtl:
                                                  pre_summary_data.optimization_directory)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
         ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
+
+        # Check breakpoint
+        self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
+        self.generate_zip_archive(toml_prog_flow)
 
         # --------------------------
         # Inductor FEM simulation
