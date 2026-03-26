@@ -219,12 +219,13 @@ class CapacitorSelection:
                     capacitor_number_in_circuit=capacitor_number_in_circuit
                 )
 
-                # Get capacitor with smallest volume (power loss can be ignored due to very small impact)
+                # Get capacitor with the smallest volume (power loss can be ignored due to very small impact)
                 if volume_total <= volume_total_minimum:
+                    ordering_code_final = ordering_code
                     capacitor_final_result = copy.deepcopy(capacitor_results)
                     volume_total_minimum = volume_total
 
-        pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code}.pkl")
+                pickle_file = os.path.join(new_circuit_dto_directory, f"{ordering_code_final}.pkl")
         with open(pickle_file, 'wb') as output:
             pickle.dump(capacitor_final_result, output, pickle.HIGHEST_PROTOCOL)
 
