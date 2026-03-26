@@ -25,10 +25,10 @@ def calc_rms_currents(config: CircuitConfig) -> tuple:
     duty_cycle_term = config.mesh_duty_cycle * (1 - config.mesh_duty_cycle)
 
     # Calculate the ripple current and rms current
-    i_ripple = config.mesh_v * duty_cycle_term / (config.Ls * config.fs)
+    i_ripple = config.mesh_v1 * duty_cycle_term / (config.Ls * config.fs)
 
     # Calculate the current mean square
-    i_ms = config.mesh_i ** 2 + (i_ripple / 12) ** 2
+    i_ms = config.mesh_i2 ** 2 + (i_ripple / 12) ** 2
     # Calculate the current root mean square
     i_rms = np.sqrt(i_ms)
 
@@ -63,6 +63,6 @@ def calc_volume_inductor_proxy(config: CircuitConfig, i_ripple: np.ndarray, i_rm
     # Calculate the ripple current and rms current
     volume_inductor_proxy: np.ndarray = kcore / bsquare_max * (i_ripple ** 2) * config.Ls + kel * (i_rms) * (config.Ls ** (1/2))
     # Debug
-    # volume_inductor_proxy = (config.mesh_i / config.mesh_i) * config.Ls ** (2/3)
+    # volume_inductor_proxy = (config.mesh_i2 / config.mesh_i2) * config.Ls ** (2/3)
 
     return volume_inductor_proxy

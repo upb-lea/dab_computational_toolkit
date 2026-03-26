@@ -39,7 +39,9 @@ from dct.components.component_dtos import (CapacitorRequirements, InductorRequir
                                            ComponentRequirements, ComponentCooling)
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               SUMMARY_COMBINATION_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER)
+from dct.topology.sbc.sbc_constants import MAX_DUTY_CYCLE
+
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
     # Definition of constant values
     # Topological resource constants
-    _number_of_required_capacitors: int = 0
+    _number_of_required_capacitors: int = 2
     _number_of_required_inductors: int = 1
     _number_of_required_transformers: int = 0
 
@@ -178,9 +180,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             is_consistent = False
         else:
             # Check lower boundary with respect to v1_min_max_list if v2_min_max_list is consistent
-            if toml_general.parameter_range.v1_min_max_list[0] <= toml_general.parameter_range.v2_min_max_list[0]:
+            if toml_general.parameter_range.v1_min_max_list[0] * MAX_DUTY_CYCLE <= toml_general.parameter_range.v2_min_max_list[1]:
                 issue_report = (f"Inconsistency in v2_min_max_list: Minimum of v1="
-                                f"{toml_general.parameter_range.v1_min_max_list[0]} is less equal minimum "
+                                f"{toml_general.parameter_range.v1_min_max_list[0]} * f{MAX_DUTY_CYCLE} is less equal maximum "
                                 f"of v2={toml_general.parameter_range.v1_min_max_list[0]}.")
                 inconsistency_report = inconsistency_report + issue_report
                 is_check_passed = False
@@ -537,10 +539,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         # Maximum value calculated from minimum v1-voltage and maximum v2-voltage
         duty_cycle_min_max_list.append(act_parameter_range.v2_min_max_list[1] / act_parameter_range.v1_min_max_list[0])
 
-        duty_cycle_min_max_list.sort()
-        if duty_cycle_min_max_list[1] >= 0.999:
-            duty_cycle_min_max_list[1] = 0.999
-
         return duty_cycle_min_max_list
 
     def get_config(self) -> circuit_dtos.CircuitParetoSbcDesign | None:
@@ -645,9 +643,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         # Overtake suggested values
         sbc_calc = d_sets.HandleSbcDto.init_config(
             name=sbc_config.circuit_study_name,
-            mesh_v=fixed_parameters.mesh_v,
+            mesh_v1=fixed_parameters.mesh_v1,
             mesh_duty_cycle=fixed_parameters.mesh_duty_cycle,
-            mesh_i=fixed_parameters.mesh_i,
+            mesh_i2=fixed_parameters.mesh_i2,
             sampling=sbc_config.sampling,
             ls=l_s_suggest,
             fs=f_s_suggest,
@@ -729,6 +727,15 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                 dim_2_user_given_points_list=act_sbc_config.sampling.duty_cycle_additional_user_point_list,
                 dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list,
                 sampling_random_seed=act_sbc_config.sampling.sampling_random_seed)
+        elif act_dab_config.sampling.sampling_method == SamplingEnum.dessca:
+            v_operating_points, duty_cylce_operating_points, i_operating_points = sampling.dessca(
+                act_sbc_config.parameter_range.v1_min_max_list[0], act_sbc_config.parameter_range.v1_min_max_list[1],
+                act_sbc_config.parameter_range.duty_cycle_min_max_list[0], act_sbc_config.parameter_range.duty_cycle_min_max_list[1],
+                act_sbc_config.parameter_range.i2_min_max_list[0], act_sbc_config.parameter_range.i2_min_max_list[1],
+                total_number_points=act_sbc_config.sampling.sampling_points,
+                dim_1_user_given_points_list=act_sbc_config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=act_sbc_config.sampling.duty_cycle_additional_user_point_list,
+                dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list)
         else:
             raise ValueError(f"sampling_method '{act_sbc_config.sampling.sampling_method}' not available.")
 
@@ -760,14 +767,24 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             logger.debug(f"{weights=}")
             logger.debug(f"Double check: Sum of weights = {np.sum(weights)}")
 
+        # return s_dtos.FixedParameters(
+        #     transistor_1_dto_list=transistor_1_dto_list,
+        #     transistor_2_dto_list=transistor_2_dto_list,
+        #     mesh_v1=np.atleast_3d(v_operating_points),
+        #     mesh_duty_cycle=np.atleast_3d(duty_cylce_operating_points),
+        #     mesh_i2=np.atleast_3d(i_operating_points),
+        #     mesh_weights=np.atleast_3d(weights)
+        # )
+        # Return result as column vector
         return s_dtos.FixedParameters(
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
-            mesh_v=np.atleast_3d(v_operating_points),
-            mesh_duty_cycle=np.atleast_3d(duty_cylce_operating_points),
-            mesh_i=np.atleast_3d(i_operating_points),
-            mesh_weights=np.atleast_3d(weights)
+            mesh_v1=v_operating_points[:, np.newaxis],
+            mesh_duty_cycle=duty_cylce_operating_points[:, np.newaxis],
+            mesh_i2=i_operating_points[:, np.newaxis],
+            mesh_weights=weights[:, np.newaxis]
         )
+
 
     def run_optimization_sqlite(self, act_number_trials: int) -> None:
         """Proceed a study which is stored as sqlite database.
@@ -871,8 +888,8 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         self._fixed_parameters = SbcCircuitOptimization.calculate_fixed_parameters(self._sbc_config)
 
         # Debug
-        print(f"i=f{self._fixed_parameters.mesh_i}")
-        print(f"V_in=f{self._fixed_parameters.mesh_v}")
+        print(f"i=f{self._fixed_parameters.mesh_i2}")
+        print(f"V_in=f{self._fixed_parameters.mesh_v1}")
         print(f"duty=f{self._fixed_parameters.mesh_duty_cycle}")
         print(f"w=f{self._fixed_parameters.mesh_weights}")
 
@@ -1013,9 +1030,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         sbc_dto = d_sets.HandleSbcDto.init_config(
             name=str(trial_number),
-            mesh_v=fix_parameters.mesh_v,
+            mesh_v1=fix_parameters.mesh_v1,
             mesh_duty_cycle=fix_parameters.mesh_duty_cycle,
-            mesh_i=fix_parameters.mesh_i,
+            mesh_i2=fix_parameters.mesh_i2,
             sampling=sbc_config.sampling,
             ls=trials_dict["l_s_suggest"],
             fs=trials_dict["f_s_suggest"],
@@ -1056,9 +1073,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
             sbc_dto = d_sets.HandleSbcDto.init_config(
                 name=str(df.at[index, "number"]),
-                mesh_v=self._fixed_parameters.mesh_v,
+                mesh_v1=self._fixed_parameters.mesh_v1,
                 mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
-                mesh_i=self._fixed_parameters.mesh_i,
+                mesh_i2=self._fixed_parameters.mesh_i2,
                 sampling=self._sbc_config.sampling,
                 ls=float(cast(SupportsFloat, df.at[index, "params_l_s_suggest"])),
                 fs=float(cast(SupportsFloat, df.at[index, "params_f_s_suggest"])),
@@ -1437,16 +1454,24 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :rtype: CapacitorRequirements
         """
         # Variable declaration
-        capacitor_requirements_list: list[CapacitorRequirements]
+        capacitor_requirements_list: list[CapacitorRequirements] = []
 
-        # Dummy access with self to satisfy ruff
-        if self._sbc_config is None:
-            capacitor_requirements_list = []
-        else:
-            capacitor_requirements_list = []
+        for circuit_id_file in self.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            circuit_dto = d_sets.HandleSbcDto.load_from_file(circuit_id_filepath)
+            if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded component requirements have wrong type.")
 
-        # Capacitor requirements still not generated
+            if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded capacitor requirements have wrong type.")
+
+            # Add capacitor requirements to the list
+            capacitor_requirements_list = capacitor_requirements_list + circuit_dto.component_requirements.capacitor_requirements
+
         return capacitor_requirements_list
+
 
     def get_inductor_requirements(self) -> list[InductorRequirements]:
         """Get the inductor requirements.
@@ -1666,6 +1691,10 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             circuit_id = row['circuit_id']
             inductor_id = row['inductor_id_0']
             inductor_study_name = row['inductor_study_name_0']
+            capacitor_1_id = row['capacitor_id_0']
+            capacitor_1_study_name = row['capacitor_study_name_0']
+            capacitor_2_id = row['capacitor_id_1']
+            capacitor_2_study_name = row['capacitor_study_name_1']
 
             # load circuit DTO
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
@@ -1684,12 +1713,34 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
             circuit_dto.inductor_results = inductor_results
 
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[0].study_data
+            capacitor_1_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                              capacitor_1_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_1_id_filepath = os.path.join(capacitor_1_study_results_filepath, f"{capacitor_1_id}.pkl")
+            with open(capacitor_1_id_filepath, 'rb') as pickle_file_data:
+                capacitor_1_results = pickle.load(pickle_file_data)
+
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[1].study_data
+            capacitor_2_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                              capacitor_2_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_2_id_filepath = os.path.join(capacitor_2_study_results_filepath, f"{capacitor_2_id}.pkl")
+            with open(capacitor_2_id_filepath, 'rb') as pickle_file_data:
+                capacitor_2_results = pickle.load(pickle_file_data)
+
+            circuit_dto.inductor_results = inductor_results
+            circuit_dto.capacitor_1_results = capacitor_1_results
+            circuit_dto.capacitor_2_results = capacitor_2_results
+
             results_folder = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
             if not os.path.exists(results_folder):
                 os.makedirs(results_folder)
 
             d_sets.HandleSbcDto.save(circuit_dto,
-                                     f"c{circuit_id}_i{inductor_id}",
+                                     f"c{circuit_id}_i{inductor_id}_cap1_{capacitor_1_id}_cap2_{capacitor_2_id}",
                                      directory=results_folder, timestamp=False)
 
     @staticmethod

@@ -44,9 +44,9 @@ class FixedParameters:
 
     transistor_1_dto_list: list[TransistorDTO]
     transistor_2_dto_list: list[TransistorDTO]
-    mesh_v: np.ndarray
+    mesh_v1: np.ndarray
     mesh_duty_cycle: np.ndarray
-    mesh_i: np.ndarray
+    mesh_i2: np.ndarray
     mesh_weights: np.ndarray
 
 @dataclasses.dataclass
@@ -64,9 +64,9 @@ class Sampling:
 class CircuitConfig:
     """Input configuration DTO for the SBC converter."""
 
-    mesh_v: np.ndarray
+    mesh_v1: np.ndarray
     mesh_duty_cycle: np.ndarray
-    mesh_i: np.ndarray
+    mesh_i2: np.ndarray
     sampling: Sampling
     Ls: np.float64
     fs: np.float64
