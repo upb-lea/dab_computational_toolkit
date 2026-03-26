@@ -96,11 +96,12 @@ class CapacitorSelection:
                     v_dc_for_op_max_voltage=capacitor_requirements.v_dc_max,
                     temperature_ambient=capacitor_toml_data.temperature_ambient,
                     voltage_safety_margin_percentage=capacitor_toml_data.voltage_safety_margin_percentage,
-                    capacitor_type_list=[pecst.CapacitorType.FilmCapacitor, pecst.CapacitorType.ElectrolyticCapacitor],
+                    capacitor_type_list=[pecst.CapacitorType.FilmCapacitor],
                     maximum_number_series_capacitors=capacitor_toml_data.maximum_number_series_capacitors,
                     capacitor_tolerance_percent=pecst.CapacitanceTolerance.TenPercent,
                     lifetime_h=capacitor_toml_data.lifetime_h,
-                    results_directory=trial_directory)
+                    results_directory=trial_directory,
+                    balancing_discharging_resistors=False)
 
                 # Initialize the statistical data
                 stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0, progress_status=ProgressStatus.Idle)
