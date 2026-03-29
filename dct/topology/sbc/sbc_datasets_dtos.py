@@ -6,6 +6,7 @@ import dataclasses
 # 3rd party libraries
 import numpy as np
 
+from dct.components.capacitor_optimization_dtos import CapacitorResults
 # own libraries
 from dct.components.component_dtos import ComponentRequirements, InductorResults, CircuitThermal
 
@@ -114,11 +115,12 @@ class SbcCircuitDTO:
     circuit_id: str
     metadata: np.ndarray | None
     input_config: CircuitConfig
-    calc_volume_inductor_proxy: np.ndarray
     calc_currents: CalcCurrents
     calc_losses: CalcLosses
     component_requirements: ComponentRequirements | None
     inductor_results: InductorResults | None
+    capacitor_1_results: CapacitorResults | None
+    capacitor_2_results: CapacitorResults | None
     circuit_thermal: CircuitThermal | None
 
 @dataclasses.dataclass

@@ -10,6 +10,7 @@ import tempfile
 # 3rd party libraries
 import pytest
 from _pytest.logging import LogCaptureFixture
+import numpy as np
 from numpy.testing import assert_array_equal
 
 # own libraries
@@ -188,7 +189,7 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
 
     parameter_range = d_dtos.CircuitParameterRange(
         v1_min_max_list=[690, 710],
-        duty_cycle_min_max_list=[0.1, 0.999],
+        duty_cycle_min_max_list=[0.1, 0.98],
         i2_min_max_list=[0, 30])
 
     filter = d_dtos.CircuitFilter(
@@ -234,7 +235,8 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
                 ClassUnderTest.calculate_fixed_parameters(sbc_config)
         else:
             output = ClassUnderTest.calculate_fixed_parameters(sbc_config)
-            assert_array_equal(result_weighting, output.mesh_weights)
+            result_weighting_cmp = np.array(result_weighting)
+            assert_array_equal(result_weighting_cmp.squeeze(), output.mesh_weights.squeeze())
 
             for info_message_id in expected_message_id_list:
                 assert info_message_dict[info_message_id] in caplog.text
@@ -305,7 +307,9 @@ def test_load_and_verify_general_parameters(test_index: int, test_type: TestCase
     # at lower boundary | at upper boundary | in between | minimum > maximum* | too few entries*
     # too many entries* | exceed the lower limit | exceed the upper limit
     float_min_max_list_configuration_ge1_le1000: list[list[float]] = (
-        [[1, 1], [1000, 1000], [300, 900], [900, 300], [500], [600, 800, 990], [-10, 120], [40.5, 1150]])
+        [[1, 1], [1000, 1000], [600, 900], [310, 300], [500], [600, 800, 990], [-10, 120], [40.5, 1150]])
+    float_min_max_list_configuration_duty_cycle_gt1em1__lt98Em2: list[list[float]] = (
+        [[0.1, 0.1], [0.98, 0.98], [0.3, 0.8], [0.7, 0.5], [0.7], [0.3, 0.5, 0.6], [0, 0.5], [0.33, 1]])
     float_min_max_list_configuration_gt0_lt999: list[list[float]] = (
         [[1e-19, 1e-19], [999, 999], [200, 700], [200, 100], [400], [300, 700, 900], [-11, 110], [40, 1101]])
     float_min_max_list_configuration_gem300_le300: list[list[float]] = (
@@ -313,11 +317,23 @@ def test_load_and_verify_general_parameters(test_index: int, test_type: TestCase
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
     int_value_ge0 = [0, 181877627, 1111, 4332, 4889393, 334544, -1, 10000]
 
+    # Calculate v2-minimum maximum list
+    duty_cycle_entry = float_min_max_list_configuration_duty_cycle_gt1em1__lt98Em2[test_index]
+    v1_entry = float_min_max_list_configuration_ge1_le1000[test_index]
+    v2_list = []
+    if len(v1_entry) > 1:
+        v2_list = [v1_entry[1] * duty_cycle_entry[0], v1_entry[0] * duty_cycle_entry[1]]
+        if len(v1_entry) == 3:
+            v2_list.append(v1_entry[0] * duty_cycle_entry[2])
+
+    if len(v1_entry) == 1:
+        v2_list = [v1_entry[0] * duty_cycle_entry[0]]
+
     # Initialize the general parameters
     test_general_parameter: sbc_tc.TomlSbcGeneral = sbc_tc.TomlSbcGeneral(
         parameter_range=sbc_tc.TomlSbcParameterRange(
             v1_min_max_list=float_min_max_list_configuration_ge1_le1000[test_index],
-            v2_min_max_list=float_min_max_list_configuration_gt0_lt999[test_index],
+            v2_min_max_list=v2_list,
             i2_min_max_list=float_min_max_list_configuration_gem300_le300[test_index]),
         sampling=sbc_tc.TomlSbcSampling(
             sampling_method=SamplingEnum.meshgrid,
@@ -782,10 +798,10 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
         [[1001, 2001], [399999, 999999], [2000, 500000], [10, 3222]])
     float_min_max_list_configuration_gt0_lt1: list[list[float]] = (
         [[1e-17, 8.1e-17], [0.1991, 0.9991], [0.34, 0.77], [-0.1, 0.88]])
-    float_min_max_list_configuration_gt0_lt1500: list[list[float]] = (
+    v1_float_min_max_list_configuration_ge1_lt1500: list[list[float]] = (
         [[1, 2], [10, 1499.9], [1000, 1499], [-10, 1200]])
-    float_min_max_list_configuration_gt0_lt1499: list[list[float]] = (
-        [[1e-18, 1.5], [5, 1309], [999, 1498], [-10, 1200]])
+    float_min_max_list_configuration_duty_cycle_gt1em1__lt98Em2: list[list[float]] = (
+        [[0.1, 0.1001], [0.4, 0.6], [0.979, 0.98], [0, 0.5]])
     float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
         [[-9.9999, 0], [22, 9.9999e4], [2000, 5e4], [-1.01e5, 3222]])
     float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, -1e-3]
@@ -795,11 +811,16 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
     int_value_gt0 = [1, 181877627, 1111, 10000]
     int_value_ge0 = [0, 181877627, 1111, 10000]
 
+    # Calculate v2-minimum maximum list
+    duty_cycle_entry = float_min_max_list_configuration_duty_cycle_gt1em1__lt98Em2[test_index]
+    v1_entry = v1_float_min_max_list_configuration_ge1_lt1500[test_index]
+    v2_list = [v1_entry[1] * duty_cycle_entry[0], v1_entry[0] * duty_cycle_entry[1]]
+
     # Initialize the general parameters
     test_general_parameter: sbc_tc.TomlSbcGeneral = sbc_tc.TomlSbcGeneral(
         parameter_range=sbc_tc.TomlSbcParameterRange(
-            v1_min_max_list=float_min_max_list_configuration_gt0_lt1500[test_index],
-            v2_min_max_list=float_min_max_list_configuration_gt0_lt1499[test_index],
+            v1_min_max_list=v1_float_min_max_list_configuration_ge1_lt1500[test_index],
+            v2_min_max_list=v2_list,
             i2_min_max_list=float_min_max_list_configuration_gtm100kw_lt100kw[test_index]),
         sampling=sbc_tc.TomlSbcSampling(
             sampling_method=SamplingEnum.meshgrid,
@@ -810,17 +831,6 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             i2_additional_user_point_list=[],
             additional_user_weighting_point_list=[])
     )
-
-    # Calculate value to list
-    calculated_duty_cycle_list: list[float] = []
-    calculated_duty_cycle_list.append(
-        test_general_parameter.parameter_range.v2_min_max_list[1] / test_general_parameter.parameter_range.v1_min_max_list[0])
-
-    calculated_duty_cycle_list.append(
-        test_general_parameter.parameter_range.v2_min_max_list[0] / test_general_parameter.parameter_range.v1_min_max_list[1])
-    calculated_duty_cycle_list.sort()
-    if calculated_duty_cycle_list[1] >= 0.999:
-        calculated_duty_cycle_list[1] = 0.999
 
     # Initialize the circuit parameters
     test_circuit_parameter: sbc_tc.TomlSbcCircuitParetoDesign = sbc_tc.TomlSbcCircuitParetoDesign(
@@ -891,7 +901,7 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             assert test_object._sbc_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
             assert test_object._sbc_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
             assert test_object._sbc_config.parameter_range.v1_min_max_list == test_general_parameter.parameter_range.v1_min_max_list
-            assert test_object._sbc_config.parameter_range.duty_cycle_min_max_list == calculated_duty_cycle_list
+            assert test_object._sbc_config.parameter_range.duty_cycle_min_max_list == float_min_max_list_configuration_duty_cycle_gt1em1__lt98Em2[test_index]
             assert test_object._sbc_config.parameter_range.i2_min_max_list == test_general_parameter.parameter_range.i2_min_max_list
             assert test_object._sbc_config.sampling.sampling_method == test_general_parameter.sampling.sampling_method
             assert test_object._sbc_config.sampling.sampling_points == test_general_parameter.sampling.sampling_points

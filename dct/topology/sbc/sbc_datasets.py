@@ -80,9 +80,6 @@ class HandleSbcDto:
         # Calculate the ripple current and rms current
         i_ripple, i_ms, i_rms = dct_currents.calc_rms_currents(input_configuration)
 
-        # Calculate the Volume proxy
-        calc_volume_inductor_proxy = dct_currents.calc_volume_inductor_proxy(input_configuration, i_ripple, i_rms)
-
         calc_currents = s_dtos.CalcCurrents(i_rms=i_rms, i_ms=i_ms, i_ripple=i_ripple)
 
         # Calculate the transistor conduction losses p_hs_cond = (I_out²+I_Ripple²/12)*R_D_S_on
@@ -108,7 +105,8 @@ class HandleSbcDto:
             calc_currents=calc_currents,
             calc_losses=p_loss,
             component_requirements=None,
-            calc_volume_inductor_proxy=calc_volume_inductor_proxy,
+            capacitor_1_results=None,
+            capacitor_2_results=None,
             inductor_results=None,
             circuit_thermal=None,
         )
@@ -266,7 +264,7 @@ class HandleSbcDto:
         i_current_vec = sbc_dto.input_config.mesh_i2 + sbc_dto.calc_currents.i_ripple / 2
         # Get the maximum current and correspondent duty cycle and ripple current
         idx_max = i_current_vec.argmax()
-        i_max_current =  sbc_dto.input_config.mesh_i2[idx_max]
+        i_max_current = sbc_dto.input_config.mesh_i2[idx_max]
         i_ripple_at_max = sbc_dto.calc_currents.i_ripple[idx_max] / 2
         duty_cycle_at_max = sbc_dto.input_config.mesh_duty_cycle[idx_max]
         # Create time vector for correspondent operation point
@@ -296,7 +294,6 @@ class HandleSbcDto:
         :rtype: List[np.ndarray]
         """
         # Variable declaration
-        i_current: np.ndarray
         i_current_array: np.ndarray
         time_array: np.ndarray
 
@@ -383,25 +380,30 @@ class HandleSbcDto:
         # Calculate the input current i1
         i1_current_array = sbc_dto.input_config.mesh_i2 * sbc_dto.input_config.mesh_duty_cycle
 
-        # Assemble time array for capacitor. Start period at SWITCH_TIME_OFF/2 (from t0=SWITCH_TIME_OFF/2 to tp= Tp+SWITCH_TIME_OFF/2)
-        time_array_cap = np.hstack((time_array[:, 0][:, np.newaxis], time_array[:, 1][:, np.newaxis] - SWITCH_TIME_ON/2 - SWITCH_TIME_OFF/2, time_array[:, 1][:, np.newaxis] + SWITCH_TIME_ON/2 - SWITCH_TIME_OFF/2,
-                          time_array[:, 2][:, np.newaxis]  - SWITCH_TIME_OFF, time_array[:, 2][:, np.newaxis]))
+        # Assemble time array for capacitor.
+        # Start period at SWITCH_TIME_OFF/2 (from t0=SWITCH_TIME_OFF/2 to t_period= T_period+SWITCH_TIME_OFF/2)
+        time_array_cap = np.hstack(
+            (time_array[:, 0][:, np.newaxis], time_array[:, 1][:, np.newaxis] - SWITCH_TIME_ON/2 - SWITCH_TIME_OFF/2,
+             time_array[:, 1][:, np.newaxis] + SWITCH_TIME_ON/2 - SWITCH_TIME_OFF/2,
+             time_array[:, 2][:, np.newaxis] - SWITCH_TIME_OFF, time_array[:, 2][:, np.newaxis]))
 
-        # Assemble current vector [-i1(Tsw-Ton),i2-i1((Ton+switch time/2) to Ton-Toff)
-        i_currents_cap_array = np.hstack((-i1_current_array, -i1_current_array, i_currents_array[:, 0][:, np.newaxis]  - i1_current_array, i_currents_array[:, 1][:, np.newaxis] - i1_current_array, - i1_current_array))
+        # Assemble current vector [-i1(T_period-Ton),i2-i1((Ton+switch time/2) to Ton-Toff)
+        i_currents_cap_array = np.hstack(
+            (-i1_current_array, -i1_current_array, i_currents_array[:, 0][:, np.newaxis] - i1_current_array,
+             i_currents_array[:, 1][:, np.newaxis] - i1_current_array, - i1_current_array))
 
         # Calculate delta current per operation point which is the slope at switch off the semiconductor (between time point 3 and 4)
         d_i_cap = i_currents_cap_array[:, 3] - i_currents_cap_array[:, 4]
 
         idx_max = d_i_cap.argmax()
-        i_currents_single_vec =  i_currents_cap_array[idx_max]
+        i_currents_single_vec = i_currents_cap_array[idx_max]
         time_single_vec = time_array_cap[idx_max]
 
         capacitor_1_requirements = c_dtos.CapacitorRequirements(
             current_vec=i_currents_single_vec.squeeze(),
             time_vec=time_single_vec.squeeze(),
-            current_array=i_currents_cap_array.reshape(1,i_currents_cap_array.shape[0],1,i_currents_cap_array.shape[1]),
-            time_array=time_array_cap.reshape(1,time_array_cap.shape[0],1,time_array_cap.shape[1]),
+            current_array=i_currents_cap_array.reshape(1, i_currents_cap_array.shape[0], 1, i_currents_cap_array.shape[1]),
+            time_array=time_array_cap.reshape(1, time_array_cap.shape[0], 1, time_array_cap.shape[1]),
             v_dc_max=np.max(sbc_dto.input_config.mesh_v1),
             study_name="",
             circuit_id=sbc_dto.circuit_id,
@@ -420,13 +422,13 @@ class HandleSbcDto:
         """
         # Get all waveforms
         time_array_cap, i_currents_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
-        # Calculate current waveform for the capacitor by removing average ouput current
+        # Calculate current waveform for the capacitor by removing average output current
         i_currents_cap_array = i_currents_array - sbc_dto.input_config.mesh_i2
 
         # Get the maximum delta current which corresponds to the maximum current
-        i_currents_cap_max_vec  = i_currents_cap_array.max(axis=1)
+        i_currents_cap_max_vec = i_currents_cap_array.max(axis=1)
         idx_max = i_currents_cap_max_vec.argmax()
-        i_currents_single_vec =  i_currents_cap_array[idx_max]
+        i_currents_single_vec = i_currents_cap_array[idx_max]
         time_single_vec = time_array_cap[idx_max]
 
         # Calculate v2 from v1
@@ -435,8 +437,8 @@ class HandleSbcDto:
         capacitor_2_requirements = c_dtos.CapacitorRequirements(
             current_vec=i_currents_single_vec,
             time_vec=time_single_vec,
-            current_array=i_currents_cap_array.reshape(1,i_currents_cap_array.shape[0],1,i_currents_cap_array.shape[1]),
-            time_array=time_array_cap.reshape(1,time_array_cap.shape[0],1,time_array_cap.shape[1]),
+            current_array=i_currents_cap_array.reshape(1, i_currents_cap_array.shape[0], 1, i_currents_cap_array.shape[1]),
+            time_array=time_array_cap.reshape(1, time_array_cap.shape[0], 1, time_array_cap.shape[1]),
             v_dc_max=np.max(mesh_v2),
             study_name="",
             circuit_id=sbc_dto.circuit_id,
@@ -548,7 +550,6 @@ class HandleTransistorDto:
         :rtype:  np.ndarray
         """
         # Transform the mesh to mesh-points
-        mesh_points = np.vstack((mesh_v1, i_rms)).T
         mesh_points = np.hstack((mesh_v1, i_rms))
         # Initialize interpolation object for e-on
         e_on_losses_obj = RGI(
