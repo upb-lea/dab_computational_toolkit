@@ -905,7 +905,11 @@ class HandleDabDto:
             r_th_jc=transistor.switch.thermal_foster.r_th_total,
             cooling_area=transistor.cooling_area,
             housing_area=transistor.housing_area,
-            r_channel=transistor.wp.switch_r_channel
+            r_channel=transistor.wp.switch_r_channel,
+            turn_off_current_vec=transistor.switch.e_off[0].graph_i_e[0],
+            turn_off_energy_vec=transistor.switch.e_off[0].graph_i_e[1],
+            turn_off_at_voltage=transistor.switch.e_off[0].v_supply,
+            turn_off_at_temperature=transistor.switch.e_off[0].t_j
         )
 
         return transistor_dto

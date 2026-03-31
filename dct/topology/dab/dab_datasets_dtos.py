@@ -22,6 +22,10 @@ class TransistorDTO:
     cooling_area: np.float64
     r_th_jc: np.ndarray
     r_channel: np.ndarray
+    turn_off_current_vec: np.ndarray
+    turn_off_energy_vec: np.ndarray
+    turn_off_at_voltage: float
+    turn_off_at_temperature: float
 
 @dataclasses.dataclass
 class FixedParameters:
@@ -98,12 +102,12 @@ class CalcFromCircuitConfig:
     Lc2_: np.ndarray
     t_j_1: np.float64
     t_j_2: np.float64
-    c_oss_par_1: np.ndarray
-    c_oss_par_2: np.ndarray
-    c_oss_1: np.ndarray
-    c_oss_2: np.ndarray
-    q_oss_1: np.ndarray
-    q_oss_2: np.ndarray
+    c_oss_par_1: np.ndarray  # config.transistor_dto_1.c_oss + config.c_par_1
+    c_oss_par_2: np.ndarray  # config.transistor_dto_2.c_oss + config.c_par_2
+    c_oss_1: np.ndarray  # config.transistor_dto_1.c_oss
+    c_oss_2: np.ndarray  # config.transistor_dto_2.c_oss
+    q_oss_1: np.ndarray  # config.transistor_dto_1.q_oss
+    q_oss_2: np.ndarray  # config.transistor_dto_2.q_oss
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
