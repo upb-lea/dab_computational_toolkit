@@ -189,9 +189,26 @@ class CalcDeadTimes:
 class CalcLosses:
     """DTO contains the calculated losses."""
 
+    # conduction loss
     p_m1_conduction: np.ndarray
     p_m2_conduction: np.ndarray
     p_dab_conduction: np.ndarray
+
+    # switching loss
+    i_turn_off_1a: np.ndarray
+    i_turn_off_1b: np.ndarray
+    i_turn_off_2a: np.ndarray
+    i_turn_off_2b: np.ndarray
+    p_turn_off_1a: np.ndarray
+    p_turn_off_1b: np.ndarray
+    p_turn_off_2a: np.ndarray
+    p_turn_off_2b: np.ndarray
+    p_m1_switching: np.ndarray
+    p_m2_switching: np.ndarray
+    p_dab_switching: np.ndarray
+
+    # total loss
+    p_dab: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

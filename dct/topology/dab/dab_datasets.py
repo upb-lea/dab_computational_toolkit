@@ -25,6 +25,7 @@ from dct.topology.dab.dab_functions_waveforms import (full_current_waveform_from
 from dct.components.component_dtos import (CircuitThermal, CapacitorRequirements, InductorRequirements, TransformerRequirements,
                                            InductorResults, StackedTransformerResults, ComponentCooling)
 from dct.components.heat_sink_optimization import ThermalCalcSupport
+from dct.topology.dab.dab_losses import transistor_turn_off_loss, calculate_turn_off_currents_single_operating_point
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,21 @@ class HandleDabDto:
 
         calc_losses = d_dtos.CalcLosses(**{'p_m1_conduction': p_m1_cond,
                                            'p_m2_conduction': p_m2_cond,
-                                           'p_dab_conduction': 4 * (p_m1_cond + p_m2_cond)})
+                                           'p_dab_conduction': 4 * (p_m1_cond + p_m2_cond),
+                                           # switching loss
+                                           'i_turn_off_1a': np.nan,
+                                           'i_turn_off_1b': np.nan,
+                                           'i_turn_off_2a': np.nan,
+                                           'i_turn_off_2b': np.nan,
+                                           'p_turn_off_1a': np.nan,
+                                           'p_turn_off_1b': np.nan,
+                                           'p_turn_off_2a': np.nan,
+                                           'p_turn_off_2b': np.nan,
+                                           'p_m1_switching': np.nan,
+                                           'p_m2_switching': np.nan,
+                                           'p_dab_switching': np.nan,
+                                           # total loss
+                                           'p_dab': np.nan})
 
         gecko_additional_params = d_dtos.GeckoAdditionalParameters(
             timestep=1e-9, number_sim_periods=2, timestep_pre=25e-9, number_pre_sim_periods=0,
@@ -174,7 +189,7 @@ class HandleDabDto:
         # add minimum dead time in case of design is useful
         if not ((np.any(np.isnan(dab_dto.calc_modulation.phi)) or np.any(np.isnan(dab_dto.calc_modulation.tau1)) \
                 or np.any(np.isnan(dab_dto.calc_modulation.tau2)))):
-            HandleDabDto.add_calculated_dead_time(dab_dto)
+            dab_dto = HandleDabDto.add_calculated_dead_time(dab_dto)
 
         return dab_dto
 
@@ -294,6 +309,76 @@ class HandleDabDto:
 
         dab_calc.calc_dead_time = d_dtos.CalcDeadTimes(t_dead_1=t_dead_1, t_dead_2=t_dead_2, is_zvs_1=is_zvs_1, is_zvs_2=is_zvs_2, zvs_coverage=zvs_coverage)
         return dab_calc
+
+    @staticmethod
+    def add_transistor_turn_off_currents_losses(dto: d_dtos.DabCircuitDTO) -> d_dtos.DabCircuitDTO:
+        """
+        Add the turn-off currents for the MOSFETs in bridge 1 and bridge 2 with the legs a and b.
+
+        :param dto: DAB circuit DTO
+        :type dto: d_dtos.DabCircuitDTO
+        """
+        # Calculate the required dead time
+        i_turn_off_1a = np.full_like(dto.calc_modulation.phi, np.nan)
+        i_turn_off_2a = np.full_like(dto.calc_modulation.phi, np.nan)
+        i_turn_off_1b = np.full_like(dto.calc_modulation.phi, np.nan)
+        i_turn_off_2b = np.full_like(dto.calc_modulation.phi, np.nan)
+        p_turn_off_1a = np.full_like(dto.calc_modulation.phi, np.nan)
+        p_turn_off_2a = np.full_like(dto.calc_modulation.phi, np.nan)
+        p_turn_off_1b = np.full_like(dto.calc_modulation.phi, np.nan)
+        p_turn_off_2b = np.full_like(dto.calc_modulation.phi, np.nan)
+        for vec_vvp in np.ndindex(dto.calc_modulation.phi.shape):
+            i_lc1_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dto.input_config.fs, np.transpose(dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_hf1_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dto.input_config.fs, np.transpose(dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dto.calc_currents.i_hf_1_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_lc2_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dto.input_config.fs, np.transpose(dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_hf2_time_current = np.asarray(full_time_waveforms_from_angles_currents(
+                dto.input_config.fs, np.transpose(dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))[vec_vvp],
+                np.transpose(dto.calc_currents.i_hf_2_sorted, (1, 2, 3, 0))[vec_vvp]))
+            i_turn_off_1a[vec_vvp], i_turn_off_1b[vec_vvp] = calculate_turn_off_currents_single_operating_point(i_lc1_time_current, i_hf1_time_current,
+                                                                                                                dto.calc_modulation.tau1[vec_vvp])
+            i_turn_off_2a[vec_vvp], i_turn_off_2b[vec_vvp] = calculate_turn_off_currents_single_operating_point(i_lc2_time_current, i_hf2_time_current,
+                                                                                                                dto.calc_modulation.tau2[vec_vvp])
+
+            p_turn_off_1a[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_1a[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
+                                                              dto.input_config.fs, dto.input_config.c_par_1)
+            p_turn_off_1b[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_1b[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
+                                                              dto.input_config.fs, dto.input_config.c_par_1)
+            p_turn_off_2a[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_2a[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
+                                                              dto.input_config.fs, dto.input_config.c_par_2)
+            p_turn_off_2b[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_2b[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
+                                                              dto.input_config.fs, dto.input_config.c_par_2)
+
+        if dto.calc_losses is not None:  # mypy
+            p_m1_cond = dto.calc_losses.p_m1_conduction
+            p_m2_cond = dto.calc_losses.p_m2_conduction
+
+            calc_losses = d_dtos.CalcLosses(**{'p_m1_conduction': p_m1_cond,
+                                               'p_m2_conduction': p_m2_cond,
+                                               'p_dab_conduction': 4 * (p_m1_cond + p_m2_cond),
+                                               # switching loss
+                                               'i_turn_off_1a': i_turn_off_1a,
+                                               'i_turn_off_1b': i_turn_off_1b,
+                                               'i_turn_off_2a': i_turn_off_2a,
+                                               'i_turn_off_2b': i_turn_off_2b,
+                                               'p_turn_off_1a': p_turn_off_1a,
+                                               'p_turn_off_1b': p_turn_off_1b,
+                                               'p_turn_off_2a': p_turn_off_2a,
+                                               'p_turn_off_2b': p_turn_off_2b,
+                                               'p_m1_switching': 2 * (p_turn_off_1a + p_turn_off_1b),
+                                               'p_m2_switching': 2 * (p_turn_off_2a + p_turn_off_2b),
+                                               'p_dab_switching': 2 * (p_turn_off_1a + p_turn_off_1b) + 2 * (p_turn_off_2a + p_turn_off_2b),
+                                               # total loss
+                                               'p_dab': 4 * (p_m1_cond + p_m2_cond) + 2 * (p_turn_off_1a + p_turn_off_1b) + 2 * (p_turn_off_2a + p_turn_off_2b)})
+
+            dto.calc_losses = calc_losses
+
+        return dto
 
     @staticmethod
     def _integrate_part_a_leftwards(q_ab_half_req: np.ndarray, time_high_resolution: np.ndarray, i_hf_high_resolution: np.ndarray,
@@ -1163,9 +1248,14 @@ class HandleDabDto:
             raise ValueError("Missing transistor loss calculation of bridge 1.")
         if circuit_dto.calc_losses is None:
             raise ValueError("Missing transistor loss calculation of bridge 2.")
+        if np.any(np.isnan(circuit_dto.calc_losses.p_m1_switching)):
+            raise ValueError("Missing transistor switching loss calculation of bridge 1.")
+        if np.any(np.isnan(circuit_dto.calc_losses.p_m2_switching)):
+            raise ValueError("Missing transistor switching loss calculation of bridge 2.")
 
-        b1_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m1_conduction
-        b2_transistor_cond_loss_matrix = circuit_dto.calc_losses.p_m2_conduction
+
+        b1_transistor_loss_matrix = circuit_dto.calc_losses.p_m1_conduction + circuit_dto.calc_losses.p_m1_switching
+        b2_transistor_loss_matrix = circuit_dto.calc_losses.p_m2_conduction + circuit_dto.calc_losses.p_m2_switching
 
         # get all the losses in a matrix
         r_th_copper_coin_1, copper_coin_area_1 = ThermalCalcSupport.calculate_r_th_copper_coin(
@@ -1181,14 +1271,14 @@ class HandleDabDto:
         circuit_r_th_1_jhs = circuit_dto.input_config.transistor_dto_1.r_th_jc + r_th_copper_coin_1 + circuit_r_th_tim_1
         circuit_r_th_2_jhs = circuit_dto.input_config.transistor_dto_2.r_th_jc + r_th_copper_coin_2 + circuit_r_th_tim_2
 
-        circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_cond_loss_matrix)
-        circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_cond_loss_matrix)
+        circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_loss_matrix)
+        circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_loss_matrix)
 
         circuit_dto.circuit_thermal = CircuitThermal(
             t_j_max=[circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
             r_th_jhs=[circuit_r_th_1_jhs, circuit_r_th_2_jhs],
             area=[4 * copper_coin_area_1, 4 * copper_coin_area_2],
-            loss_array=[b1_transistor_cond_loss_matrix, b2_transistor_cond_loss_matrix],
+            loss_array=[b1_transistor_loss_matrix, b2_transistor_loss_matrix],
             temperature_heat_sink_max_array=[circuit_heat_sink_max_1_array, circuit_heat_sink_max_2_array]
         )
 
