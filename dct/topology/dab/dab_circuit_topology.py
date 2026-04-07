@@ -1284,7 +1284,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             dto = HandleDabDto.add_transistor_turn_off_currents_losses(dto)
             dto = HandleDabDto.generate_thermal_transistor_parameters(dto, transistor_b1_cooling, transistor_b2_cooling)
 
-
             HandleDabDto.save(dto, dto.circuit_id, directory=dto_directory, timestamp=False)
 
         # Update the filtered result list

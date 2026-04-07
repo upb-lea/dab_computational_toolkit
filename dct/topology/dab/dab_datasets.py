@@ -10,6 +10,7 @@ import pickle
 import numpy as np
 import transistordatabase as tdb
 from matplotlib import pyplot as plt
+from scipy.integrate import cumulative_trapezoid
 
 # own libraries
 from dct.constant_path import GECKO_PATH
@@ -344,15 +345,27 @@ class HandleDabDto:
                                                                                                                 dto.calc_modulation.tau1[vec_vvp])
             i_turn_off_2a[vec_vvp], i_turn_off_2b[vec_vvp] = calculate_turn_off_currents_single_operating_point(i_lc2_time_current, i_hf2_time_current,
                                                                                                                 dto.calc_modulation.tau2[vec_vvp])
-
-            p_turn_off_1a[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_1a[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
-                                                              dto.input_config.fs, dto.input_config.c_par_1)
-            p_turn_off_1b[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_1b[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
-                                                              dto.input_config.fs, dto.input_config.c_par_1)
-            p_turn_off_2a[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_2a[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
-                                                              dto.input_config.fs, dto.input_config.c_par_2)
-            p_turn_off_2b[vec_vvp] = transistor_turn_off_loss(float(i_turn_off_2b[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
-                                                              dto.input_config.fs, dto.input_config.c_par_2)
+            if dto.input_config.transistor_dto_1.turn_off_fit_factors is not None:
+                print("# turn off fit factors transistor 1")
+                p_turn_off_1a[vec_vvp] = transistor_turn_off_loss(
+                    float(i_turn_off_1a[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
+                    dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
+                p_turn_off_1b[vec_vvp] = transistor_turn_off_loss(
+                    float(i_turn_off_1b[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
+                    dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
+            else:
+                p_turn_off_1a[vec_vvp] = 0
+                p_turn_off_1b[vec_vvp] = 0
+            if dto.input_config.transistor_dto_2.turn_off_fit_factors is not None:
+                p_turn_off_2a[vec_vvp] = transistor_turn_off_loss(
+                    float(i_turn_off_2a[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
+                    dto.input_config.transistor_dto_2.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_2)
+                p_turn_off_2b[vec_vvp] = transistor_turn_off_loss(
+                    float(i_turn_off_2b[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
+                    dto.input_config.transistor_dto_2.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_2)
+            else:
+                p_turn_off_2a[vec_vvp] = 0
+                p_turn_off_2b[vec_vvp] = 0
 
         if dto.calc_losses is not None:  # mypy
             p_m1_cond = dto.calc_losses.p_m1_conduction
@@ -374,7 +387,8 @@ class HandleDabDto:
                                                'p_m2_switching': 2 * (p_turn_off_2a + p_turn_off_2b),
                                                'p_dab_switching': 2 * (p_turn_off_1a + p_turn_off_1b) + 2 * (p_turn_off_2a + p_turn_off_2b),
                                                # total loss
-                                               'p_dab': 4 * (p_m1_cond + p_m2_cond) + 2 * (p_turn_off_1a + p_turn_off_1b) + 2 * (p_turn_off_2a + p_turn_off_2b)})
+                                               'p_dab': 4 * (p_m1_cond + p_m2_cond) + 2 * (p_turn_off_1a + p_turn_off_1b) + \
+                                                        2 * (p_turn_off_2a + p_turn_off_2b)})
 
             dto.calc_losses = calc_losses
 
@@ -636,7 +650,7 @@ class HandleDabDto:
         return is_zvs, minimum_dead_time_first_switching_event
 
     @staticmethod
-    def get_c_oss_from_tdb(transistor: tdb.Transistor, margin_factor: float = 1.2) -> tuple:
+    def get_c_oss_from_tdb(transistor: tdb.Transistor, margin_factor: float = 1.0) -> tuple:
         """
         Import the transistor Coss(Vds) capacitance from the transistor database (TDB).
 
@@ -673,7 +687,8 @@ class HandleDabDto:
         # return coss_interp
         c_oss = coss_interp
         q_oss = HandleDabDto._integrate_c_oss(coss_interp)
-        return c_oss, q_oss
+        e_oss = cumulative_trapezoid(v_interp * c_oss, v_interp, initial=0)
+        return v_interp, c_oss, q_oss, e_oss
 
     @staticmethod
     def _integrate_c_oss(coss):
@@ -973,8 +988,7 @@ class HandleDabDto:
 
         t_j_recommended = transistor.switch.t_j_max - 25
 
-        c_oss, q_oss = (HandleDabDto.get_c_oss_from_tdb
-                        (transistor, margin_factor=c_oss_margin_factor))
+        v_interp, c_oss, q_oss, e_oss = (HandleDabDto.get_c_oss_from_tdb(transistor, margin_factor=c_oss_margin_factor))
 
         # export c_oss files for GeckoCIRCUITS
         if not os.path.exists(os.path.join(HandleDabDto.c_oss_storage_directory, f"{transistor.name}_c_oss.nlc")):
@@ -985,16 +999,16 @@ class HandleDabDto:
         transistor_dto = d_dtos.TransistorDTO(
             name=transistor.name,
             t_j_max_op=t_j_recommended,
+            v_oss=v_interp,
             c_oss=c_oss,
             q_oss=q_oss,
+            e_oss=e_oss,
             r_th_jc=transistor.switch.thermal_foster.r_th_total,
             cooling_area=transistor.cooling_area,
             housing_area=transistor.housing_area,
             r_channel=transistor.wp.switch_r_channel,
-            turn_off_current_vec=transistor.switch.e_off[0].graph_i_e[0],
-            turn_off_energy_vec=transistor.switch.e_off[0].graph_i_e[1],
-            turn_off_at_voltage=transistor.switch.e_off[0].v_supply,
-            turn_off_at_temperature=transistor.switch.e_off[0].t_j
+            turn_on_fit_factors=transistor.wp.e_on_meas_fit,
+            turn_off_fit_factors=transistor.wp.e_off_meas_fit
         )
 
         return transistor_dto
@@ -1252,7 +1266,6 @@ class HandleDabDto:
             raise ValueError("Missing transistor switching loss calculation of bridge 1.")
         if np.any(np.isnan(circuit_dto.calc_losses.p_m2_switching)):
             raise ValueError("Missing transistor switching loss calculation of bridge 2.")
-
 
         b1_transistor_loss_matrix = circuit_dto.calc_losses.p_m1_conduction + circuit_dto.calc_losses.p_m1_switching
         b2_transistor_loss_matrix = circuit_dto.calc_losses.p_m2_conduction + circuit_dto.calc_losses.p_m2_switching

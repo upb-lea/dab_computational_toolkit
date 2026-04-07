@@ -5,6 +5,7 @@ import dataclasses
 
 # 3rd party libraries
 import numpy as np
+import transistordatabase as tdb
 
 # own libraries
 from dct.components.capacitor_optimization_dtos import CapacitorResults
@@ -16,16 +17,16 @@ class TransistorDTO:
 
     name: str
     t_j_max_op: np.ndarray
+    v_oss: np.ndarray  # voltage steps for c_oss, q_oss and e_oss
     c_oss: np.ndarray
     q_oss: np.ndarray
+    e_oss: np.ndarray
     housing_area: np.float64
     cooling_area: np.float64
     r_th_jc: np.ndarray
     r_channel: np.ndarray
-    turn_off_current_vec: np.ndarray
-    turn_off_energy_vec: np.ndarray
-    turn_off_at_voltage: float
-    turn_off_at_temperature: float
+    turn_on_fit_factors: tdb.SwitchingLossFitFactors | None
+    turn_off_fit_factors: tdb.SwitchingLossFitFactors | None
 
 @dataclasses.dataclass
 class FixedParameters:

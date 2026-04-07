@@ -4,10 +4,10 @@ import logging
 
 # 3rd party libraries
 import numpy as np
+import transistordatabase as tdb
 
 # own modules
 from dct.topology.dab import dab_datasets_dtos as d_dtos
-from dct.topology.dab.dab_mod_zvs import _integrate_c_oss
 from dct.topology.dab.dab_functions_waveforms import double_waveform
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ def calculate_turn_off_currents_single_operating_point(i_lc_full_time_current_wa
     return current_switching_1, current_switching_2
 
 def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto: d_dtos.TransistorDTO, v_dc: np.ndarray,
-                             f_s: float, c_par: float) -> float:
+                             temperature: float, f_s: float, c_par: float) -> float:
     """
     Calculate the transistor turn-off losses.
 
@@ -108,26 +108,31 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
     :type f_s: float
     :param c_par: parallel PCB capacitance in F
     :type c_par: float
+    :param temperature: Temperature in °C
+    :type temperature: float
     :return: Switching losses in W
     :rtype: float
     """
     # Calculate the charge in the MOSFETs capacitance in parallel with the parasitic PCB capacitance at the given voltage
-    c_oss_par = transistor_dto.c_oss  # + c_par
-    q_oss_par = _integrate_c_oss(c_oss_par, v_dc)
-    # Calculate the energy stored in the MOSFETs capacitance at the given
-    energy_in_capacitance_at_dpt_voltage = 0.5 * q_oss_par * transistor_dto.turn_off_at_voltage
+    current_vec = np.linspace(0, transistor_dto.turn_off_fit_factors.current_max)
+    energy_vec = tdb.Transistor.fit_function(
+        (current_vec, v_dc, temperature), transistor_dto.turn_off_fit_factors.a_current,
+        transistor_dto.turn_off_fit_factors.b_current,
+        transistor_dto.turn_off_fit_factors.c_current, transistor_dto.turn_off_fit_factors.voltage_factor, transistor_dto.turn_off_fit_factors.voltage_exponent,
+        transistor_dto.turn_off_fit_factors.ct_0, transistor_dto.turn_off_fit_factors.ct_1, transistor_dto.turn_off_fit_factors.ct_2)
 
-    # correct the given turn-off energy according to the energy stored in the parasitic capacitance
-    turn_off_energy_corrected_energy_vec = transistor_dto.turn_off_energy_vec  # - energy_in_capacitance_at_dpt_voltage
+    # correct data with the energy in c_oss
+    print(f"{transistor_dto.e_oss=}")
+    energy_in_capacitance_at_dpt_voltage = np.interp(v_dc, transistor_dto.v_oss, transistor_dto.e_oss)
+    print(f"{energy_in_capacitance_at_dpt_voltage=}")
 
-    # correct for the switching voltage
-    turn_off_energy_corrected_energy_voltage_vec = turn_off_energy_corrected_energy_vec * v_dc / transistor_dto.turn_off_at_voltage
+    energy_vec_corrected = energy_vec - energy_in_capacitance_at_dpt_voltage
 
     # clip unrealistic values smaller then zero
-    turn_off_energy_corrected_energy_voltage_vec = turn_off_energy_corrected_energy_voltage_vec.clip(min=0)
+    turn_off_energy_corrected_energy_voltage_vec = energy_vec_corrected.clip(min=0)
 
     # interpolate the switching energy
-    turn_off_energy = np.interp(np.abs(transistor_turn_off_current), transistor_dto.turn_off_current_vec, turn_off_energy_corrected_energy_voltage_vec)
+    turn_off_energy = np.interp(np.abs(transistor_turn_off_current), current_vec, turn_off_energy_corrected_energy_voltage_vec)
 
     # estimate the switching loss
     turn_off_power = turn_off_energy * f_s
