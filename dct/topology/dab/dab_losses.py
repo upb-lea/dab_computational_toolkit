@@ -98,6 +98,9 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
     """
     Calculate the transistor turn-off losses.
 
+    In case of measurement data is available, the measurement fit factors are used. In case of no measurement data availabe, the
+    datasheet switching loss curves are considered.
+
     :param transistor_turn_off_current: Current in A at turn-off
     :type transistor_turn_off_current: float
     :param transistor_dto: transistor DTO (Data transfer object)
@@ -113,20 +116,27 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
     :return: Switching losses in W
     :rtype: float
     """
-    # Calculate the charge in the MOSFETs capacitance in parallel with the parasitic PCB capacitance at the given voltage
-    current_vec = np.linspace(0, transistor_dto.turn_off_fit_factors.current_max)
-    energy_vec = tdb.Transistor.fit_function(
-        (current_vec, v_dc, temperature), transistor_dto.turn_off_fit_factors.a_current,
-        transistor_dto.turn_off_fit_factors.b_current,
-        transistor_dto.turn_off_fit_factors.c_current, transistor_dto.turn_off_fit_factors.voltage_factor, transistor_dto.turn_off_fit_factors.voltage_exponent,
-        transistor_dto.turn_off_fit_factors.ct_0, transistor_dto.turn_off_fit_factors.ct_1, transistor_dto.turn_off_fit_factors.ct_2)
+    # in case of measurement data is available, use this
+    if transistor_dto.turn_off_fit_factors is not None:
+        logger.info(f"{transistor_dto.name} switching loss data source: fitted measurement data.")
+        current_vec = np.linspace(0, transistor_dto.turn_off_fit_factors.current_max)
+        energy_vec = tdb.Transistor.fit_function(
+            (current_vec, v_dc, temperature), transistor_dto.turn_off_fit_factors.a_current,
+            transistor_dto.turn_off_fit_factors.b_current,
+            transistor_dto.turn_off_fit_factors.c_current, transistor_dto.turn_off_fit_factors.voltage_factor, transistor_dto.turn_off_fit_factors.voltage_exponent,
+            transistor_dto.turn_off_fit_factors.ct_0, transistor_dto.turn_off_fit_factors.ct_1, transistor_dto.turn_off_fit_factors.ct_2)
 
-    # correct data with the energy in c_oss
-    print(f"{transistor_dto.e_oss=}")
-    energy_in_capacitance_at_dpt_voltage = np.interp(v_dc, transistor_dto.v_oss, transistor_dto.e_oss)
-    print(f"{energy_in_capacitance_at_dpt_voltage=}")
+        # correct data with the energy in c_oss
+        energy_in_capacitance_at_dpt_voltage = np.interp(v_dc, transistor_dto.v_oss, transistor_dto.e_oss)
 
-    energy_vec_corrected = energy_vec - energy_in_capacitance_at_dpt_voltage
+        energy_vec_corrected = energy_vec - energy_in_capacitance_at_dpt_voltage
+    else:
+        logger.info(f"{transistor_dto.name} switching loss data source: datasheet data")
+        # use datasheet data, scale curve according to the dc link voltage
+        current_vec = transistor_dto.turn_off_current_vec
+        energy_vec_corrected = transistor_dto.turn_off_energy_vec * v_dc / transistor_dto.turn_off_voltage
+
+
 
     # clip unrealistic values smaller then zero
     turn_off_energy_corrected_energy_voltage_vec = energy_vec_corrected.clip(min=0)

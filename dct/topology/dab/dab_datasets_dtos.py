@@ -25,6 +25,14 @@ class TransistorDTO:
     cooling_area: np.float64
     r_th_jc: np.ndarray
     r_channel: np.ndarray
+    turn_on_current_vec: np.ndarray
+    turn_on_energy_vec: np.ndarray
+    turn_on_temperature: np.float64
+    turn_on_voltage: np.float64
+    turn_off_current_vec: np.ndarray
+    turn_off_energy_vec: np.ndarray
+    turn_off_temperature: np.float64
+    turn_off_voltage: np.float64
     turn_on_fit_factors: tdb.SwitchingLossFitFactors | None
     turn_off_fit_factors: tdb.SwitchingLossFitFactors | None
 

@@ -345,27 +345,20 @@ class HandleDabDto:
                                                                                                                 dto.calc_modulation.tau1[vec_vvp])
             i_turn_off_2a[vec_vvp], i_turn_off_2b[vec_vvp] = calculate_turn_off_currents_single_operating_point(i_lc2_time_current, i_hf2_time_current,
                                                                                                                 dto.calc_modulation.tau2[vec_vvp])
-            if dto.input_config.transistor_dto_1.turn_off_fit_factors is not None:
-                print("# turn off fit factors transistor 1")
-                p_turn_off_1a[vec_vvp] = transistor_turn_off_loss(
-                    float(i_turn_off_1a[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
-                    dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
-                p_turn_off_1b[vec_vvp] = transistor_turn_off_loss(
-                    float(i_turn_off_1b[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
-                    dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
-            else:
-                p_turn_off_1a[vec_vvp] = 0
-                p_turn_off_1b[vec_vvp] = 0
-            if dto.input_config.transistor_dto_2.turn_off_fit_factors is not None:
-                p_turn_off_2a[vec_vvp] = transistor_turn_off_loss(
-                    float(i_turn_off_2a[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
-                    dto.input_config.transistor_dto_2.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_2)
-                p_turn_off_2b[vec_vvp] = transistor_turn_off_loss(
-                    float(i_turn_off_2b[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
-                    dto.input_config.transistor_dto_2.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_2)
-            else:
-                p_turn_off_2a[vec_vvp] = 0
-                p_turn_off_2b[vec_vvp] = 0
+
+
+            p_turn_off_1a[vec_vvp] = transistor_turn_off_loss(
+                float(i_turn_off_1a[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
+                dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
+            p_turn_off_1b[vec_vvp] = transistor_turn_off_loss(
+                float(i_turn_off_1b[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
+                dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
+            p_turn_off_2a[vec_vvp] = transistor_turn_off_loss(
+                float(i_turn_off_2a[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
+                dto.input_config.transistor_dto_2.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_2)
+            p_turn_off_2b[vec_vvp] = transistor_turn_off_loss(
+                float(i_turn_off_2b[vec_vvp]), dto.input_config.transistor_dto_2, dto.input_config.mesh_v2[vec_vvp],
+                dto.input_config.transistor_dto_2.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_2)
 
         if dto.calc_losses is not None:  # mypy
             p_m1_cond = dto.calc_losses.p_m1_conduction
@@ -1007,6 +1000,16 @@ class HandleDabDto:
             cooling_area=transistor.cooling_area,
             housing_area=transistor.housing_area,
             r_channel=transistor.wp.switch_r_channel,
+            # switching loss datasheet curves
+            turn_on_current_vec=transistor.wp.e_on.graph_i_e[0],
+            turn_on_energy_vec=transistor.wp.e_on.graph_i_e[1],
+            turn_on_temperature=transistor.wp.e_on.t_j,
+            turn_on_voltage=transistor.wp.e_on.v_supply,
+            turn_off_current_vec=transistor.wp.e_off.graph_i_e[0],
+            turn_off_energy_vec=transistor.wp.e_off.graph_i_e[1],
+            turn_off_temperature=transistor.wp.e_off.t_j,
+            turn_off_voltage=transistor.wp.e_off.v_supply,
+            # switching loss measurement fitted curves
             turn_on_fit_factors=transistor.wp.e_on_meas_fit,
             turn_off_fit_factors=transistor.wp.e_off_meas_fit
         )
