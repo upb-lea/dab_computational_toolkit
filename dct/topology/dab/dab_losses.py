@@ -118,7 +118,7 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
     """
     # in case of measurement data is available, use this
     if transistor_dto.turn_off_fit_factors is not None:
-        logger.info(f"{transistor_dto.name} switching loss data source: fitted measurement data.")
+        logger.info(f"{transistor_dto.name} turn-on loss data source: fitted measurement data.")
         current_vec = np.linspace(0, transistor_dto.turn_off_fit_factors.current_max)
         energy_vec = tdb.Transistor.fit_function(
             (current_vec, v_dc, temperature), transistor_dto.turn_off_fit_factors.a_current,
@@ -131,7 +131,7 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
 
         energy_vec_corrected = energy_vec - energy_in_capacitance_at_dpt_voltage
     else:
-        logger.info(f"{transistor_dto.name} switching loss data source: datasheet data")
+        logger.info(f"{transistor_dto.name} turn-off loss data source: datasheet data")
         # use datasheet data, scale curve according to the dc link voltage
         current_vec = transistor_dto.turn_off_current_vec
         energy_vec_corrected = transistor_dto.turn_off_energy_vec * v_dc / transistor_dto.turn_off_voltage
