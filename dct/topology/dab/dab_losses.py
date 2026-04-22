@@ -98,8 +98,8 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
     """
     Calculate the transistor turn-off losses.
 
-    In case of measurement data is available, the measurement fit factors are used. In case of no measurement data availabe, the
-    datasheet switching loss curves are considered.
+    In case of measurement data is available, the measurement fit factors are used. In case of no measurement data available, the
+    data sheet switching loss curves are considered.
 
     :param transistor_turn_off_current: Current in A at turn-off
     :type transistor_turn_off_current: float
@@ -131,8 +131,8 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
 
         energy_vec_corrected = energy_vec - energy_in_capacitance_at_dpt_voltage
     else:
-        logger.info(f"{transistor_dto.name} turn-off loss data source: datasheet data")
-        # use datasheet data, scale curve according to the dc link voltage
+        logger.info(f"{transistor_dto.name} turn-off loss data source: data sheet data")
+        # use data sheet data, scale curve according to the dc link voltage
         current_vec = transistor_dto.turn_off_current_vec
         energy_vec_corrected = transistor_dto.turn_off_energy_vec * v_dc / transistor_dto.turn_off_voltage
 
