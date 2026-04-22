@@ -185,10 +185,6 @@ class StackedTransformerResults:
     volume: float
     area_to_heat_sink: float
     r_th_xfmr_heat_sink: float
-    transformer_current_amplitude_1: np.ndarray
-    transformer_current_amplitude_2: np.ndarray
-    transformer_phase_deg_1: np.ndarray
-    transformer_phase_deg_2: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
