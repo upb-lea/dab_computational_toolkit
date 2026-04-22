@@ -998,7 +998,7 @@ class HandleDabDto:
             cooling_area=transistor.cooling_area,
             housing_area=transistor.housing_area,
             r_channel=transistor.wp.switch_r_channel,
-            # switching loss datasheet curves
+            # switching loss data sheet curves
             turn_on_current_vec=transistor.wp.e_on.graph_i_e[0],
             turn_on_energy_vec=transistor.wp.e_on.graph_i_e[1],
             turn_on_temperature=transistor.wp.e_on.t_j,
