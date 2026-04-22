@@ -345,8 +345,6 @@ class HandleDabDto:
                                                                                                                 dto.calc_modulation.tau1[vec_vvp])
             i_turn_off_2a[vec_vvp], i_turn_off_2b[vec_vvp] = calculate_turn_off_currents_single_operating_point(i_lc2_time_current, i_hf2_time_current,
                                                                                                                 dto.calc_modulation.tau2[vec_vvp])
-
-
             p_turn_off_1a[vec_vvp] = transistor_turn_off_loss(
                 float(i_turn_off_1a[vec_vvp]), dto.input_config.transistor_dto_1, dto.input_config.mesh_v1[vec_vvp],
                 dto.input_config.transistor_dto_1.t_j_max_op - 25, dto.input_config.fs, dto.input_config.c_par_1)
@@ -381,7 +379,7 @@ class HandleDabDto:
                                                'p_dab_switching': 2 * (p_turn_off_1a + p_turn_off_1b) + 2 * (p_turn_off_2a + p_turn_off_2b),
                                                # total loss
                                                'p_dab': 4 * (p_m1_cond + p_m2_cond) + 2 * (p_turn_off_1a + p_turn_off_1b) + \
-                                                        2 * (p_turn_off_2a + p_turn_off_2b)})
+                                               2 * (p_turn_off_2a + p_turn_off_2b)})
 
             dto.calc_losses = calc_losses
 

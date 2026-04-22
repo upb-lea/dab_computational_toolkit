@@ -94,7 +94,7 @@ def calculate_turn_off_currents_single_operating_point(i_lc_full_time_current_wa
     return current_switching_1, current_switching_2
 
 def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto: d_dtos.TransistorDTO, v_dc: np.ndarray,
-                             temperature: float, f_s: float, c_par: float) -> float:
+                             temperature: np.ndarray, f_s: float, c_par: float) -> float:
     """
     Calculate the transistor turn-off losses.
 
@@ -122,9 +122,9 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
         current_vec = np.linspace(0, transistor_dto.turn_off_fit_factors.current_max)
         energy_vec = tdb.Transistor.fit_function(
             (current_vec, v_dc, temperature), transistor_dto.turn_off_fit_factors.a_current,
-            transistor_dto.turn_off_fit_factors.b_current,
-            transistor_dto.turn_off_fit_factors.c_current, transistor_dto.turn_off_fit_factors.voltage_factor, transistor_dto.turn_off_fit_factors.voltage_exponent,
-            transistor_dto.turn_off_fit_factors.ct_0, transistor_dto.turn_off_fit_factors.ct_1, transistor_dto.turn_off_fit_factors.ct_2)
+            transistor_dto.turn_off_fit_factors.b_current, transistor_dto.turn_off_fit_factors.c_current, transistor_dto.turn_off_fit_factors.voltage_factor,
+            transistor_dto.turn_off_fit_factors.voltage_exponent, transistor_dto.turn_off_fit_factors.ct_0, transistor_dto.turn_off_fit_factors.ct_1,
+            transistor_dto.turn_off_fit_factors.ct_2)
 
         # correct data with the energy in c_oss
         energy_in_capacitance_at_dpt_voltage = np.interp(v_dc, transistor_dto.v_oss, transistor_dto.e_oss)
@@ -135,8 +135,6 @@ def transistor_turn_off_loss(transistor_turn_off_current: float, transistor_dto:
         # use datasheet data, scale curve according to the dc link voltage
         current_vec = transistor_dto.turn_off_current_vec
         energy_vec_corrected = transistor_dto.turn_off_energy_vec * v_dc / transistor_dto.turn_off_voltage
-
-
 
     # clip unrealistic values smaller then zero
     turn_off_energy_corrected_energy_voltage_vec = energy_vec_corrected.clip(min=0)
