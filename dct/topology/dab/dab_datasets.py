@@ -318,6 +318,8 @@ class HandleDabDto:
 
         :param dto: DAB circuit DTO
         :type dto: d_dtos.DabCircuitDTO
+        :return: DAB circuit DTO
+        :rtype: d_dtos.DabCircuitDTO
         """
         # Calculate the required dead time
         i_turn_off_1a = np.full_like(dto.calc_modulation.phi, np.nan)
@@ -1257,7 +1259,8 @@ class HandleDabDto:
         :type transistor_b1_cooling: ComponentCooling
         :param transistor_b2_cooling: Transistor cooling
         :type transistor_b2_cooling: ComponentCooling
-        :return:
+        :return: DAB circuit DTO
+        :rtype: d_dtos.DabCircuitDTO
         """
         if circuit_dto.calc_losses is None:
             raise ValueError("Missing transistor loss calculation of bridge 1.")

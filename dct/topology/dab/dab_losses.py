@@ -27,7 +27,7 @@ def transistor_conduction_loss(transistor_rms_current: float, transistor_dto: d_
 
 
 def calculate_turn_off_currents_single_operating_point(i_lc_full_time_current_waveform: np.ndarray, i_hf_full_time_current_waveform: np.ndarray,
-                                                       tau_rad: np.ndarray) -> tuple[bool, float]:
+                                                       tau_rad: np.ndarray) -> tuple[float, float]:
     """
     MOSFET turn-off current estimation.
 
@@ -40,6 +40,8 @@ def calculate_turn_off_currents_single_operating_point(i_lc_full_time_current_wa
     :type i_hf_full_time_current_waveform: np.ndarray
     :param tau_rad: control parameter tau in radiant to distinguish for triangular / trapezoidal current
     :type tau_rad: float
+    :return: turn-off currents: current_switching_1, current_switching_2
+    :rtype: tuple[float, float]
     """
     # figure out the maximum current points to determine the first switching event
     indexes_ilc_max = np.where(i_lc_full_time_current_waveform[1] == np.max(i_lc_full_time_current_waveform[1]))[0]
@@ -60,7 +62,7 @@ def calculate_turn_off_currents_single_operating_point(i_lc_full_time_current_wa
 
     # in case of tau_rad is not 180°, two maximum in i_lc appear (three different voltage levels on the bridge output)
     # but i_hf has two different current values at the switching points. The integration must be done on the second switching point also.
-    # In the end, it must be checked which dead time is greater.
+    # Therefore, it must be checked which dead time is greater.
     current_switching_2 = current_switching_1
     if tau_rad != np.pi:
         # Note: It is important to take the second index, not the last.
