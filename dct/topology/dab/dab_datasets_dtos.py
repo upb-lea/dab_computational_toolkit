@@ -5,6 +5,7 @@ import dataclasses
 
 # 3rd party libraries
 import numpy as np
+import transistordatabase as tdb
 
 # own libraries
 from dct.components.capacitor_optimization_dtos import CapacitorResults
@@ -16,12 +17,24 @@ class TransistorDTO:
 
     name: str
     t_j_max_op: np.ndarray
+    v_oss: np.ndarray  # voltage steps for c_oss, q_oss and e_oss
     c_oss: np.ndarray
     q_oss: np.ndarray
+    e_oss: np.ndarray
     housing_area: np.float64
     cooling_area: np.float64
     r_th_jc: np.ndarray
     r_channel: np.ndarray
+    turn_on_current_vec: np.ndarray
+    turn_on_energy_vec: np.ndarray
+    turn_on_temperature: np.float64
+    turn_on_voltage: np.float64
+    turn_off_current_vec: np.ndarray
+    turn_off_energy_vec: np.ndarray
+    turn_off_temperature: np.float64
+    turn_off_voltage: np.float64
+    turn_on_fit_factors: tdb.SwitchingLossFitFactors | None
+    turn_off_fit_factors: tdb.SwitchingLossFitFactors | None
 
 @dataclasses.dataclass
 class FixedParameters:
@@ -98,12 +111,12 @@ class CalcFromCircuitConfig:
     Lc2_: np.ndarray
     t_j_1: np.float64
     t_j_2: np.float64
-    c_oss_par_1: np.ndarray
-    c_oss_par_2: np.ndarray
-    c_oss_1: np.ndarray
-    c_oss_2: np.ndarray
-    q_oss_1: np.ndarray
-    q_oss_2: np.ndarray
+    c_oss_par_1: np.ndarray  # config.transistor_dto_1.c_oss + config.c_par_1
+    c_oss_par_2: np.ndarray  # config.transistor_dto_2.c_oss + config.c_par_2
+    c_oss_1: np.ndarray  # config.transistor_dto_1.c_oss
+    c_oss_2: np.ndarray  # config.transistor_dto_2.c_oss
+    q_oss_1: np.ndarray  # config.transistor_dto_1.q_oss
+    q_oss_2: np.ndarray  # config.transistor_dto_2.q_oss
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
@@ -185,9 +198,26 @@ class CalcDeadTimes:
 class CalcLosses:
     """DTO contains the calculated losses."""
 
+    # conduction loss
     p_m1_conduction: np.ndarray
     p_m2_conduction: np.ndarray
     p_dab_conduction: np.ndarray
+
+    # switching loss
+    i_turn_off_1a: np.ndarray
+    i_turn_off_1b: np.ndarray
+    i_turn_off_2a: np.ndarray
+    i_turn_off_2b: np.ndarray
+    p_turn_off_1a: np.ndarray
+    p_turn_off_1b: np.ndarray
+    p_turn_off_2a: np.ndarray
+    p_turn_off_2b: np.ndarray
+    p_m1_switching: np.ndarray
+    p_m2_switching: np.ndarray
+    p_dab_switching: np.ndarray
+
+    # total loss
+    p_dab: np.ndarray
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

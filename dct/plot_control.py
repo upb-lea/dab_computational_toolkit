@@ -189,7 +189,7 @@ class ParetoPlots:
 
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
-            # Draw the picture
+            # Display diagram
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
                                              alpha_list=[0.5, 0.5, 0.5],
                                              x_label=r'$V_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
@@ -246,7 +246,7 @@ class ParetoPlots:
             fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}_{transformer_study_data.study_name}")
 
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 0.5],
-                                             x_label=r'$V_\mathrm{tr}$ / cm³', y_label=r'$P_\mathrm{tr}$ / W', label_list=label_list,
+                                             x_label=r'$\mathcal{V}_\mathrm{tr}$ / cm³', y_label=r'$P_\mathrm{tr}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
@@ -293,7 +293,8 @@ class ParetoPlots:
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"capacitor_c{circuit_number}_{capacitor_study_data.study_name}")
 
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red"], alpha_list=[0.5, 0.5], x_label=r'$V_\mathrm{tr}$ / cm³',
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red"], alpha_list=[0.5, 0.5],
+                                             x_label=r'$\mathcal{V}_\mathrm{tr}$ / cm³',
                                              y_label=r'$P_\mathrm{capacitor}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
@@ -342,7 +343,7 @@ class ParetoPlots:
 
         # plot all the different heat sink areas
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha_list=[0.5, 0.5, 0.5],
-                                         x_label=r'$V_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
+                                         x_label=r'$\mathcal{V}_\mathrm{HS}$ / cm³', y_label=r'$R_\mathrm{th,HS}$ / (K/W)',
                                          label_list=legend_list,
                                          fig_name_path=fig_name)
 
