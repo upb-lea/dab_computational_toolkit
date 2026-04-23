@@ -654,13 +654,13 @@ class SummaryProcessing:
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
         df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda arr: arr.min())
         # Calculate the maximal temperature for all inductors
-        component_temperatur_series = SummaryProcessing._calculate_minimum_component_temperature(df, "inductor")
-        if isinstance(component_temperatur_series, pd.Series):
-            df["t_min_array"] = SummaryProcessing._get_minimum_temperature_value(df["t_min_array"], component_temperatur_series)
+        component_temperature_series = SummaryProcessing._calculate_minimum_component_temperature(df, "inductor")
+        if isinstance(component_temperature_series, pd.Series):
+            df["t_min_array"] = SummaryProcessing._get_minimum_temperature_value(df["t_min_array"], component_temperature_series)
         # Calculate the maximal temperature for all transformers
-        component_temperatur_series = SummaryProcessing._calculate_minimum_component_temperature(df, "transformer")
-        if isinstance(component_temperatur_series, pd.Series):
-            df["t_min_array"] = SummaryProcessing._get_minimum_temperature_value(df["t_min_array"], component_temperatur_series)
+        component_temperature_series = SummaryProcessing._calculate_minimum_component_temperature(df, "transformer")
+        if isinstance(component_temperature_series, pd.Series):
+            df["t_min_array"] = SummaryProcessing._get_minimum_temperature_value(df["t_min_array"], component_temperature_series)
 
         # Calculate boundary condition
         df["t_min_array"] = df.apply(lambda x: np.minimum(x["t_min_array"], heat_sink_boundary_conditions.t_hs_max), axis=1)
