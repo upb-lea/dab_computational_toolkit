@@ -16,9 +16,9 @@ import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
-                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, FEMMT_FEM_RESULTS_FOLDER)
+                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
-
+from dct.components.component_dtos import InductorResults
 
 class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
@@ -106,7 +106,7 @@ class ParetoPlots:
                                          label_list=plot_data.label_list, fig_name_path=fig_name)
 
     @staticmethod
-    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
+    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, is_summary: bool = False) -> None:
         """
         Plot the results of the inductor optimization in the Pareto plane.
 
@@ -133,16 +133,7 @@ class ParetoPlots:
             # m³ -> cm³
             df[volume_key] = df[volume_key] * FACTOR_M3_TO_CM3
 
-            fem_results_folder_path = os.path.join(file_path, FEMMT_FEM_RESULTS_FOLDER)
             df_filtered = fmt.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
-            df_fem_reluctance = fmt.InductorOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
-
-            # all fem simulation points
-            fem_loss_results = df_fem_reluctance["fem_p_loss_winding"] + df_fem_reluctance["fem_eddy_core"] + df_fem_reluctance["user_attrs_p_hyst"]
-
-            x_values_list = [df[volume_key], df_filtered[volume_key], df_fem_reluctance[volume_key]]
-            y_values_list = [df[loss_key], df_filtered[loss_key], fem_loss_results]
-            label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
 
             x_scale_min = 0.9 * df_filtered[volume_key].min()
             x_scale_max = 1.1 * df_filtered[volume_key].max()
@@ -150,12 +141,61 @@ class ParetoPlots:
             y_scale_min = 0.9 * df_filtered[loss_key].min()
             y_scale_max = 1.1 * df_filtered[loss_key].max()
 
+            label_list: list[str | None] = ["RM all", "RM filtered"]
+
+            # Add  analytic points
+            x_values_list = [df[volume_key], df_filtered[volume_key]]
+            y_values_list = [df[loss_key], df_filtered[loss_key]]
+            # Add color list
+            color_list: list[str] = ["black", "red"]
+
+            if is_summary:
+                # New approach for FEM - simulation data
+                fem_results_folder_path = os.path.join(file_path, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
+                # Create inductor_fem_result_list
+                inductor_fem_selected_result_list: list[tuple[float,float]] = []
+
+                # Load simulation results for the circuit
+                for act_fem_inductor_file in os.listdir(fem_results_folder_path):
+                    # Assemble file path name
+                    fem_inductor_id_file_path = os.path.join(fem_results_folder_path, act_fem_inductor_file)
+                    # Get circuit results
+                    with open(fem_inductor_id_file_path, 'rb') as pickle_file_data:
+                        inductor_fem_result_dto = pickle.load(pickle_file_data)
+                        # Calculate loss array average
+                        loss_array_avg = 0
+                        for loss_value in inductor_fem_result_dto.loss_array:
+                            loss_array_avg = loss_value + loss_array_avg
+                        loss_avg: float = float(loss_array_avg / len(inductor_fem_result_dto.loss_array))
+                    # Put data to list
+                    inductor_fem_selected_result_list.append((inductor_fem_result_dto.volume * FACTOR_M3_TO_CM3, loss_avg))
+
+                df_fem_result = pd.DataFrame(inductor_fem_selected_result_list, columns=[volume_key, loss_key])
+
+                # Append label and colour
+                label_list.append("FEM")
+                color_list.append("green")
+
+                # Add  fem simulation points
+                x_values_list.append(df_fem_result[volume_key])
+                y_values_list.append(df_fem_result[loss_key])
+
+                # Scaling needs to update
+                x_scale_min = min(x_scale_min, 0.9 * df_fem_result[volume_key].min())
+                x_scale_max = max(x_scale_max, 1.1 * df_fem_result[volume_key].max())
+
+                y_scale_min = min(y_scale_min, 0.9 * df_fem_result[loss_key].min())
+                y_scale_max = max(y_scale_max, 1.1 * df_fem_result[loss_key].max())
+
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
-
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 0.5],
-                                             x_label=r'$V_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W', label_list=label_list,
-                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+            # Draw the picture
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
+                                             alpha_list=[0.5, 0.5, 0.5],
+                                             x_label=r'$V_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
+                                             label_list=label_list,
+                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max],
+                                             ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
@@ -307,7 +347,7 @@ class ParetoPlots:
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0) -> None:
+    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0, is_summary = False) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
@@ -351,6 +391,12 @@ class ParetoPlots:
         y_scale_min = 0.9 * df_filtered[total_mean_loss_key].min()
         y_scale_max = 1.1 * df_filtered[total_mean_loss_key].max()
 
-        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 1],
+        # add Color list
+        if is_summary == False:
+            color_list = ["black", "red"]
+        else:
+            color_list = ["black", "green"]
+
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=color_list, alpha_list=[0.5, 0.7],
                                          x_label=r"$V_\mathrm{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,mean}$ / W",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])

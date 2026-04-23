@@ -1058,13 +1058,13 @@ class DctMainCtl:
                 response_data.pareto_front_optuna = self._circuit_optimization.get_actual_pareto_html()
             elif not self._circuit_list[c_configuration_index].progress_data.progress_status == ProgressStatus.Idle:
                 # Get Pareto front from file
-                if StudyData.check_study_data(CircuitOptimizationBase.circuit_study_data.optimization_directory,
-                                              CircuitOptimizationBase.circuit_study_data.study_name):
+                if StudyData.check_study_data(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                              self._circuit_optimization.circuit_study_data.study_name):
                     response_data.evaluation_info = f"Circuit configuration: {self._circuit_list[c_configuration_index].configuration_name}"
                     response_data.pareto_front_optuna = self._circuit_optimization.get_pareto_html(
-                        CircuitOptimizationBase.circuit_study_data.study_name,
-                        os.path.join(CircuitOptimizationBase.circuit_study_data.optimization_directory,
-                                     CircuitOptimizationBase.circuit_study_data.study_name+".sqlite3"))
+                        self._circuit_optimization.circuit_study_data.study_name,
+                        os.path.join(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                     self._circuit_optimization.circuit_study_data.study_name+".sqlite3"))
             else:
                 response_data.evaluation_info = "Pareto front calculation still not started!"
         # Pareto front of inductor
@@ -2144,14 +2144,14 @@ class DctMainCtl:
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                              summary_data.optimization_directory)
+                                              summary_data.optimization_directory, True)
         # Plot results of all transformers
         for transformer_study_configuration in self._transformer_study_configuration_list:
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
                                                  summary_data.optimization_directory)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
-        ParetoPlots.plot_summary(summary_data, self._circuit_optimization)
+        ParetoPlots.plot_summary(summary_data, self._circuit_optimization, 0, True)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()
