@@ -8,16 +8,17 @@
     l_1_min_max_list=[10e-6, 10e-3]
     l_2__min_max_list=[10e-6, 1e-3]
     n_min_max_list=[3, 7]
-    # transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J']
-    # transistor_2_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J']
-    # Debug
-    transistor_1_name_list=['CREE_C3M0120100J']
-    transistor_2_name_list=['CREE_C3M0120100J']
+    #    transistor_1_name_list=['Rohm_SCT3060AW7']
+    #    transistor_2_name_list=['Rohm_SCT3060AW7']
+    # Better
+    transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J']
+    transistor_2_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J']
+    ripple_quality = 10
     c_par_1=16e-12
     c_par_2=16e-12
 
 [filter_distance]
-    number_filtered_designs = 2
+    number_filtered_designs = 11
     difference_percentage = 5
 
 [thermal_data]
