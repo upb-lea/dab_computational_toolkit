@@ -16,9 +16,8 @@ import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
-                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
+                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, FEMMT_FEM_RESULTS_FOLDER)
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
-from dct.components.component_dtos import InductorResults
 
 class ParetoPlots:
     """Generate PDF plots to see the results of single Pareto steps (circuit, inductor, transformer, heat sink)."""
@@ -116,6 +115,8 @@ class ParetoPlots:
         :type  filtered_list_files: list[str]
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
+        :param is_summary: Flag to distinguish between pre summary and summary plot
+        :type  is_summary: bool
         """
         volume_key = "values_0"
         loss_key = "values_1"
@@ -153,7 +154,7 @@ class ParetoPlots:
                 # New approach for FEM - simulation data
                 fem_results_folder_path = os.path.join(file_path, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
                 # Create inductor_fem_result_list
-                inductor_fem_selected_result_list: list[tuple[float,float]] = []
+                inductor_fem_selected_result_list: list[tuple[float, float]] = []
 
                 # Load simulation results for the circuit
                 for act_fem_inductor_file in os.listdir(fem_results_folder_path):
@@ -172,7 +173,7 @@ class ParetoPlots:
 
                 df_fem_result = pd.DataFrame(inductor_fem_selected_result_list, columns=[volume_key, loss_key])
 
-                # Append label and colour
+                # Append label and color
                 label_list.append("FEM")
                 color_list.append("green")
 
@@ -348,7 +349,7 @@ class ParetoPlots:
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0, is_summary = False) -> None:
+    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0, is_summary: bool = False) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
@@ -358,6 +359,8 @@ class ParetoPlots:
         :type  circuit_optimization: CircuitOptimizationBase
         :param combination_id: combination ID to highlight in the Pareto plane
         :type combination_id: int
+        :param is_summary: Flag to distinguish between pre summary and summary plot
+        :type  is_summary: bool
         """
         total_volume_key = "total_volume"
         total_mean_loss_key = "total_mean_loss"
@@ -393,7 +396,7 @@ class ParetoPlots:
         y_scale_max = 1.1 * df_filtered[total_mean_loss_key].max()
 
         # add Color list
-        if is_summary == False:
+        if not is_summary:
             color_list = ["black", "red"]
         else:
             color_list = ["black", "green"]

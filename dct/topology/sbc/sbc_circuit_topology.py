@@ -490,6 +490,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         design_space = circuit_dtos.CircuitParetoDesignSpace(
             f_s_min_max_list=self._toml_circuit.design_space.f_s_min_max_list,
             l_s_min_max_list=self._toml_circuit.design_space.l_s_min_max_list,
+            ripple_quality=self._toml_circuit.design_space.ripple_quality,
             transistor_1_name_list=self._toml_circuit.design_space.transistor_1_name_list,
             transistor_2_name_list=self._toml_circuit.design_space.transistor_2_name_list,
             c_par_1=self._toml_circuit.design_space.c_par_1,
@@ -741,11 +742,11 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         # Calculate the switch period factor to get the required inductor
         # i_ripple defined by ripple_quality : i_ripple = i_2/ ripple_quality
-        i_ripple = self._fixed_parameters.mesh_i2 / self._toml_circuit.design_space.ripple_quality
+        i_ripple = self._fixed_parameters.mesh_i2 / self._sbc_config.design_space.ripple_quality
         # L  = max(V_out/i_ripple * t_off) =  max(V_out/i_ripple * (1 - duty_cycle) * ts ) = max(V_in * duty_cycle /i_ripple * (1 - duty_cycle) * ts )
         # i_ripple defined by quality factor ripple_quality: L = max(V_in * duty_cycle * ripple_quality /i_2 * (1 - duty_cycle) * ts )
 
-        k_ts_inductor_array = self._fixed_parameters.mesh_v1 * self._fixed_parameters.mesh_duty_cycle * ( 1 - self._fixed_parameters.mesh_duty_cycle) / i_ripple
+        k_ts_inductor_array = self._fixed_parameters.mesh_v1 * self._fixed_parameters.mesh_duty_cycle * (1 - self._fixed_parameters.mesh_duty_cycle) / i_ripple
         k_ts_inductor = k_ts_inductor_array.max()
 
         # Calculate curve length and curve points of all transistors

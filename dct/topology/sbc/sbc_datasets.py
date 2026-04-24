@@ -482,6 +482,9 @@ class HandleTransistorDto:
 
         transistor: tdb.Transistor = db.load_transistor(transistor_name)
 
+        if transistor is None:
+            raise ValueError(f"Transistor type: {transistor_name} is of registered in transistor database!")
+
         # if transistor.type != "MOSFET" and transistor.type != "SiC-MOSFET":
         #     raise ValueError(f"Transistor 1: {transistor.name} is of non-allowed type {transistor.type}. "
         #                      f"Allowed types are MOSFET, SiC-MOSFET.")

@@ -184,6 +184,7 @@ def test_calculate_fix_parameters(caplog: LogCaptureFixture, sampling_method: Sa
         l_s_min_max_list=[10e-6, 10e-3],
         transistor_1_name_list=['CREE_C3M0065100J', 'CREE_C3M0120100J'],
         transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J'],
+        ripple_quality=10,
         c_par_1=1e-12,
         c_par_2=1e-12)
 
@@ -631,6 +632,7 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
     float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 99, 45, 67, 9.9e-3, 100.15]
     float_value_list_configuration_gt0_le1em2xgt1_le100: list[list[float]] = (
         [[1e-17, 1.1], [0.01, 100], [0.0034, 73.78], [-1, -282.3], [0.0033], [0.0066, 22.76, 33], [0, 10], [0.011, 100.01]])
+    float_value_ge0_5_le10000: list[float] = [0.5, 10000, 55, 99, 45, 67e1, 0.4991, 10000.15]
     int_value_gt0 = [1, 181877627, 1111, 4332, 14332, 34544, 0, 10000]
 
     # Initialize the circuit parameters
@@ -640,6 +642,7 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
             l_s_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
             transistor_1_name_list=transistor_name_list_configuration[test_index],
             transistor_2_name_list=transistor_name_list_configuration[test_index],
+            ripple_quality=float_value_ge0_5_le10000[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
         thermal_data=sbc_tc.TomlSbcThermalResistanceData(
@@ -661,7 +664,7 @@ def test_load_and_verify_circuit_parameters(get_transistor_name_list: list[str],
     # Perform the test for the circuit
     is_circuit_consistent, error_report_circuit = test_object.load_and_verify_circuit_parameters(test_circuit_parameter_dict, is_tbd_updated)
 
-    if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary:
+    if test_type == TestCase.LowerBoundary or test_type == TestCase.UpperBoundary or test_type == TestCase.InBetween:
         # No error and empty report string
         assert error_report_circuit == ""
         assert is_circuit_consistent
@@ -804,6 +807,7 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
         [[0.1, 0.1001], [0.4, 0.6], [0.979, 0.98], [0, 0.5]])
     float_min_max_list_configuration_gtm100kw_lt100kw: list[list[float]] = (
         [[-9.9999, 0], [22, 9.9999e4], [2000, 5e4], [-1.01e5, 3222]])
+    float_value_ge0_5_le10000: list[float] = [0.5, 10000, 55, 10000.15]
     float_value_gt0_lt1em3: list[float] = [1e-22, 9.999e-4, 3.55e-4, -1e-3]
     float_value_gt1em2_le100: list[float] = [0.011, 100, 55, 9.9e-3]
     float_value_list_configuration_gt0_le1em2xgt1_le100: list[list[float]] = (
@@ -839,6 +843,7 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             l_s_min_max_list=float_min_max_list_configuration_gt0_lt1[test_index],
             transistor_1_name_list=transistor_name_list_configuration[test_index],
             transistor_2_name_list=transistor_name_list_configuration[test_index],
+            ripple_quality=float_value_ge0_5_le10000[test_index],
             c_par_1=float_value_gt0_lt1em3[test_index],
             c_par_2=float_value_gt0_lt1em3[test_index]),
         thermal_data=sbc_tc.TomlSbcThermalResistanceData(
@@ -898,6 +903,7 @@ def test_initialize_circuit_optimization(get_transistor_name_list: list[str], te
             assert test_object._sbc_config.design_space.l_s_min_max_list == test_circuit_parameter.design_space.l_s_min_max_list
             assert test_object._sbc_config.design_space.transistor_1_name_list == test_circuit_parameter.design_space.transistor_1_name_list
             assert test_object._sbc_config.design_space.transistor_2_name_list == test_circuit_parameter.design_space.transistor_2_name_list
+            assert test_object._sbc_config.design_space.ripple_quality == test_circuit_parameter.design_space.ripple_quality
             assert test_object._sbc_config.design_space.c_par_1 == test_circuit_parameter.design_space.c_par_1
             assert test_object._sbc_config.design_space.c_par_2 == test_circuit_parameter.design_space.c_par_2
             assert test_object._sbc_config.parameter_range.v1_min_max_list == test_general_parameter.parameter_range.v1_min_max_list
