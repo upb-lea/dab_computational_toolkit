@@ -17,6 +17,8 @@ from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
                                CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, FEMMT_FEM_RESULTS_FOLDER)
+# Debug inductor issue
+
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
 
 class ParetoPlots:
@@ -149,6 +151,7 @@ class ParetoPlots:
             y_values_list = [df[loss_key], df_filtered[loss_key]]
             # Add color list
             color_list: list[str] = ["black", "red"]
+            alpha_list: list[float] = [0.5, 0.5]
 
             if is_summary:
                 # New approach for FEM - simulation data
@@ -160,22 +163,23 @@ class ParetoPlots:
                 for act_fem_inductor_file in os.listdir(fem_results_folder_path):
                     # Assemble file path name
                     fem_inductor_id_file_path = os.path.join(fem_results_folder_path, act_fem_inductor_file)
+                    # Check extension for pkl-File
+                    if os.path.splitext(fem_inductor_id_file_path)[1] != ".pkl":
+                        continue
                     # Get circuit results
                     with open(fem_inductor_id_file_path, 'rb') as pickle_file_data:
                         inductor_fem_result_dto = pickle.load(pickle_file_data)
-                        # Calculate loss array average
-                        loss_array_avg = 0
-                        for loss_value in inductor_fem_result_dto.loss_array:
-                            loss_array_avg = loss_value + loss_array_avg
-                        loss_avg: float = float(loss_array_avg / len(inductor_fem_result_dto.loss_array))
-                    # Put data to list
-                    inductor_fem_selected_result_list.append((inductor_fem_result_dto.volume * FACTOR_M3_TO_CM3, loss_avg))
+
+                    # Calculate maximum loss
+                    loss_max = max(inductor_fem_result_dto.loss_array)
+                    inductor_fem_selected_result_list.append((inductor_fem_result_dto.volume * FACTOR_M3_TO_CM3, loss_max))
 
                 df_fem_result = pd.DataFrame(inductor_fem_selected_result_list, columns=[volume_key, loss_key])
 
                 # Append label and color
                 label_list.append("FEM")
                 color_list.append("green")
+                alpha_list.append(0.5)
 
                 # Add  fem simulation points
                 x_values_list.append(df_fem_result[volume_key])
@@ -192,7 +196,7 @@ class ParetoPlots:
             fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
             # Display diagram
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
-                                             alpha_list=[0.5, 0.5, 0.5],
+                                             alpha_list=alpha_list,
                                              x_label=r'$V_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
                                              label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max],

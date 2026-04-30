@@ -264,7 +264,7 @@ class HandleSbcDto:
         i_current_vec = sbc_dto.input_config.mesh_i2 + sbc_dto.calc_currents.i_ripple / 2
         # Get the maximum current and correspondent duty cycle and ripple current
         idx_max = i_current_vec.argmax()
-        i_max_current = sbc_dto.input_config.mesh_i2[idx_max]
+        i_max_current = i_current_vec[idx_max]
         i_ripple_at_max = sbc_dto.calc_currents.i_ripple[idx_max] / 2
         duty_cycle_at_max = sbc_dto.input_config.mesh_duty_cycle[idx_max]
         # Create time vector for correspondent operation point
