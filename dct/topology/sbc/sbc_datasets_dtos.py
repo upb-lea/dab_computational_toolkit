@@ -98,7 +98,11 @@ class CalcLosses:
     p_hs_conduction: np.ndarray
     p_ls_conduction: np.ndarray
     p_hs_switch: np.ndarray
+    t_hs_switch_on: np.ndarray
+    t_hs_switch_off: np.ndarray
     p_ls_switch: np.ndarray
+    t_ls_switch_on: np.ndarray
+    t_ls_switch_off: np.ndarray
     p_sbc_total: np.ndarray
 
     def __init__(self, **kwargs):

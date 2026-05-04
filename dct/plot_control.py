@@ -16,7 +16,8 @@ import femmt as fmt
 from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
-                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, FEMMT_FEM_RESULTS_FOLDER)
+                               CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED,
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
 # Debug inductor issue
 
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
@@ -197,13 +198,13 @@ class ParetoPlots:
             # Display diagram
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
                                              alpha_list=alpha_list,
-                                             x_label=r'$V_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
+                                             x_label=r'$\mathcal{V}_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
                                              label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max],
                                              ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
-    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
+    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, is_summary: bool = False) -> None:
         """
         Plot the results of the transformer optimization in the Pareto plane.
 
@@ -213,6 +214,8 @@ class ParetoPlots:
         :type  filtered_list_files: list[str]
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
+        :param is_summary: Flag to distinguish between pre summary and summary plot
+        :type  is_summary: bool
         """
         volume_key = "values_0"
         loss_key = "values_1"
@@ -230,16 +233,11 @@ class ParetoPlots:
             # m³ -> cm³
             df[volume_key] = df[volume_key] * FACTOR_M3_TO_CM3
 
-            fem_results_folder_path = os.path.join(file_path, FEMMT_FEM_RESULTS_FOLDER)
             df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=10)
-            df_fem_reluctance = fmt.StackedTransformerOptimization.FemSimulation.fem_logs_to_df(df_filtered, fem_results_folder_path)
 
-            # all fem simulation points
-            fem_loss_results = df_fem_reluctance["fem_p_loss_winding"] + df_fem_reluctance["fem_eddy_core"] + df_fem_reluctance["user_attrs_p_hyst"]
-
-            x_values_list = [df[volume_key], df_filtered[volume_key], df_fem_reluctance[volume_key]]
-            y_values_list = [df[loss_key], df_filtered[loss_key], fem_loss_results]
-            label_list: list[str | None] = ["RM all", "RM filtered", "FEM"]
+            x_values_list = [df[volume_key], df_filtered[volume_key]]
+            y_values_list = [df[loss_key], df_filtered[loss_key]]
+            label_list: list[str | None] = ["RM all", "RM filtered"]
 
             x_scale_min = 0.9 * df_filtered[volume_key].min()
             x_scale_max = 1.1 * df_filtered[volume_key].max()
@@ -247,12 +245,61 @@ class ParetoPlots:
             y_scale_min = 0.9 * df_filtered[loss_key].min()
             y_scale_max = 1.1 * df_filtered[loss_key].max()
 
+            # Add  analytic points
+            x_values_list = [df[volume_key], df_filtered[volume_key]]
+            y_values_list = [df[loss_key], df_filtered[loss_key]]
+            # Add color list
+            color_list: list[str] = ["black", "red"]
+            alpha_list: list[float] = [0.5, 0.5]
+
+            if is_summary:
+                # New approach for FEM - simulation data
+                fem_results_folder_path = os.path.join(file_path, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
+                # Create transformer_fem_result_list
+                transformer_fem_selected_result_list: list[tuple[float, float]] = []
+
+                # Load simulation results for the circuit
+                for act_fem_transformer_file in os.listdir(fem_results_folder_path):
+                    # Assemble file path name
+                    fem_transformer_id_file_path = os.path.join(fem_results_folder_path, act_fem_transformer_file)
+                    # Check extension for pkl-File
+                    if os.path.splitext(fem_transformer_id_file_path)[1] != ".pkl":
+                        continue
+                    # Get circuit results
+                    with open(fem_transformer_id_file_path, 'rb') as pickle_file_data:
+                        transformer_fem_result_dto = pickle.load(pickle_file_data)
+
+                    # Calculate maximum loss
+                    loss_max = max(transformer_fem_result_dto.loss_array)
+                    transformer_fem_selected_result_list.append((transformer_fem_result_dto.volume * FACTOR_M3_TO_CM3, loss_max))
+
+                df_fem_result = pd.DataFrame(transformer_fem_selected_result_list, columns=[volume_key, loss_key])
+
+                # Append label and color
+                label_list.append("FEM")
+                color_list.append("green")
+                alpha_list.append(0.5)
+
+                # Add  fem simulation points
+                x_values_list.append(df_fem_result[volume_key])
+                y_values_list.append(df_fem_result[loss_key])
+
+                # Scaling needs to update
+                x_scale_min = min(x_scale_min, 0.9 * df_fem_result[volume_key].min())
+                x_scale_max = max(x_scale_max, 1.1 * df_fem_result[volume_key].max())
+
+                y_scale_min = min(y_scale_min, 0.9 * df_fem_result[loss_key].min())
+                y_scale_max = max(y_scale_max, 1.1 * df_fem_result[loss_key].max())
+
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}_{transformer_study_data.study_name}")
-
-            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red", "green"], alpha_list=[0.5, 0.5, 0.5],
-                                             x_label=r'$\mathcal{V}_\mathrm{tr}$ / cm³', y_label=r'$P_\mathrm{tr}$ / W', label_list=label_list,
-                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+            # Display diagram
+            ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
+                                             alpha_list=alpha_list,
+                                             x_label=r'$\mathcal{V}_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
+                                             label_list=label_list,
+                                             fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max],
+                                             ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
     def plot_capacitor_results(capacitor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str) -> None:
@@ -406,5 +453,5 @@ class ParetoPlots:
             color_list = ["black", "green"]
 
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=color_list, alpha_list=[0.5, 0.7],
-                                         x_label=r"$V_\mathrm{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,mean}$ / W",
+                                         x_label=r"$V_\mathcal{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,mean}$ / W",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])

@@ -24,10 +24,6 @@ from dct.topology.sbc.sbc_circuit_topology_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
 
-# Later to replace by the switching time of the semiconductor at given current
-SWITCH_TIME_ON = 1e-8
-SWITCH_TIME_OFF = 1e-8
-
 class HandleSbcDto:
     """Class to handle the Sbc data transfer object, e.g. save and load the files."""
 
@@ -86,15 +82,19 @@ class HandleSbcDto:
         p_hs_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * input_configuration.mesh_duty_cycle, transistor_dto_1)
         p_ls_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * (1 - input_configuration.mesh_duty_cycle),
                                                                    transistor_dto_1)
-        p_hs_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
-                                                                 input_configuration.transistor_dto_1, input_configuration.fs)
-        p_ls_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v1, i_rms,
-                                                                 input_configuration.transistor_dto_2, input_configuration.fs)
+        p_hs_switch, t_hs_switch_on, t_hs_switch_off = HandleTransistorDto.transistor_switch_loss(
+            input_configuration.mesh_v1, i_rms, input_configuration.transistor_dto_1, input_configuration.fs)
+        p_ls_switch, t_ls_switch_on, t_ls_switch_off = HandleTransistorDto.transistor_switch_loss(
+            input_configuration.mesh_v1, i_rms, input_configuration.transistor_dto_2, input_configuration.fs)
 
         p_loss = s_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond.ravel(),
                                       'p_ls_conduction': p_ls_cond.ravel(),
-                                      'p_hs_switch': p_hs_switch.ravel(),
-                                      'p_ls_switch': p_ls_switch.ravel(),
+                                      'p_hs_switch': p_hs_switch,
+                                      't_hs_switch_on': t_hs_switch_on,
+                                      't_hs_switch_off': t_ls_switch_off,
+                                      'p_ls_switch': p_ls_switch,
+                                      't_ls_switch_on': t_hs_switch_on,
+                                      't_ls_switch_off': t_ls_switch_off,
                                       'p_sbc_total': p_hs_cond.ravel() + p_ls_cond.ravel() + p_hs_switch.ravel() + p_ls_switch.ravel()})
 
         sbc_dto = s_dtos.SbcCircuitDTO(
@@ -379,13 +379,17 @@ class HandleSbcDto:
         time_array, i_currents_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
         # Calculate the input current i1
         i1_current_array = sbc_dto.input_config.mesh_i2 * sbc_dto.input_config.mesh_duty_cycle
+        # Set HS-transistor switch times to necessary format
+        t_hs_switch_on = sbc_dto.calc_losses.t_hs_switch_on.reshape(-1, 1)
+        t_hs_switch_off = sbc_dto.calc_losses.t_hs_switch_off.reshape(-1, 1)
 
         # Assemble time array for capacitor.
         # Start period at SWITCH_TIME_OFF/2 (from t0=SWITCH_TIME_OFF/2 to t_period= T_period+SWITCH_TIME_OFF/2)
-        time_array_cap = np.hstack(
-            (time_array[:, 0][:, np.newaxis], time_array[:, 1][:, np.newaxis] - SWITCH_TIME_ON/2 - SWITCH_TIME_OFF/2,
-             time_array[:, 1][:, np.newaxis] + SWITCH_TIME_ON/2 - SWITCH_TIME_OFF/2,
-             time_array[:, 2][:, np.newaxis] - SWITCH_TIME_OFF, time_array[:, 2][:, np.newaxis]))
+        time_array_cap = np.hstack((time_array[:, 0][:, np.newaxis],
+                                    time_array[:, 1][:, np.newaxis] - t_hs_switch_on / 2 - t_hs_switch_off / 2,
+                                    time_array[:, 1][:, np.newaxis] + t_hs_switch_on / 2 - t_hs_switch_off / 2,
+                                    time_array[:, 2][:, np.newaxis] - t_hs_switch_off,
+                                    time_array[:, 2][:, np.newaxis]))
 
         # Assemble current vector [-i1(T_period-Ton),i2-i1((Ton+switch time/2) to Ton-Toff)
         i_currents_cap_array = np.hstack(
@@ -537,7 +541,7 @@ class HandleTransistorDto:
 
     @staticmethod
     def transistor_switch_loss(mesh_v1: np.ndarray, i_rms: np.ndarray, tr_data_dto: s_dtos.TransistorDTO,
-                               fs: float) -> np.ndarray:
+                               fs: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate the transistor conduction losses.
 
@@ -561,6 +565,8 @@ class HandleTransistorDto:
 
         # Calculate the loss results for switch on
         e_on_losses = e_on_losses_obj(mesh_points)
+        # Calculate the switch time according t_on = 2 E_on / (V_DS * I_D)
+        t_switch_on = 2 * e_on_losses / (mesh_v1.flatten() * i_rms.flatten())
 
         # Initialize interpolation object for e-off
         e_off_losses_obj = RGI(
@@ -569,12 +575,14 @@ class HandleTransistorDto:
 
         # Calculate the loss results for switch on
         e_off_losses = e_off_losses_obj(mesh_points)
+        # Calculate the switch time according t_on = 2 E_on / (V_DS * I_D)
+        t_switch_off = 2 * e_off_losses / (mesh_v1.flatten() * i_rms.flatten())
 
         # Add both energies and calculate the power loss
         p_switch_loss: NDArray = (e_on_losses + e_off_losses) * fs
 
         # Calculate the sum of transistor switching losses
-        return p_switch_loss
+        return p_switch_loss, t_switch_on, t_switch_off
 
     @staticmethod
     def calculate_2D_grid(switch_energy_data_list: list[tdb.SwitchEnergyData]) -> s_dtos.LossDataGrid:

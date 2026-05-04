@@ -43,9 +43,6 @@ from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUI
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER)
 from dct.topology.sbc.sbc_constants import MAX_DUTY_CYCLE
 
-# Later to define in parameter set (I2_DC/ripple current)
-RIPPLE_QUALITY = 10
-
 logger = logging.getLogger(__name__)
 
 class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_tc.TomlSbcCircuitParetoDesign]):
