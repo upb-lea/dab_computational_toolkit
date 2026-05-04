@@ -42,6 +42,7 @@ DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET = "df_wo_hs_wo_offset.csv"
 DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET = "df_w_hs_wo_offset.csv"
 DF_SUMMARY_FINAL = "df_final.csv"
 DF_SUMMARY_FINAL_FILTERED = "df_final_filtered.csv"
+DF_SUMMARY_FINAL_FILTERED_PKL = "df_final_filtered.pkl"
 
 # FEMMT fixed folder names, do not change!
 FEMMT_FEM_RESULTS_FOLDER = "02_fem_simulation_results"

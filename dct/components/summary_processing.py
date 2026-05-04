@@ -25,7 +25,7 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET,
-                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL, DF_SUMMARY_FINAL_FILTERED)
+                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL, DF_SUMMARY_FINAL_FILTERED, DF_SUMMARY_FINAL_FILTERED_PKL)
 
 logger = logging.getLogger(__name__)
 
@@ -836,4 +836,5 @@ class SummaryProcessing:
         df_filtered = CircuitOptimizationBase.filter_df(df, x="total_volume", y="total_mean_loss",
                                                         factor_min_dc_losses=0.001, factor_max_dc_losses=100, abs_max_losses=abs_max_losses)
         df_filtered.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}")
+        df_filtered.to_pickle(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED_PKL}")
         return df_filtered
