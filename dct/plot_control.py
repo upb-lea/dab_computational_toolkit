@@ -453,5 +453,5 @@ class ParetoPlots:
             color_list = ["black", "green"]
 
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=color_list, alpha_list=[0.5, 0.7],
-                                         x_label=r"$V_\mathcal{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,mean}$ / W",
+                                         x_label=r"$\mathcal{V}_\mathrm{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,mean}$ / W",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
