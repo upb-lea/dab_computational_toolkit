@@ -16,6 +16,7 @@ class CircuitParetoDesignSpace:
     l_s_min_max_list: list[float]
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
+    ripple_quality: float
     c_par_1: float
     c_par_2: float
 

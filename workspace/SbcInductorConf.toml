@@ -10,7 +10,7 @@
     temperature=100
 
 [material_data_sources]
-    permeability_datasource="LEA_MTB"
+    permeability_datasource="MagNet"
     permittivity_datasource="LEA_MTB"
 
 [insulations]

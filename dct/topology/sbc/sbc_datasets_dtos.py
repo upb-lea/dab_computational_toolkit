@@ -6,6 +6,7 @@ import dataclasses
 # 3rd party libraries
 import numpy as np
 
+from dct.components.capacitor_optimization_dtos import CapacitorResults
 # own libraries
 from dct.components.component_dtos import ComponentRequirements, InductorResults, CircuitThermal
 
@@ -44,9 +45,9 @@ class FixedParameters:
 
     transistor_1_dto_list: list[TransistorDTO]
     transistor_2_dto_list: list[TransistorDTO]
-    mesh_v: np.ndarray
+    mesh_v1: np.ndarray
     mesh_duty_cycle: np.ndarray
-    mesh_i: np.ndarray
+    mesh_i2: np.ndarray
     mesh_weights: np.ndarray
 
 @dataclasses.dataclass
@@ -64,9 +65,9 @@ class Sampling:
 class CircuitConfig:
     """Input configuration DTO for the SBC converter."""
 
-    mesh_v: np.ndarray
+    mesh_v1: np.ndarray
     mesh_duty_cycle: np.ndarray
-    mesh_i: np.ndarray
+    mesh_i2: np.ndarray
     sampling: Sampling
     Ls: np.float64
     fs: np.float64
@@ -97,7 +98,11 @@ class CalcLosses:
     p_hs_conduction: np.ndarray
     p_ls_conduction: np.ndarray
     p_hs_switch: np.ndarray
+    t_hs_switch_on: np.ndarray
+    t_hs_switch_off: np.ndarray
     p_ls_switch: np.ndarray
+    t_ls_switch_on: np.ndarray
+    t_ls_switch_off: np.ndarray
     p_sbc_total: np.ndarray
 
     def __init__(self, **kwargs):
@@ -114,11 +119,12 @@ class SbcCircuitDTO:
     circuit_id: str
     metadata: np.ndarray | None
     input_config: CircuitConfig
-    calc_volume_inductor_proxy: np.ndarray
     calc_currents: CalcCurrents
     calc_losses: CalcLosses
     component_requirements: ComponentRequirements | None
     inductor_results: InductorResults | None
+    capacitor_1_results: CapacitorResults | None
+    capacitor_2_results: CapacitorResults | None
     circuit_thermal: CircuitThermal | None
 
 @dataclasses.dataclass

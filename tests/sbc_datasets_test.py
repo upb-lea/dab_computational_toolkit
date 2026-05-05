@@ -47,7 +47,7 @@ class TestCase(Enum):
     "transistor_name, expected_exception, expected_message_id",
     [
         # Invalid transistor names
-        ("invalid_transistor_name", AttributeError, 1),
+        ("invalid_transistor_name", ValueError, 1),
         # Valid transistor names
         ("CREE_C3M0065100J", None, 0),
     ]
@@ -65,7 +65,7 @@ def test_tdb_to_transistor_dto(transistor_name: str, expected_exception: type,
     :type  expected_message_id: int
     """
     info_message: list[str] = ["",
-                               "'NoneType' object has no attribute 'type'",
+                               "Transistor type: invalid_transistor_name is of registered in transistor database!",
                                f"Transistor 1: {transistor_name} is of non-allowed type. "
                                f"Allowed types are MOSFET, SiC-MOSFET."]
 

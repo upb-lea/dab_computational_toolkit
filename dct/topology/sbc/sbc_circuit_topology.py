@@ -6,6 +6,7 @@ import pickle
 import datetime
 import threading
 import copy
+import sqlite3
 from typing import Any
 
 # 3rd party libraries
@@ -13,7 +14,7 @@ import optuna
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-import deepdiff
+
 import dct.sampling as sampling
 from sklearn.cluster import KMeans
 from scipy.signal import savgol_filter
@@ -39,7 +40,8 @@ from dct.components.component_dtos import (CapacitorRequirements, InductorRequir
                                            ComponentRequirements, ComponentCooling)
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               SUMMARY_COMBINATION_FOLDER)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER)
+from dct.topology.sbc.sbc_constants import MAX_DUTY_CYCLE
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
     # Definition of constant values
     # Topological resource constants
-    _number_of_required_capacitors: int = 0
+    _number_of_required_capacitors: int = 2
     _number_of_required_inductors: int = 1
     _number_of_required_transformers: int = 0
 
@@ -58,7 +60,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
     _progress_run_time: RunTime
     _sbc_config: circuit_dtos.CircuitParetoSbcDesign | None
     _study_in_memory: optuna.Study | None
-    _study_in_storage: optuna.Study | None
+    _study_in_storage: pd.DataFrame | None
     _fixed_parameters: s_dtos.FixedParameters | None
 
     def __init__(self) -> None:
@@ -178,18 +180,18 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             is_consistent = False
         else:
             # Check lower boundary with respect to v1_min_max_list if v2_min_max_list is consistent
-            if toml_general.parameter_range.v1_min_max_list[0] <= toml_general.parameter_range.v2_min_max_list[0]:
+            if toml_general.parameter_range.v1_min_max_list[0] * MAX_DUTY_CYCLE < toml_general.parameter_range.v2_min_max_list[1]:
                 issue_report = (f"Inconsistency in v2_min_max_list: Minimum of v1="
-                                f"{toml_general.parameter_range.v1_min_max_list[0]} is less equal minimum "
+                                f"{toml_general.parameter_range.v1_min_max_list[0]} * f{MAX_DUTY_CYCLE} is less equal maximum "
                                 f"of v2={toml_general.parameter_range.v1_min_max_list[0]}.")
                 inconsistency_report = inconsistency_report + issue_report
                 is_check_passed = False
             else:
                 is_check_passed = True
             # Check upper boundary with respect to v1_min_max_list
-            if toml_general.parameter_range.v1_min_max_list[1] <= toml_general.parameter_range.v2_min_max_list[1]:
+            if toml_general.parameter_range.v1_min_max_list[0] <= toml_general.parameter_range.v2_min_max_list[1]:
                 issue_report = (f"Inconsistency in v2_min_max_list: Maximum of v1="
-                                f"{toml_general.parameter_range.v1_min_max_list[1]} is less equal maximum "
+                                f"{toml_general.parameter_range.v1_min_max_list[0]} is less equal maximum "
                                 f"of v2={toml_general.parameter_range.v1_min_max_list[1]}.")
                 inconsistency_report = inconsistency_report + issue_report
                 is_check_passed = False
@@ -352,6 +354,14 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             inconsistency_report = inconsistency_report + issue_report
             is_consistent = False
 
+        # Check ripple_quality
+        # Perform the boundary check
+        is_check_passed, issue_report = BoundaryCheck.check_float_value(
+            0.5, 1e4, toml_circuit.design_space.ripple_quality, "ripple_quality", c_flag.check_inclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
         # Check c_par_1 and c_par_2
         toml_check_value_list = (
             [(toml_circuit.design_space.c_par_1, "c_par_1"),
@@ -477,6 +487,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         design_space = circuit_dtos.CircuitParetoDesignSpace(
             f_s_min_max_list=self._toml_circuit.design_space.f_s_min_max_list,
             l_s_min_max_list=self._toml_circuit.design_space.l_s_min_max_list,
+            ripple_quality=self._toml_circuit.design_space.ripple_quality,
             transistor_1_name_list=self._toml_circuit.design_space.transistor_1_name_list,
             transistor_2_name_list=self._toml_circuit.design_space.transistor_2_name_list,
             c_par_1=self._toml_circuit.design_space.c_par_1,
@@ -536,10 +547,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         duty_cycle_min_max_list.append(act_parameter_range.v2_min_max_list[0] / act_parameter_range.v1_min_max_list[1])
         # Maximum value calculated from minimum v1-voltage and maximum v2-voltage
         duty_cycle_min_max_list.append(act_parameter_range.v2_min_max_list[1] / act_parameter_range.v1_min_max_list[0])
-
-        duty_cycle_min_max_list.sort()
-        if duty_cycle_min_max_list[1] >= 0.999:
-            duty_cycle_min_max_list[1] = 0.999
 
         return duty_cycle_min_max_list
 
@@ -613,81 +620,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         return pareto_html
 
     @staticmethod
-    def _objective(trial: optuna.Trial, sbc_config: circuit_dtos.CircuitParetoSbcDesign, fixed_parameters: s_dtos.FixedParameters) -> tuple:
-        """
-        Objective function to optimize.
-
-        :param sbc_config: Synchronous buck converter optimization configuration file
-        :type sbc_config: circuit_dtos.CircuitParetoSbcDesign
-        :param trial: optuna trial
-        :type trial: optuna.Trial
-        :param fixed_parameters: fixed parameters (loaded transistor DTOs)
-        :type fixed_parameters: s_dtos.FixedParameters
-
-        :return:
-        """
-        # Variable declaration
-        transistor_1_dto: s_dtos.TransistorDTO | None = None
-
-        # Get new suggestion from optimizer
-        f_s_suggest = trial.suggest_int('f_s_suggest', sbc_config.design_space.f_s_min_max_list[0], sbc_config.design_space.f_s_min_max_list[1])
-        l_s_suggest = trial.suggest_float('l_s_suggest', sbc_config.design_space.l_s_min_max_list[0], sbc_config.design_space.l_s_min_max_list[1])
-        transistor_1_name_suggest = trial.suggest_categorical('transistor_1_name_suggest', sbc_config.design_space.transistor_1_name_list)
-
-        # Copy transistor data based on suggested transistor name
-        for transistor_dto in fixed_parameters.transistor_1_dto_list:
-            if transistor_dto.name == transistor_1_name_suggest:
-                transistor_1_dto = transistor_dto
-
-        if transistor_1_dto is None:
-            return float('nan'), float('nan')
-
-        # Overtake suggested values
-        sbc_calc = d_sets.HandleSbcDto.init_config(
-            name=sbc_config.circuit_study_name,
-            mesh_v=fixed_parameters.mesh_v,
-            mesh_duty_cycle=fixed_parameters.mesh_duty_cycle,
-            mesh_i=fixed_parameters.mesh_i,
-            sampling=sbc_config.sampling,
-            ls=l_s_suggest,
-            fs=f_s_suggest,
-            transistor_dto_1=transistor_1_dto,
-            transistor_dto_2=transistor_1_dto
-        )
-
-        # 0 = ripple, 1=volume , 2= one function
-        debug_selection = 1
-        # False = switching and conduction loss, True = only switching loss
-        debug_consider_only_switch_loss = False
-        # Debug selection
-        i_ripple_or_volume_cost_value: np.ndarray = np.array(0)
-        # Debug i_ripple
-        if debug_selection == 0:
-            # Set the ripple current square value (ripple power) as sum of the weights
-            i_ripple_or_volume_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_currents.i_ripple.ravel()
-
-        # Debug volume proxy L
-        if debug_selection == 1:
-            # Set the inductor volume as sum of the weights
-            i_ripple_or_volume_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_volume_inductor_proxy.ravel()
-
-        # Calculate transistor losses
-        # Debug Only switching losses ASA: Later to correct
-        if debug_consider_only_switch_loss:
-            i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ (sbc_calc.calc_losses.p_hs_switch + sbc_calc.calc_losses.p_ls_switch)
-        else:
-            i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_losses.p_sbc_total
-
-        # Debug basic pareto behavior according fixed functions
-        if debug_selection == 2:
-            i_ripple_or_volume_cost_value = np.array(20+5e-5/l_s_suggest)
-            # i_ripple_or_volume_cost_value = (l_s_suggest * fixed_parameters.mesh_weights.ravel())
-            # i_loss_cost_value = 30+f_s_suggest/100000
-            i_loss_cost_value = fixed_parameters.mesh_weights.ravel() @ sbc_calc.calc_losses.p_sbc_total
-
-        return i_ripple_or_volume_cost_value, i_loss_cost_value
-
-    @staticmethod
     def calculate_fixed_parameters(act_sbc_config: circuit_dtos.CircuitParetoSbcDesign) -> s_dtos.FixedParameters:
         """
         Calculate time-consuming parameters which are same for every single simulation.
@@ -711,7 +643,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             steps_per_dimension = int(np.ceil(np.power(act_sbc_config.sampling.sampling_points, 1 / 3)))
             logger.info(f"Number of sampling points has been updated from {act_sbc_config.sampling.sampling_points} to {steps_per_dimension ** 3}.")
             logger.info("Note: meshgrid sampling does not take user-given operating points into account")
-            v_operating_points, duty_cylce_operating_points, i_operating_points = np.meshgrid(
+            v_operating_points, duty_cycle_operating_points, i_operating_points = np.meshgrid(
                 np.linspace(act_sbc_config.parameter_range.v1_min_max_list[0], act_sbc_config.parameter_range.v1_min_max_list[1],
                             steps_per_dimension),
                 np.linspace(act_sbc_config.parameter_range.duty_cycle_min_max_list[0],
@@ -720,7 +652,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                             steps_per_dimension),
                 sparse=False)
         elif act_sbc_config.sampling.sampling_method == SamplingEnum.latin_hypercube:
-            v_operating_points, duty_cylce_operating_points, i_operating_points = sampling.latin_hypercube(
+            v_operating_points, duty_cycle_operating_points, i_operating_points = sampling.latin_hypercube(
                 act_sbc_config.parameter_range.v1_min_max_list[0], act_sbc_config.parameter_range.v1_min_max_list[1],
                 act_sbc_config.parameter_range.duty_cycle_min_max_list[0], act_sbc_config.parameter_range.duty_cycle_min_max_list[1],
                 act_sbc_config.parameter_range.i2_min_max_list[0], act_sbc_config.parameter_range.i2_min_max_list[1],
@@ -729,6 +661,15 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                 dim_2_user_given_points_list=act_sbc_config.sampling.duty_cycle_additional_user_point_list,
                 dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list,
                 sampling_random_seed=act_sbc_config.sampling.sampling_random_seed)
+        elif act_sbc_config.sampling.sampling_method == SamplingEnum.dessca:
+            v_operating_points, duty_cycle_operating_points, i_operating_points = sampling.dessca(
+                act_sbc_config.parameter_range.v1_min_max_list[0], act_sbc_config.parameter_range.v1_min_max_list[1],
+                act_sbc_config.parameter_range.duty_cycle_min_max_list[0], act_sbc_config.parameter_range.duty_cycle_min_max_list[1],
+                act_sbc_config.parameter_range.i2_min_max_list[0], act_sbc_config.parameter_range.i2_min_max_list[1],
+                total_number_points=act_sbc_config.sampling.sampling_points,
+                dim_1_user_given_points_list=act_sbc_config.sampling.v1_additional_user_point_list,
+                dim_2_user_given_points_list=act_sbc_config.sampling.duty_cycle_additional_user_point_list,
+                dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list)
         else:
             raise ValueError(f"sampling_method '{act_sbc_config.sampling.sampling_method}' not available.")
 
@@ -760,69 +701,186 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             logger.debug(f"{weights=}")
             logger.debug(f"Double check: Sum of weights = {np.sum(weights)}")
 
+        # Return result as column vector
         return s_dtos.FixedParameters(
             transistor_1_dto_list=transistor_1_dto_list,
             transistor_2_dto_list=transistor_2_dto_list,
-            mesh_v=np.atleast_3d(v_operating_points),
-            mesh_duty_cycle=np.atleast_3d(duty_cylce_operating_points),
-            mesh_i=np.atleast_3d(i_operating_points),
-            mesh_weights=np.atleast_3d(weights)
+            mesh_v1=v_operating_points[:, np.newaxis],
+            mesh_duty_cycle=duty_cycle_operating_points[:, np.newaxis],
+            mesh_i2=i_operating_points[:, np.newaxis],
+            mesh_weights=weights[:, np.newaxis]
         )
 
-    def run_optimization_sqlite(self, act_number_trials: int) -> None:
-        """Proceed a study which is stored as sqlite database.
+    def run_optimization(self, act_number_trials: int) -> pd.DataFrame:
+        """Proceed a study which bases on functional data.
 
         :type act_number_trials: int
         :param act_number_trials: Number of optimization trials
         """
+        # Variable declaration
+        circuit_id: int = 0
+        df_circuit_study = pd.DataFrame()
+
         if self._sbc_config is None:
             logger.warning("Circuit configuration is not initialized!")
-            return
+            return df_circuit_study
         elif self._fixed_parameters is None:
             logger.warning("Parameter calculation is missing!")
-            return
-        elif self._study_in_memory is None:
-            logger.warning("Study is not initialized!")
-            return
+            return df_circuit_study
 
         # Function to execute
-        func = lambda trial: SbcCircuitOptimization._objective(trial, self._sbc_config, self._fixed_parameters)
+        # Start with fs low
+        ts_min = 1 / self._sbc_config.design_space.f_s_min_max_list[1]
+        ts_max = 1 / self._sbc_config.design_space.f_s_min_max_list[0]
+        ts_norm = ts_max - ts_min
+        # Calculate oversampling with 10
+        act_number_points = round(act_number_trials / len(self._fixed_parameters.transistor_1_dto_list))
+        n = act_number_points * 10
 
-        try:
-            self._study_in_memory.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
-        except KeyboardInterrupt:
-            pass
+        # Calculate the switch period factor to get the required inductor
+        # i_ripple defined by ripple_quality : i_ripple = i_2/ ripple_quality
+        i_ripple = self._fixed_parameters.mesh_i2 / self._sbc_config.design_space.ripple_quality
+        # L  = max(V_out/i_ripple * t_off) =  max(V_out/i_ripple * (1 - duty_cycle) * ts ) = max(V_in * duty_cycle /i_ripple * (1 - duty_cycle) * ts )
+        # i_ripple defined by quality factor ripple_quality: L = max(V_in * duty_cycle * ripple_quality /i_2 * (1 - duty_cycle) * ts )
 
-    def run_optimization_mysql(self, act_storage_url: str, act_number_trials: int) -> None:
-        """Proceed a study which is stored as sqlite database.
+        k_ts_inductor_array = self._fixed_parameters.mesh_v1 * self._fixed_parameters.mesh_duty_cycle * (1 - self._fixed_parameters.mesh_duty_cycle) / i_ripple
+        k_ts_inductor = k_ts_inductor_array.max()
 
-        :param act_storage_url: url-Name of the database path
-        :type act_storage_url: str
-        :param act_number_trials: Number of trials adding to the existing study
-        :type  act_number_trials: int
+        # Calculate curve length and curve points of all transistors
+        for transistor_dto in self._fixed_parameters.transistor_1_dto_list:
+            curve_ts: list[float] = []
+            curve_ploss: list[np.ndarray] = []
+            actual_ts = ts_min
+            required_L = k_ts_inductor * actual_ts
+            # Calculate the loss value at maximum ts
+            sbc_calc = d_sets.HandleSbcDto.init_config(
+                name=self._sbc_config.circuit_study_name,
+                mesh_v1=self._fixed_parameters.mesh_v1,
+                mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
+                mesh_i2=self._fixed_parameters.mesh_i2,
+                sampling=self._sbc_config.sampling,
+                ls=required_L,
+                fs=1 / actual_ts,
+                transistor_dto_1=transistor_dto,
+                transistor_dto_2=transistor_dto
+            )
+            max_loss = sbc_calc.calc_losses.p_sbc_total.max()
+
+            actual_ts = ts_max
+            required_L = k_ts_inductor * actual_ts
+            # Calculate the loss value at maximum ts
+            sbc_calc = d_sets.HandleSbcDto.init_config(
+                name=self._sbc_config.circuit_study_name,
+                mesh_v1=self._fixed_parameters.mesh_v1,
+                mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
+                mesh_i2=self._fixed_parameters.mesh_i2,
+                sampling=self._sbc_config.sampling,
+                ls=required_L,
+                fs=1 / actual_ts,
+                transistor_dto_1=transistor_dto,
+                transistor_dto_2=transistor_dto
+            )
+            loss_norm = max_loss - sbc_calc.calc_losses.p_sbc_total.max()
+
+            # Store the first point
+            curve_ts.append(actual_ts)
+            curve_ploss.append(sbc_calc.calc_losses.p_sbc_total.max())
+            # Define initial fine granular dynamic delta_x
+            d_ts = (ts_max - ts_min) / n
+            actual_ts = actual_ts - d_ts
+            required_L = k_ts_inductor * actual_ts
+            # Calculate the loss value at maximum ts
+            sbc_calc = d_sets.HandleSbcDto.init_config(
+                name=self._sbc_config.circuit_study_name,
+                mesh_v1=self._fixed_parameters.mesh_v1,
+                mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
+                mesh_i2=self._fixed_parameters.mesh_i2,
+                sampling=self._sbc_config.sampling,
+                ls=required_L,
+                fs=1 / actual_ts,
+                transistor_dto_1=transistor_dto,
+                transistor_dto_2=transistor_dto
+            )
+
+            # Store second point
+            curve_ts.append(actual_ts)
+            curve_ploss.append(sbc_calc.calc_losses.p_sbc_total.max())
+
+            # Calculate the normalized fine constant arc distance
+            m = (curve_ploss[-1] - curve_ploss[-2]) / loss_norm / d_ts * ts_norm
+            darc_fine_norm = d_ts / ts_norm * ((1 + m ** 2) ** 0.5)
+
+            # Calculate the curve length by fine granular approach
+            while actual_ts > ts_min:
+                actual_ts = actual_ts - d_ts
+                curve_ts.append(actual_ts)
+                required_L = k_ts_inductor * actual_ts
+                # Calculate the loss value
+                sbc_calc = d_sets.HandleSbcDto.init_config(
+                    name=self._sbc_config.circuit_study_name,
+                    mesh_v1=self._fixed_parameters.mesh_v1,
+                    mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
+                    mesh_i2=self._fixed_parameters.mesh_i2,
+                    sampling=self._sbc_config.sampling,
+                    ls=required_L,
+                    fs=1/actual_ts,
+                    transistor_dto_1=transistor_dto,
+                    transistor_dto_2=transistor_dto
+                )
+                curve_ploss.append(sbc_calc.calc_losses.p_sbc_total.max())
+
+                m = (curve_ploss[-1] - curve_ploss[-2]) / loss_norm / d_ts * ts_norm
+                d_ts = darc_fine_norm * ts_norm / ((1 + m ** 2) ** 0.5)
+
+            # Calculate x-values
+            index_list = SbcCircuitOptimization._get_ts_index(curve_ts, act_number_points)
+            # Collect data at x-values
+            l_s_list: list[float] = []
+            circuit_id_list: list[int] = []
+            result_curve_ploss: list[np.ndarray] = []
+            result_curve_ts: list[float] = []
+            result_curve_fs: list[float] = []
+            for idx in index_list:
+                l_s_list.append(k_ts_inductor * curve_ts[idx])
+                result_curve_ts.append(curve_ts[idx])
+                result_curve_fs.append(1/curve_ts[idx])
+                result_curve_ploss.append(curve_ploss[idx])
+                circuit_id_list.append(circuit_id)
+                circuit_id = circuit_id + 1
+
+            # Transfer to DataFrame
+            df = pd.DataFrame(
+                {"number": circuit_id_list, "values_0": result_curve_ts, "values_1": result_curve_ploss,
+                 "params_l_s_suggest": l_s_list, "params_f_s_suggest": result_curve_fs,
+                 "params_transistor_1_name_suggest": transistor_dto.name,
+                 "params_transistor_2_name_suggest": transistor_dto.name})
+
+            df_circuit_study = pd.concat([df_circuit_study, df], ignore_index=True)
+
+        return df_circuit_study
+
+    @staticmethod
+    def _get_ts_index(act_curve_x: list[float], act_number_points: int) -> list[int]:
+        """Provide the list of x-Values from curve_x.
+
+        :param act_curve_x: curve with x-values
+        :type  act_curve_x: float
+        :param act_number_points: Number of points to get from curve
+        :type  act_number_points: int
         """
-        if self._sbc_config is None:
-            logger.warning("Circuit configuration is not initialized!")
-            return
-        elif self._fixed_parameters is None:
-            logger.warning("Parameter calculation is missing!")
-            return
+        # Variable declaration
+        index_list: list[int] = []
+        # Calculate the number of requested points
+        n_fine = len(act_curve_x)
+        dn = n_fine / act_number_points
+        index = 0.0
+        # Sample the curve
+        while round(index) < len(act_curve_x):
+            idx = round(index)
+            index_list.append(idx)
+            index = index + dn
 
-        # Function to execute
-        func = lambda trial: SbcCircuitOptimization._objective(trial, self._sbc_config, self._fixed_parameters)
-
-        # Each process create his own study instance with the same database and study name
-        act_study = optuna.load_study(storage=act_storage_url, study_name=self._sbc_config.circuit_study_name)
-        # Run optimization
-        try:
-            act_study.optimize(func, n_trials=act_number_trials, n_jobs=1, show_progress_bar=True)
-        except KeyboardInterrupt:
-            pass
-        finally:
-            # study_in_storage.add_trials(act_study_name.trials[-number_trials:])
-            logger.info(f"Finished {act_number_trials} trials.")
-            logger.info(f"current time: {datetime.datetime.now()}")
-            # Save method from RAM-Disk to where ever (Currently opened by missing RAM-DISK)
+        return index_list
 
     def start_proceed_study(self, number_trials: int, database_type: str = 'sqlite',
                             sampler: optuna.samplers.BaseSampler = optuna.samplers.NSGAIIISampler()) -> None:
@@ -835,46 +893,23 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :param sampler: optuna.samplers.NSGAIISampler() or optuna.samplers.NSGAIIISampler(). Note about the brackets () !! Default: NSGAIII
         :type sampler: optuna.sampler-object
         """
+        # Check if data are initialized
         if self._sbc_config is None:
             logger.warning("Method 'initialize_circuit_optimization' is not called!\n"
                            "    No list is generated so that no optimization can be performed!")
             return
 
+        # Create dummy database file path
         circuit_study_sqlite_database = os.path.join(self.circuit_study_data.optimization_directory,
                                                      f"{self._sbc_config.circuit_study_name}.sqlite3")
 
         if os.path.exists(circuit_study_sqlite_database):
-            logger.info("Existing circuit study found. Proceeding.")
+            logger.info("Existing circuit study will be overwritten.")
         else:
             os.makedirs(f"{self.circuit_study_data.optimization_directory}", exist_ok=True)
 
-        # set logging verbosity: https://optuna.readthedocs.io/en/stable/reference/generated/optuna.logger.set_verbosity.html#optuna.logging.set_verbosity
-        # .INFO: all messages (default)
-        # .WARNING: fails and warnings
-        # .ERROR: only errors
-        optuna.logging.set_verbosity(optuna.logging.ERROR)
-
-        # check for differences with the old configuration file
-        config_on_disk_filepath = f"{self.circuit_study_data.optimization_directory}/{self._sbc_config.circuit_study_name}.pkl"
-        if os.path.exists(config_on_disk_filepath):
-            config_on_disk = SbcCircuitOptimization.load_stored_config(self.circuit_study_data)
-            difference = deepdiff.DeepDiff(config_on_disk, self._sbc_config, ignore_order=True, significant_digits=10)
-            if difference:
-                raise ValueError("Configuration file has changed from previous simulation.\n"
-                                 f"Program is terminated.\n"
-                                 f"Difference: {difference}")
-
-        # directions = ['maximize', 'minimize']
-        directions = ["minimize", "minimize"]
-
         # Calculate the fixed parameters
         self._fixed_parameters = SbcCircuitOptimization.calculate_fixed_parameters(self._sbc_config)
-
-        # Debug
-        print(f"i=f{self._fixed_parameters.mesh_i}")
-        print(f"V_in=f{self._fixed_parameters.mesh_v}")
-        print(f"duty=f{self._fixed_parameters.mesh_duty_cycle}")
-        print(f"w=f{self._fixed_parameters.mesh_weights}")
 
         # Update statistical data
         with self._c_lock_stat:
@@ -882,84 +917,23 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             self._progress_run_time.reset_start_trigger()
             self._progress_data.progress_status = ProgressStatus.InProgress
 
-        # introduce study in storage, e.g. sqlite or mysql
-        if database_type == 'sqlite':
-            # Note: for sqlite operation, there needs to be three slashes '///' even before the path '/home/...'
-            # Means, in total there are four slashes including the path itself '////home/.../database.sqlite3'
-            storage = f"sqlite:///{circuit_study_sqlite_database}"
-
-            # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=self._sbc_config.circuit_study_name,
-                                                         storage=storage,
-                                                         directions=directions,
-                                                         load_if_exists=True, sampler=sampler)
-
-            # Create study object in memory
-            self._study_in_memory = optuna.create_study(study_name=self._sbc_config.circuit_study_name, directions=directions, sampler=sampler)
-            # If trials exists, add them to study_in_memory
-            self._study_in_memory.add_trials(self._study_in_storage.trials)
             # Inform about sampler type
-            logger.info(f"Sampler is {self._study_in_storage.sampler.__class__.__name__}")
-            # actual number of trials
-            overtaken_no_trials = len(self._study_in_memory.trials)
+            logger.info("No sampler is used")
             # Start optimization
-            self.run_optimization_sqlite(number_trials)
-            # Store memory to storage
-            self._study_in_storage.add_trials(self._study_in_memory.trials[-number_trials:])
-            logger.info(f"Add {number_trials} new calculated trials to existing {overtaken_no_trials} trials ="
-                        f"{len(self._study_in_memory.trials)} trials.")
+            self._study_in_storage = self.run_optimization(number_trials)
+            # Store as sqlite file
+            sqlite_handler = sqlite3.connect(circuit_study_sqlite_database)
+            self._study_in_storage.to_sql(self.circuit_study_data.study_name, sqlite_handler, if_exists='replace', index=False)
+            sqlite_handler.close()
+
+            logger.info(f"Calculate {number_trials} trials.")
             logger.info(f"current time: {datetime.datetime.now()}")
             self.save_config()
 
             self.save_study_results_pareto(show_results=False)
 
-        elif database_type == 'mysql':
-
-            # connection to MySQL-database
-            storage_url = "mysql+pymysql://oaml_optuna:optuna@localhost/optuna_db"
-
-            # Create storage-object for Optuna on drive (Later RAMDISK)
-            storage_mysql = optuna.storages.RDBStorage(storage_url)
-            # storage = "mysql://oaml_optuna:optuna@localhost/optuna_db"
-
-            # Create study object in drive
-            self._study_in_storage = optuna.create_study(study_name=self._sbc_config.circuit_study_name,
-                                                         storage=storage_mysql,
-                                                         directions=directions,
-                                                         load_if_exists=True, sampler=sampler)
-
-            # Inform about sampler type
-            logger.info(f"Sampler is {self._study_in_storage.sampler.__class__.__name__}")
-            # Start optimization
-            self.run_optimization_mysql(storage_url, number_trials)
-
-            # Stop time measurement
-            self._progress_run_time.stop_trigger()
-
         # Set flag _is_study_available to indicate, that the study is available for filtering
         self._is_study_available = True
-
-        # Parallelization Test with mysql
-        # Number of processes
-        #   num_processes = 1
-        # Process list
-        #    processes = []
-        # Loop to start the processes
-        #   for proc in range(num_processes):
-        #       logger.info(f"Process {proc} started")
-        #       p = multiprocessing.Process(target=Optimization.run_optimization,
-        #                                   args=(storage_url, sbc_config.circuit_study_name,
-        #                                         number_trials, sbc_config,fixed_parameters
-        #                                        )
-        #                                  )
-        #       p.start()
-        #       processes.append(p)
-
-        # Wait for joining
-        #   for proc in processes:
-        # wait until each process is joined
-        #       p.join()
-        #       logger.info(f"Process {proc} joins")
 
     def save_study_results_pareto(self, show_results: bool = False) -> None:
         """Show the results of a study.
@@ -976,13 +950,14 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             logger.warning("Circuit configuration is not initialized!")
             return
 
-        fig = optuna.visualization.plot_pareto_front(self._study_in_storage, target_names=["ZVS coverage / %", r"i_\mathrm{cost}"])
-        fig.update_layout(title=f"{self._sbc_config.circuit_study_name} <br><sup>{self._sbc_config.project_directory}</sup>")
-        fig.write_html(
-            f"{self.circuit_study_data.optimization_directory}"
-            f"_{datetime.datetime.now().isoformat(timespec='minutes')}.html")
+        self._study_in_storage.plot.scatter(x='values_0', y='values_1')
+        plt.title('Circuit optimization result')
+        plt.xlabel('switching period/s')
+        plt.ylabel('transistor loss/W')
+        plt.savefig(f"{self.circuit_study_data.optimization_directory}"
+                    f"_{datetime.datetime.now().isoformat(timespec='minutes')}.png")
         if show_results:
-            fig.show()
+            plt.show()
 
     @staticmethod
     def load_sbc_dto_from_study(act_study_data: StudyData, sbc_config: circuit_dtos.CircuitParetoSbcDesign,
@@ -1013,9 +988,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         sbc_dto = d_sets.HandleSbcDto.init_config(
             name=str(trial_number),
-            mesh_v=fix_parameters.mesh_v,
+            mesh_v1=fix_parameters.mesh_v1,
             mesh_duty_cycle=fix_parameters.mesh_duty_cycle,
-            mesh_i=fix_parameters.mesh_i,
+            mesh_i2=fix_parameters.mesh_i2,
             sampling=sbc_config.sampling,
             ls=trials_dict["l_s_suggest"],
             fs=trials_dict["f_s_suggest"],
@@ -1056,9 +1031,9 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
             sbc_dto = d_sets.HandleSbcDto.init_config(
                 name=str(df.at[index, "number"]),
-                mesh_v=self._fixed_parameters.mesh_v,
+                mesh_v1=self._fixed_parameters.mesh_v1,
                 mesh_duty_cycle=self._fixed_parameters.mesh_duty_cycle,
-                mesh_i=self._fixed_parameters.mesh_i,
+                mesh_i2=self._fixed_parameters.mesh_i2,
                 sampling=self._sbc_config.sampling,
                 ls=float(cast(SupportsFloat, df.at[index, "params_l_s_suggest"])),
                 fs=float(cast(SupportsFloat, df.at[index, "params_f_s_suggest"])),
@@ -1078,10 +1053,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :return: study result data transferred to Pandas dataframe
         :rtype: pd.DataFrame
         """
-        database_url = SbcCircuitOptimization.create_sqlite_database_url(act_study_data)
-        loaded_study = optuna.create_study(study_name=act_study_data.study_name, storage=database_url, load_if_exists=True)
-        df = loaded_study.trials_dataframe()
-        df.to_csv(f'{act_study_data.optimization_directory}/{act_study_data.study_name}.csv')
+        df = pd.read_csv(f"{act_study_data.optimization_directory}/{act_study_data.study_name}.csv")
         return df
 
     @staticmethod
@@ -1339,8 +1311,87 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         return pareto_matrix_result
 
+    @staticmethod
+    def filter_equidistant_sampling(pareto_matrix: np.ndarray, n_points: int = 8) -> np.ndarray:
+        """
+        Filter the study result.
+
+        For SBC a Pseudo Pareto front is provided. Each point have similar distance, if function is normalized.
+        Filtering are separated in 2 ranges:
+        The middle is identified by the normalized smallest distance to 0
+        Based on this middle both branches are taken for filter point
+        1 Design: normalized middle (NM)
+        2 Designs: Started from NM  1/3 between NM and max and similar to minimum
+        3 Designs: Minimum, middle and maximum
+        4 Designs: Minimum, 1/3 , 2/3 and maximum
+        More than 4 Designs: Max, min and normalized equidistant arc length in between
+
+        :param pareto_matrix: pareto front points with shape (n,2)
+        :type pareto_matrix: np.ndarray
+        :param n_points: Number of filtered points
+        :type n_points: int
+        :returns: filtered points
+        :rtype: np.ndarray
+        """
+        # Variable declaration
+        pareto_matrix_result: np.ndarray
+        p_idx_list: list = []
+
+        # Constant values
+        # Copy, sort and normalize
+        pareto_matrix_copy = pareto_matrix.copy().astype(float)
+        # Normalize the curve to [0,1]
+        pareto_norm = (
+            (pareto_matrix_copy - pareto_matrix_copy.min(axis=0)) / (pareto_matrix_copy.max(axis=0) - pareto_matrix_copy.min(axis=0)))
+
+        distances = np.linalg.norm(pareto_norm, axis=1)
+        middle_idx = np.argmin(distances)
+        max_idx = len(pareto_matrix_copy)-1
+
+        # Check if sufficient points are available
+        if middle_idx < 2 or (max_idx - middle_idx) < 2:
+            raise ValueError(f"The number of Pareto points are {max_idx+1} and "
+                             f"the middle index is {middle_idx}."
+                             f"The allowed range of middle index is between {2} and {max_idx - 2}."
+                             f"Increase the number of trials to solve this issue.")
+
+        # Number of selected points with point density method(round up)
+        if n_points == 1:
+            pareto_matrix_result = pareto_matrix_copy[middle_idx]
+        elif n_points == 2:
+            p_idx_list.append(round(middle_idx * 2 / 3))
+            p_idx_list.append(round((max_idx / 3) + (2 * middle_idx / 3)))
+            pareto_matrix_result = pareto_matrix_copy[p_idx_list]
+        elif n_points == 3:
+            p_idx_list.append(0)
+            p_idx_list.append(middle_idx)
+            p_idx_list.append(max_idx)
+            pareto_matrix_result = pareto_matrix_copy[p_idx_list]
+        elif n_points == 4:
+            p_idx_list.append(0)
+            p_idx_list.append(round(middle_idx * 2 / 3))
+            p_idx_list.append(round((max_idx / 3) + (2 * middle_idx / 3)))
+            p_idx_list.append(max_idx)
+            pareto_matrix_result = pareto_matrix_copy[p_idx_list]
+        else:
+            # Calculate the number of requested points
+            n_fine = max_idx + 1
+            dn = n_fine / n_points
+            index = 0.0
+            # Sample the curve
+            while round(index) < len(pareto_matrix_copy):
+                idx = round(index)
+                p_idx_list.append(idx)
+                index = index + dn
+            pareto_matrix_result = pareto_matrix_copy[p_idx_list]
+
+        return pareto_matrix_result
+
     def filter_study_results(self) -> tuple[bool, str]:
-        """Filter the study result."""
+        """Filter the study result.
+
+        For SBC a Pseudo Pareto front is provided, which is filtered for requested number of designs.
+        """
         # Variable initialization
         is_filter_available: bool = False
         issue_report: str = ""
@@ -1358,33 +1409,28 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         if self._toml_circuit is None:
             raise ValueError("Serious programming error in 'filter study results'. Please write an issue!")
 
+        # Set filter data to True
         is_filter_available = True
 
-        # Evaluate previous result
-        if not is_filter_available:
-            logger.warning(issue_report)
-            return is_filter_available, issue_report
+        self._study_in_storage.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._sbc_config.circuit_study_name}.csv')
 
-        df = self._study_in_storage.trials_dataframe()
-        df.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._sbc_config.circuit_study_name}.csv')
+        df_pareto_front = SbcCircuitOptimization.pareto_front_from_df(self._study_in_storage)
 
-        df_pareto_front = SbcCircuitOptimization.pareto_front_from_df(df)
-
-        # Filter points from pareto front with hybrid algorithm
-        filtered_points: np.ndarray = SbcCircuitOptimization.hybrid_pareto_sampling(
+        # Filter Pseudo Pareto front
+        filtered_points: np.ndarray = SbcCircuitOptimization.filter_equidistant_sampling(
             df_pareto_front[["values_0", "values_1"]].to_numpy(), self._sbc_config.filter.number_filtered_designs)
 
         # Assign the identified points to the dataframe index
         filtered_indices: list[int] = []
         for point in filtered_points:
             # boolean mask for rows of identical content
-            mask = (df["values_0"].values == point[0]) & (df["values_1"].values == point[1])
+            mask = (self._study_in_storage["values_0"].values == point[0]) & (self._study_in_storage["values_1"].values == point[1])
             # Find index in data frame
             idx = int(np.where(mask)[0][0])
             filtered_indices.append(idx)
 
         # Create selection data frame
-        df_selected = df.loc[filtered_indices]
+        df_selected = self._study_in_storage.loc[filtered_indices]
 
         # Continue time measurement
         with self._c_lock_stat:
@@ -1437,15 +1483,22 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :rtype: CapacitorRequirements
         """
         # Variable declaration
-        capacitor_requirements_list: list[CapacitorRequirements]
+        capacitor_requirements_list: list[CapacitorRequirements] = []
 
-        # Dummy access with self to satisfy ruff
-        if self._sbc_config is None:
-            capacitor_requirements_list = []
-        else:
-            capacitor_requirements_list = []
+        for circuit_id_file in self.filter_data.filtered_list_files:
+            circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id_file}.pkl")
+            circuit_dto = d_sets.HandleSbcDto.load_from_file(circuit_id_filepath)
+            if not isinstance(circuit_dto.component_requirements, ComponentRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded component requirements have wrong type.")
 
-        # Capacitor requirements still not generated
+            if not isinstance(circuit_dto.component_requirements.capacitor_requirements[0], CapacitorRequirements):
+                # due to mypy checker
+                raise TypeError("Loaded capacitor requirements have wrong type.")
+
+            # Add capacitor requirements to the list
+            capacitor_requirements_list = capacitor_requirements_list + circuit_dto.component_requirements.capacitor_requirements
+
         return capacitor_requirements_list
 
     def get_inductor_requirements(self) -> list[InductorRequirements]:
@@ -1508,7 +1561,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         circuit_plot_data: PlotData = (
             PlotData(x_values_list=circuit_x_values_list, y_values_list=circuit_y_values_list,
                      color_list=[gps.colors()["black"]], alpha_list=[0.5],
-                     x_label=r'$V_\mathrm{proxi}$', y_label=r'$P_\mathrm{tran}$ / W',
+                     x_label=r'$T_\mathrm{period}$ / s', y_label=r'$P_\mathrm{tran}$ / W',
                      label_list=[None], fig_name_path=act_study_data.study_name))
 
         return circuit_plot_data
@@ -1666,6 +1719,10 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
             circuit_id = row['circuit_id']
             inductor_id = row['inductor_id_0']
             inductor_study_name = row['inductor_study_name_0']
+            capacitor_1_id = row['capacitor_id_0']
+            capacitor_1_study_name = row['capacitor_study_name_0']
+            capacitor_2_id = row['capacitor_id_1']
+            capacitor_2_study_name = row['capacitor_study_name_1']
 
             # load circuit DTO
             circuit_id_filepath = os.path.join(self.filter_data.filtered_list_pathname, f"{circuit_id}.pkl")
@@ -1684,12 +1741,34 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
             circuit_dto.inductor_results = inductor_results
 
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[0].study_data
+            capacitor_1_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                              capacitor_1_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_1_id_filepath = os.path.join(capacitor_1_study_results_filepath, f"{capacitor_1_id}.pkl")
+            with open(capacitor_1_id_filepath, 'rb') as pickle_file_data:
+                capacitor_1_results = pickle.load(pickle_file_data)
+
+            # load capacitor 1 DTO
+            study_data = capacitor_selection_data_list[1].study_data
+            capacitor_2_study_results_filepath = os.path.join(study_data.optimization_directory, circuit_id,
+                                                              capacitor_2_study_name, CIRCUIT_CAPACITOR_LOSS_FOLDER)
+
+            capacitor_2_id_filepath = os.path.join(capacitor_2_study_results_filepath, f"{capacitor_2_id}.pkl")
+            with open(capacitor_2_id_filepath, 'rb') as pickle_file_data:
+                capacitor_2_results = pickle.load(pickle_file_data)
+
+            circuit_dto.inductor_results = inductor_results
+            circuit_dto.capacitor_1_results = capacitor_1_results
+            circuit_dto.capacitor_2_results = capacitor_2_results
+
             results_folder = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
             if not os.path.exists(results_folder):
                 os.makedirs(results_folder)
 
             d_sets.HandleSbcDto.save(circuit_dto,
-                                     f"c{circuit_id}_i{inductor_id}",
+                                     f"c{circuit_id}_i{inductor_id}_cap1_{capacitor_1_id}_cap2_{capacitor_2_id}",
                                      directory=results_folder, timestamp=False)
 
     @staticmethod
