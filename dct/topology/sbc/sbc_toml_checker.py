@@ -47,6 +47,8 @@ class TomlSbcCircuitParetoDesignSpace(TomlCData):
     l_s_min_max_list: list[float]
     transistor_1_name_list: list[str]
     transistor_2_name_list: list[str]
+    # ripple quality factor ripple_quality=i_2/i_ripple
+    ripple_quality: float
     c_par_1: float
     c_par_2: float
 

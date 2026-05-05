@@ -28,7 +28,7 @@ class HandleSbcDto:
     """Class to handle the Sbc data transfer object, e.g. save and load the files."""
 
     @staticmethod
-    def init_config(name: str, mesh_v: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i: np.ndarray,
+    def init_config(name: str, mesh_v1: np.ndarray, mesh_duty_cycle: np.ndarray, mesh_i2: np.ndarray,
                     sampling: CircuitSampling, ls: float, fs: float,
                     transistor_dto_1: s_dtos.TransistorDTO, transistor_dto_2: s_dtos.TransistorDTO) -> s_dtos.SbcCircuitDTO:
         """
@@ -36,12 +36,12 @@ class HandleSbcDto:
 
         :param name: name of the simulation
         :type  name: str
-        :param mesh_v: mesh or hypercube sampling for v1
-        :type  mesh_v: np.ndarray
+        :param mesh_v1: mesh or hypercube sampling for v1
+        :type  mesh_v1: np.ndarray
         :param mesh_duty_cycle: mesh or hypercube sampling for duty cycle
         :type  mesh_duty_cycle: np.ndarray
-        :param mesh_i: mesh or hypercube sampling for current
-        :type  mesh_i: np.ndarray
+        :param mesh_i2: mesh or hypercube sampling for current
+        :type  mesh_i2: np.ndarray
         :param sampling: Sampling parameters
         :type  sampling: d_dtos.Sampling
         :param ls: series inductance
@@ -54,9 +54,9 @@ class HandleSbcDto:
         :type  transistor_dto_2: TransistorDTO
         :return:
         """
-        input_configuration = s_dtos.CircuitConfig(mesh_v=mesh_v,
+        input_configuration = s_dtos.CircuitConfig(mesh_v1=mesh_v1,
                                                    mesh_duty_cycle=mesh_duty_cycle,
-                                                   mesh_i=mesh_i,
+                                                   mesh_i2=mesh_i2,
                                                    sampling=sampling,
                                                    Ls=np.array(ls),
                                                    fs=np.array(fs),
@@ -76,24 +76,25 @@ class HandleSbcDto:
         # Calculate the ripple current and rms current
         i_ripple, i_ms, i_rms = dct_currents.calc_rms_currents(input_configuration)
 
-        # Calculate the Volume proxy
-        calc_volume_inductor_proxy = dct_currents.calc_volume_inductor_proxy(input_configuration, i_ripple, i_rms)
-
         calc_currents = s_dtos.CalcCurrents(i_rms=i_rms, i_ms=i_ms, i_ripple=i_ripple)
 
         # Calculate the transistor conduction losses p_hs_cond = (I_out²+I_Ripple²/12)*R_D_S_on
         p_hs_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * input_configuration.mesh_duty_cycle, transistor_dto_1)
         p_ls_cond = HandleTransistorDto.transistor_conduction_loss(i_ms * (1 - input_configuration.mesh_duty_cycle),
                                                                    transistor_dto_1)
-        p_hs_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v, i_rms,
-                                                                 input_configuration.transistor_dto_1, input_configuration.fs)
-        p_ls_switch = HandleTransistorDto.transistor_switch_loss(input_configuration.mesh_v, i_rms,
-                                                                 input_configuration.transistor_dto_2, input_configuration.fs)
+        p_hs_switch, t_hs_switch_on, t_hs_switch_off = HandleTransistorDto.transistor_switch_loss(
+            input_configuration.mesh_v1, i_rms, input_configuration.transistor_dto_1, input_configuration.fs)
+        p_ls_switch, t_ls_switch_on, t_ls_switch_off = HandleTransistorDto.transistor_switch_loss(
+            input_configuration.mesh_v1, i_rms, input_configuration.transistor_dto_2, input_configuration.fs)
 
         p_loss = s_dtos.CalcLosses(**{'p_hs_conduction': p_hs_cond.ravel(),
                                       'p_ls_conduction': p_ls_cond.ravel(),
-                                      'p_hs_switch': p_hs_switch.ravel(),
-                                      'p_ls_switch': p_ls_switch.ravel(),
+                                      'p_hs_switch': p_hs_switch,
+                                      't_hs_switch_on': t_hs_switch_on,
+                                      't_hs_switch_off': t_ls_switch_off,
+                                      'p_ls_switch': p_ls_switch,
+                                      't_ls_switch_on': t_hs_switch_on,
+                                      't_ls_switch_off': t_ls_switch_off,
                                       'p_sbc_total': p_hs_cond.ravel() + p_ls_cond.ravel() + p_hs_switch.ravel() + p_ls_switch.ravel()})
 
         sbc_dto = s_dtos.SbcCircuitDTO(
@@ -104,7 +105,8 @@ class HandleSbcDto:
             calc_currents=calc_currents,
             calc_losses=p_loss,
             component_requirements=None,
-            calc_volume_inductor_proxy=calc_volume_inductor_proxy,
+            capacitor_1_results=None,
+            capacitor_2_results=None,
             inductor_results=None,
             circuit_thermal=None,
         )
@@ -254,32 +256,35 @@ class HandleSbcDto:
         :rtype: List[np.ndarray]
         """
         # Variable declaration
-        i_rms_current: np.ndarray
-        i_rms_max_current: np.ndarray
+        i_current_vec: np.ndarray
+        i_max_current_array: np.ndarray
         time_array: np.ndarray
 
-        # Create time vector
-        time_array = np.array([0, 0.5, 1]) * 1/sbc_dto.input_config.fs
-        # FEMMT issue: DC current leads to problems-> Code is to correct after FEMMT-issue is solved
-        i_rms_current = np.squeeze(sbc_dto.calc_currents.i_ripple)
-        # ASA: Duty cycle worst case=0.5. This is to replace by suitable result out of mesh duty cycle
-        i_rms_max_current = np.array([-0.5, +0.5, -0.5])
-        i_rms_max_current = i_rms_max_current * i_rms_current.max()
+        # Calculate the current vector for each operation point
+        i_current_vec = sbc_dto.input_config.mesh_i2 + sbc_dto.calc_currents.i_ripple / 2
+        # Get the maximum current and correspondent duty cycle and ripple current
+        idx_max = i_current_vec.argmax()
+        i_max_current = i_current_vec[idx_max]
+        i_ripple_at_max = sbc_dto.calc_currents.i_ripple[idx_max] / 2
+        duty_cycle_at_max = sbc_dto.input_config.mesh_duty_cycle[idx_max]
+        # Create time vector for correspondent operation point
+        time_array = np.array([0, duty_cycle_at_max.squeeze(), 1]) / sbc_dto.input_config.fs
+        i_max_current_array = np.array([i_max_current - i_ripple_at_max, i_max_current, i_max_current - i_ripple_at_max])
 
         if plot:
-            plt.plot(time_array, i_rms_max_current, color='red', label='peak current full waveform')
+            plt.plot(time_array, i_max_current_array, color='red', label='peak current full waveform')
             plt.grid()
             plt.xlabel('time in us')
             plt.ylabel('Current in A')
             plt.legend()
             plt.show()
 
-        return time_array, i_rms_max_current
+        return time_array, i_max_current_array.squeeze()
 
     @staticmethod
     def get_waveform_inductor(sbc_dto: s_dtos.SbcCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
-        Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
+        Get the inductor waveform for all operation points.
 
         :param sbc_dto: SBC data transfer object (DTO)
         :type sbc_dto: d_dtos.SbcCircuitDTO
@@ -289,25 +294,27 @@ class HandleSbcDto:
         :rtype: List[np.ndarray]
         """
         # Variable declaration
-        i_rms_current: np.ndarray
-        i_rms_current_array: np.ndarray
+        i_current_array: np.ndarray
         time_array: np.ndarray
 
         # Create time array with 3 columns and number of operation points rows
-        n = sbc_dto.input_config.mesh_duty_cycle.shape[1]  # Number of lines
+        n = sbc_dto.input_config.mesh_duty_cycle.shape[0]  # Number of lines
         time_array = np.zeros((n, 3))
         time_array[:, 0] = 0
-        time_array[:, 1] = sbc_dto.input_config.mesh_duty_cycle.ravel()
+        time_array[:, 1] = sbc_dto.input_config.mesh_duty_cycle.squeeze()
         time_array[:, 2] = 1
         # Calculate times
         time_array = time_array * (1 / sbc_dto.input_config.fs)
 
-        # FEMMT issue: DC current leads to problems-> Code is to correct after FEMMT-issue is solved
-        i_rms_current = sbc_dto.calc_currents.i_ripple.reshape(8, 1)
-        i_rms_current_array = np.array([-0.5, +0.5, -0.5]).reshape(1, 3)
-        i_rms_current_array = i_rms_current @ i_rms_current_array
+        # Get the current and correspondent duty cycle and ripple current
+        # i_ripple_current = sbc_dto.calc_currents.i_ripple.reshape(8, 1)
+        # i_current_array = np.array([-0.5, +0.5, -0.5]).reshape(1, 3)
+        i_ripple_current = sbc_dto.calc_currents.i_ripple
+        i_current_array = np.array([-0.5, +0.5, -0.5])
+        i_current_array = np.outer(i_ripple_current, i_current_array)
+        i_current_array = i_current_array + sbc_dto.input_config.mesh_i2
 
-        return time_array, i_rms_current_array
+        return time_array, i_current_array
 
     @staticmethod
     def generate_components_target_requirements(sbc_dto: s_dtos.SbcCircuitDTO, act_study_name: str) -> s_dtos.SbcCircuitDTO:
@@ -321,10 +328,11 @@ class HandleSbcDto:
         :return: updated SBC circuit DTO
         :rtype: s_dtos.SbcCircuitDTO
         """
-        # capacitor_requirements = HandleSbcDto.generate_capacitor_1_target_requirements(sbc_dto) to add later
+        capacitor_1_requirements = HandleSbcDto.generate_capacitor_1_target_requirements(sbc_dto)
+        capacitor_2_requirements = HandleSbcDto.generate_capacitor_2_target_requirements(sbc_dto)
         inductor_requirements = HandleSbcDto.generate_inductor_target_requirements(sbc_dto, act_study_name)
 
-        sbc_dto.component_requirements = s_dtos.ComponentRequirements(capacitor_requirements=[],
+        sbc_dto.component_requirements = s_dtos.ComponentRequirements(capacitor_requirements=[capacitor_1_requirements, capacitor_2_requirements],
                                                                       inductor_requirements=[inductor_requirements],
                                                                       transformer_requirements=[])
 
@@ -342,21 +350,106 @@ class HandleSbcDto:
         :rtype: InductorRequirements
         """
         # Get the single maximum operating point
-        time_vec, i_rms_current_vec = HandleSbcDto.get_max_peak_waveform_inductor(sbc_dto, plot=False)
+        time_vec, i_current_vec = HandleSbcDto.get_max_peak_waveform_inductor(sbc_dto, plot=False)
         # Get the data of all operating points
-        time_array, i_rms_current_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
+        time_array, i_current_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
 
         inductor_requirements: c_dtos.InductorRequirements = c_dtos.InductorRequirements(
             time_vec=time_vec,
-            current_vec=i_rms_current_vec,
+            current_vec=i_current_vec,
             time_array=time_array,
-            current_array=i_rms_current_array,
+            current_array=i_current_array,
             study_name=act_study_name,
             target_inductance=sbc_dto.input_config.Ls,
             circuit_id=sbc_dto.circuit_id,
             inductor_number_in_circuit=0,
         )
         return inductor_requirements
+
+    @staticmethod
+    def generate_capacitor_1_target_requirements(sbc_dto: s_dtos.SbcCircuitDTO) -> c_dtos.CapacitorRequirements:
+        """Capacitor 1 requirements.
+
+        :param sbc_dto: SBC circuit DTO
+        :type sbc_dto: c_dtos.SbcCircuitDTO
+        :return: capacitor requirements
+        :rtype: CapacitorRequirements
+        """
+        # Get all waveforms
+        time_array, i_currents_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
+        # Calculate the input current i1
+        i1_current_array = sbc_dto.input_config.mesh_i2 * sbc_dto.input_config.mesh_duty_cycle
+        # Set HS-transistor switch times to necessary format
+        t_hs_switch_on = sbc_dto.calc_losses.t_hs_switch_on.reshape(-1, 1)
+        t_hs_switch_off = sbc_dto.calc_losses.t_hs_switch_off.reshape(-1, 1)
+
+        # Assemble time array for capacitor.
+        # Start period at SWITCH_TIME_OFF/2 (from t0=SWITCH_TIME_OFF/2 to t_period= T_period+SWITCH_TIME_OFF/2)
+        time_array_cap = np.hstack((time_array[:, 0][:, np.newaxis],
+                                    time_array[:, 1][:, np.newaxis] - t_hs_switch_on / 2 - t_hs_switch_off / 2,
+                                    time_array[:, 1][:, np.newaxis] + t_hs_switch_on / 2 - t_hs_switch_off / 2,
+                                    time_array[:, 2][:, np.newaxis] - t_hs_switch_off,
+                                    time_array[:, 2][:, np.newaxis]))
+
+        # Assemble current vector [-i1(T_period-Ton),i2-i1((Ton+switch time/2) to Ton-Toff)
+        i_currents_cap_array = np.hstack(
+            (-i1_current_array, -i1_current_array, i_currents_array[:, 0][:, np.newaxis] - i1_current_array,
+             i_currents_array[:, 1][:, np.newaxis] - i1_current_array, - i1_current_array))
+
+        # Calculate delta current per operation point which is the slope at switch off the semiconductor (between time point 3 and 4)
+        d_i_cap = i_currents_cap_array[:, 3] - i_currents_cap_array[:, 4]
+
+        idx_max = d_i_cap.argmax()
+        i_currents_single_vec = i_currents_cap_array[idx_max]
+        time_single_vec = time_array_cap[idx_max]
+
+        capacitor_1_requirements = c_dtos.CapacitorRequirements(
+            current_vec=i_currents_single_vec.squeeze(),
+            time_vec=time_single_vec.squeeze(),
+            current_array=i_currents_cap_array.reshape(1, i_currents_cap_array.shape[0], 1, i_currents_cap_array.shape[1]),
+            time_array=time_array_cap.reshape(1, time_array_cap.shape[0], 1, time_array_cap.shape[1]),
+            v_dc_max=np.max(sbc_dto.input_config.mesh_v1),
+            study_name="",
+            circuit_id=sbc_dto.circuit_id,
+            capacitor_number_in_circuit=0
+        )
+        return capacitor_1_requirements
+
+    @staticmethod
+    def generate_capacitor_2_target_requirements(sbc_dto: s_dtos.SbcCircuitDTO) -> c_dtos.CapacitorRequirements:
+        """Capacitor 2 requirements.
+
+        :param sbc_dto: SBC circuit DTO
+        :type sbc_dto: c_dtos.SbcCircuitDTO
+        :return: capacitor requirements
+        :rtype: CapacitorRequirements
+        """
+        # Get all waveforms
+        time_array_cap, i_currents_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
+        # Calculate current waveform for the capacitor by removing average output current
+        i_currents_cap_array = i_currents_array - sbc_dto.input_config.mesh_i2
+
+        # Get the maximum delta current which corresponds to the maximum current
+        i_currents_cap_max_vec = i_currents_cap_array.max(axis=1)
+        idx_max = i_currents_cap_max_vec.argmax()
+        i_currents_single_vec = i_currents_cap_array[idx_max]
+        time_single_vec = time_array_cap[idx_max]
+
+        # Calculate v2 from v1
+        mesh_v2 = sbc_dto.input_config.mesh_v1 * sbc_dto.input_config.mesh_duty_cycle
+
+        capacitor_2_requirements = c_dtos.CapacitorRequirements(
+            current_vec=i_currents_single_vec,
+            time_vec=time_single_vec,
+            current_array=i_currents_cap_array.reshape(1, i_currents_cap_array.shape[0], 1, i_currents_cap_array.shape[1]),
+            time_array=time_array_cap.reshape(1, time_array_cap.shape[0], 1, time_array_cap.shape[1]),
+            v_dc_max=np.max(mesh_v2),
+            study_name="",
+            circuit_id=sbc_dto.circuit_id,
+            capacitor_number_in_circuit=1
+        )
+
+        return capacitor_2_requirements
 
     @staticmethod
     def add_inductor_results(sbc_dto: s_dtos.SbcCircuitDTO, inductor_results: c_dtos.InductorResults) -> s_dtos.SbcCircuitDTO:
@@ -393,9 +486,12 @@ class HandleTransistorDto:
 
         transistor: tdb.Transistor = db.load_transistor(transistor_name)
 
-        if transistor.type != "MOSFET" and transistor.type != "SiC-MOSFET":
-            raise ValueError(f"Transistor 1: {transistor.name} is of non-allowed type {transistor.type}. "
-                             f"Allowed types are MOSFET, SiC-MOSFET.")
+        if transistor is None:
+            raise ValueError(f"Transistor type: {transistor_name} is of registered in transistor database!")
+
+        # if transistor.type != "MOSFET" and transistor.type != "SiC-MOSFET":
+        #     raise ValueError(f"Transistor 1: {transistor.name} is of non-allowed type {transistor.type}. "
+        #                      f"Allowed types are MOSFET, SiC-MOSFET.")
 
         t_j_recommended = transistor.switch.t_j_max - 25
 
@@ -445,7 +541,7 @@ class HandleTransistorDto:
 
     @staticmethod
     def transistor_switch_loss(mesh_v1: np.ndarray, i_rms: np.ndarray, tr_data_dto: s_dtos.TransistorDTO,
-                               fs: float) -> np.ndarray:
+                               fs: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate the transistor conduction losses.
 
@@ -461,8 +557,7 @@ class HandleTransistorDto:
         :rtype:  np.ndarray
         """
         # Transform the mesh to mesh-points
-        mesh_points = np.vstack((mesh_v1, i_rms)).T
-
+        mesh_points = np.hstack((mesh_v1, i_rms))
         # Initialize interpolation object for e-on
         e_on_losses_obj = RGI(
             (tr_data_dto.switch_e_on_data.voltage_parameter, tr_data_dto.switch_e_on_data.current_data),
@@ -470,6 +565,8 @@ class HandleTransistorDto:
 
         # Calculate the loss results for switch on
         e_on_losses = e_on_losses_obj(mesh_points)
+        # Calculate the switch time according t_on = 2 E_on / (V_DS * I_D)
+        t_switch_on = 2 * e_on_losses / (mesh_v1.flatten() * i_rms.flatten())
 
         # Initialize interpolation object for e-off
         e_off_losses_obj = RGI(
@@ -478,12 +575,14 @@ class HandleTransistorDto:
 
         # Calculate the loss results for switch on
         e_off_losses = e_off_losses_obj(mesh_points)
+        # Calculate the switch time according t_on = 2 E_on / (V_DS * I_D)
+        t_switch_off = 2 * e_off_losses / (mesh_v1.flatten() * i_rms.flatten())
 
         # Add both energies and calculate the power loss
         p_switch_loss: NDArray = (e_on_losses + e_off_losses) * fs
 
         # Calculate the sum of transistor switching losses
-        return p_switch_loss
+        return p_switch_loss, t_switch_on, t_switch_off
 
     @staticmethod
     def calculate_2D_grid(switch_energy_data_list: list[tdb.SwitchEnergyData]) -> s_dtos.LossDataGrid:
