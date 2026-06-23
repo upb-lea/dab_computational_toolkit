@@ -18,7 +18,7 @@ import femmt as fmt
 from dct.circuit_enums import CalcModeEnum
 from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
 from dct.server_ctl_dtos import ProgressStatus
-from dct.datasets_dtos import TransformerConfiguration, StudyData
+from dct.datasets_dtos import TransformerConfiguration
 from dct.components.component_dtos import TransformerRequirements
 from dct.components.transformer_optimization import TransformerOptimization
 
@@ -373,6 +373,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
 # Unit test function
 def test_initialize_transformer_optimization_list(test_index: int, test_type: TestCase, is_error: bool) -> None:
     """Test the method initialize_transformer_optimization_list.
+    
     :param test_index: Test index of the used list element
     :type  test_index: int
     :param test_type: Type of performed test
@@ -380,72 +381,35 @@ def test_initialize_transformer_optimization_list(test_index: int, test_type: Te
     :param is_error: Indicates, if the function exits with error
     :type  is_error: bool
     """
-    # Create dummy Test value lists - 4 entries, one per test_index
     # Pattern: lower boundary | upper boundary | in between | error case
 
     # float min/max list: 0 < val < 5 (core dimensions)
-    float_min_max_gt0_lt5: list[list[float]] = [
-        [1e-4, 2e-4],     # lower boundary
-        [4.0, 4.9],       # upper boundary
-        [0.5, 2.5],       # in between
-        [0.5, 2.5],       # error case (toml_data=None; these values are never reached)
-    ]
+    float_min_max_gt0_lt5: list[list[float]] = (
+        [[1e-4, 2e-4], [4.0, 4.9], [0.5, 2.5], [0.5, 2.5]])
 
     # int min/max list: turns ratio
-    int_min_max_n_p: list[list[int]] = [
-        [1, 2],         # lower boundary
-        [8, 10],        # upper boundary
-        [3, 6],         # in between
-        [3, 6],         # error case
-    ]
+    int_min_max_n_p: list[list[int]] = (
+        [[1, 2], [8, 10], [3, 6], [3, 6]])
 
     # float min/max list: 0 < val <= 100  (factor_dc_losses)
-    float_min_max_gt0_le100: list[list[float]] = [
-        [1e-4, 1e-4],     # lower boundary
-        [99.0, 100.0],    # upper boundary
-        [34.0, 77.0],     # in between
-        [34.0, 77.0],     # error case
-    ]
+    float_min_max_gt0_le100: list[list[float]] = (
+        [[1e-4, 1e-4], [99.0, 100.0], [34.0, 77.0], [34.0, 77.0]])
 
     # float value: 0 < val < 0.1  (insulation values)
-    float_value_gt0_lt0_1: list[float] = [
-        1e-5,   # lower boundary
-        0.09,   # upper boundary
-        0.03,   # in between
-        0.03,   # error case
-    ]
+    float_value_gt0_lt0_1: list[float] = [1e-5, 0.09, 0.03, 0.03]
  
     # float value: -40 <= val <= 175  (temperature)
-    float_value_gem40_le175: list[float] = [
-        -40.0,   # lower boundary
-        175.0,   # upper boundary
-        80.0,    # in between
-        80.0,    # error case
-    ]
+    float_value_gem40_le175: list[float] = [-40.0, 175.0, 80.0, 80.0]
  
     # float value: max transformer total height (> 0)
-    float_max_height: list[float] = [
-        0.01,   # lower boundary
-        0.5,    # upper boundary
-        0.15,   # in between
-        0.15,   # error case
-    ]
+    float_max_height: list[float] = [0.01, 0.5, 0.15, 0.15]
  
     # float value: max core volume (> 0)
-    float_max_core_volume: list[float] = [
-        1e-6,   # lower boundary
-        1e-3,   # upper boundary
-        5e-5,   # in between
-        5e-5,   # error case
-    ]
+    float_max_core_volume: list[float] = [1e-6, 1e-3, 5e-5, 5e-5]
 
     # thermal_cooling: [tim_thickness (0 < val <= 0.01), tim_conductivity (0 < val <= 100)]
-    float_thermal_cooling: list[list[float]] = [
-        [1e-5, 1.0],      # lower boundary
-        [0.01, 100.0],    # upper boundary
-        [0.005, 50.0],    # in between
-        [0.005, 50.0],    # error case
-    ]
+    float_thermal_cooling: list[list[float]] = (
+        [[1e-5, 1.0], [0.01, 100.0], [0.005, 50.0], [0.005, 50.0]])
     
     # fft_filter_value_factor and mesh_accuracy (float > 0)
     float_fft_filter: list[float] = [1e-4, 0.9, 0.5, 0.5]
@@ -455,19 +419,18 @@ def test_initialize_transformer_optimization_list(test_index: int, test_type: Te
     int_number_of_trials: list[int] = [1, 10000, 500, 500]
 
     # transformer target parameters
-    float_l_s12_target: list[float] = [1e-9,  1e-3,  5e-6,  5e-6]
-    float_l_h_target: list[float]   = [1e-6,  1e-2,  5e-4,  5e-4]
-    float_n_target: list[float]     = [0.5,   10.0,  3.0,   3.0]
+    float_l_s12_target: list[float] = [1e-9, 1e-3, 5e-6, 5e-6]
+    float_l_h_target: list[float] = [1e-6, 1e-2, 5e-4, 5e-4]
+    float_n_target: list[float] = [0.5, 10.0, 3.0, 3.0]
  
     # Fixed time / current waveforms (same for all test indices)
-    time_vec: list[float]   = [0.0, 5e-6, 1e-5]
-    current_1_vec: list[float] = [0.0, 5.0,  0.0]
+    time_vec: list[float] = [0.0, 5e-6, 1e-5]
+    current_1_vec: list[float] = [0.0, 5.0, 0.0]
     current_2_vec: list[float] = [0.0, -2.5, 0.0]
  
     # Study and circuit name suffixes — one per test_index
-    study_name_prefix: list[str]  = ["trf_study_A", "trf_study_B", "trf_study_C", "trf_study_D"]
-    circuit_id_prefix: list[str]  = ["trf_circuit_0", "trf_circuit_1", "trf_circuit_2", "trf_circuit_3"]
-
+    study_name_prefix: list[str] = ["trf_study_A", "trf_study_B", "trf_study_C", "trf_study_D"]
+    circuit_id_prefix: list[str] = ["trf_circuit_0", "trf_circuit_1", "trf_circuit_2", "trf_circuit_3"]
 
     # Build TomlTransformer
     if not is_error:
@@ -564,6 +527,7 @@ def test_initialize_transformer_optimization_list(test_index: int, test_type: Te
             for i, req in enumerate(req_list):
                 config = config_list[i]
                 trf_toml = config.transformer_toml_data
+                assert trf_toml is not None
 
                 # Exactly one DTO must have been appended per requirement
                 assert len(test_object._optimization_config_list[i]) == 1
@@ -579,48 +543,48 @@ def test_initialize_transformer_optimization_list(test_index: int, test_type: Te
                 sto: fmt.StoSingleInputConfig = dto.fmt_transformer_optimization_dto
 
                 # Verify Insulation DTO
-                assert sto.insulations.iso_window_top_core_top    == trf_toml.insulation.iso_window_top_core_top
-                assert sto.insulations.iso_window_top_core_bot    == trf_toml.insulation.iso_window_top_core_bot
-                assert sto.insulations.iso_window_top_core_left   == trf_toml.insulation.iso_window_top_core_left
-                assert sto.insulations.iso_window_top_core_right  == trf_toml.insulation.iso_window_top_core_right
-                assert sto.insulations.iso_window_bot_core_top    == trf_toml.insulation.iso_window_bot_core_top
-                assert sto.insulations.iso_window_bot_core_bot    == trf_toml.insulation.iso_window_bot_core_bot
-                assert sto.insulations.iso_window_bot_core_left   == trf_toml.insulation.iso_window_bot_core_left
-                assert sto.insulations.iso_window_bot_core_right  == trf_toml.insulation.iso_window_bot_core_right
-                assert sto.insulations.iso_primary_to_primary     == trf_toml.insulation.iso_primary_to_primary
+                assert sto.insulations.iso_window_top_core_top == trf_toml.insulation.iso_window_top_core_top
+                assert sto.insulations.iso_window_top_core_bot == trf_toml.insulation.iso_window_top_core_bot
+                assert sto.insulations.iso_window_top_core_left == trf_toml.insulation.iso_window_top_core_left
+                assert sto.insulations.iso_window_top_core_right == trf_toml.insulation.iso_window_top_core_right
+                assert sto.insulations.iso_window_bot_core_top == trf_toml.insulation.iso_window_bot_core_top
+                assert sto.insulations.iso_window_bot_core_bot == trf_toml.insulation.iso_window_bot_core_bot
+                assert sto.insulations.iso_window_bot_core_left == trf_toml.insulation.iso_window_bot_core_left
+                assert sto.insulations.iso_window_bot_core_right == trf_toml.insulation.iso_window_bot_core_right
+                assert sto.insulations.iso_primary_to_primary == trf_toml.insulation.iso_primary_to_primary
                 assert sto.insulations.iso_secondary_to_secondary == trf_toml.insulation.iso_secondary_to_secondary
-                assert sto.insulations.iso_primary_to_secondary   == trf_toml.insulation.iso_primary_to_secondary
+                assert sto.insulations.iso_primary_to_secondary == trf_toml.insulation.iso_primary_to_secondary
 
                 # Verify Material Data Sources
                 assert sto.material_data_sources.permeability_datasource == trf_toml.material_data_sources.permeability_datasource
                 assert sto.material_data_sources.permittivity_datasource == trf_toml.material_data_sources.permittivity_datasource
 
                 # Verify FMT Transformer Optimization DTO (Sto Single Input Config) 
-                assert sto.stacked_transformer_study_name       == config.study_data.study_name
-                assert sto.temperature                          == trf_toml.boundary_conditions.temperature
-                assert sto.max_transformer_total_height         == trf_toml.boundary_conditions.max_transformer_total_height
-                assert sto.max_core_volume                      == trf_toml.boundary_conditions.max_core_volume
-                assert sto.n_p_top_min_max_list                 == trf_toml.design_space.n_p_top_min_max_list
-                assert sto.n_p_bot_min_max_list                 == trf_toml.design_space.n_p_bot_min_max_list
-                assert sto.material_list                        == trf_toml.design_space.material_name_list
-                assert sto.core_name_list                       == trf_toml.design_space.core_name_list
-                assert sto.core_inner_diameter_min_max_list     == trf_toml.design_space.core_inner_diameter_min_max_list
-                assert sto.window_w_min_max_list                == trf_toml.design_space.window_w_min_max_list
-                assert sto.window_h_bot_min_max_list            == trf_toml.design_space.window_h_bot_min_max_list
-                assert sto.primary_litz_wire_list               == trf_toml.design_space.primary_litz_wire_list
-                assert sto.secondary_litz_wire_list             == trf_toml.design_space.secondary_litz_wire_list
-                assert sto.fft_filter_value_factor              == trf_toml.settings.fft_filter_value_factor
-                assert sto.mesh_accuracy                        == trf_toml.settings.mesh_accuracy
+                assert sto.stacked_transformer_study_name == config.study_data.study_name
+                assert sto.temperature == trf_toml.boundary_conditions.temperature
+                assert sto.max_transformer_total_height == trf_toml.boundary_conditions.max_transformer_total_height
+                assert sto.max_core_volume == trf_toml.boundary_conditions.max_core_volume
+                assert sto.n_p_top_min_max_list == trf_toml.design_space.n_p_top_min_max_list
+                assert sto.n_p_bot_min_max_list == trf_toml.design_space.n_p_bot_min_max_list
+                assert sto.material_list == trf_toml.design_space.material_name_list
+                assert sto.core_name_list == trf_toml.design_space.core_name_list
+                assert sto.core_inner_diameter_min_max_list == trf_toml.design_space.core_inner_diameter_min_max_list
+                assert sto.window_w_min_max_list == trf_toml.design_space.window_w_min_max_list
+                assert sto.window_h_bot_min_max_list == trf_toml.design_space.window_h_bot_min_max_list
+                assert sto.primary_litz_wire_list == trf_toml.design_space.primary_litz_wire_list
+                assert sto.secondary_litz_wire_list == trf_toml.design_space.secondary_litz_wire_list
+                assert sto.fft_filter_value_factor == trf_toml.settings.fft_filter_value_factor
+                assert sto.mesh_accuracy == trf_toml.settings.mesh_accuracy
                 assert sto.stacked_transformer_optimization_directory == expected_trial_directory
 
                 # Verify Thermal DTO
-                assert dto.thermal_data.tim_thickness    == trf_toml.thermal_data.thermal_cooling[0]
+                assert dto.thermal_data.tim_thickness == trf_toml.thermal_data.thermal_cooling[0]
                 assert dto.thermal_data.tim_conductivity == trf_toml.thermal_data.thermal_cooling[1]
 
                 # Verify Filter distance
                 assert dto.factor_dc_losses_min_max_list == trf_toml.filter_distance.factor_dc_losses_min_max_list
 
-                # Verify transfromer_requirements fields
+                # Verify transformer_requirements fields
                 assert dto.transformer_requirements.transformer_number_in_circuit == req.transformer_number_in_circuit
                 assert dto.transformer_requirements.circuit_id == req.circuit_id
                 assert dto.transformer_requirements.l_s12_target == req.l_s12_target

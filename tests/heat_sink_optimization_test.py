@@ -242,47 +242,23 @@ def test_initialize_heat_sink_optimization(test_index: int, test_type: TestCase,
     :param is_error: Indicates, if the function exits with error
     :type  is_error: bool
     """
-
     # Test value tables 
     # float min/max list: geometry dimensions (0 < val)
-    float_min_max_geometry: list[list[float]] = [
-        [1e-4, 2e-4],   # lower boundary
-        [0.04,  0.0999],    # upper boundary
-        [0.05, 0.05],    # in between
-        [-0.1, 0.05],    # error case — negative value triggers ValueError
-    ]
+    float_min_max_geometry: list[list[float]] = (
+        [[1e-4, 2e-4], [0.04, 0.0999], [0.05, 0.05], [-0.1, 0.05]])
  
     # int min/max list: number of cooling channels
-    int_min_max_cooling_channels: list[list[int]] = [
-        [3,  8],    # lower boundary
-        [8, 10],    # upper boundary
-        [3,  6],    # in between
-        [-1, 5],    # error case — negative value triggers ValueError
-    ]
+    int_min_max_cooling_channels: list[list[int]] = (
+        [[3, 8], [8, 10], [3, 6], [-1, 5]])
  
     # float value: ambient temperature (°C)
-    float_t_ambient: list[float] = [
-        -40.0,  # lower boundary
-        125.0,  # upper boundary
-        25.0,   # in between
-        25.0,   # error case
-    ]
+    float_t_ambient: list[float] = [-40.0, 125.0, 25.0, 25.0]
  
     # float value: t_hs_max (°C)
-    float_t_hs_max: list[float] = [
-        -40.0,  # lower boundary
-        125.0,  # upper boundary
-        80.0,   # in between
-        80.0,   # error case
-    ]
+    float_t_hs_max: list[float] = [-40.0, 125.0, 80.0, 80.0]
  
     # float value: area_min (m²)
-    float_area_min: list[float] = [
-        1e-6,   # lower boundary
-        1e-2,   # upper boundary
-        1e-4,   # in between
-        1e-4,   # error case
-    ]
+    float_area_min: list[float] = [1e-6, 1e-2, 1e-4, 1e-4]
  
     # int value: number_directions
     int_number_directions: list[int] = [2, 3, 2, 2]
@@ -293,12 +269,12 @@ def test_initialize_heat_sink_optimization(test_index: int, test_type: TestCase,
     # float value: factor_bottom_area_copper_coin
     float_factor_bottom: list[float] = [0.01, 0.99, 0.5, 0.5]
  
-    # float value: thermal_conductivity_copper (W/mK)
+    # float value: thermal_conductivity_copper
     float_thermal_conductivity: list[float] = [80.0, 200.0, 120.0, 120.0]
  
     # study and directory name suffixes — one per test_index
     hs_study_name_list: list[str] = ["hs_study_A.toml", "hs_study_B.toml", "hs_study_C.toml", "hs_study_D.toml"]
-    subdirectory_list: list[str]  = ["hs_subdir_A", "hs_subdir_B", "hs_subdir_C", "hs_subdir_D"]
+    subdirectory_list: list[str] = ["hs_sub_dir_A", "hs_sub_dir_B", "hs_sub_dir_C", "hs_sub_dir_D"]
  
     # Build Toml Heat Sink
     toml_heat_sink = tc.TomlHeatSink(

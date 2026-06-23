@@ -343,6 +343,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
 # Unit test function
 def test_initialize_inductor_optimization_list(test_index: int, test_type: TestCase, is_error: bool) -> None:
     """Test the method initialize_inductor_optimization_list.
+
     :param test_index: Test index of the used list element
     :type  test_index: int
     :param test_type: Type of performed test
@@ -350,59 +351,31 @@ def test_initialize_inductor_optimization_list(test_index: int, test_type: TestC
     :param is_error: Indicates, if the function exits with error
     :type  is_error: bool
     """
-    # Create dummy Test value lists - 4 entries, one per test_index
     # Pattern: lower boundary | upper boundary | in between | error case
 
     # float min/max list: 0 < val < 5 (core dimensions)
-    float_min_max_gt0_lt5: list[list[float]] = [
-        [1e-4, 2e-4],     # lower boundary
-        [4.0, 4.9],       # upper boundary
-        [0.5, 2.5],       # in between
-        [0.5, 2.5],       # error case (toml_data=None; these values are never reached)
-    ]
+    float_min_max_gt0_lt5: list[list[float]] = (
+        [[1e-4, 2e-4], [4.0, 4.9], [0.5, 2.5], [0.5, 2.5]])
 
     # float min/max list: 0 < val <= 100  (factor_dc_losses)
-    float_min_max_gt0_le100: list[list[float]] = [
-        [1e-4, 1e-4],     # lower boundary
-        [99.0, 100.0],    # upper boundary
-        [34.0, 77.0],     # in between
-        [34.0, 77.0],     # error case
-    ]
+    float_min_max_gt0_le100: list[list[float]] = (
+        [[1e-4, 1e-4], [99.0, 100.0], [34.0, 77.0], [34.0, 77.0]])
 
     # float value: 0 < val < 0.1  (insulation values)
-    float_value_gt0_lt0_1: list[float] = [
-        1e-5,   # lower boundary
-        0.09,   # upper boundary
-        0.03,   # in between
-        0.03,   # error case
-    ]
+    float_value_gt0_lt0_1: list[float] = [1e-5, 0.09, 0.03, 0.03]
  
     # float value: -40 <= val <= 175  (temperature)
-    float_value_gem40_le175: list[float] = [
-        -40.0,   # lower boundary
-        175.0,   # upper boundary
-        80.0,    # in between
-        80.0,    # error case
-    ]
+    float_value_gem40_le175: list[float] = [-40.0, 175.0, 80.0, 80.0]
  
     # thermal_cooling: [tim_thickness (0 < val <= 0.01), tim_conductivity (0 < val <= 100)]
-    float_thermal_cooling: list[list[float]] = [
-        [1e-5, 1.0],      # lower boundary
-        [0.01, 100.0],    # upper boundary
-        [0.005, 50.0],    # in between
-        [0.005, 50.0],    # error case
-    ]
+    float_thermal_cooling: list[list[float]] = (
+        [[1e-5, 1.0], [0.01, 100.0], [0.005, 50.0], [0.005, 50.0]])
     
     # number_of_trials (int > 0)
     int_number_of_trials: list[int] = [1, 10000, 500, 500]
 
     # target_inductance (float > 0)
-    float_target_inductance: list[float] = [
-        1e-9,  # lower boundary
-        1e-2,  # upper boundary
-        5e-5,  # in between
-        5e-5,  # error case
-    ]
+    float_target_inductance: list[float] = [1e-9, 1e-2, 5e-5, 5e-5]
 
     # Fixed time / current waveform
     time_vec: list[float] = [0.0, 5e-6, 1e-5]
@@ -481,6 +454,7 @@ def test_initialize_inductor_optimization_list(test_index: int, test_type: TestC
 
         # Call method and verify every DTO field
         if not is_error:
+            # 
             test_object.initialize_inductor_optimization_list(config_list, req_list)
 
             # Verify the length of the final list
@@ -489,6 +463,7 @@ def test_initialize_inductor_optimization_list(test_index: int, test_type: TestC
             for i, req in enumerate(req_list):
                 config = config_list[i]
                 ind_toml = config.inductor_toml_data
+                assert ind_toml is not None
 
                 # Exactly one DTO must have been appended per requirement
                 assert len(test_object._optimization_config_list[i]) == 1
