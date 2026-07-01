@@ -170,7 +170,6 @@ def dessca(dim_1_min: float, dim_1_max: float, dim_2_min: float, dim_2_max: floa
         next_sample_suggest = dessca_instance.update_and_sample()
         scaled_points = [next_sample_suggest]
 
-
     next_sample_suggest = dessca_instance.update_and_sample()
     scaled_points = np.append(scaled_points, [next_sample_suggest], axis=0)  # type: ignore
     for _ in range(total_number_points - len(scaled_points)):
