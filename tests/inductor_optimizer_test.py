@@ -46,7 +46,9 @@ class TestCase(Enum):
     # Special test of additional point list: Valid test case
     SpecialTestNumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
     # Data are not initialized
-    DataNotInitialized = 8  # Test when Number of entries in additional point list is inconsistent
+    DataNotInitialized = 9  # Test when toml data is not initialized
+    SkipOptimization = 10  # Test when the calculation mode is set to skip
+    SparseIndex = 11  # Test when there is many config but few inductor requirements
 
 
 #########################################################################################################
@@ -328,97 +330,64 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
 #                                           inductor_requirements_list: list[InductorRequirements]) -> None:
 
 # test parameter list (counter)
-@pytest.mark.parametrize("test_index, test_type, is_error", [
-    # Valid test case
-    # Test value at lower boundary
-    (0, TestCase.LowerBoundary, False),
-    # Test value at upper boundary
-    (1, TestCase.UpperBoundary, False),
-    # Test value in between
-    (2, TestCase.InBetween, False),
-    # Failure test case
+@pytest.mark.parametrize("test_type, calc_mode, sim_calc_mode", [
+    # Valid test case - No boundary check needed as the function just creates DTO
+    (TestCase.InBetween, CalcModeEnum.new_mode, CalcModeEnum.new_mode),
+    (TestCase.InBetween, CalcModeEnum.skip_mode, CalcModeEnum.new_mode),
+    (TestCase.InBetween, CalcModeEnum.new_mode, CalcModeEnum.skip_mode),
+    # Test when calculation/simulation mode is set to skip
+    (TestCase.SkipOptimization, CalcModeEnum.skip_mode, CalcModeEnum.skip_mode),
     # Test when the inductor_toml_data is None -> ValueError raised
-    (3, TestCase.DataNotInitialized, True),
+    (TestCase.DataNotInitialized, CalcModeEnum.new_mode, CalcModeEnum.new_mode),
+    # Test when there is many config but few inductor requirements
+    (TestCase.SparseIndex, CalcModeEnum.new_mode, CalcModeEnum.new_mode),
 ])
 # Unit test function
-def test_initialize_inductor_optimization_list(test_index: int, test_type: TestCase, is_error: bool) -> None:
+def test_initialize_inductor_optimization_list(test_type: TestCase, calc_mode: CalcModeEnum, sim_calc_mode: CalcModeEnum) -> None:
     """Test the method initialize_inductor_optimization_list.
 
-    :param test_index: Test index of the used list element
-    :type  test_index: int
     :param test_type: Type of performed test
     :type  test_type: TestCase
-    :param is_error: Indicates, if the function exits with error
-    :type  is_error: bool
+    :param calc_mode: Sets the calculation/simulation mode
+    :type  calc_mode: CalcModeEnum
+    :param sim_calc_mode: Sets the calculation/simulation mode
+    :type  sim_calc_mode: CalcModeEnum
     """
-    # Pattern: lower boundary | upper boundary | in between | error case
-
-    # float min/max list: 0 < val < 5 (core dimensions)
-    float_min_max_gt0_lt5: list[list[float]] = (
-        [[1e-4, 2e-4], [4.0, 4.9], [0.5, 2.5], [0.5, 2.5]])
-
-    # float min/max list: 0 < val <= 100  (factor_dc_losses)
-    float_min_max_gt0_le100: list[list[float]] = (
-        [[1e-4, 1e-4], [99.0, 100.0], [34.0, 77.0], [34.0, 77.0]])
-
-    # float value: 0 < val < 0.1  (insulation values)
-    float_value_gt0_lt0_1: list[float] = [1e-5, 0.09, 0.03, 0.03]
- 
-    # float value: -40 <= val <= 175  (temperature)
-    float_value_gem40_le175: list[float] = [-40.0, 175.0, 80.0, 80.0]
- 
-    # thermal_cooling: [tim_thickness (0 < val <= 0.01), tim_conductivity (0 < val <= 100)]
-    float_thermal_cooling: list[list[float]] = (
-        [[1e-5, 1.0], [0.01, 100.0], [0.005, 50.0], [0.005, 50.0]])
-    
-    # number_of_trials (int > 0)
-    int_number_of_trials: list[int] = [1, 10000, 500, 500]
-
-    # target_inductance (float > 0)
-    float_target_inductance: list[float] = [1e-9, 1e-2, 5e-5, 5e-5]
-
-    # Fixed time / current waveform
-    time_vec: list[float] = [0.0, 5e-6, 1e-5]
-    current_vec: list[float] = [0.0, 5.0, 0.0]
-
-    # Study and circuit name suffixes — one per test_index
-    study_name_prefix: list[str] = ["study_A", "study_B", "study_C", "study_D"]
-    circuit_id_prefix: list[str] = ["circuit_0", "circuit_1", "circuit_2", "circuit_3"]
-
     # Build TomlInductor
-    if not is_error:
-        toml_data: tc.TomlInductor | None = tc.TomlInductor(
+    toml_data = (
+        None
+        if test_type == TestCase.DataNotInitialized
+        else tc.TomlInductor(
             design_space=tc.TomlInductorDesignSpace(
                 core_name_list=[],
                 material_name_list=["3C95"],
                 litz_wire_name_list=[],
-                core_inner_diameter_min_max_list=float_min_max_gt0_lt5[test_index],
-                window_h_min_max_list=float_min_max_gt0_lt5[test_index],
-                window_w_min_max_list=float_min_max_gt0_lt5[test_index],
+                core_inner_diameter_min_max_list=[1.0, 2.0],
+                window_h_min_max_list=[1.0, 2.0],
+                window_w_min_max_list=[1.0, 2.0],
             ),
             insulations=tc.TomlInductorInsulation(
-                primary_to_primary=float_value_gt0_lt0_1[test_index],
-                core_bot=float_value_gt0_lt0_1[test_index],
-                core_top=float_value_gt0_lt0_1[test_index],
-                core_right=float_value_gt0_lt0_1[test_index],
-                core_left=float_value_gt0_lt0_1[test_index],
+                primary_to_primary=0.03,
+                core_bot=0.03,
+                core_top=0.03,
+                core_right=0.03,
+                core_left=0.03,
             ),
             thermal_data=tc.TomlThermalData(
-                thermal_cooling=float_thermal_cooling[test_index],
+                thermal_cooling=[0.05, 50.0],
             ),
             boundary_conditions=tc.TomlInductorBoundaryConditions(
-                temperature=float_value_gem40_le175[test_index],
+                temperature=80.0,
             ),
             filter_distance=dct.TomlFilterDistance(
-                factor_dc_losses_min_max_list=float_min_max_gt0_le100[test_index],
+                factor_dc_losses_min_max_list=[34.0, 77.0],
             ),
             material_data_sources=tc.TomlMaterialDataSources(
                 permeability_datasource="LEA_MTB",
                 permittivity_datasource="LEA_MTB",
             ),
         )
-    else:
-        toml_data = None
+    )
     
     # Build configuration_data_list (minimum 3 elements)
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -426,108 +395,136 @@ def test_initialize_inductor_optimization_list(test_index: int, test_type: TestC
         config_list: list[InductorConfiguration] = [
             InductorConfiguration(
                 study_data=dct.StudyData(
-                    study_name=f"{study_name_prefix[test_index]}_{i}",
+                    study_name=f"study_{test_type.name}_{i}",
                     optimization_directory=tmpdir,
-                    number_of_trials=int_number_of_trials[test_index],
-                    calculation_mode=CalcModeEnum.new_mode,
+                    number_of_trials=500,
+                    calculation_mode=calc_mode,
                 ),
-                simulation_calculation_mode=CalcModeEnum.new_mode,
+                simulation_calculation_mode=sim_calc_mode,
                 inductor_toml_data=toml_data,
             )
             for i in range(NUMBER_OF_INDUCTORS)
         ]
     
         # Build inductor_requirements_list (minimum 3 elements)
-        req_list: list[InductorRequirements] = [
-            InductorRequirements(
-                inductor_number_in_circuit=i,
-                circuit_id=f"{circuit_id_prefix[test_index]}_{i}",
-                target_inductance=float_target_inductance[test_index],
-                time_vec=time_vec,
-                current_vec=current_vec,
-            )
-            for i in range(NUMBER_OF_INDUCTORS)
-        ]
+        req_list: list[InductorRequirements] = (
+            # In case of just one inductor requirement
+            [
+                InductorRequirements(
+                    inductor_number_in_circuit=NUMBER_OF_INDUCTORS-1,  # example: inductor_number_in_circuit = 2
+                    circuit_id=f"circuit_{test_type.name}",
+                    target_inductance=5e-5,
+                    time_vec=[0.0, 5e-6, 1e-5],
+                    current_vec=[0.0, 5.0, 0.0],
+                )
+            ]
+            if test_type == TestCase.SparseIndex
+            # Otherwise length of inductor requirement = number of inductors
+            else [
+                InductorRequirements(
+                    inductor_number_in_circuit=i,
+                    circuit_id=f"circuit_{test_type.name}_{i}",
+                    target_inductance=5e-5,
+                    time_vec=[0.0, 5e-6, 1e-5],
+                    current_vec=[0.0, 5.0, 0.0],
+                )
+                for i in range(NUMBER_OF_INDUCTORS)
+            ]
+        )
 
         # Create the object under test
         test_object: InductorOptimization = InductorOptimization()
-
-        # Call method and verify every DTO field
-        if not is_error:
-            # 
-            test_object.initialize_inductor_optimization_list(config_list, req_list)
-
-            # Verify the length of the final list
-            assert len(test_object._optimization_config_list) == NUMBER_OF_INDUCTORS
-
-            for i, req in enumerate(req_list):
-                config = config_list[i]
-                ind_toml = config.inductor_toml_data
-                assert ind_toml is not None
-
-                # Exactly one DTO must have been appended per requirement
-                assert len(test_object._optimization_config_list[i]) == 1
-
-                dto: InductorOptimizationDto = test_object._optimization_config_list[i][0]
-
-                expected_trial_directory = os.path.join(
-                    config.study_data.optimization_directory,
-                    req.circuit_id,
-                    config.study_data.study_name
-                )
-
-                fmt_dto: fmt.InductorOptimizationDTO = dto.fmt_inductor_optimization_dto
-
-                # Verify Insulation DTO
-                assert fmt_dto.insulations.primary_to_primary == ind_toml.insulations.primary_to_primary
-                assert fmt_dto.insulations.core_bot == ind_toml.insulations.core_bot
-                assert fmt_dto.insulations.core_top == ind_toml.insulations.core_top
-                assert fmt_dto.insulations.core_right == ind_toml.insulations.core_right
-                assert fmt_dto.insulations.core_left == ind_toml.insulations.core_left
-
-                # Verify Material Data Sources
-                assert fmt_dto.material_data_sources.permeability_datasource == ind_toml.material_data_sources.permeability_datasource
-                assert fmt_dto.material_data_sources.permittivity_datasource == ind_toml.material_data_sources.permittivity_datasource
-
-                # Verify FMT Inductor Optimization DTO
-                assert fmt_dto.inductor_study_name == config.study_data.study_name
-                assert fmt_dto.core_name_list == ind_toml.design_space.core_name_list
-                assert fmt_dto.material_name_list == ind_toml.design_space.material_name_list
-                assert fmt_dto.litz_wire_name_list == ind_toml.design_space.litz_wire_name_list
-                assert fmt_dto.core_inner_diameter_min_max_list == ind_toml.design_space.core_inner_diameter_min_max_list
-                assert fmt_dto.window_h_min_max_list == ind_toml.design_space.window_h_min_max_list
-                assert fmt_dto.window_w_min_max_list == ind_toml.design_space.window_w_min_max_list
-                assert fmt_dto.target_inductance == req.target_inductance
-                assert fmt_dto.temperature == ind_toml.boundary_conditions.temperature
-                assert fmt_dto.time_current_vec == [req.time_vec, req.current_vec]
-                assert fmt_dto.inductor_optimization_directory == expected_trial_directory
-
-                # Verify Thermal DTO
-                assert dto.thermal_data.tim_thickness == ind_toml.thermal_data.thermal_cooling[0]
-                assert dto.thermal_data.tim_conductivity == ind_toml.thermal_data.thermal_cooling[1]
-
-                # Verify Filter distance
-                assert dto.factor_dc_losses_min_max_list == ind_toml.filter_distance.factor_dc_losses_min_max_list
-
-                # Verify inductor_requirements fields
-                assert dto.inductor_requirements.inductor_number_in_circuit == req.inductor_number_in_circuit
-                assert dto.inductor_requirements.circuit_id == req.circuit_id
-                assert dto.inductor_requirements.target_inductance == req.target_inductance
-                assert dto.inductor_requirements.time_vec == req.time_vec
-                assert dto.inductor_requirements.current_vec == req.current_vec
-
-                # Verify Progress Data
-                assert dto.progress_data.progress_status == ProgressStatus.Idle
-                assert dto.progress_data.run_time == 0
-                assert dto.progress_data.number_of_filtered_points == 0
-
-                # Verify Inductor Optimization DTO (Top level)
-                assert dto.trial_directory == expected_trial_directory
-                assert dto.circuit_id == req.circuit_id
-                assert dto.inductor_number_in_circuit == req.inductor_number_in_circuit
-                assert dto.number_of_trails == config.study_data.number_of_trials
-        else:
+         
+        # Verify the toml data is None case
+        if test_type == TestCase.DataNotInitialized:
             with pytest.raises(ValueError) as error_message:
                 test_object.initialize_inductor_optimization_list(config_list, req_list)
-            
             assert "Serious programming error in inductor optimization" in str(error_message.value)
+            return
+        
+        # Call the method under Test
+        test_object.initialize_inductor_optimization_list(config_list, req_list)
+
+        # Verify the length of the final list in case of skip mode
+        if test_type == TestCase.SkipOptimization:
+            assert len(test_object._optimization_config_list) == 0
+            return
+
+        # Verify the output configuration list structure
+        if test_type == TestCase.SparseIndex:
+            sparse_index = req_list[0].inductor_number_in_circuit
+            assert len(test_object._optimization_config_list) == sparse_index + 1
+            for i in range(sparse_index):
+                assert test_object._optimization_config_list[i] == []
+            assert len(test_object._optimization_config_list[sparse_index]) == 1
+            return
+        
+        # Verify the length of the final list in normal mode
+        assert len(test_object._optimization_config_list) == NUMBER_OF_INDUCTORS
+
+        for i, req in enumerate(req_list):
+            config = config_list[i]
+            ind_toml = config.inductor_toml_data
+            assert ind_toml is not None
+
+            # Exactly one DTO must have been appended per requirement
+            assert len(test_object._optimization_config_list[i]) == 1
+
+            dto: InductorOptimizationDto = test_object._optimization_config_list[i][0]
+
+            expected_directory = os.path.join(
+                config.study_data.optimization_directory,
+                req.circuit_id,
+                config.study_data.study_name
+            )
+
+            fmt_dto: fmt.InductorOptimizationDTO = dto.fmt_inductor_optimization_dto
+
+            # Verify Insulation DTO
+            assert fmt_dto.insulations.primary_to_primary == ind_toml.insulations.primary_to_primary
+            assert fmt_dto.insulations.core_bot == ind_toml.insulations.core_bot
+            assert fmt_dto.insulations.core_top == ind_toml.insulations.core_top
+            assert fmt_dto.insulations.core_right == ind_toml.insulations.core_right
+            assert fmt_dto.insulations.core_left == ind_toml.insulations.core_left
+
+            # Verify Material Data Sources
+            assert fmt_dto.material_data_sources.permeability_datasource == ind_toml.material_data_sources.permeability_datasource
+            assert fmt_dto.material_data_sources.permittivity_datasource == ind_toml.material_data_sources.permittivity_datasource
+
+            # Verify FMT Inductor Optimization DTO
+            assert fmt_dto.inductor_study_name == config.study_data.study_name
+            assert fmt_dto.core_name_list == ind_toml.design_space.core_name_list
+            assert fmt_dto.material_name_list == ind_toml.design_space.material_name_list
+            assert fmt_dto.litz_wire_name_list == ind_toml.design_space.litz_wire_name_list
+            assert fmt_dto.core_inner_diameter_min_max_list == ind_toml.design_space.core_inner_diameter_min_max_list
+            assert fmt_dto.window_h_min_max_list == ind_toml.design_space.window_h_min_max_list
+            assert fmt_dto.window_w_min_max_list == ind_toml.design_space.window_w_min_max_list
+            assert fmt_dto.target_inductance == req.target_inductance
+            assert fmt_dto.temperature == ind_toml.boundary_conditions.temperature
+            assert fmt_dto.time_current_vec == [req.time_vec, req.current_vec]
+            assert fmt_dto.inductor_optimization_directory == expected_directory
+
+            # Verify Thermal DTO
+            assert dto.thermal_data.tim_thickness == ind_toml.thermal_data.thermal_cooling[0]
+            assert dto.thermal_data.tim_conductivity == ind_toml.thermal_data.thermal_cooling[1]
+
+            # Verify Filter distance
+            assert dto.factor_dc_losses_min_max_list == ind_toml.filter_distance.factor_dc_losses_min_max_list
+
+            # Verify inductor_requirements fields
+            assert dto.inductor_requirements.inductor_number_in_circuit == req.inductor_number_in_circuit
+            assert dto.inductor_requirements.circuit_id == req.circuit_id
+            assert dto.inductor_requirements.target_inductance == req.target_inductance
+            assert dto.inductor_requirements.time_vec == req.time_vec
+            assert dto.inductor_requirements.current_vec == req.current_vec
+
+            # Verify Progress Data
+            assert dto.progress_data.progress_status == ProgressStatus.Idle
+            assert dto.progress_data.run_time == 0
+            assert dto.progress_data.number_of_filtered_points == 0
+
+            # Verify Inductor Optimization DTO (Top level)
+            assert dto.trial_directory == expected_directory
+            assert dto.circuit_id == req.circuit_id
+            assert dto.inductor_number_in_circuit == req.inductor_number_in_circuit
+            assert dto.number_of_trails == config.study_data.number_of_trials
