@@ -447,7 +447,7 @@ class TransformerOptimization:
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
                 logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
             else:
-                for vec_vvp in tqdm.tqdm(np.ndindex(result_array.shape), total=len(transformer_requirements.time_array[..., 0].flatten())):
+                for vec_vvp in np.ndindex(result_array.shape):
                     time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
                     current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indices]
                     current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indices]
@@ -654,8 +654,7 @@ class TransformerOptimization:
                 # The femmt simulation (full_simulation()) can raise different errors, most of them are geometry errors
                 # e.g. winding is not fitting in the winding window
                 try:
-                    for vec_vvp in tqdm.tqdm(np.ndindex(transformer_requirements.time_array[..., 0].shape),
-                                             total=len(transformer_requirements.time_array[..., 0].flatten())):
+                    for vec_vvp in np.ndindex(transformer_requirements.time_array[..., 0].shape):
                         time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
                         current_1 = transformer_requirements.current_1_array[vec_vvp][unique_indices]
                         current_2 = transformer_requirements.current_2_array[vec_vvp][unique_indices]
