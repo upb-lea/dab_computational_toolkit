@@ -48,7 +48,7 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               SIMULATION_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
+                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
 
 logger = logging.getLogger(__name__)
 
@@ -1601,7 +1601,7 @@ class DctMainCtl:
                                    f"{issue_report}")
                 else:
                     # Assemble processing complete file name
-                    processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
+                    processing_complete_file = f"ind_{index}_" + FEM_COMPLETE_FILE
                     # Check if the optimization is skippable for simulation calculation
                     is_skippable, issue_report = DctMainCtl._is_skippable(
                         self._inductor_study_configuration_list[index].study_data, processing_complete_file, True,
@@ -1679,7 +1679,7 @@ class DctMainCtl:
                                    f"{issue_report}")
                 else:
                     # Assemble processing complete file name
-                    processing_complete_file = f"trf_{index}_" + SIMULATION_COMPLETE_FILE
+                    processing_complete_file = f"trf_{index}_" + FEM_COMPLETE_FILE
                     # Check if the optimization is skippable for simulation calculation
                     is_skippable, issue_report = DctMainCtl._is_skippable(
                         self._transformer_study_configuration_list[index].study_data, processing_complete_file, True,
@@ -2056,7 +2056,7 @@ class DctMainCtl:
             # Check, if inductor FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
             if not self._inductor_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
-                processing_complete_file = f"ind_{index}_" + SIMULATION_COMPLETE_FILE
+                processing_complete_file = f"ind_{index}_" + FEM_COMPLETE_FILE
                 # Delete processing complete indicator
                 DctMainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
                                                        processing_complete_file)
@@ -2084,7 +2084,7 @@ class DctMainCtl:
             # Check, if transformer FEM simulation is not to skip (cannot be skipped if circuit calculation mode is new)
             if not self._transformer_study_configuration_list[index].simulation_calculation_mode == CalcModeEnum.skip_mode:
                 # Assemble processing complete file name
-                processing_complete_file = f"trf_{index}_" + SIMULATION_COMPLETE_FILE
+                processing_complete_file = f"trf_{index}_" + FEM_COMPLETE_FILE
                 # Delete processing complete indicator
                 DctMainCtl._delete_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
                                                        processing_complete_file)
