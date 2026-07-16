@@ -700,8 +700,8 @@ class TransformerOptimization:
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(transformer_results, output, pickle.HIGHEST_PROTOCOL)
-                except:
+                except Exception as e:
                     logger.info(f"FEM-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")
                     failed_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}_failed.txt")
                     with open(failed_file, "a") as f:
-                        f.write("")
+                        f.write(e)

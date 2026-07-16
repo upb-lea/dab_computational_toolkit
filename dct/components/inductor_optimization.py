@@ -593,9 +593,9 @@ class InductorOptimization:
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(inductor_results, output, pickle.HIGHEST_PROTOCOL)
-            except:
+            except Exception as e:
                 logger.warning(f"for number {inductor_id} an operation point exceeds the boundary!")
                 failed_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}_failed.txt")
                 print(f"{failed_file=}")
                 with open(failed_file, "a") as f:
-                    f.write("")
+                    f.write(e)
