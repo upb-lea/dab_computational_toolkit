@@ -704,4 +704,4 @@ class TransformerOptimization:
                     logger.info(f"FEM-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")
                     failed_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}_failed.txt")
                     with open(failed_file, "a") as f:
-                        f.write(e)
+                        f.write(f"Error message: {e}")
