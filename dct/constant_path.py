@@ -30,7 +30,7 @@ PARETO_PLOT_PKL_FOLDER = "pareto_plot_pkl"
 
 # processing status
 RELUCTANCE_COMPLETE_FILE = "reluctance_processing_complete.json"
-SIMULATION_COMPLETE_FILE = "simulation_processing_complete.json"
+FEM_COMPLETE_FILE = "fem_processing_complete.json"
 PROCESSING_COMPLETE_FILE = "processing_complete.json"
 
 # capacitor optimization result file names
