@@ -3,6 +3,8 @@
 # python libraries
 import logging
 from enum import Enum
+import os
+import tempfile
 
 # 3rd party libraries
 import pytest
@@ -11,7 +13,7 @@ import pytest
 import dct.components.heat_sink_optimization as test_circuit
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
-
+from dct.components.heat_sink_optimization import HeatSinkOptimization
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ class TestCase(Enum):
     APt_NumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
     # Special test of additional point list: Valid test case
     SpecialTestNumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
+    ParameterInconsistent = 8  # triggers ValueError via invalid toml parameter
 
 
 #########################################################################################################
@@ -208,3 +211,165 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
 
         # Error is indicated
         assert not is_consistent
+################
+
+#########################################################################################################
+# test of initialize_heat_sink_optimization
+#########################################################################################################
+
+# def initialize_heat_sink_optimization(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
+# test parameter list (counter)
+@pytest.mark.parametrize("test_type, is_error", [
+    # Test when the valid parameters loaded
+    (TestCase.InBetween, False),
+    # Test when the invalid parameters loaded
+    (TestCase.ParameterInconsistent, True),
+])
+# Unit test function
+def test_initialize_heat_sink_optimization(test_type: TestCase, is_error: bool) -> None:
+    """Test the method initialize_circuit_optimization.
+
+    :param test_type: Type of performed test
+    :type  test_type: TestCase
+    :param is_error: Indicates, if the function exits with error
+    :type  is_error: bool
+    """
+    # Test value tables - The values here should be within valid ranges except the last entry
+    # Normal values for the parameters
+    float_min_max_geometry: list[float] = [0.05, 0.05] if not is_error else [-0.1, 0.05]
+    int_min_max_cooling_channels: list[int] = [3, 6] if not is_error else [-1, 5]
+ 
+    study_filename = f"hs_study_{test_type.name}.toml"
+    sub_dir_name = f"hs_sub_dir_{test_type.name}"
+
+    # Build Toml Heat Sink
+    toml_heat_sink = tc.TomlHeatSink(
+        design_space=tc.TomlHeatSinkDesignSpace(
+            height_c_min_max_list=float_min_max_geometry,
+            width_b_min_max_list=float_min_max_geometry,
+            length_l_min_max_list=float_min_max_geometry,
+            height_d_min_max_list=float_min_max_geometry,
+            number_cooling_channels_n_min_max_list=int_min_max_cooling_channels,
+            thickness_fin_t_min_max_list=float_min_max_geometry,
+        ),
+        settings=tc.TomlHeatSinkSettings(
+            number_directions=2,
+            factor_pcb_area_copper_coin=0.5,
+            factor_bottom_area_copper_coin=0.5,
+            thermal_conductivity_copper=120.0,
+        ),
+        boundary_conditions=tc.TomlHeatSinkBoundaryConditions(
+            t_ambient=25.0,
+            t_hs_max=80.0,
+            area_min=1e-4,
+        ),
+
+    )
+
+    # Build FlowControl (toml_prog_flow)
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        toml_prog_flow = tc.FlowControl(
+            general=tc.General(
+                project_directory=tmpdir,
+                topology="dab",
+            ),
+            breakpoints=tc.Breakpoints(
+                circuit_pareto="no",
+                circuit_filtered="no",
+                capacitor="no",
+                inductor="no",
+                transformer="no",
+                heat_sink="no",
+                pre_summary="no",
+                summary="no",
+            ),
+            conditional_breakpoints=tc.CondBreakpoints(
+                circuit=0,
+                inductor=0,
+                transformer=0,
+                heat_sink=0,
+            ),
+            circuit=tc.Circuit(
+                number_of_trials=100,
+                calculation_mode="new",
+                subdirectory="circuit",
+            ),
+            capacitor=tc.Capacitor(
+                calculation_modes=["new"],
+                subdirectory="capacitor",
+            ),
+            inductor=tc.Inductor(
+                numbers_of_trials=[100],
+                calculation_modes=["new"],
+                subdirectory="inductor",
+            ),
+            transformer=tc.Transformer(
+                numbers_of_trials=[100],
+                calculation_modes=["new"],
+                subdirectory="transformer",
+            ),
+            heat_sink=tc.HeatSink(
+                number_of_trials=100,
+                calculation_mode="new",
+                subdirectory=sub_dir_name,
+            ),
+            pre_summary=tc.PreSummary(
+                calculation_mode="new",
+                subdirectory="pre_summary",
+            ),
+            summary=tc.Summary(
+                subdirectory="summary",
+            ),
+            configuration_data_files=tc.ConfigurationDataFiles(
+                topology_files=["topology.toml"],
+                capacitor_configuration_files=["capacitor.toml"],
+                inductor_configuration_files=["inductor.toml"],
+                transformer_configuration_files=["transformer.toml"],
+                heat_sink_configuration_file=study_filename,
+            ),
+        )
+
+        # Create the object under test
+        test_object: HeatSinkOptimization = HeatSinkOptimization()
+
+        # Verify the inconsistent parameters
+        if test_type == TestCase.ParameterInconsistent:
+            with pytest.raises(ValueError, match="Heat sink optimization parameter are inconsistent"):
+                test_object.initialize_heat_sink_optimization(toml_heat_sink, toml_prog_flow)
+            return
+        
+        # Call the method under Test
+        is_initialized = test_object.initialize_heat_sink_optimization(toml_heat_sink, toml_prog_flow)
+
+        assert is_initialized 
+        assert test_object._hct_config is not None
+
+        expected_study_name = study_filename.replace(".toml", "")
+        expected_optimization_directory = os.path.join(
+            tmpdir,
+            sub_dir_name,
+            expected_study_name
+        )
+
+        # Verify general fields
+        assert test_object._hct_config.heat_sink_study_name == expected_study_name
+        assert test_object._hct_config.heat_sink_optimization_directory == expected_optimization_directory
+
+        # Verify design space fields
+        assert test_object._hct_config.height_c_min_max_list == toml_heat_sink.design_space.height_c_min_max_list
+        assert test_object._hct_config.width_b_min_max_list == toml_heat_sink.design_space.width_b_min_max_list
+        assert test_object._hct_config.length_l_min_max_list == toml_heat_sink.design_space.length_l_min_max_list
+        assert test_object._hct_config.height_d_min_max_list == toml_heat_sink.design_space.height_d_min_max_list
+        assert test_object._hct_config.number_cooling_channels_n_min_max_list == toml_heat_sink.design_space.number_cooling_channels_n_min_max_list
+        assert test_object._hct_config.thickness_fin_t_min_max_list == toml_heat_sink.design_space.thickness_fin_t_min_max_list
+
+        # Verify boundary conditions
+        assert test_object._hct_config.t_ambient == toml_heat_sink.boundary_conditions.t_ambient
+        assert test_object._hct_config.area_min == toml_heat_sink.boundary_conditions.area_min
+
+        # Verify settings
+        assert test_object._hct_config.number_directions == toml_heat_sink.settings.number_directions
+
+        # Verify fan list
+        assert isinstance(test_object._hct_config.fan_list, list)
