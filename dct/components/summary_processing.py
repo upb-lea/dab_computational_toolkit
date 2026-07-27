@@ -382,8 +382,7 @@ class SummaryProcessing:
                         f"transformer_loss_array_{number_in_circuit}": np.squeeze(transformer_results_dto.loss_array),
                         f"transformer_t_max_{number_in_circuit}": 0,
                         f"transformer_area_{number_in_circuit}": transformer_results_dto.area_to_heat_sink,
-                        f"r_th_xfmr_heat_sink_{number_in_circuit}": inductor_results_dto.r_th_ind_heat_sink
-
+                        f"r_th_xfmr_heat_sink_{number_in_circuit}": transformer_results_dto.r_th_xfmr_heat_sink
                     }
 
                     # Store transformer data set
