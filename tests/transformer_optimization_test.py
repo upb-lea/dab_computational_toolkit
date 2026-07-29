@@ -4,6 +4,8 @@
 import logging
 import copy
 from enum import Enum
+import os
+import tempfile
 
 # 3rd party libraries
 import pytest
@@ -13,11 +15,19 @@ import dct.components.transformer_optimization as test_circuit
 import dct.toml_checker as tc
 import dct.server_ctl_dtos
 import femmt as fmt
+from dct.circuit_enums import CalcModeEnum
+from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
+from dct.server_ctl_dtos import ProgressStatus
+from dct.datasets_dtos import TransformerConfiguration
+from dct.components.component_dtos import TransformerRequirements
+from dct.components.transformer_optimization import TransformerOptimization
 
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
 
+# Number of transformers used in all test cases (minimum required: 3)
+NUMBER_OF_TRANSFORMERS = 3
 
 class TestCase(Enum):
     """Enum of test types."""
@@ -36,6 +46,10 @@ class TestCase(Enum):
     APt_NumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
     # Special test of additional point list: Valid test case
     SpecialTestNumberOfEntries = 8  # Test when Number of entries in additional point list is inconsistent
+    # Data are not initialized
+    DataNotInitialized = 9  # Test when toml data is not initialized
+    SkipOptimization = 10  # Test when the calculation mode is set to skip
+    SparseIndex = 11  # Test when there is many config but few inductor requirements
 
 
 #########################################################################################################
@@ -336,3 +350,246 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
 
         # Error is indicated
         assert not is_consistent
+################
+
+#########################################################################################################
+# test of initialize_transformer_optimization_list
+#########################################################################################################
+
+# initialize_transformer_optimization_list(self, configuration_data_list: list[TransformerConfiguration],
+#                                           transformer_requirements_list: list[TransformerRequirements]) -> None:
+
+# test parameter list (counter)
+@pytest.mark.parametrize("test_type, calc_mode, sim_calc_mode", [
+    # Valid test case - No boundary check needed as the function just creates DTO
+    (TestCase.InBetween, CalcModeEnum.new_mode, CalcModeEnum.new_mode),
+    (TestCase.InBetween, CalcModeEnum.skip_mode, CalcModeEnum.new_mode),
+    (TestCase.InBetween, CalcModeEnum.new_mode, CalcModeEnum.skip_mode),
+    # Test when calculation/simulation mode is set to skip
+    (TestCase.SkipOptimization, CalcModeEnum.skip_mode, CalcModeEnum.skip_mode),
+    # Test when the inductor_toml_data is None -> ValueError raised
+    (TestCase.DataNotInitialized, CalcModeEnum.new_mode, CalcModeEnum.new_mode),
+    # Test when there is many config but few inductor requirements
+    (TestCase.SparseIndex, CalcModeEnum.new_mode, CalcModeEnum.new_mode),
+])
+# Unit test function
+def test_initialize_transformer_optimization_list(test_type: TestCase, calc_mode: CalcModeEnum, sim_calc_mode: CalcModeEnum) -> None:
+    """Test the method initialize_transformer_optimization_list.
+    
+    :param test_type: Type of performed test
+    :type  test_type: TestCase
+    :param calc_mode: Sets the calculation/simulation mode
+    :type  calc_mode: CalcModeEnum
+    :param sim_calc_mode: Sets the calculation/simulation mode
+    :type  sim_calc_mode: CalcModeEnum
+    """
+    # Build TomlTransformer
+    toml_data = (
+        None
+        if test_type == TestCase.DataNotInitialized
+        else tc.TomlTransformer(
+            design_space=tc.TomlTransformerDesignSpace(
+                material_name_list=["3C95"],
+                core_name_list=[],
+                core_inner_diameter_min_max_list=[0.50, 2.50],
+                window_w_min_max_list=[0.51, 2.51],
+                window_h_bot_min_max_list=[0.52, 2.52],
+                primary_litz_wire_list=[],
+                secondary_litz_wire_list=[],
+                n_p_top_min_max_list=[3, 6],
+                n_p_bot_min_max_list=[4, 7],
+            ),
+            insulation=tc.TomlTransformerInsulation(
+                iso_window_top_core_top=0.01,
+                iso_window_top_core_bot=0.02,
+                iso_window_top_core_left=0.03,
+                iso_window_top_core_right=0.04,
+                iso_window_bot_core_top=0.05,
+                iso_window_bot_core_bot=0.06,
+                iso_window_bot_core_left=0.07,
+                iso_window_bot_core_right=0.08,
+                iso_primary_to_primary=0.09,
+                iso_secondary_to_secondary=0.10,
+                iso_primary_to_secondary=0.11,
+            ),
+            thermal_data=tc.TomlThermalData(
+                thermal_cooling=[0.005, 50.0],
+            ),
+            boundary_conditions=tc.TomlTransformerBoundaryConditions(
+                max_transformer_total_height=0.15,
+                max_core_volume=5e-5,
+                temperature=175.0,
+            ),
+            filter_distance=dct.TomlTransformerFilterDistance(
+                factor_dc_losses_min_max_list=[34.0, 77.0],
+            ),
+            material_data_sources=tc.TomlMaterialDataSources(
+                permeability_datasource="LEA_MTB",
+                permittivity_datasource="LEA_MTB",
+            ),
+            settings=tc.TomlTransformerSettings(
+                fft_filter_value_factor=0.5,
+                mesh_accuracy=0.9,
+            ),
+        )
+    )
+    
+    # Build configuration_data_list (minimum 3 elements)
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        config_list: list[TransformerConfiguration] = [
+            TransformerConfiguration(
+                study_data=dct.StudyData(
+                    study_name=f"study_{test_type.name}_{i}",
+                    optimization_directory=tmpdir,
+                    number_of_trials=500,
+                    calculation_mode=calc_mode,
+                ),
+                simulation_calculation_mode=sim_calc_mode,
+                transformer_toml_data=toml_data,
+            )
+            for i in range(NUMBER_OF_TRANSFORMERS)
+        ]
+    
+        # Build transformer_requirements_list (minimum 3 elements)
+        req_list: list[TransformerRequirements] = (
+            # In case of just one transformer requirement
+            [
+                TransformerRequirements(
+                    transformer_number_in_circuit=NUMBER_OF_TRANSFORMERS-1,  # example: inductor_number_in_circuit = 2
+                    circuit_id=f"circuit{test_type.name}",
+                    l_s12_target=5e-6,
+                    l_h_target=5e-4,
+                    n_target=3.0,
+                    time_vec=[0.0, 5e-6, 1e-5],
+                    current_1_vec=[0.0, 5.0, 0.0],
+                    current_2_vec=[0.0, -2.5, 0.0],
+                )
+            ]
+            if test_type == TestCase.SparseIndex
+            # Otherwise length of transformer requirement = number of transformer
+            else [
+                TransformerRequirements(
+                    transformer_number_in_circuit=i,
+                    circuit_id=f"circuit{test_type.name}_{i}",
+                    l_s12_target=5e-6,
+                    l_h_target=5e-4,
+                    n_target=3.0,
+                    time_vec=[0.0, 5e-6, 1e-5],
+                    current_1_vec=[0.0, 5.0, 0.0],
+                    current_2_vec=[0.0, -2.5, 0.0],
+                )
+                for i in range(NUMBER_OF_TRANSFORMERS)
+            ]
+        )
+
+        # Create the object under test
+        test_object: TransformerOptimization = TransformerOptimization()
+
+        # Verify the toml data is None case
+        if test_type == TestCase.DataNotInitialized:
+            with pytest.raises(ValueError) as error_message:
+                test_object.initialize_transformer_optimization_list(config_list, req_list)
+            assert "Serious programming error in transformer optimization" in str(error_message.value)
+            return
+        
+        # Call the method under Test
+        test_object.initialize_transformer_optimization_list(config_list, req_list)
+
+        # Verify the length of the final list in case of skip mode
+        if test_type == TestCase.SkipOptimization:
+            assert len(test_object._optimization_config_list) == 0
+            return
+        
+        # Verify the output configuration list structure
+        if test_type == TestCase.SparseIndex:
+            sparse_index = req_list[0].transformer_number_in_circuit
+            assert len(test_object._optimization_config_list) == sparse_index + 1
+            for i in range(sparse_index):
+                assert test_object._optimization_config_list[i] == []
+            assert len(test_object._optimization_config_list[sparse_index]) == 1
+            return
+        
+        # Verify the length of the final list in normal mode
+        assert len(test_object._optimization_config_list) == NUMBER_OF_TRANSFORMERS
+        
+        for i, req in enumerate(req_list):
+            config = config_list[i]
+            trf_toml = config.transformer_toml_data
+            assert trf_toml is not None
+
+            # Exactly one DTO must have been appended per requirement
+            assert len(test_object._optimization_config_list[i]) == 1
+
+            dto: TransformerOptimizationDto = test_object._optimization_config_list[i][0]
+
+            expected_trial_directory = os.path.join(
+                config.study_data.optimization_directory,
+                req.circuit_id,
+                config.study_data.study_name
+            )
+
+            sto: fmt.StoSingleInputConfig = dto.fmt_transformer_optimization_dto
+
+            # Verify Insulation DTO
+            assert sto.insulations.iso_window_top_core_top == trf_toml.insulation.iso_window_top_core_top
+            assert sto.insulations.iso_window_top_core_bot == trf_toml.insulation.iso_window_top_core_bot
+            assert sto.insulations.iso_window_top_core_left == trf_toml.insulation.iso_window_top_core_left
+            assert sto.insulations.iso_window_top_core_right == trf_toml.insulation.iso_window_top_core_right
+            assert sto.insulations.iso_window_bot_core_top == trf_toml.insulation.iso_window_bot_core_top
+            assert sto.insulations.iso_window_bot_core_bot == trf_toml.insulation.iso_window_bot_core_bot
+            assert sto.insulations.iso_window_bot_core_left == trf_toml.insulation.iso_window_bot_core_left
+            assert sto.insulations.iso_window_bot_core_right == trf_toml.insulation.iso_window_bot_core_right
+            assert sto.insulations.iso_primary_to_primary == trf_toml.insulation.iso_primary_to_primary
+            assert sto.insulations.iso_secondary_to_secondary == trf_toml.insulation.iso_secondary_to_secondary
+            assert sto.insulations.iso_primary_to_secondary == trf_toml.insulation.iso_primary_to_secondary
+
+            # Verify Material Data Sources
+            assert sto.material_data_sources.permeability_datasource == trf_toml.material_data_sources.permeability_datasource
+            assert sto.material_data_sources.permittivity_datasource == trf_toml.material_data_sources.permittivity_datasource
+
+            # Verify FMT Transformer Optimization DTO (Sto Single Input Config) 
+            assert sto.stacked_transformer_study_name == config.study_data.study_name
+            assert sto.temperature == trf_toml.boundary_conditions.temperature
+            assert sto.max_transformer_total_height == trf_toml.boundary_conditions.max_transformer_total_height
+            assert sto.max_core_volume == trf_toml.boundary_conditions.max_core_volume
+            assert sto.n_p_top_min_max_list == trf_toml.design_space.n_p_top_min_max_list
+            assert sto.n_p_bot_min_max_list == trf_toml.design_space.n_p_bot_min_max_list
+            assert sto.material_list == trf_toml.design_space.material_name_list
+            assert sto.core_name_list == trf_toml.design_space.core_name_list
+            assert sto.core_inner_diameter_min_max_list == trf_toml.design_space.core_inner_diameter_min_max_list
+            assert sto.window_w_min_max_list == trf_toml.design_space.window_w_min_max_list
+            assert sto.window_h_bot_min_max_list == trf_toml.design_space.window_h_bot_min_max_list
+            assert sto.primary_litz_wire_list == trf_toml.design_space.primary_litz_wire_list
+            assert sto.secondary_litz_wire_list == trf_toml.design_space.secondary_litz_wire_list
+            assert sto.fft_filter_value_factor == trf_toml.settings.fft_filter_value_factor
+            assert sto.mesh_accuracy == trf_toml.settings.mesh_accuracy
+            assert sto.stacked_transformer_optimization_directory == expected_trial_directory
+
+            # Verify Thermal DTO
+            assert dto.thermal_data.tim_thickness == trf_toml.thermal_data.thermal_cooling[0]
+            assert dto.thermal_data.tim_conductivity == trf_toml.thermal_data.thermal_cooling[1]
+
+            # Verify Filter distance
+            assert dto.factor_dc_losses_min_max_list == trf_toml.filter_distance.factor_dc_losses_min_max_list
+
+            # Verify transformer_requirements fields
+            assert dto.transformer_requirements.transformer_number_in_circuit == req.transformer_number_in_circuit
+            assert dto.transformer_requirements.circuit_id == req.circuit_id
+            assert dto.transformer_requirements.l_s12_target == req.l_s12_target
+            assert dto.transformer_requirements.l_h_target == req.l_h_target
+            assert dto.transformer_requirements.n_target == req.n_target
+            assert dto.transformer_requirements.time_vec == req.time_vec
+            assert dto.transformer_requirements.current_1_vec == req.current_1_vec
+            assert dto.transformer_requirements.current_2_vec == req.current_2_vec
+
+            # Verify Progress Data
+            assert dto.progress_data.progress_status == ProgressStatus.Idle
+            assert dto.progress_data.run_time == 0
+            assert dto.progress_data.number_of_filtered_points == 0
+
+            # Verify Transformer Optimization DTO (Top level)
+            assert dto.trial_directory == expected_trial_directory
+            assert dto.circuit_id == req.circuit_id
+            assert dto.transformer_number_in_circuit == req.transformer_number_in_circuit
+            assert dto.number_of_trails == config.study_data.number_of_trials
