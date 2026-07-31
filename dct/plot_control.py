@@ -296,7 +296,7 @@ class ParetoPlots:
             # Display diagram
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
                                              alpha_list=alpha_list,
-                                             x_label=r'$\mathcal{V}_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
+                                             x_label=r'$\mathcal{V}_\mathrm{transformer}$ / cm³', y_label=r'$P_\mathrm{transformer}$ / W',
                                              label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max],
                                              ylim=[y_scale_min, y_scale_max])
