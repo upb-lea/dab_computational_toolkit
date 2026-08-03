@@ -1267,6 +1267,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             df_smallest_all = pd.concat([df_smallest_all, df_smallest], axis=0)
 
         smallest_dto_list = self.df_to_dab_dto_list(df_smallest_all)
+        logger.info("Save filtered circuit results into csv file.")
+        df_smallest_all.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._dab_config.circuit_study_name}_filtered.csv')
 
         dto_directory = self.filter_data.filtered_list_pathname
         os.makedirs(dto_directory, exist_ok=True)

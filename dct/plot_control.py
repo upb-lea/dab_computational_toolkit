@@ -296,7 +296,7 @@ class ParetoPlots:
             # Display diagram
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=color_list,
                                              alpha_list=alpha_list,
-                                             x_label=r'$\mathcal{V}_\mathrm{ind}$ / cm³', y_label=r'$P_\mathrm{ind}$ / W',
+                                             x_label=r'$\mathcal{V}_\mathrm{transformer}$ / cm³', y_label=r'$P_\mathrm{transformer}$ / W',
                                              label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max],
                                              ylim=[y_scale_min, y_scale_max])
@@ -346,7 +346,7 @@ class ParetoPlots:
             fig_name = os.path.join(summary_directory, f"capacitor_c{circuit_number}_{capacitor_study_data.study_name}")
 
             ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list=["black", "red"], alpha_list=[0.5, 0.5],
-                                             x_label=r'$\mathcal{V}_\mathrm{tr}$ / cm³',
+                                             x_label=r'$\mathcal{V}_\mathrm{capacitor}$ / cm³',
                                              y_label=r'$P_\mathrm{capacitor}$ / W', label_list=label_list,
                                              fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
