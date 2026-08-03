@@ -165,6 +165,7 @@ def calc_modulation_params(n: np.float64, ls: np.float64, lc1: np.float64, lc2: 
     da_mod_results[MOD_KEYS[7]] = np.count_nonzero(zvs) / np.size(zvs)
 
     # ZVS coverage based on calculation: Percentage ZVS based on all points where the converter can be operated (not full operating range)
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         da_mod_results[MOD_KEYS[8]] = np.count_nonzero(zvs[~np.isnan(tau1)]) / np.size(zvs[~np.isnan(tau1)])
 
@@ -225,9 +226,11 @@ def _calc_interval_1(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
     e5 = l_s * l_c_b2_ * omega_s * (e2 + 2 * e1 + 2 * np.sqrt(e1 * (e1 + e2)))
 
     # Solution for interval I (mode 2)
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         tau_1_rad = (np.sqrt(2) * (l_c_b1 * np.sqrt(v_b2_ * e3 * e5) + e4 * e3 * 1 / n)) / (v_b1 * e3 * (l_c_b1 + l_s))
 
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         tau_2_rad = np.sqrt((2 * e5) / (v_b2_ * e3))
 
@@ -275,9 +278,11 @@ def _calc_interval_2(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
     e5 = l_s * l_c_b2_ * omega_s * (e2 + 2 * e1 + 2 * np.sqrt(e1 * (e1 + e2)))
 
     # Solution for interval II (mode 2)
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         tau_1_rad = (np.sqrt(2) * (e5 + omega_s * l_s * l_c_b2_ * e2 * (v_b2_ / v_b1 * (l_s / l_c_b2_ + 1) - 1))) / (np.sqrt(v_b2_ * e3 * e5))
 
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         tau_2_rad = np.sqrt((2 * e5) / (v_b2_ * e3))
 
@@ -327,6 +332,7 @@ def _calc_interval_3(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
     # Solution for interval III (mode 1)
     tau_1_rad = np.full_like(v_b1, np.pi)
 
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         tau_2_rad = np.sqrt((2 * e5) / (v_b2_ * e3))
 
@@ -340,6 +346,7 @@ def _calc_interval_3(n: np.float64, l_s: np.float64, l_c_b1: np.float64, l_c_b2_
     # Check if tau_2_rad > pi: Set tau_2_rad = pi and recalculate phi_rad for these points
     tau2_III_g_pi_mask = np.greater(tau_2_rad, np.pi)
     tau2_III_part_2 = np.full_like(v_b1, np.pi)
+    # ignore error in case of NaN. NaN invalid results will be ignored by the Pareto algorithm anyway
     with np.errstate(invalid='ignore'):
         phi_III_part_2 = (- tau_1_rad + tau2_III_part_2 + np.pi) / 2 - np.sqrt(
             (- np.power((tau2_III_part_2 - np.pi), 2) + tau_1_rad * (2 * np.pi - tau_1_rad)) / 4 - (i_b1 * omega_s * l_s * np.pi) / v_b2_)
