@@ -48,7 +48,7 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE)
+                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -591,8 +591,7 @@ class DctMainCtl:
         return is_processing_complete, issue_report
 
     @staticmethod
-    def _set_processing_complete(base_directory: str, subdirectory: str, complete_file_name: str,
-                                 circuit_filtered_index_list: list[str] | None = None) -> None:
+    def _create_pkl_file_completion_list(path_list: list[str], extension: str) -> list[str]:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
@@ -601,16 +600,48 @@ class DctMainCtl:
         by , 'base_directory'/filter_results_list'-entry/'subdirectory'. If the filter_results_list is empty only
         'base_directory' is taken as path to pkl-files. An exception occurs, if base_directory does not exist.
 
+        :param path_list: List of the file path
+        :type  path_list: list[str]
+        :param extension: Extension of files, which shall be added to the list
+        :type  extension: str
+        :return: List of existing files with requested extension within the given paths.
+        :rtype:  list[str]
+        """
+        # Variable declaration and initialization of return value
+        pkl_file_list: list[str] = []
+
+        # Create pkl-file completion list
+        for path_entry in path_list:
+            # Check path
+            if not (os.path.exists(path_entry) or path_entry == ""):
+                raise ValueError(f"{extension}-file path {path_entry} does not exists!")
+            # Create list
+            for filename in os.listdir(path_entry):
+                if filename.endswith(extension):
+                    pkl_file_list.append(os.path.join(path_entry, filename))
+
+        return pkl_file_list
+
+    @staticmethod
+    def _set_processing_complete(base_directory: str, subdirectory: str, complete_file_name: str,
+                                 circuit_filtered_index_list: list[str] | None = None) -> None:
+        """Create the 'processing_complete.json' file to indicate the completion of the calculation.
+
+        At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
+        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
+        'processing_complete.json'-file contains the list of all created pkl-files.
+        The path to these files are assembled by , 'base_directory'/filter_results_list'-entry/'subdirectory'.
+        If the filter_results_list is empty only 'base_directory' is taken as path to pkl-files.
+        An exception occurs, if base_directory does not exist.
+
         :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
         :type  base_directory: str
-        :param subdirectory_list: List of the (relative) subdirectory path to pkl-files
-        :type  subdirectory_list: list[str]
-        :param complete_file_name: List of the complete file names
-        :type  complete_file_name: list[str]
+        :param subdirectory: Subdirectory path to pkl-files
+        :type  subdirectory: str
+        :param complete_file_name: Complete file name
+        :type  complete_file_name: str
         :param circuit_filtered_index_list: List with the name of filtered results
         :type  circuit_filtered_index_list: list[str]
-        :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
-        :rtype: bool
         """
         # Variable declaration and initialization
         path_list: list[str] = []
@@ -632,14 +663,49 @@ class DctMainCtl:
             path_list.append(os.path.join(base_directory, subdirectory))
 
         # Create pkl-file completion list
-        for path_entry in path_list:
-            # Check path
-            if not (os.path.exists(path_entry) or path_entry == ""):
-                raise ValueError(f"pkl-file path {path_entry} does not exists!")
-            # Create list
-            for filename in os.listdir(path_entry):
-                if filename.endswith(".pkl"):
-                    pkl_file_list.append(os.path.join(path_entry, filename))
+        pkl_file_list = DctMainCtl._create_pkl_file_completion_list(path_list, ".pkl")
+
+        # Store processing_complete_file
+        with open(processing_complete_file, "w", encoding="utf-8") as file_handle:
+            json.dump(pkl_file_list, file_handle, indent=2)
+
+    @staticmethod
+    def _set_presummary_complete(base_directory: str, complete_file_name: str) -> None:
+        """Create the 'processing_complete.json' file to indicate the completion of the calculation.
+
+        At the end of pre summary the 'processing_complete.json' will be created. This is for verification,
+        that the pre summary is complete. In case of skip this file will be use to check the completion of pre summary.
+        'processing_complete.json'-file contains the list of all created pkl-files of SUMMARY_COMBINATION_FOLDER and csv-files.
+        An exception occurs, if base_directory does not exist.
+
+        :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
+        :type  base_directory: str
+        :param complete_file_name: Complete file name
+        :type  complete_file_name: str
+        :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
+        :rtype: bool
+        """
+        # Variable declaration and initialization
+        path_list: list[str] = []
+
+        # Check if file exists
+        # Check path
+        if not (os.path.exists(base_directory) or base_directory == ""):
+            raise ValueError(f"Path {base_directory} does not exists!")
+
+        # Set file path
+        processing_complete_file = os.path.join(base_directory, complete_file_name)
+        # Create path list
+        # pkl-files searched in base_directory
+        path_list.append(base_directory)
+
+        # Create csv-file completion list of csv-files
+        pkl_file_list = DctMainCtl._create_pkl_file_completion_list(path_list, ".csv")
+        # Create pre summary completion list with pkl-file entries
+        path_list = [os.path.join(base_directory, SUMMARY_COMBINATION_FOLDER)]
+        # Add pkl-file entries for SUMMARY_COMBINATION_FOLDER folder
+        pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".pkl")
+
         # Store processing_complete_file
         with open(processing_complete_file, "w", encoding="utf-8") as file_handle:
             json.dump(pkl_file_list, file_handle, indent=2)
@@ -1734,7 +1800,52 @@ class DctMainCtl:
             # Delete old heat sink study
             self.delete_study_content(True, self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name)
 
+        # --------------------------
+        # Pre-summary flow control
+        # --------------------------
+
+        # Check, if pre-summary is to skip
+        if pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check if pre summary are skippable
+            is_skippable, issue_report = DctMainCtl._is_skippable(pre_summary_data,
+                                                                  PROCESSING_COMPLETE_FILE, False, [])
+
+            if is_skippable:
+                # Check if all components are skipped
+                # Check for not skip in capacitor configuration list
+                for actual_capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+                    if actual_capacitor_selection_configuration.study_data.calculation_mode != CalcModeEnum.skip_mode:
+                        is_skippable = False
+                        break
+                if is_skippable:
+                    # Check for not skip in inductor configuration list
+                    for actual_inductor_study_configuration in self._inductor_study_configuration_list:
+                        if actual_inductor_study_configuration.study_data.calculation_mode != CalcModeEnum.skip_mode:
+                            is_skippable = False
+                            break
+                if is_skippable:
+                    # Check for not skip in transformer configuration list
+                    for actual_transformer_study_configuration in self._transformer_study_configuration_list:
+                        if actual_transformer_study_configuration.study_data.calculation_mode != CalcModeEnum.skip_mode:
+                            is_skippable = False
+                            break
+                # Check for not skip in heat sink
+                if self._heat_sink_study_data.calculation_mode != CalcModeEnum.skip_mode and is_skippable:
+                    is_skippable = False
+
+            # Evaluate if the pre summary is skippable
+            if not is_skippable:
+                pre_summary_data.calculation_mode = CalcModeEnum.new_mode
+
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if pre_summary_data.calculation_mode == CalcModeEnum.new_mode:
+            # Delete old pre summary
+            self.delete_study_content(True, pre_summary_data.optimization_directory, pre_summary_data.study_name)
+
         # -- Start server  --------------------------------------------------------------------------------------------
+
+        # Debug logger
+        logger.info("Test in run_optimization_from_toml_configurations: Start server")
 
         # Initialize the runtime timer
         self._circuit_progress_time = [RunTime()]
@@ -1762,6 +1873,8 @@ class DctMainCtl:
         # --------------------------
         # Circuit optimization
         # --------------------------
+        # Debug logger
+        logger.info("Test in run_optimization_from_toml_configurations: Circuit optimization")
         logger.info("Start circuit optimization.")
 
         # Check, if electrical optimization is not to skip
@@ -1984,38 +2097,48 @@ class DctMainCtl:
         # --------------------------
         logger.info("Start pre-summary.")
 
-        # Allocate summary data object
-        self._summary_pre_processing = SummaryProcessing()
+        # Check, if pre summary is to skip
+        if not pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
 
-        if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
-            raise ValueError("Thermal data configuration not initialized!")
+            # Allocate summary data object
+            self._summary_pre_processing = SummaryProcessing()
 
-        # Initialize pre summary processing by collecting data from circuit and component optimization
-        self._summary_pre_processing.initialize_processing(
-            act_filter_data=self._circuit_optimization.filter_data,
-            act_capacitor_data_list=self._capacitor_selection_configuration_list,
-            act_inductor_data_list=self._inductor_study_configuration_list,
-            act_transformer_data_list=self._transformer_study_configuration_list,
-            summary_study_data=pre_summary_data, is_pre_summary=True)
+            if not self._summary_pre_processing.init_thermal_configuration(toml_heat_sink):
+                raise ValueError("Thermal data configuration not initialized!")
 
-        # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = self._summary_pre_processing.generate_cooling_requirement_database(
-            heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions)
+            # Initialize pre summary processing by collecting data from circuit and component optimization
+            self._summary_pre_processing.initialize_processing(
+                act_filter_data=self._circuit_optimization.filter_data,
+                act_capacitor_data_list=self._capacitor_selection_configuration_list,
+                act_inductor_data_list=self._inductor_study_configuration_list,
+                act_transformer_data_list=self._transformer_study_configuration_list,
+                summary_study_data=pre_summary_data, is_pre_summary=True)
 
-        #  Select the needed heat sink configuration
-        df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
-        # ASA: Generally control_board_volume and control_board_loss depends on the topology.
-        # Only for test setups it could be the same
-        df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
-                                                                                toml_misc.control_board_loss)
+            # Delete processing complete indicator
+            DctMainCtl._delete_processing_complete(pre_summary_data.optimization_directory,
+                                                   PROCESSING_COMPLETE_FILE)
 
-        df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000)
+            # Start summary processing by generating the DataFrame from calculated simulation results
+            s_df = self._summary_pre_processing.generate_cooling_requirement_database(
+                heat_sink_boundary_conditions=self._summary_pre_processing.heat_sink_boundary_conditions)
 
-        self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
-                                                        self._capacitor_selection_configuration_list,
-                                                        self._inductor_study_configuration_list,
-                                                        self._transformer_study_configuration_list,
-                                                        df_pareto_front, is_pre_summary=True)
+            #  Select the needed heat sink configuration
+            df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
+            # ASA: Generally control_board_volume and control_board_loss depends on the topology.
+            # Only for test setups it could be the same
+            df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
+                                                                                    toml_misc.control_board_loss)
+
+            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000)
+
+            self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
+                                                            self._capacitor_selection_configuration_list,
+                                                            self._inductor_study_configuration_list,
+                                                            self._transformer_study_configuration_list,
+                                                            df_pareto_front, is_pre_summary=True)
+
+            # Set processing complete indicator
+            DctMainCtl._set_presummary_complete(pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
 
@@ -2169,6 +2292,7 @@ if __name__ == "__main__":
 
     # Create a main control instance
     dct_mctl = DctMainCtl()
+
     # Read the command line
     arguments = sys.argv
 
