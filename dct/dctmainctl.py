@@ -629,9 +629,10 @@ class DctMainCtl:
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
         that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
-        The verification bases on all created pkl-files while optimization. E.g. the path to these files are assembled
-        by , 'base_directory'/filter_results_list'-entry/'subdirectory'. If the filter_results_list is empty only
-        'base_directory' is taken as path to pkl-files. An exception occurs, if base_directory does not exist.
+        'processing_complete.json'-file contains the list of all created pkl-files.
+        The path to these files are assembled by , 'base_directory'/filter_results_list'-entry/'subdirectory'.
+        If the filter_results_list is empty only 'base_directory' is taken as path to pkl-files.
+        An exception occurs, if base_directory does not exist.
 
         :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
         :type  base_directory: str
@@ -669,19 +670,16 @@ class DctMainCtl:
             json.dump(pkl_file_list, file_handle, indent=2)
 
     @staticmethod
-    def _set_presummary_complete(base_directory: str, subdirectory: str, complete_file_name: str) -> None:
+    def _set_presummary_complete(base_directory: str, complete_file_name: str) -> None:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
-        At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
-        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
-        The verification bases on all created pkl-files while optimization. E.g. the path to these files are assembled
-        by , 'base_directory'/filter_results_list'-entry/'subdirectory'. If the filter_results_list is empty only
-        'base_directory' is taken as path to pkl-files. An exception occurs, if base_directory does not exist.
+        At the end of pre summary the 'processing_complete.json' will be created. This is for verification,
+        that the pre summary is complete. In case of skip this file will be use to check the completion of pre summary.
+        'processing_complete.json'-file contains the list of all created pkl-files of SUMMARY_COMBINATION_FOLDER and csv-files.
+        An exception occurs, if base_directory does not exist.
 
         :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
         :type  base_directory: str
-        :param subdirectory: Subdirectory path to pkl-files
-        :type  subdirectory: str
         :param complete_file_name: Complete file name
         :type  complete_file_name: str
         :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
@@ -698,14 +696,14 @@ class DctMainCtl:
         # Set file path
         processing_complete_file = os.path.join(base_directory, complete_file_name)
         # Create path list
-        # pkl-files searched in base_directory/subdirectory
-        path_list.append(os.path.join(base_directory, subdirectory))
+        # pkl-files searched in base_directory
+        path_list.append(base_directory)
 
-        # Create pkl-file completion list of csv-files
+        # Create csv-file completion list of csv-files
         pkl_file_list = DctMainCtl._create_pkl_file_completion_list(path_list, ".csv")
-        # Create pre summary completion list with csv-file entries
-        path_list = [os.path.join(base_directory, subdirectory, SUMMARY_COMBINATION_FOLDER)]
-        # Add pkl-file entries for both sub folders
+        # Create pre summary completion list with pkl-file entries
+        path_list = [os.path.join(base_directory, SUMMARY_COMBINATION_FOLDER)]
+        # Add pkl-file entries for SUMMARY_COMBINATION_FOLDER folder
         pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".pkl")
 
         # Store processing_complete_file
@@ -1613,7 +1611,7 @@ class DctMainCtl:
         # --------------------------
         # Inductor flow control
         # --------------------------
-        # logger.debug("Read inductor flow control")
+        logger.debug("Read inductor flow control")
 
         # Add calculation mode list for simulation optimization
         inductor_sim_calculation_mode_list: list[CalcModeEnum] = []
@@ -2140,8 +2138,7 @@ class DctMainCtl:
                                                             df_pareto_front, is_pre_summary=True)
 
             # Set processing complete indicator
-            DctMainCtl._set_presummary_complete(pre_summary_data.optimization_directory, "",
-                                                PROCESSING_COMPLETE_FILE)
+            DctMainCtl._set_presummary_complete(pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
 
@@ -2295,8 +2292,6 @@ if __name__ == "__main__":
 
     # Create a main control instance
     dct_mctl = DctMainCtl()
-    # Debug logger
-    logger.info("Test in main")
 
     # Read the command line
     arguments = sys.argv

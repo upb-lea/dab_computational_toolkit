@@ -65,7 +65,7 @@
     #    # General configuration file followed by circuit configuration file
     #    topology_files =  ["SbcGeneralConf.toml","SbcCircuitConf.toml"]
     #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
-    #    capacitor_configuration_files = []
+    #    capacitor_configuration_files = ["SbcCapacitor1Conf.toml", "SbcCapacitor2Conf.toml"]
     #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
     #    inductor_configuration_files = ["SbcInductorConf.toml"]
     #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
