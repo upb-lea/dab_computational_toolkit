@@ -360,7 +360,7 @@ class InductorOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
-                logger.info(f"Re-simulation of circuit {circuit_id} with inductor {inductor_id} already exists. Skip.")
+                logger.info(f"All-operating point simulation of circuit {circuit_id} with inductor {inductor_id} already exists. Skip.")
             else:
                 for vec_vvp in np.ndindex(inductor_requirements.time_array[..., 0].shape):
                     time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
