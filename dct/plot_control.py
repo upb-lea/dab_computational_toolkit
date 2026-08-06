@@ -7,6 +7,7 @@ import pickle
 # 3rd party libraries
 from matplotlib import pyplot as plt
 import pandas as pd
+import numpy as np
 
 # own libraries
 import dct.generalplotsettings as gps
@@ -108,7 +109,8 @@ class ParetoPlots:
                                          label_list=plot_data.label_list, fig_name_path=fig_name)
 
     @staticmethod
-    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, is_summary: bool = False) -> None:
+    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, vvp_index: tuple,
+                              is_summary: bool = False) -> None:
         """
         Plot the results of the inductor optimization in the Pareto plane.
 
@@ -118,6 +120,8 @@ class ParetoPlots:
         :type  filtered_list_files: list[str]
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
+        :param vvp_index: loss index for final summary to consider
+        :type vvp_index: tuple
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
         """
@@ -171,11 +175,11 @@ class ParetoPlots:
                     with open(fem_inductor_id_file_path, 'rb') as pickle_file_data:
                         inductor_fem_result_dto = pickle.load(pickle_file_data)
 
-                    # Calculate maximum loss
-                    loss_max = max(inductor_fem_result_dto.loss_array)
-                    inductor_fem_selected_result_list.append((inductor_fem_result_dto.volume * FACTOR_M3_TO_CM3, loss_max))
+                    inductor_fem_selected_result_list.append((inductor_fem_result_dto.volume * FACTOR_M3_TO_CM3, inductor_fem_result_dto.loss_array))
 
                 df_fem_result = pd.DataFrame(inductor_fem_selected_result_list, columns=[volume_key, loss_key])
+
+                loss_array_from_index = df_fem_result[loss_key].apply(lambda x: x[vvp_index[0]][vvp_index[1]][vvp_index[2]]).tolist()
 
                 # Append label and color
                 label_list.append("FEM")
@@ -184,14 +188,14 @@ class ParetoPlots:
 
                 # Add  fem simulation points
                 x_values_list.append(df_fem_result[volume_key])
-                y_values_list.append(df_fem_result[loss_key])
+                y_values_list.append(loss_array_from_index)
 
                 # Scaling needs to update
                 x_scale_min = min(x_scale_min, 0.9 * df_fem_result[volume_key].min())
                 x_scale_max = max(x_scale_max, 1.1 * df_fem_result[volume_key].max())
 
-                y_scale_min = min(y_scale_min, 0.9 * df_fem_result[loss_key].min())
-                y_scale_max = max(y_scale_max, 1.1 * df_fem_result[loss_key].max())
+                y_scale_min = min(y_scale_min, 0.9 * np.min(loss_array_from_index))
+                y_scale_max = max(y_scale_max, 1.1 * np.max(loss_array_from_index))
 
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"inductor_c{circuit_number}_{inductor_study_data.study_name}")
@@ -204,7 +208,8 @@ class ParetoPlots:
                                              ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
-    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, is_summary: bool = False) -> None:
+    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, vvp_index: tuple,
+                                 is_summary: bool = False) -> None:
         """
         Plot the results of the transformer optimization in the Pareto plane.
 
@@ -214,6 +219,8 @@ class ParetoPlots:
         :type  filtered_list_files: list[str]
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
+        :param vvp_index: loss index for final summary to consider
+        :type vvp_index: tuple
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
         """
@@ -269,11 +276,11 @@ class ParetoPlots:
                     with open(fem_transformer_id_file_path, 'rb') as pickle_file_data:
                         transformer_fem_result_dto = pickle.load(pickle_file_data)
 
-                    # Calculate maximum loss
-                    loss_max = max(transformer_fem_result_dto.loss_array)
-                    transformer_fem_selected_result_list.append((transformer_fem_result_dto.volume * FACTOR_M3_TO_CM3, loss_max))
+                    transformer_fem_selected_result_list.append((transformer_fem_result_dto.volume * FACTOR_M3_TO_CM3, transformer_fem_result_dto.loss_array))
 
                 df_fem_result = pd.DataFrame(transformer_fem_selected_result_list, columns=[volume_key, loss_key])
+
+                loss_array_from_index = df_fem_result[loss_key].apply(lambda x: x[vvp_index[0]][vvp_index[1]][vvp_index[2]]).tolist()
 
                 # Append label and color
                 label_list.append("FEM")
@@ -282,14 +289,14 @@ class ParetoPlots:
 
                 # Add  fem simulation points
                 x_values_list.append(df_fem_result[volume_key])
-                y_values_list.append(df_fem_result[loss_key])
+                y_values_list.append(loss_array_from_index)
 
                 # Scaling needs to update
                 x_scale_min = min(x_scale_min, 0.9 * df_fem_result[volume_key].min())
                 x_scale_max = max(x_scale_max, 1.1 * df_fem_result[volume_key].max())
 
-                y_scale_min = min(y_scale_min, 0.9 * df_fem_result[loss_key].min())
-                y_scale_max = max(y_scale_max, 1.1 * df_fem_result[loss_key].max())
+                y_scale_min = min(y_scale_min, 0.9 * np.min(loss_array_from_index))
+                y_scale_max = max(y_scale_max, 1.1 * np.max(loss_array_from_index))
 
             # Set the target directory
             fig_name = os.path.join(summary_directory, f"transformer_c{circuit_number}_{transformer_study_data.study_name}")

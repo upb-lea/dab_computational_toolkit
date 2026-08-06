@@ -2152,12 +2152,12 @@ class DctMainCtl:
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                              pre_summary_data.optimization_directory)
+                                              pre_summary_data.optimization_directory, vvp_index=(0, 0, 0))  # dummy index, not used in pre-summary
         # Plot results of all transformers
         for transformer_study_configuration in self._transformer_study_configuration_list:
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
-                                                 pre_summary_data.optimization_directory)
+                                                 pre_summary_data.optimization_directory, vvp_index=(0, 0, 0))  # dummy index, not used in pre-summary
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
         ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
 
@@ -2264,15 +2264,20 @@ class DctMainCtl:
                                                summary_data.optimization_directory)
 
         # Plot results of all inductors
-        for inductor_study_configuration in self._inductor_study_configuration_list:
+        for count, inductor_study_configuration in enumerate(self._inductor_study_configuration_list):
+            inductor_requirement = inductor_requirements_list[count]
+
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                              summary_data.optimization_directory, True)
+                                              summary_data.optimization_directory, vvp_index=inductor_requirement.vvp_index,
+                                              is_summary=True)
         # Plot results of all transformers
-        for transformer_study_configuration in self._transformer_study_configuration_list:
+        for count, transformer_study_configuration in enumerate(self._transformer_study_configuration_list):
+            transformer_requirement = transformer_requirements_list[count]
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
-                                                 summary_data.optimization_directory, True)
+                                                 summary_data.optimization_directory, vvp_index=transformer_requirement.vvp_index,
+                                                 is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
 

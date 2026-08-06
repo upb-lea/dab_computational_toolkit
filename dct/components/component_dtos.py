@@ -50,9 +50,10 @@ class InductorRequirements:
 
     target_inductance: float
 
-    # exact a single current waveform to optimize the inductor
+    # exact a single current waveform to optimize the inductor. Add tuple with operating point index
     time_vec: np.ndarray
     current_vec: np.ndarray
+    vvp_index: tuple
 
     # all current waveforms for calculation the inductor loss for a single (optimized) inductor
     time_array: np.ndarray
@@ -89,6 +90,7 @@ class TransformerRequirements:
     time_vec: np.ndarray
     current_1_vec: np.ndarray
     current_2_vec: np.ndarray
+    vvp_index: tuple
 
     # all current waveforms for calculation the transformer loss for a single (optimized) transformer
     time_array: np.ndarray

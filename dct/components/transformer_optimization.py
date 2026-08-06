@@ -620,20 +620,22 @@ class TransformerOptimization:
 
         # Filter study. Use same filter as in the reluctance model
         df = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.study_to_df(act_sto_config)
-        df_filtered = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
+        df_transformer_pareto = fmt.optimization.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(
             df, factor_min_dc_losses=factor_dc_losses_min_max_list[0], factor_max_dc_losses=factor_dc_losses_min_max_list[1])
         if debug.general.is_debug:
             # reduce dataset to the given number from the debug configuration
-            df_filtered = df_filtered.iloc[:debug.transformer.number_fem_working_point_max]
+            df_transformer_pareto = df_transformer_pareto.iloc[:debug.transformer.number_fem_working_point_max]
 
         # Assemble configuration path
         config_filepath = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                        f"{act_sto_config.stacked_transformer_study_name}.pkl")
 
-        re_simulate_numbers = df_filtered["number"].to_numpy()
+        transformer_id_list_pareto = df_transformer_pareto["number"].to_numpy()
 
-        for transformer_id in re_simulate_numbers:
-            df_geometry_re_simulation_number = df_filtered[df_filtered["number"] == transformer_id]
+        logger.info(f"Full-operating point simulation list: {transformer_id_list_pareto}")
+
+        for transformer_id in transformer_id_list_pareto:
+            df_geometry_re_simulation_number = df_transformer_pareto[df_transformer_pareto["number"] == transformer_id]
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,
                                                      CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)

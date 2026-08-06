@@ -774,7 +774,7 @@ class HandleDabDto:
             return loaded_circuit_dto
 
     @staticmethod
-    def get_max_peak_waveform_transformer(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def get_max_peak_waveform_transformer(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray, tuple]:
         """
         Get the transformer waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -782,8 +782,8 @@ class HandleDabDto:
         :type dab_dto: d_dtos.DabCircuitDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
-        :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform. All as a numpy array.
-        :rtype: List[np.ndarray]
+        :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform, vvp_index. All as a numpy array except vvp_index (tuple)
+        :rtype: List[np.ndarray, np.ndarray, np.ndarray, tuple]
         """
         i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted * dab_dto.input_config.n - dab_dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
@@ -810,10 +810,10 @@ class HandleDabDto:
             plt.legend()
             plt.show()
 
-        return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform
+        return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform, max_index
 
     @staticmethod
-    def get_max_peak_waveform_inductor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def get_max_peak_waveform_inductor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, tuple]:
         """
         Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -821,8 +821,8 @@ class HandleDabDto:
         :type dab_dto: d_dtos.DabCircuitDTO
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
-        :return: sorted_max_angles, i_l_s_max_current_waveform, i_l1_max_current_waveform. All as a numpy array.
-        :rtype: List[np.ndarray]
+        :return: [sorted_max_angles, i_l_max_current_waveform, vvp_max_index]. As a numpy array, index as tuple
+        :rtype: List[np.ndarray, np.ndarray, tuple]
         """
         i_l1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
@@ -847,7 +847,7 @@ class HandleDabDto:
             plt.legend()
             plt.show()
 
-        return sorted_max_angles, i_l1_max_current_waveform
+        return sorted_max_angles, i_l1_max_current_waveform, max_index
 
     @staticmethod
     def get_max_rms_waveform_capacitor_1(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -1122,7 +1122,7 @@ class HandleDabDto:
         :rtype: InductorRequirements
         """
         # get the single maximum operating point
-        sorted_max_rms_angles, i_l_1_max_peak_current_waveform = HandleDabDto.get_max_peak_waveform_inductor(dab_dto, plot=False)
+        sorted_max_rms_angles, i_l_1_max_peak_current_waveform, vvp_max_index = HandleDabDto.get_max_peak_waveform_inductor(dab_dto, plot=False)
 
         # get all current waveforms for all operating points
         i_l_1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
@@ -1151,6 +1151,7 @@ class HandleDabDto:
         inductor_requirements = InductorRequirements(
             current_vec=i_l_1_max_peak_current_waveform,
             time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
+            vvp_index=vvp_max_index,
             time_array=time_array_resorted,
             current_array=current_array_resorted,
             study_name="",
@@ -1172,7 +1173,8 @@ class HandleDabDto:
         :rtype: TransformerRequirements
         """
         # get the single maximum operating point
-        sorted_max_rms_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform = HandleDabDto.get_max_peak_waveform_transformer(dab_dto, plot=False)
+        sorted_max_rms_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform, vvp_max_index = HandleDabDto.get_max_peak_waveform_transformer(
+            dab_dto, plot=False)
 
         # get all current waveforms for all operating points
         i_l_s_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted, (1, 2, 3, 0))
@@ -1214,6 +1216,7 @@ class HandleDabDto:
             time_vec=sorted_max_rms_angles / (2 * np.pi * dab_dto.input_config.fs),
             current_1_vec=i_l_s_max_current_waveform,
             current_2_vec=-i_hf_2_max_current_waveform,
+            vvp_index=vvp_max_index,
 
             # all current waveforms for calculation the transformer loss for a single (optimized) transformer
             time_array=time_array_resorted,
