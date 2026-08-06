@@ -445,7 +445,7 @@ class TransformerOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{transformer_id}.pkl")):
-                logger.info(f"All-operating point simulation of cirucit {circuit_id} with transformer {transformer_id} already exists. Skip.")
+                logger.info(f"All-operating point simulation of circuit {circuit_id} with transformer {transformer_id} already exists. Skip.")
             else:
                 for vec_vvp in np.ndindex(result_array.shape):
                     time, unique_indices = np.unique(transformer_requirements.time_array[vec_vvp], return_index=True)
