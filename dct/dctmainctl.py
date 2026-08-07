@@ -595,7 +595,7 @@ class DctMainCtl:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
-        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
+        that the optimization is complete. In case of skip this file will be used to check the completion of optimization.
         The verification bases on all created pkl-files while optimization. E.g. the path to these files are assembled
         by , 'base_directory'/filter_results_list'-entry/'subdirectory'. If the filter_results_list is empty only
         'base_directory' is taken as path to pkl-files. An exception occurs, if base_directory does not exist.
@@ -628,13 +628,13 @@ class DctMainCtl:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
-        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
+        that the optimization is complete. In case of skip this file will be used to check the completion of optimization.
         'processing_complete.json'-file contains the list of all created pkl-files.
         The path to these files are assembled by , 'base_directory'/filter_results_list'-entry/'subdirectory'.
         If the filter_results_list is empty only 'base_directory' is taken as path to pkl-files.
         An exception occurs, if base_directory does not exist.
 
-        :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
+        :param base_directory: Directory for 'processing_complete.json' and start point for subdirectory
         :type  base_directory: str
         :param subdirectory: Subdirectory path to pkl-files
         :type  subdirectory: str
@@ -674,11 +674,11 @@ class DctMainCtl:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of pre summary the 'processing_complete.json' will be created. This is for verification,
-        that the pre summary is complete. In case of skip this file will be use to check the completion of pre summary.
+        that the pre summary is complete. In case of skip this file will be used to check the completion of pre summary.
         'processing_complete.json'-file contains the list of all created pkl-files of SUMMARY_COMBINATION_FOLDER and csv-files.
         An exception occurs, if base_directory does not exist.
 
-        :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
+        :param base_directory: Directory for 'processing_complete.json' and start point for subdirectory
         :type  base_directory: str
         :param complete_file_name: Complete file name
         :type  complete_file_name: str
@@ -2264,15 +2264,20 @@ class DctMainCtl:
                                                summary_data.optimization_directory)
 
         # Plot results of all inductors
-        for inductor_study_configuration in self._inductor_study_configuration_list:
+        for count, inductor_study_configuration in enumerate(self._inductor_study_configuration_list):
+            inductor_requirement = inductor_requirements_list[count]
+
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                              summary_data.optimization_directory, True)
+                                              summary_data.optimization_directory, vvp_index=inductor_requirement.vvp_index,
+                                              is_summary=True)
         # Plot results of all transformers
-        for transformer_study_configuration in self._transformer_study_configuration_list:
+        for count, transformer_study_configuration in enumerate(self._transformer_study_configuration_list):
+            transformer_requirement = transformer_requirements_list[count]
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
-                                                 summary_data.optimization_directory, True)
+                                                 summary_data.optimization_directory, vvp_index=transformer_requirement.vvp_index,
+                                                 is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
 

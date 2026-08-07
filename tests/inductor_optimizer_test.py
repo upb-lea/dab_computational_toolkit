@@ -239,7 +239,11 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
             factor_dc_losses_min_max_list=float_min_max_list_configuration_gt0_le100[test_index]),
         material_data_sources=tc.TomlMaterialDataSources(
             permeability_datasource="LEA_MTB",
-            permittivity_datasource="LEA_MTB")
+            permittivity_datasource="LEA_MTB"),
+        settings=tc.TomlInductorSettings(
+            mesh_accuracy=0.5,
+            fft_filter_value_factor=0.1
+        )
     )
 
     # Create boundary list from minimum-maximum list with assigned parameters
@@ -386,6 +390,10 @@ def test_initialize_inductor_optimization_list(test_type: TestCase, calc_mode: C
                 permeability_datasource="LEA_MTB",
                 permittivity_datasource="LEA_MTB",
             ),
+            settings=tc.TomlInductorSettings(
+                mesh_accuracy=0.5,
+                fft_filter_value_factor=0.1
+            )
         )
     )
     
