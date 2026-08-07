@@ -87,6 +87,7 @@ class ParetoPlots:
         # Save the figure as pickle file type, for later view
         with open(f"{path}/{PARETO_PLOT_PKL_FOLDER}/{fig_name}.pkl", "wb") as f:
             pickle.dump(fig, f)
+        plt.close()
 
     @staticmethod
     def plot_circuit_results(circuit_optimization: CircuitOptimizationBase, summary_directory: str) -> None:
