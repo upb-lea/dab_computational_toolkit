@@ -24,8 +24,9 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Python Version [e.g. 14.0]
+ - label: [Enter the release tag or branch name]
+ - Python version: [Enter the python version, you use]
+ - OS: [Enter the OS you use e.g. 'iOS' or 'Linux']
 
 
 **Additional context**
