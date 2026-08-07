@@ -595,7 +595,7 @@ class DctMainCtl:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
-        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
+        that the optimization is complete. In case of skip this file will be used to check the completion of optimization.
         The verification bases on all created pkl-files while optimization. E.g. the path to these files are assembled
         by , 'base_directory'/filter_results_list'-entry/'subdirectory'. If the filter_results_list is empty only
         'base_directory' is taken as path to pkl-files. An exception occurs, if base_directory does not exist.
@@ -628,13 +628,13 @@ class DctMainCtl:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of an optimization the 'processing_complete.json' will be created. This is for verification,
-        that the optimization is complete. In case of skip this file will be use to check the completion of optimization.
+        that the optimization is complete. In case of skip this file will be used to check the completion of optimization.
         'processing_complete.json'-file contains the list of all created pkl-files.
         The path to these files are assembled by , 'base_directory'/filter_results_list'-entry/'subdirectory'.
         If the filter_results_list is empty only 'base_directory' is taken as path to pkl-files.
         An exception occurs, if base_directory does not exist.
 
-        :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
+        :param base_directory: Directory for 'processing_complete.json' and start point for subdirectory
         :type  base_directory: str
         :param subdirectory: Subdirectory path to pkl-files
         :type  subdirectory: str
@@ -674,11 +674,11 @@ class DctMainCtl:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
 
         At the end of pre summary the 'processing_complete.json' will be created. This is for verification,
-        that the pre summary is complete. In case of skip this file will be use to check the completion of pre summary.
+        that the pre summary is complete. In case of skip this file will be used to check the completion of pre summary.
         'processing_complete.json'-file contains the list of all created pkl-files of SUMMARY_COMBINATION_FOLDER and csv-files.
         An exception occurs, if base_directory does not exist.
 
-        :param base_directory: Directory for 'processing_complete.json' and start point for sub directory
+        :param base_directory: Directory for 'processing_complete.json' and start point for subdirectory
         :type  base_directory: str
         :param complete_file_name: Complete file name
         :type  complete_file_name: str
