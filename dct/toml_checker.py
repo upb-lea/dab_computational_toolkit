@@ -194,6 +194,12 @@ class TomlInductorDesignSpace(BaseModel):
     window_h_min_max_list: list[float]
     window_w_min_max_list: list[float]
 
+class TomlInductorSettings(BaseModel):
+    """Toml checker class for InductorSettings."""
+
+    fft_filter_value_factor: float
+    mesh_accuracy: float
+
 class TomlInductorInsulation(BaseModel):
     """Toml checker class for InductorInsulation."""
 
@@ -223,6 +229,7 @@ class TomlInductor(BaseModel):
     boundary_conditions: TomlInductorBoundaryConditions
     thermal_data: TomlThermalData
     filter_distance: TomlFilterDistance
+    settings: TomlInductorSettings
     material_data_sources: TomlMaterialDataSources
 
 # ######################################################

@@ -44,7 +44,7 @@ class InductorOptimization:
 
     @staticmethod
     def verify_optimization_parameter(toml_inductor: dct.TomlInductor) -> tuple[bool, str]:
-        """Verify the input parameter ranges.
+        """Verify the input parameter ranges from the inductor toml configuration file.
 
         :param toml_inductor: toml inductor configuration
         :type toml_inductor: dct.TomlInductor
@@ -147,6 +147,20 @@ class InductorOptimization:
                 inconsistency_report = inconsistency_report + issue_report
                 is_consistent = False
 
+        # Perform setting check
+        group_name = "setting"
+        # Perform the boundary check
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, toml_inductor.settings.fft_filter_value_factor, f"{group_name}: fft_filter_value_factor", c_flag.check_inclusive, c_flag.check_inclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+        is_check_passed, issue_report = dct.BoundaryCheck.check_float_value(
+            0, 1, toml_inductor.settings.mesh_accuracy, f"{group_name}: mesh_accuracy", c_flag.check_exclusive, c_flag.check_exclusive)
+        if not is_check_passed:
+            inconsistency_report = inconsistency_report + issue_report
+            is_consistent = False
+
         # Perform filter_distance value check
         group_name = "filter_distance"
         # Perform the boundary check
@@ -220,7 +234,9 @@ class InductorOptimization:
                         configuration_data.study_data.optimization_directory,
                         circuit_id,
                         configuration_data.study_data.study_name),
-                    material_data_sources=act_material_data_sources)
+                    material_data_sources=act_material_data_sources,
+                    fft_filter_value_factor=inductor_toml_data.settings.fft_filter_value_factor,
+                    mesh_accuracy=inductor_toml_data.settings.mesh_accuracy)
 
                 # Initialize the statistical data
                 stat_data_init: ProgressData = ProgressData(run_time=0, number_of_filtered_points=0,
@@ -240,7 +256,8 @@ class InductorOptimization:
                     number_of_trails=configuration_data.study_data.number_of_trials,
                     thermal_data=thermal_data,
                     factor_dc_losses_min_max_list=inductor_toml_data.filter_distance.factor_dc_losses_min_max_list,
-                    inductor_requirements=inductor_requirements)
+                    inductor_requirements=inductor_requirements
+                )
 
                 # Check list size
                 while len(self._optimization_config_list) <= inductor_number_in_circuit:
@@ -360,7 +377,7 @@ class InductorOptimization:
                 os.makedirs(new_circuit_dto_directory)
 
             if os.path.exists(os.path.join(new_circuit_dto_directory, f"{inductor_id}.pkl")):
-                logger.info(f"Re-simulation of {circuit_id} already exists. Skip.")
+                logger.info(f"All-operating point simulation of circuit {circuit_id} with inductor {inductor_id} already exists. Skip.")
             else:
                 for vec_vvp in np.ndindex(inductor_requirements.time_array[..., 0].shape):
                     time, unique_indices = np.unique(inductor_requirements.time_array[vec_vvp], return_index=True)
