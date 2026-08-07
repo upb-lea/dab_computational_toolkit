@@ -109,8 +109,8 @@ class ParetoPlots:
                                          label_list=plot_data.label_list, fig_name_path=fig_name)
 
     @staticmethod
-    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, vvp_index: tuple,
-                              is_summary: bool = False) -> None:
+    def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str,
+                              vvp_index: tuple[int, int, int] = (0, 0, 0), is_summary: bool = False) -> None:
         """
         Plot the results of the inductor optimization in the Pareto plane.
 
@@ -121,7 +121,7 @@ class ParetoPlots:
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         :param vvp_index: loss index for final summary to consider
-        :type vvp_index: tuple
+        :type vvp_index: tuple[int, int, int]
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
         """
@@ -208,8 +208,8 @@ class ParetoPlots:
                                              ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
-    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str, vvp_index: tuple,
-                                 is_summary: bool = False) -> None:
+    def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str,
+                                 vvp_index: tuple[int, int, int] = (0, 0, 0), is_summary: bool = False) -> None:
         """
         Plot the results of the transformer optimization in the Pareto plane.
 
@@ -220,7 +220,7 @@ class ParetoPlots:
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         :param vvp_index: loss index for final summary to consider
-        :type vvp_index: tuple
+        :type vvp_index: tuple[int, int, int]
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
         """

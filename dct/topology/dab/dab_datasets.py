@@ -774,7 +774,7 @@ class HandleDabDto:
             return loaded_circuit_dto
 
     @staticmethod
-    def get_max_peak_waveform_transformer(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray, tuple]:
+    def get_max_peak_waveform_transformer(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray, tuple[int, int, int]]:
         """
         Get the transformer waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -783,7 +783,7 @@ class HandleDabDto:
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform, vvp_index. All as a numpy array except vvp_index (tuple)
-        :rtype: List[np.ndarray, np.ndarray, np.ndarray, tuple]
+        :rtype: List[np.ndarray, np.ndarray, np.ndarray, tuple[int, int, int]]
         """
         i_hf_2_sorted = np.transpose(dab_dto.calc_currents.i_l_s_sorted * dab_dto.input_config.n - dab_dto.calc_currents.i_l_2_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
@@ -813,7 +813,7 @@ class HandleDabDto:
         return sorted_max_angles, i_l_s_max_current_waveform, i_hf_2_max_current_waveform, max_index
 
     @staticmethod
-    def get_max_peak_waveform_inductor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, tuple]:
+    def get_max_peak_waveform_inductor(dab_dto: d_dtos.DabCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, tuple[int, int, int]]:
         """
         Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -822,7 +822,7 @@ class HandleDabDto:
         :param plot: True to plot the results, mostly for understanding and debugging
         :type plot: bool
         :return: [sorted_max_angles, i_l_max_current_waveform, vvp_max_index]. As a numpy array, index as tuple
-        :rtype: List[np.ndarray, np.ndarray, tuple]
+        :rtype: List[np.ndarray, np.ndarray, tuple[int, int, int]]
         """
         i_l1_sorted = np.transpose(dab_dto.calc_currents.i_l_1_sorted, (1, 2, 3, 0))
         angles_rad_sorted = np.transpose(dab_dto.calc_currents.angles_rad_sorted, (1, 2, 3, 0))
