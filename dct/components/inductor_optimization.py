@@ -358,7 +358,7 @@ class InductorOptimization:
         # Overtake the filtered operation points
         quantity_of_inductor_id_pareto = len(inductor_id_list_pareto)
 
-        logger.info(f"Full-operating point simulation list: {inductor_id_list_pareto}")
+        logger.info(f"Full-operating point simulation list with {len(inductor_id_list_pareto)} designs: {inductor_id_list_pareto}")
 
         # simulate all operating points
         for inductor_id in tqdm.tqdm(inductor_id_list_pareto):
@@ -547,7 +547,7 @@ class InductorOptimization:
 
         inductor_id_list_pareto = df_inductor_pareto["number"].to_numpy()
 
-        logger.info(f"Full-operating point simulation list: {inductor_id_list_pareto}")
+        logger.info(f"Full-operating point simulation list with {len(inductor_id_list_pareto)} designs: {inductor_id_list_pareto}")
 
         # simulate all operating points
         for inductor_id in tqdm.tqdm(inductor_id_list_pareto):
@@ -611,7 +611,7 @@ class InductorOptimization:
                     with open(pickle_file, 'wb') as output:
                         pickle.dump(inductor_results, output, pickle.HIGHEST_PROTOCOL)
             except Exception as e:
-                logger.warning(f"for number {inductor_id} an operation point exceeds the boundary!")
+                logger.warning(f"circuit {circuit_id} with inductor {inductor_id}: an operation point exceeds the boundary!")
                 failed_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}_failed.txt")
                 print(f"{failed_file=}")
                 with open(failed_file, "a") as f:
