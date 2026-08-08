@@ -2262,6 +2262,9 @@ class DctMainCtl:
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
 
+        # generate and store pareto front of the final summary
+        self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000)
+
         # Plot results of all capacitors
         for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
             ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
