@@ -111,6 +111,7 @@ class ParetoPlots:
 
     @staticmethod
     def plot_inductor_results(inductor_study_data: StudyData, filtered_list_files: list[str], summary_directory: str,
+                              factor_min_dc_losses: float = 0.2, factor_max_dc_losses: float = 100,
                               vvp_index: tuple[int, int, int] = (0, 0, 0), is_summary: bool = False) -> None:
         """
         Plot the results of the inductor optimization in the Pareto plane.
@@ -119,6 +120,10 @@ class ParetoPlots:
         :type  inductor_study_data: StudyData
         :param filtered_list_files: List of filtered circuit design names
         :type  filtered_list_files: list[str]
+        :param factor_min_dc_losses: factor to filter the Pareto front from the minimum available losses
+        :type factor_min_dc_losses: float | int
+        :param factor_max_dc_losses: factor to filter the Pareto front from the maximum available losses
+        :type factor_max_dc_losses: float | int
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
         :param vvp_index: loss index for final summary to consider
@@ -142,7 +147,8 @@ class ParetoPlots:
             # m³ -> cm³
             df[volume_key] = df[volume_key] * FACTOR_M3_TO_CM3
 
-            df_filtered = fmt.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=100)
+            df_filtered = fmt.InductorOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=factor_min_dc_losses,
+                                                                                       factor_max_dc_losses=factor_max_dc_losses)
 
             x_scale_min = 0.9 * df_filtered[volume_key].min()
             x_scale_max = 1.1 * df_filtered[volume_key].max()
@@ -210,6 +216,7 @@ class ParetoPlots:
 
     @staticmethod
     def plot_transformer_results(transformer_study_data: StudyData, filtered_list_files: list[str], summary_directory: str,
+                                 factor_min_dc_losses: float = 0.2, factor_max_dc_losses: float | int = 10,
                                  vvp_index: tuple[int, int, int] = (0, 0, 0), is_summary: bool = False) -> None:
         """
         Plot the results of the transformer optimization in the Pareto plane.
@@ -220,6 +227,10 @@ class ParetoPlots:
         :type  filtered_list_files: list[str]
         :param summary_directory: Path of the summary directory (pre-summary or summary directory)
         :type  summary_directory: str
+        :param factor_min_dc_losses: factor to filter the Pareto front from the minimum available losses
+        :type factor_min_dc_losses: float | int
+        :param factor_max_dc_losses: factor to filter the Pareto front from the maximum available losses
+        :type factor_max_dc_losses: float | int
         :param vvp_index: loss index for final summary to consider
         :type vvp_index: tuple[int, int, int]
         :param is_summary: Flag to distinguish between pre summary and summary plot
@@ -241,7 +252,8 @@ class ParetoPlots:
             # m³ -> cm³
             df[volume_key] = df[volume_key] * FACTOR_M3_TO_CM3
 
-            df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=0.2, factor_max_dc_losses=10)
+            df_filtered = fmt.StackedTransformerOptimization.ReluctanceModel.filter_loss_list_df(df, factor_min_dc_losses=factor_min_dc_losses,
+                                                                                                 factor_max_dc_losses=factor_max_dc_losses)
 
             x_values_list = [df[volume_key], df_filtered[volume_key]]
             y_values_list = [df[loss_key], df_filtered[loss_key]]

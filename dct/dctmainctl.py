@@ -2152,12 +2152,17 @@ class DctMainCtl:
         for inductor_study_configuration in self._inductor_study_configuration_list:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                              pre_summary_data.optimization_directory)
+                                              pre_summary_data.optimization_directory,
+                                              factor_min_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[0],
+                                              factor_max_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[1]
+                                              )
         # Plot results of all transformers
         for transformer_study_configuration in self._transformer_study_configuration_list:
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
-                                                 pre_summary_data.optimization_directory)
+                                                 pre_summary_data.optimization_directory,
+                                                 factor_min_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[0],
+                                                 factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1])
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
         ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
 
@@ -2270,6 +2275,8 @@ class DctMainCtl:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
                                               summary_data.optimization_directory, vvp_index=inductor_requirement.vvp_index,
+                                              factor_min_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[0],
+                                              factor_max_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[1],
                                               is_summary=True)
         # Plot results of all transformers
         for count, transformer_study_configuration in enumerate(self._transformer_study_configuration_list):
@@ -2277,6 +2284,8 @@ class DctMainCtl:
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
                                                  summary_data.optimization_directory, vvp_index=transformer_requirement.vvp_index,
+                                                 factor_min_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[0],
+                                                 factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1],
                                                  is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
