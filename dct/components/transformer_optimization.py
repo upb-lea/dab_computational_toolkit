@@ -429,7 +429,7 @@ class TransformerOptimization:
         # Overtake the filtered operation points
         quantity_transformer_id_pareto = len(transformer_id_list_pareto)
 
-        logger.info(f"Full-operating point simulation list: {transformer_id_list_pareto}")
+        logger.info(f"Full-operating point simulation list with {len(transformer_id_list_pareto)} designs: {transformer_id_list_pareto}")
 
         for transformer_id in tqdm.tqdm(transformer_id_list_pareto):
             df_transformer_id = df_transformer_pareto[df_transformer_pareto["number"] == transformer_id]
@@ -632,9 +632,9 @@ class TransformerOptimization:
 
         transformer_id_list_pareto = df_transformer_pareto["number"].to_numpy()
 
-        logger.info(f"Full-operating point simulation list: {transformer_id_list_pareto}")
+        logger.info(f"Full-operating point simulation list with {len(transformer_id_list_pareto)} designs: {transformer_id_list_pareto}")
 
-        for transformer_id in transformer_id_list_pareto:
+        for transformer_id in tqdm.tqdm(transformer_id_list_pareto):
             df_geometry_re_simulation_number = df_transformer_pareto[df_transformer_pareto["number"] == transformer_id]
 
             new_circuit_dto_directory = os.path.join(act_sto_config.stacked_transformer_optimization_directory,

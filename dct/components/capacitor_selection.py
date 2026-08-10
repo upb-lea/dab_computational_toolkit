@@ -164,7 +164,8 @@ class CapacitorSelection:
         # Overtake the filtered operation points
         number_of_filtered_points = len(all_operation_point_ordering_codes_list)
 
-        logger.info(f"Full-operating point simulation list: {all_operation_point_ordering_codes_list}")
+        logger.info(f"Full-operating point simulation list with {len(all_operation_point_ordering_codes_list)} "
+                    f"designs: {all_operation_point_ordering_codes_list}")
 
         # Initialize volume_total_minimum
         volume_total_minimum = all_operation_point_volume_list[0]
