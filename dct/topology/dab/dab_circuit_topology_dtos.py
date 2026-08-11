@@ -1,5 +1,5 @@
 """Data transfer objects (DTOs) for the Pareto optimization."""
-# python libraries
+# Python libraries
 import dataclasses
 
 # 3rd party libraries

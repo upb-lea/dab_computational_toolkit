@@ -66,6 +66,7 @@ class CircuitConfig:
     mesh_v1: np.ndarray
     mesh_v2: np.ndarray
     mesh_p: np.ndarray
+    mesh_weights: np.ndarray
     sampling: Sampling
     n: np.float64
     Ls: np.float64
