@@ -834,5 +834,7 @@ class SummaryProcessing:
         """
         df_filtered = CircuitOptimizationBase.filter_df(df, x="total_volume", y="total_mean_loss",
                                                         factor_min_dc_losses=0.001, factor_max_dc_losses=100, abs_max_losses=abs_max_losses)
-        df_filtered.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}")
+        filename = f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}"
+        df_filtered.to_csv(filename)
+        logger.info(f"Save filtered Pareto front to {filename}")
         return df_filtered
