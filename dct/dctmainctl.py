@@ -2237,7 +2237,7 @@ class DctMainCtl:
         if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
 
-        # Initialize pre summary processing by collecting data from circuit and component optimization
+        # Initialize summary processing by collecting data from circuit and component optimization
         self._summary_processing.initialize_processing(
             act_filter_data=self._circuit_optimization.filter_data,
             act_capacitor_data_list=self._capacitor_selection_configuration_list,
@@ -2254,7 +2254,7 @@ class DctMainCtl:
         df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
         # ASA: Generally control_board_volume and control_board_loss depends on the topology.
         # Only for test setups it could be the same
-        self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        df_pareto_plane = self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

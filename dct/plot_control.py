@@ -65,7 +65,9 @@ class ParetoPlots:
             legend = label_list[count]
             plt.scatter(x_values, y_values, color=color, alpha=alpha_list[count], label=legend)
 
-        plt.legend()
+        # plot legend if minimum one element of label_list is not None
+        if any(element is not None for element in label_list):
+            plt.legend()
         plt.xlabel(x_label)
         plt.ylabel(y_label)
         plt.xlim(xlim)

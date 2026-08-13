@@ -66,7 +66,8 @@ class HandleDabDto:
     def init_config(name: str, mesh_v1: np.ndarray, mesh_v2: np.ndarray, mesh_p: np.ndarray,
                     sampling: CircuitSampling, n: float, ls: float, lc1: float, lc2: float, fs: float,
                     transistor_dto_1: d_dtos.TransistorDTO, transistor_dto_2: d_dtos.TransistorDTO,
-                    lossfilepath: str, c_par_1: float, c_par_2: float, t_dead_1_max: float, t_dead_2_max: float) -> d_dtos.DabCircuitDTO:
+                    lossfilepath: str, c_par_1: float, c_par_2: float, t_dead_1_max: float, t_dead_2_max: float,
+                    mesh_weights: np.ndarray) -> d_dtos.DabCircuitDTO:
         """
         Initialize the DAB structure.
 
@@ -90,6 +91,8 @@ class HandleDabDto:
         :type lc2: float
         :param fs: Switching frequency
         :type fs: float
+        :param mesh_weights: weighted operating points
+        :type mesh_weights: np.ndarray
         :param transistor_dto_1: Transistor DTO for transistor bridge 1. Must match with transistordatabase available transistors.
         :type transistor_dto_1: TransistorDTO
         :param transistor_dto_2: Transistor DTO for transistor bridge 2. Must match with transistordatabase available transistors.
@@ -110,6 +113,7 @@ class HandleDabDto:
         input_configuration = d_dtos.CircuitConfig(mesh_v1=mesh_v1,
                                                    mesh_v2=mesh_v2,
                                                    mesh_p=mesh_p,
+                                                   mesh_weights=mesh_weights,
                                                    sampling=sampling,
                                                    n=np.array(n),
                                                    Ls=np.array(ls),
