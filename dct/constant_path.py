@@ -10,6 +10,8 @@ import dct
 # root directory
 DCT_ROOT = os.path.dirname(os.path.realpath(dct.__file__))
 
+FILEPATH_CONFIG_JSON = "filepath_config.json"
+
 # GECKO simulation
 GECKO_PATH = os.path.join(DCT_ROOT, "topology", "dab", "GeckoCIRCUITS")
 GECKO_COMPONENT_MODELS_DIRECTORY = "gecko_component_models"

@@ -48,7 +48,7 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER)
+                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER, FILEPATH_CONFIG_JSON)
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +183,7 @@ class DctMainCtl:
         for _, value in path_dict.items():
             os.makedirs(value, exist_ok=True)
 
-        json_filepath = os.path.join(project_directory, "filepath_config.json")
+        json_filepath = os.path.join(project_directory, FILEPATH_CONFIG_JSON)
 
         with open(json_filepath, 'w', encoding='utf8') as json_file:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
