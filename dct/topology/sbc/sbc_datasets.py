@@ -244,7 +244,7 @@ class HandleSbcDto:
             return loaded_circuit_dto
 
     @staticmethod
-    def get_max_peak_waveform_inductor(sbc_dto: s_dtos.SbcCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def get_max_peak_waveform_inductor(sbc_dto: s_dtos.SbcCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray, tuple[int, int, int]]:
         """
         Get the inductor waveform with the maximum current peak out of the three-dimensional simulation array (v_1, v_2, P).
 
@@ -279,7 +279,10 @@ class HandleSbcDto:
             plt.legend()
             plt.show()
 
-        return time_array, i_max_current_array.squeeze()
+        # Workaround: Satisfy vvp_index - shape
+        max_index = (0, int(idx_max), 0)
+
+        return time_array, i_max_current_array.squeeze(), max_index
 
     @staticmethod
     def get_waveform_inductor(sbc_dto: s_dtos.SbcCircuitDTO, plot: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -350,13 +353,14 @@ class HandleSbcDto:
         :rtype: InductorRequirements
         """
         # Get the single maximum operating point
-        time_vec, i_current_vec = HandleSbcDto.get_max_peak_waveform_inductor(sbc_dto, plot=False)
+        time_vec, i_current_vec, vvp_max_index = HandleSbcDto.get_max_peak_waveform_inductor(sbc_dto, plot=False)
         # Get the data of all operating points
         time_array, i_current_array = HandleSbcDto.get_waveform_inductor(sbc_dto, plot=False)
 
         inductor_requirements: c_dtos.InductorRequirements = c_dtos.InductorRequirements(
             time_vec=time_vec,
             current_vec=i_current_vec,
+            vvp_index=vvp_max_index,
             time_array=time_array,
             current_array=i_current_array,
             study_name=act_study_name,
