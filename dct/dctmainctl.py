@@ -2243,7 +2243,7 @@ class DctMainCtl:
         if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
             raise ValueError("Thermal data configuration not initialized!")
 
-        # Initialize pre summary processing by collecting data from circuit and component optimization
+        # Initialize summary processing by collecting data from circuit and component optimization
         self._summary_processing.initialize_processing(
             act_filter_data=self._circuit_optimization.filter_data,
             act_capacitor_data_list=self._capacitor_selection_configuration_list,
@@ -2260,13 +2260,16 @@ class DctMainCtl:
         df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
         # ASA: Generally control_board_volume and control_board_loss depends on the topology.
         # Only for test setups it could be the same
-        self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+        df_pareto_plane = self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
         self.generate_zip_archive(toml_prog_flow)
 
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
+
+        # generate and store pareto front of the final summary
+        self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000)
 
         # Plot results of all capacitors
         for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
@@ -2281,6 +2284,8 @@ class DctMainCtl:
             ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                               self._circuit_optimization.filter_data.filtered_list_files,
                                               summary_data.optimization_directory, vvp_index=inductor_requirement.vvp_index,
+                                              factor_min_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[0],
+                                              factor_max_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[1],
                                               is_summary=True)
         # Plot results of all transformers
         for count, transformer_study_configuration in enumerate(self._transformer_study_configuration_list):
@@ -2288,6 +2293,8 @@ class DctMainCtl:
             ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                  self._circuit_optimization.filter_data.filtered_list_files,
                                                  summary_data.optimization_directory, vvp_index=transformer_requirement.vvp_index,
+                                                 factor_min_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[0],
+                                                 factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1],
                                                  is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
