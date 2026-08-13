@@ -48,7 +48,8 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER)
+                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER,
+                               PARETO_PLOT_PKL_FOLDER, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER)
 
 logger = logging.getLogger(__name__)
 
@@ -701,10 +702,20 @@ class DctMainCtl:
 
         # Create csv-file completion list of csv-files
         pkl_file_list = DctMainCtl._create_pkl_file_completion_list(path_list, ".csv")
-        # Create pre summary completion list with pkl-file entries
-        path_list = [os.path.join(base_directory, SUMMARY_COMBINATION_FOLDER)]
-        # Add pkl-file entries for SUMMARY_COMBINATION_FOLDER folder
+        # Create path list with pkl-file folders SUMMARY_COMBINATION_FOLDER and PARETO_PLOT_PKL_FOLDER
+        path_list = [os.path.join(base_directory, SUMMARY_COMBINATION_FOLDER), os.path.join(base_directory, PARETO_PLOT_PKL_FOLDER)]
+        # Append pre summary completion list with pkl-file entries
         pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".pkl")
+
+        # Create path list with pdf-file folder PARETO_PLOT_PDF_FOLDER
+        path_list = [os.path.join(base_directory, PARETO_PLOT_PDF_FOLDER)]
+        # Append pre summary completion list with pkl-file entries
+        pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".pdf")
+
+        # Create path list with pdf-file folder PARETO_PLOT_PDF_FOLDER
+        path_list = [os.path.join(base_directory, PARETO_PLOT_PNG_FOLDER)]
+        # Append pre summary completion list with pkl-file entries
+        pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".png")
 
         # Store processing_complete_file
         with open(processing_complete_file, "w", encoding="utf-8") as file_handle:
@@ -2137,34 +2148,29 @@ class DctMainCtl:
                                                             self._transformer_study_configuration_list,
                                                             df_pareto_front, is_pre_summary=True)
 
+            ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
+
+            # Plot results of all capacitors
+            for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+                ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
+                                                   self._circuit_optimization.filter_data.filtered_list_files,
+                                                   pre_summary_data.optimization_directory)
+
+            # Plot results of all inductors
+            for inductor_study_configuration in self._inductor_study_configuration_list:
+                ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
+                                                  self._circuit_optimization.filter_data.filtered_list_files,
+                                                  pre_summary_data.optimization_directory)
+            # Plot results of all transformers
+            for transformer_study_configuration in self._transformer_study_configuration_list:
+                ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
+                                                     self._circuit_optimization.filter_data.filtered_list_files,
+                                                     pre_summary_data.optimization_directory)
+            ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
+            ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
+
             # Set processing complete indicator
             DctMainCtl._set_presummary_complete(pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
-
-        ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
-
-        # Plot results of all capacitors
-        for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
-            ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
-                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                               pre_summary_data.optimization_directory)
-
-        # Plot results of all inductors
-        for inductor_study_configuration in self._inductor_study_configuration_list:
-            ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
-                                              self._circuit_optimization.filter_data.filtered_list_files,
-                                              pre_summary_data.optimization_directory,
-                                              factor_min_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[0],
-                                              factor_max_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[1]
-                                              )
-        # Plot results of all transformers
-        for transformer_study_configuration in self._transformer_study_configuration_list:
-            ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
-                                                 self._circuit_optimization.filter_data.filtered_list_files,
-                                                 pre_summary_data.optimization_directory,
-                                                 factor_min_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[0],
-                                                 factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1])
-        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
-        ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
