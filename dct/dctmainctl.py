@@ -172,6 +172,7 @@ class DctMainCtl:
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
         pre_summary_path = os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory)
         summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
+        data_generation_path = os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory)
 
         path_dict = {'circuit': circuit_path,
                      'capacitor': capacitor_path,
@@ -179,7 +180,8 @@ class DctMainCtl:
                      'transformer': transformer_path,
                      'heat_sink': heat_sink_path,
                      'pre_summary': pre_summary_path,
-                     'summary': summary_path}
+                     'summary': summary_path,
+                     'data_generation': data_generation_path}
 
         for _, value in path_dict.items():
             os.makedirs(value, exist_ok=True)
@@ -255,7 +257,7 @@ class DctMainCtl:
         number_of_inductors = topology_optimization.get_number_of_required_inductors()
         number_of_transformers = topology_optimization.get_number_of_required_transformers()
 
-        # Check numbers of trails, calculation modes and configuration files
+        # Check numbers of trials, calculation modes and configuration files
         issue_report = issue_report + DctMainCtl._check_list_entries("capacitor", "calculation_modes", number_of_capacitors,
                                                                      len(act_toml_prog_flow.capacitor.calculation_modes))
         issue_report = issue_report + DctMainCtl._check_list_entries(
@@ -1477,6 +1479,11 @@ class DctMainCtl:
                                  optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory,
                                                                      circuit_configuration_file.replace(".toml", "")))
 
+        data_generation_data = StudyData(study_name="data_generation",
+                                 optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
+                                                                     circuit_configuration_file.replace(".toml", "")),
+                                         calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
+
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
          self._transformer_list, self._heat_sink_list, self._summary_list) = self.get_initialization_queue_data(toml_prog_flow)
@@ -2298,6 +2305,17 @@ class DctMainCtl:
                                                  is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
+
+
+        # --------------------------
+        # Data generation
+        # --------------------------
+
+        # Check, if data generation is to skip
+        if not data_generation_data.calculation_mode == CalcModeEnum.skip_mode:
+            print("Start data generation")
+            self._circuit_optimization.generate_manufacturing_data(toml_prog_flow, workspace_path)
+
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

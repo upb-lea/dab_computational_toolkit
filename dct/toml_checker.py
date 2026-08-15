@@ -123,6 +123,12 @@ class Summary(BaseModel):
 
     subdirectory: str
 
+class DataGeneration(BaseModel):
+    """Flow control for the data generation."""
+
+    calculation_mode: Literal['new', 'skip', 'continue']
+    subdirectory: str
+
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
 
@@ -145,6 +151,7 @@ class FlowControl(BaseModel):
     heat_sink: HeatSink
     pre_summary: PreSummary
     summary: Summary
+    data_generation: DataGeneration
     configuration_data_files: ConfigurationDataFiles
 
 # ######################################################

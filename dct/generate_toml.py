@@ -79,6 +79,10 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
     
     [summary]
         subdirectory = "07_summary"
+        
+    [data_generation]
+        calculation_mode = "new" # (new,continue,skip)
+        subdirectory = "08_data_generation"
     
     [configuration_data_files]
         # General configuration file followed by circuit configuration file
