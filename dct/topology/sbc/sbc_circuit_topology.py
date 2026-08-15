@@ -20,6 +20,7 @@ from sklearn.cluster import KMeans
 from scipy.signal import savgol_filter
 from typing import cast, SupportsFloat
 
+from dct import toml_checker as tc
 # own libraries
 from dct.topology.sbc import sbc_datasets_dtos as s_dtos
 from dct.topology.sbc import sbc_circuit_topology_dtos as circuit_dtos
@@ -1807,3 +1808,15 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :type dto_directory: str
         """
         print(dto_directory)
+
+    @staticmethod
+    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str) -> None:
+        """
+        Generate data for all components to enable the manufacturing process.
+
+        :param toml_prog_flow: toml file for the program flow
+        :type toml_prog_flow: tc.FlowControl
+        :param workspace_path: workspace path
+        :type workspace_path: str
+        """
+        pass

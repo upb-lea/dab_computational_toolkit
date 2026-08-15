@@ -1839,7 +1839,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             plot_calc_vs_requirements(combination_dto)
 
     @staticmethod
-    def _read_summary_parameters(combination_id: int, df: pd.DataFrame):
+    def _read_summary_parameters(combination_id: int, df: pd.DataFrame) -> tuple[int, int, int, int, int, int]:
         """
         Read component IDs from the summary file.
 
@@ -1858,7 +1858,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         return circuit_id, capacitor_id_0, capacitor_id_1, inductor_id, transformer_id, heat_sink_id
 
     @staticmethod
-    def _generate_circuit_data(circuit_id, df_circuit: pd.DataFrame, output_filepath: str):
+    def _generate_circuit_data(circuit_id: int, df_circuit: pd.DataFrame, output_filepath: str) -> None:
         """
         Generate circuit manufacturing data.
 
@@ -1889,7 +1889,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(circuit_data)
 
     @staticmethod
-    def _generate_capacitor_data(capacitor_id: int, df_capacitor, output_filepath: str, capacitor_number: int):
+    def _generate_capacitor_data(capacitor_id: int, df_capacitor: pd.DataFrame, output_filepath: str, capacitor_number: int) -> None:
         """
         Generate inductor manufacturing data.
 
@@ -1914,7 +1914,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(capacitor_data)
 
     @staticmethod
-    def _generate_inductor_data(inductor_id: int, df_inductor, output_filepath: str):
+    def _generate_inductor_data(inductor_id: int, df_inductor: pd.DataFrame, output_filepath: str) -> None:
         """
         Generate inductor manufacturing data.
 
@@ -1951,9 +1951,9 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(inductor_data)
 
     @staticmethod
-    def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str):
+    def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str) -> None:
         """
-        Generate transfomer manufacturing data.
+        Generate transformer manufacturing data.
 
         :param transformer_id: transformer ID
         :type transformer_id: int
@@ -1997,7 +1997,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(transformer_data)
 
     @staticmethod
-    def _generate_heat_sink_data(heat_sink_id: int, df_heat_sink: pd.DataFrame, output_filepath: str):
+    def _generate_heat_sink_data(heat_sink_id: int, df_heat_sink: pd.DataFrame, output_filepath: str) -> None:
         """
         Generate heat sink manufacturing data.
 
@@ -2029,7 +2029,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(heat_sink_data)
 
     @staticmethod
-    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path):
+    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str) -> None:
         """
         Generate data for all components to enable the manufacturing process.
 
