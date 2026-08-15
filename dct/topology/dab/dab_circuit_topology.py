@@ -17,7 +17,6 @@ import deepdiff
 
 # own libraries
 import dct.sampling as sampling
-from dct import General
 from dct.components.component_dtos import InductorRequirements
 from dct.generalplotsettings import colors
 from dct.constant_path import GECKO_COMPONENT_MODELS_DIRECTORY
@@ -1841,6 +1840,14 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
     @staticmethod
     def _read_summary_parameters(combination_id: int, df: pd.DataFrame):
+        """
+        Read component IDs from the summary file.
+
+        :param combination_id: combination ID
+        :type combination_id: int
+        :param df: summary dataframe
+        :type df: pd.DataFrame
+        """
         circuit_id = df.loc[df['combination_id'] == combination_id, 'circuit_id'].values[0]
         capacitor_id_0 = df.loc[df['combination_id'] == combination_id, 'capacitor_id_0'].values[0]
         capacitor_id_1 = df.loc[df['combination_id'] == combination_id, 'capacitor_id_1'].values[0]
@@ -1852,6 +1859,16 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
     @staticmethod
     def _generate_circuit_data(circuit_id, df_circuit: pd.DataFrame, output_filepath: str):
+        """
+        Generate circuit manufacturing data.
+
+        :param circuit_id: circuit ID
+        :type circuit_id: int
+        :param df_circuit: circuit dataframe
+        :type df_circuit: pd.DataFrame
+        :param output_filepath: output filepath
+        :type output_filepath: str
+        """
         frequency = df_circuit.loc[df_circuit['number'] == circuit_id, 'params_f_s_suggest'].values[0]
         l_1 = df_circuit.loc[df_circuit['number'] == circuit_id, 'params_l_1_suggest'].values[0]
         l_2_ = df_circuit.loc[df_circuit['number'] == circuit_id, 'params_l_2__suggest'].values[0]
@@ -1872,7 +1889,42 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(circuit_data)
 
     @staticmethod
-    def _generate_inductor_data(inductor_id, df_inductor, output_filepath: str):
+    def _generate_capacitor_data(capacitor_id: int, df_capacitor, output_filepath: str, capacitor_number: int):
+        """
+        Generate inductor manufacturing data.
+
+        :param capacitor_id: inductor ID
+        :type capacitor_id: int
+        :param df_capacitor: inductor dataframe
+        :type df_capacitor: pd.DataFrame
+        :param output_filepath: output filepath
+        :type output_filepath: str
+        :param capacitor_number: capacitor number in circuit, e.g. 0 or 1
+        :type capacitor_number: int
+        """
+        ordering_code = df_capacitor.loc[df_capacitor['ordering code'] == capacitor_id, 'ordering code'].values[0]
+        in_series_needed = df_capacitor.loc[df_capacitor['ordering code'] == capacitor_id, 'in_series_needed'].values[0]
+        in_parallel_needed = df_capacitor.loc[df_capacitor['ordering code'] == capacitor_id, 'in_parallel_needed'].values[0]
+
+        capacitor_data = (f"{ordering_code=}\n"
+                          f"{in_series_needed=}\n"
+                          f"{in_parallel_needed=}\n"
+                          )
+        with open(f"{output_filepath}/capacitor_data_{capacitor_number}.txt", "w", encoding="utf-8") as f:
+            f.write(capacitor_data)
+
+    @staticmethod
+    def _generate_inductor_data(inductor_id: int, df_inductor, output_filepath: str):
+        """
+        Generate inductor manufacturing data.
+
+        :param inductor_id: inductor ID
+        :type inductor_id: int
+        :param df_inductor: inductor dataframe
+        :type df_inductor: pd.DataFrame
+        :param output_filepath: output filepath
+        :type output_filepath: str
+        """
         params_core_name = df_inductor.loc[df_inductor['number'] == inductor_id, 'params_core_name'].values[0]
         params_litz_wire_name = df_inductor.loc[df_inductor['number'] == inductor_id, 'params_litz_wire_name'].values[0]
         params_material_name = df_inductor.loc[df_inductor['number'] == inductor_id, 'params_material_name'].values[0]
@@ -1899,7 +1951,17 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(inductor_data)
 
     @staticmethod
-    def _generate_transformer_data(transformer_id, df_transformer: pd.DataFrame, output_filepath: str):
+    def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str):
+        """
+        Generate transfomer manufacturing data.
+
+        :param transformer_id: transformer ID
+        :type transformer_id: int
+        :param df_transformer: transformer dataframe
+        :type df_transformer: pd.DataFrame
+        :param output_filepath: output filepath
+        :type output_filepath: str
+        """
         params_core_name = df_transformer.loc[df_transformer['number'] == transformer_id, 'params_core_name'].values[0]
         params_material_name = df_transformer.loc[df_transformer['number'] == transformer_id, 'params_material_name'].values[0]
         params_n_p_bot = df_transformer.loc[df_transformer['number'] == transformer_id, 'params_n_p_bot'].values[0]
@@ -1935,7 +1997,17 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(transformer_data)
 
     @staticmethod
-    def _generate_heat_sink_data(heat_sink_id, df_heat_sink: pd.DataFrame, output_filepath: str):
+    def _generate_heat_sink_data(heat_sink_id: int, df_heat_sink: pd.DataFrame, output_filepath: str):
+        """
+        Generate heat sink manufacturing data.
+
+        :param heat_sink_id: heat sink ID
+        :type heat_sink_id: int
+        :param df_heat_sink: heat sink dataframe
+        :type df_heat_sink: pd.DataFrame
+        :param output_filepath: output filepath
+        :type output_filepath: str
+        """
         params_fan = df_heat_sink.loc[df_heat_sink['number'] == heat_sink_id, 'params_fan'].values[0]
         params_height_c = df_heat_sink.loc[df_heat_sink['number'] == heat_sink_id, 'params_height_c'].values[0]
         params_height_d = df_heat_sink.loc[df_heat_sink['number'] == heat_sink_id, 'params_height_d'].values[0]
@@ -1958,7 +2030,14 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
     @staticmethod
     def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path):
+        """
+        Generate data for all components to enable the manufacturing process.
 
+        :param toml_prog_flow: toml file for the program flow
+        :type toml_prog_flow: tc.FlowControl
+        :param workspace_path: workspace path
+        :type workspace_path: str
+        """
         # Add absolute path to project data path
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
 
@@ -1969,37 +2048,56 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         df_summary = pd.read_csv(summary_filepath)
 
         for combination_id in df_summary["combination_id"]:
-            logger.info(f"{combination_id=}")
+            logger.info(f"Generate manufacturing data for {combination_id=}")
 
-            circuit_id, capacitor_id_0, capacitor_id_1, inductor_id, transformer_id, heat_sink_id = DabCircuitOptimization._read_summary_parameters(combination_id, df_summary)
+            circuit_id, capacitor_id_0, capacitor_id_1, inductor_id, transformer_id, heat_sink_id = DabCircuitOptimization._read_summary_parameters(
+                combination_id, df_summary)
 
             # read circuit file
             circuit_name = toml_prog_flow.configuration_data_files.topology_files[1].replace('.toml', '')
-            circuit_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.circuit.subdirectory, circuit_name, f"{circuit_name}.csv")
+            circuit_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.circuit.subdirectory,
+                                            circuit_name, f"{circuit_name}.csv")
 
-            output_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.data_generation.subdirectory, circuit_name, str(combination_id))
+            output_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.data_generation.subdirectory,
+                                           circuit_name, str(combination_id))
             if not os.path.exists(output_filepath):
                 os.mkdir(output_filepath)
 
             df_circuit = pd.read_csv(circuit_filepath)
             DabCircuitOptimization._generate_circuit_data(circuit_id, df_circuit, output_filepath)
 
+            # read capacitor 0 file
+            capacitor_0_name = toml_prog_flow.configuration_data_files.capacitor_configuration_files[0].replace('.toml', '')
+            capacitor_0_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.capacitor.subdirectory, circuit_name,
+                                                str(circuit_id), f"cap_0_{capacitor_0_name}", "results.csv")
+            df_capacitor_0 = pd.read_csv(capacitor_0_filepath)
+            DabCircuitOptimization._generate_capacitor_data(capacitor_id_0, df_capacitor_0, output_filepath, 0)
+
+            # read capacitor 1 file
+            capacitor_1_name = toml_prog_flow.configuration_data_files.capacitor_configuration_files[1].replace('.toml', '')
+            capacitor_1_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.capacitor.subdirectory, circuit_name,
+                                                str(circuit_id), f"cap_1_{capacitor_1_name}", "results.csv")
+            df_capacitor_1 = pd.read_csv(capacitor_1_filepath)
+            DabCircuitOptimization._generate_capacitor_data(capacitor_id_1, df_capacitor_1, output_filepath, 1)
+
             # read inductor file
             inductor_name = toml_prog_flow.configuration_data_files.inductor_configuration_files[0].replace('.toml', '')
-            inductor_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.inductor.subdirectory, circuit_name, str(circuit_id),
-                                             f"ind_0_{inductor_name}", f"ind_0_{inductor_name}.csv")
+            inductor_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.inductor.subdirectory, circuit_name,
+                                             str(circuit_id), f"ind_0_{inductor_name}", f"ind_0_{inductor_name}.csv")
             df_inductor = pd.read_csv(inductor_filepath)
             DabCircuitOptimization._generate_inductor_data(inductor_id, df_inductor, output_filepath)
 
             # read transformer file
             transformer_name = toml_prog_flow.configuration_data_files.transformer_configuration_files[0].replace('.toml', '')
-            transformer_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.transformer.subdirectory, circuit_name, str(circuit_id),
+            transformer_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.transformer.subdirectory,
+                                                circuit_name, str(circuit_id),
                                                 f"it_f_0_{transformer_name}", f"it_f_0_{transformer_name}.csv")
             df_transformer = pd.read_csv(transformer_filepath)
             DabCircuitOptimization._generate_transformer_data(transformer_id, df_transformer, output_filepath)
 
             # read heat sink file
             heat_sink_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace('.toml', '')
-            heat_sink_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory, heat_sink_name, f"{heat_sink_name}.csv")
+            heat_sink_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
+                                              heat_sink_name, f"{heat_sink_name}.csv")
             df_heat_sink = pd.read_csv(heat_sink_filepath)
             DabCircuitOptimization._generate_heat_sink_data(heat_sink_id, df_heat_sink, output_filepath)

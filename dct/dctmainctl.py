@@ -1480,8 +1480,8 @@ class DctMainCtl:
                                                                      circuit_configuration_file.replace(".toml", "")))
 
         data_generation_data = StudyData(study_name="data_generation",
-                                 optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
-                                                                     circuit_configuration_file.replace(".toml", "")),
+                                         optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
+                                                                             circuit_configuration_file.replace(".toml", "")),
                                          calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
@@ -2306,7 +2306,6 @@ class DctMainCtl:
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
 
-
         # --------------------------
         # Data generation
         # --------------------------
@@ -2315,7 +2314,6 @@ class DctMainCtl:
         if not data_generation_data.calculation_mode == CalcModeEnum.skip_mode:
             print("Start data generation")
             self._circuit_optimization.generate_manufacturing_data(toml_prog_flow, workspace_path)
-
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

@@ -462,5 +462,13 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
     @staticmethod
     @abstractmethod
-    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path:str):
+    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str):
+        """
+        Generate data for all components to enable the manufacturing process.
+
+        :param toml_prog_flow: toml file for the program flow
+        :type toml_prog_flow: tc.FlowControl
+        :param workspace_path: workspace path
+        :type workspace_path: str
+        """
         pass
