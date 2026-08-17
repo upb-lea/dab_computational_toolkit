@@ -1810,7 +1810,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         print(dto_directory)
 
     @staticmethod
-    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str) -> None:
+    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str, debug: tc.Debug) -> None:
         """
         Generate data for all components to enable the manufacturing process.
 
