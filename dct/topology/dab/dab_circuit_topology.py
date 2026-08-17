@@ -2027,7 +2027,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             f.write(heat_sink_data)
 
     @staticmethod
-    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str) -> None:
+    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str, debug: tc.Debug) -> None:
         """
         Generate data for all components to enable the manufacturing process.
 
@@ -2035,6 +2035,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         :type toml_prog_flow: tc.FlowControl
         :param workspace_path: workspace path
         :type workspace_path: str
+        :param debug: Debug configuration
+        :type debug: tc.Debug
         """
         # Add absolute path to project data path
         toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
@@ -2044,6 +2046,10 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                                         toml_prog_flow.configuration_data_files.topology_files[1].replace('.toml', ''), DF_SUMMARY_FINAL_FILTERED)
 
         df_summary = pd.read_csv(summary_filepath)
+
+        if debug.general.is_debug:
+            # reduce dataset to the given number from the debug configuration
+            df_summary = df_summary.iloc[:debug.data_generation.number_combinations_max]
 
         for combination_id in df_summary["combination_id"]:
             logger.info(f"Generate manufacturing data for {combination_id=}")

@@ -39,6 +39,11 @@ class DebugTransformer(BaseModel):
     number_reluctance_working_point_max: int
     number_fem_working_point_max: int
 
+class DebugDataGeneration(BaseModel):
+    """Debug information for the data generation."""
+
+    number_combinations_max: int
+
 class Debug(BaseModel):
     """General information in debug configuration."""
 
@@ -47,6 +52,7 @@ class Debug(BaseModel):
     capacitor: DebugCapacitor
     inductor: DebugInductor
     transformer: DebugTransformer
+    data_generation: DebugDataGeneration
 
 # ######################################################
 # flow control

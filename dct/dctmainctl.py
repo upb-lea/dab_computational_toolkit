@@ -2313,7 +2313,7 @@ class DctMainCtl:
         # Check, if data generation is to skip
         if not data_generation_data.calculation_mode == CalcModeEnum.skip_mode:
             print("Start data generation")
-            self._circuit_optimization.generate_manufacturing_data(toml_prog_flow, workspace_path)
+            self._circuit_optimization.generate_manufacturing_data(toml_prog_flow, workspace_path, debug=toml_debug)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

@@ -1818,5 +1818,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         :type toml_prog_flow: tc.FlowControl
         :param workspace_path: workspace path
         :type workspace_path: str
+        :param debug: Debug configuration
+        :type debug: tc.Debug
         """
         pass
