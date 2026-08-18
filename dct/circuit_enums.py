@@ -27,3 +27,5 @@ class CalcModeEnum(enum.Enum):
     continue_mode = "continue"
     # skip calculation and use actual data
     skip_mode = "skip"
+    # ignore step
+    ignore = "ignore"

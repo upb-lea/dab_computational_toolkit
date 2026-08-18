@@ -132,7 +132,7 @@ class Summary(BaseModel):
 class DataGeneration(BaseModel):
     """Flow control for the data generation."""
 
-    calculation_mode: Literal['new', 'skip', 'continue']
+    calculation_mode: Literal['new', 'ignore', 'continue']
     subdirectory: str
 
 class ConfigurationDataFiles(BaseModel):
