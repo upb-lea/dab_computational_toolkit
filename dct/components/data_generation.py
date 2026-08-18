@@ -263,7 +263,7 @@ class DataGeneration:
             output_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.data_generation.subdirectory,
                                            circuit_name, str(combination_id))
             if not os.path.exists(output_filepath):
-                os.mkdir(output_filepath)
+                os.makedirs(output_filepath)
 
             df_circuit = pd.read_csv(circuit_filepath)
             DataGeneration._generate_circuit_data(circuit_id, df_circuit, output_filepath)
