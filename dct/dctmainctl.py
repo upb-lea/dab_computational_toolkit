@@ -36,6 +36,7 @@ from dct import HeatSinkOptimization
 from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
 import dct.generate_toml as toml_gen
+from dct.components.data_generation import DataGeneration
 from dct.components.summary_processing import SummaryProcessing
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.server_ctl import DctServer as ServerCtl
@@ -2313,7 +2314,7 @@ class DctMainCtl:
         # Check, if data generation is to skip
         if not data_generation_data.calculation_mode == CalcModeEnum.skip_mode:
             print("Start data generation")
-            self._circuit_optimization.generate_manufacturing_data(toml_prog_flow, workspace_path, debug=toml_debug)
+            DataGeneration.generate_manufacturing_data(toml_prog_flow, workspace_path, debug=toml_debug)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

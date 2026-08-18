@@ -1,6 +1,6 @@
 # Path configuration
 [general]
-    project_directory = "2026-01-26_example"
+    project_directory = "2026-08-17_data_generation"
     topology = "dab"  # dab, sbc
 
 [breakpoints]
@@ -21,8 +21,8 @@
     heat_sink = 1000         # Number of trials which exceed a limit value?
 
 [circuit]
-    number_of_trials = 100
-    calculation_mode = "new" # (new,continue,skip)
+    number_of_trials = 500
+    calculation_mode = "skip" # (new,continue,skip)
     subdirectory = "01_circuit"
 
 [capacitor]
@@ -31,12 +31,12 @@
     subdirectory = "02_capacitor"
 
 [inductor]
-    numbers_of_trials = [200]
+    numbers_of_trials = [500]
     calculation_modes = ["skip"] # (new,continue,skip)
     subdirectory = "03_inductor"
 
 [transformer]
-    numbers_of_trials = [400]
+    numbers_of_trials = [500]
     calculation_modes = ["skip"] # (new,continue,skip)
     subdirectory = "04_transformer"
 
@@ -46,11 +46,15 @@
     subdirectory = "05_heat_sink"
 
 [pre_summary]
-    calculation_mode = "new" # (new,skip)
+    calculation_mode = "skip" # (new,skip)
     subdirectory = "06_pre_summary"
 
 [summary]
     subdirectory = "07_summary"
+
+[data_generation]
+    calculation_mode = "new" # (new,continue,skip)
+    subdirectory = "08_data_generation"
 
 [configuration_data_files]
     # General configuration file followed by circuit configuration file

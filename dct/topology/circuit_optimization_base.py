@@ -18,7 +18,6 @@ from dct.server_ctl_dtos import ProgressData
 from dct.components.component_dtos import CapacitorRequirements, InductorRequirements, TransformerRequirements
 from dct.circuit_enums import CalcModeEnum
 from dct.constant_path import FILTERED_RESULTS_PATH
-import dct.toml_checker as tc
 
 # Type of general optimization parameter
 T_G_D = TypeVar("T_G_D", bound="TomlGData")
@@ -457,20 +456,5 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :param dto_directory: Folder of circuit DTOs to read the values from
         :type dto_directory: str
-        """
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str, debug: tc.Debug) -> None:
-        """
-        Generate data for all components to enable the manufacturing process.
-
-        :param toml_prog_flow: toml file for the program flow
-        :type toml_prog_flow: tc.FlowControl
-        :param workspace_path: workspace path
-        :type workspace_path: str
-        :param debug: Debug configuration
-        :type debug: tc.Debug
         """
         pass
