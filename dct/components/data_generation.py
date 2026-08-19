@@ -11,6 +11,7 @@ import femmt as fmt
 
 # own libraries
 import dct.toml_checker as tc
+from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData
 from dct.constant_path import DF_SUMMARY_FINAL_FILTERED
 from dct.constants import FACTOR_M_TO_MM
 
@@ -93,7 +94,7 @@ class DataGeneration:
             )
 
             if result.stdout:
-                logger.info("FreeCAD output:\n%s", result.stdout)
+                logger.debug("FreeCAD output:\n%s", result.stdout)
 
             if result.stderr:
                 # FreeCAD can write non-fatal messages to stderr.
@@ -523,23 +524,35 @@ class DataGeneration:
             f.write(heat_sink_data)
 
     @staticmethod
-    def generate_manufacturing_data(toml_prog_flow: tc.FlowControl, workspace_path: str, debug: tc.Debug) -> None:
+    def generate_manufacturing_data(debug: tc.Debug,
+                                    circuit_configuration,
+                                    inductor_configuration_list: list[InductorConfiguration],
+                                    transformer_configuration_list: list[TransformerConfiguration],
+                                    capacitor_configuration_list: list[CapacitorConfiguration],
+                                    heat_sink_configuration: StudyData,
+                                    summary_data: StudyData, data_generation_data: StudyData) -> None:
         """
         Generate data for all components to enable the manufacturing process.
 
-        :param toml_prog_flow: toml file for the program flow
-        :type toml_prog_flow: tc.FlowControl
-        :param workspace_path: workspace path
-        :type workspace_path: str
         :param debug: Debug configuration
         :type debug: tc.Debug
+        :param circuit_configuration: circuit configuration
+        :type circuit_configuration:
+        :param inductor_configuration_list: inductor configuration list
+        :type inductor_configuration_list: list[InductorConfiguration]
+        :param transformer_configuration_list: transformer configuration list
+        :type transformer_configuration_list: list[TransformerConfiguration]
+        :param capacitor_configuration_list: capacitor configuration list
+        :type capacitor_configuration_list: list[CapacitorConfiguration]
+        :param heat_sink_configuration: heat sink configuration
+        :type heat_sink_configuration: StudyData
+        :param summary_data: summary data
+        :type summary_data: StudyData
+        :param data_generation_data: data generation data
+        :type data_generation_data: StudyData
         """
-        # Add absolute path to project data path
-        toml_prog_flow.general.project_directory = os.path.join(workspace_path, toml_prog_flow.general.project_directory)
-
         # read summary parameters
-        summary_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.summary.subdirectory,
-                                        toml_prog_flow.configuration_data_files.topology_files[1].replace('.toml', ''), DF_SUMMARY_FINAL_FILTERED)
+        summary_filepath = os.path.join(summary_data.optimization_directory, DF_SUMMARY_FINAL_FILTERED)
 
         df_summary = pd.read_csv(summary_filepath)
 
@@ -554,12 +567,10 @@ class DataGeneration:
                 combination_id, df_summary)
 
             # read circuit file
-            circuit_name = toml_prog_flow.configuration_data_files.topology_files[1].replace('.toml', '')
-            circuit_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.circuit.subdirectory,
-                                            circuit_name, f"{circuit_name}.csv")
+            circuit_filepath = os.path.join(circuit_configuration.circuit_study_data.optimization_directory,
+                                            f"{circuit_configuration.circuit_study_data.study_name}.csv")
 
-            output_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.data_generation.subdirectory,
-                                           circuit_name, str(combination_id))
+            output_filepath = os.path.join(data_generation_data.optimization_directory, str(combination_id))
             if not os.path.exists(output_filepath):
                 os.makedirs(output_filepath)
 
@@ -568,33 +579,28 @@ class DataGeneration:
 
             # read capacitor file
             for count, capacitor_id in enumerate(capacitor_id_list):
-
-                capacitor_name = toml_prog_flow.configuration_data_files.capacitor_configuration_files[count].replace('.toml', '')
-                capacitor_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.capacitor.subdirectory, circuit_name,
-                                                  str(circuit_id), f"cap_{count}_{capacitor_name}", "results.csv")
+                capacitor_filepath = os.path.join(capacitor_configuration_list[count].study_data.optimization_directory,
+                                                  str(circuit_id), capacitor_configuration_list[count].study_data.study_name, "results.csv")
                 df_capacitor = pd.read_csv(capacitor_filepath)
                 DataGeneration._generate_capacitor_data(capacitor_id, df_capacitor, output_filepath, count)
 
             # read inductor file
             for count, inductor_id in enumerate(inductor_id_list):
-                inductor_name = toml_prog_flow.configuration_data_files.inductor_configuration_files[count].replace('.toml', '')
-                inductor_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.inductor.subdirectory, circuit_name,
-                                                 str(circuit_id), f"ind_{count}_{inductor_name}", f"ind_{count}_{inductor_name}.csv")
+                inductor_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
+                                                 inductor_configuration_list[count].study_data.study_name,
+                                                 f"{inductor_configuration_list[count].study_data.study_name}.csv")
                 df_inductor = pd.read_csv(inductor_filepath)
                 DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count)
 
             # read transformer file
             for count, transformer_id in enumerate(transformer_id_list):
-                transformer_name = toml_prog_flow.configuration_data_files.transformer_configuration_files[count].replace('.toml', '')
-                transformer_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.transformer.subdirectory,
-                                                    circuit_name, str(circuit_id),
-                                                    f"it_f_{count}_{transformer_name}", f"it_f_{count}_{transformer_name}.csv")
+                transformer_filepath = os.path.join(transformer_configuration_list[count].study_data.optimization_directory, str(circuit_id),
+                                                    transformer_configuration_list[count].study_data.study_name,
+                                                    f"{transformer_configuration_list[count].study_data.study_name}.csv")
                 df_transformer = pd.read_csv(transformer_filepath)
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count)
 
             # read heat sink file
-            heat_sink_name = toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace('.toml', '')
-            heat_sink_filepath = os.path.join(workspace_path, toml_prog_flow.general.project_directory, toml_prog_flow.heat_sink.subdirectory,
-                                              heat_sink_name, f"{heat_sink_name}.csv")
+            heat_sink_filepath = os.path.join(heat_sink_configuration.optimization_directory, f"{heat_sink_configuration.study_name}.csv")
             df_heat_sink = pd.read_csv(heat_sink_filepath)
             DataGeneration._generate_heat_sink_data(heat_sink_id, df_heat_sink, output_filepath)
