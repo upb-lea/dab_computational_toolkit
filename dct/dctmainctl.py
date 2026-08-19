@@ -1369,7 +1369,8 @@ class DctMainCtl:
                                   inductor=tc.DebugInductor(number_reluctance_working_point_max=1,
                                                             number_fem_working_point_max=1),
                                   transformer=tc.DebugTransformer(number_reluctance_working_point_max=1,
-                                                                  number_fem_working_point_max=1))
+                                                                  number_fem_working_point_max=1),
+                                  data_generation=tc.DebugDataGeneration(number_combinations_max=1))
 
         # --------------------------
         # Flow control

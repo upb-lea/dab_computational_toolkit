@@ -3,9 +3,11 @@
 # Python libraries
 import os
 import logging
+import subprocess
 
 # 3rd party libraries
 import pandas as pd
+import femmt as fmt
 
 # own libraries
 import dct.toml_checker as tc
@@ -15,6 +17,121 @@ logger = logging.getLogger(__name__)
 
 class DataGeneration:
     """Generate manufacturing data."""
+
+    @staticmethod
+    def _run_freecad(freecad_script_file, output_file, variables=None):
+        """
+        Run a FreeCAD Python script from the command line to export a STEP file.
+
+        :param freecad_script_file: Path to the FreeCAD Python script (.py)
+        :type freecad_script_file : str
+        :param output_file: output STEP file path
+        :type output_file: str
+        :param variables: Optional parameters passed to the FreeCAD script as environment variables. Keys are converted to uppercase.
+        :type variables: dict | None
+
+        Example:
+        {
+            "core_inner_diameter_mm": 16.0,
+            "l_air_gap_mm": 0.8
+        }
+
+        becomes:
+        CORE_INNER_DIAMETER_MM=16.0
+        L_AIR_GAP_MM=0.8
+        """
+        # Check whether the FreeCAD script exists.
+        if not os.path.isfile(freecad_script_file):
+            logger.error("Error: %s not found.", freecad_script_file)
+            return False
+
+        # Normalize paths.
+        freecad_script_file = os.path.abspath(freecad_script_file)
+        output_file = os.path.abspath(output_file)
+
+        # Create the output folder when required.
+        output_directory = os.path.dirname(output_file)
+        if output_directory:
+            os.makedirs(output_directory, exist_ok=True)
+
+        # Copy the current environment to retain PATH, FreeCAD libraries, etc.
+        environment = os.environ.copy()
+
+        # This environment variable is read by the FreeCAD script.
+        environment["OUTPUT_STEP_FILE"] = output_file
+
+        # Pass optional script parameters through environment variables.
+        if variables:
+            for key, value in variables.items():
+                environment[key.upper()] = str(value)
+
+        # Adjust this if FreeCADCmd is not available in the system PATH.
+        cmd = [
+            "FreeCADCmd",
+            freecad_script_file
+        ]
+
+        logger.info("Running: %s", " ".join(cmd))
+
+        if variables:
+            logger.info(
+                "FreeCAD parameters: %s",
+                ", ".join(
+                    f"{key.upper()}={value}"
+                    for key, value in variables.items()
+                )
+            )
+
+        try:
+            result = subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                text=True,
+                env=environment
+            )
+
+            if result.stdout:
+                logger.debug("FreeCAD output:\n%s", result.stdout)
+
+            if result.stderr:
+                # FreeCAD can write non-fatal messages to stderr.
+                logger.warning("FreeCAD messages:\n%s", result.stderr)
+
+            if not os.path.isfile(output_file):
+                logger.error(
+                    "FreeCAD completed without error, but no STEP file was found: %s",
+                    output_file
+                )
+                return False
+
+            logger.info("Success! STEP file saved to: %s", output_file)
+            return True
+
+        except FileNotFoundError:
+            logger.error(
+                "Error: 'FreeCADCmd' command not found. "
+                "Install FreeCAD or add FreeCADCmd to your PATH."
+            )
+            return False
+
+        except subprocess.CalledProcessError as error:
+            logger.error(
+                "FreeCAD exited with return code %s.",
+                error.returncode
+            )
+
+            if error.stdout:
+                logger.error("FreeCAD stdout:\n%s", error.stdout)
+
+            if error.stderr:
+                logger.error("FreeCAD stderr:\n%s", error.stderr)
+
+            return False
+
+        except Exception:
+            logger.exception("Unexpected error while running FreeCAD.")
+            return False
 
     @staticmethod
     def _read_summary_parameters(combination_id: int, df: pd.DataFrame) -> tuple[int, list[int], list[int], list[int], int]:
@@ -102,7 +219,7 @@ class DataGeneration:
                           f"{in_series_needed=}\n"
                           f"{in_parallel_needed=}\n"
                           )
-        with open(f"{output_filepath}/capacitor_data_{capacitor_number}.txt", "w", encoding="utf-8") as f:
+        with open(f"{output_filepath}/capacitor_{capacitor_number}_data.txt", "w", encoding="utf-8") as f:
             f.write(capacitor_data)
 
     @staticmethod
@@ -141,8 +258,49 @@ class DataGeneration:
                          f"{user_attrs_l_air_gap=}\n"
                          f"{user_attrs_window_w=}\n"
                          )
-        with open(f"{output_filepath}/inductor_data_{inductor_number}.txt", "w", encoding="utf-8") as f:
+        with open(f"{output_filepath}/inductor_{inductor_number}_data.txt", "w", encoding="utf-8") as f:
             f.write(inductor_data)
+
+        # PQ core step file generation
+        core = fmt.core_database()[params_core_name]
+
+        core_height_difference = core["window_h"] - params_window_h
+
+        pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_core_half.py")
+
+        success = DataGeneration._run_freecad(
+            freecad_script_file=pq_core_filepath,
+            output_file=f"{output_filepath}/inductor_{inductor_number}_core.step",
+            variables={
+                "core_h_mm": (core["core_h"] - core_height_difference) * 1000,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * 1000,
+                "window_h_mm": params_window_h * 1000,
+                "window_w_mm": user_attrs_window_w * 1000,
+                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
+                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "l_air_gap_mm": user_attrs_l_air_gap * 1000,
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
+
+        success = DataGeneration._run_freecad(
+            freecad_script_file=pq_core_filepath,
+            output_file=f"{output_filepath}/inductor_{inductor_number}_core_original.step",
+            variables={
+                "core_h_mm": core["core_h"] * 1000,
+                "core_inner_diameter_mm": core["core_inner_diameter"] * 1000,
+                "window_h_mm": core["window_h"] * 1000,
+                "window_w_mm": core["window_w"] * 1000,
+                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
+                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "l_air_gap_mm": 0,
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
 
     @staticmethod
     def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str, transformer_number: int) -> None:
@@ -189,8 +347,67 @@ class DataGeneration:
                             f"{user_attrs_window_w=}\n"
 
                             )
-        with open(f"{output_filepath}/transformer_data_{transformer_number}.txt", "w", encoding="utf-8") as f:
+        with open(f"{output_filepath}/transformer_{transformer_number}_data.txt", "w", encoding="utf-8") as f:
             f.write(transformer_data)
+
+        core = fmt.core_database()[params_core_name]
+
+        lower_core_height_difference = core["window_h"] - params_window_h_bot
+
+        pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_core_half.py")
+
+        success = DataGeneration._run_freecad(
+            freecad_script_file=pq_core_filepath,
+            output_file=f"{output_filepath}/transformer_{transformer_number}_core_lower.step",
+            variables={
+                "core_h_mm": (core["core_h"] - lower_core_height_difference) * 1000,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * 1000,
+                "window_h_mm": params_window_h_bot * 1000,
+                "window_w_mm": user_attrs_window_w * 1000,
+                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
+                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "l_air_gap_mm": user_attrs_l_bot_air_gap * 1000,
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
+
+        success = DataGeneration._run_freecad(
+            freecad_script_file=pq_core_filepath,
+            output_file=f"{output_filepath}/transformer_{transformer_number}_core_original.step",
+            variables={
+                "core_h_mm": core["core_h"] * 1000,
+                "core_inner_diameter_mm": core["core_inner_diameter"] * 1000,
+                "window_h_mm": core["window_h"] * 1000,
+                "window_w_mm": core["window_w"] * 1000,
+                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
+                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "l_air_gap_mm": 0,
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
+
+        upper_core_height_difference = core["window_h"] - 2 * user_attrs_window_h_top
+
+        success = DataGeneration._run_freecad(
+            freecad_script_file=pq_core_filepath,
+            output_file=f"{output_filepath}/transformer_{transformer_number}_core_upper.step",
+            variables={
+                "core_h_mm": (core["core_h"] - upper_core_height_difference) * 1000,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * 1000,
+                "window_h_mm": user_attrs_window_h_top * 2 * 1000,  # upper core half needs twice the window_h
+                "window_w_mm": user_attrs_window_w * 1000,
+                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
+                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "l_air_gap_mm": user_attrs_l_top_air_gap * 1000 * 2,  # upper core half needs the full air gap, not the reduced one
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
 
     @staticmethod
     def _generate_heat_sink_data(heat_sink_id: int, df_heat_sink: pd.DataFrame, output_filepath: str) -> None:
