@@ -1,6 +1,6 @@
 # Path configuration
 [general]
-    project_directory = "2026-08-17_data_generation"
+    project_directory = "2026-08-19_summary_filter"
     topology = "dab"  # dab, sbc
 
 [breakpoints]
@@ -46,7 +46,7 @@
     subdirectory = "05_heat_sink"
 
 [pre_summary]
-    calculation_mode = "skip" # (new,skip)
+    calculation_mode = "new" # (new,skip)
     subdirectory = "06_pre_summary"
 
 [summary]
@@ -66,6 +66,7 @@
     # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
     transformer_configuration_files = ["DabTransformerConf.toml"]
     heat_sink_configuration_file = "DabHeatSinkConf.toml"
+    summary_configuration_file = "DabSummaryConf.toml"
     #    # General configuration file followed by circuit configuration file
     #    topology_files =  ["SbcGeneralConf.toml","SbcCircuitConf.toml"]
     #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology

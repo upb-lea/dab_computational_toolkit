@@ -16,6 +16,8 @@ def generate_missing_toml_files(working_directory: str) -> None:
         generate_default_transformer_toml(working_directory)
     if not os.path.isfile(os.path.join(working_directory, "DabHeatSinkConf.toml")):
         generate_default_heat_sink_toml(working_directory)
+    if not os.path.isfile(os.path.join(working_directory, "DabSummaryConf.toml")):
+        generate_default_summary_toml(working_directory)
 
 def generate_default_flow_control_toml(working_directory: str) -> None:
     """
@@ -256,6 +258,24 @@ def generate_default_heat_sink_toml(file_path: str) -> None:
         # W/(m*K)
         thermal_conductivity_copper = 136
 
+    '''
+    with open(file_path, 'w') as output:
+        output.write(toml_data)
+
+def generate_default_summary_toml(file_path: str) -> None:
+    """
+    Generate the default summary configuration toml file.
+
+    :param file_path: filename including absolute path
+    :type file_path: str
+    """
+    toml_data = '''
+    [default_data] # After update this configuration file according your project delete this line to validate it
+    [pre_summary]
+        filter_distance = [0.01, 100]
+
+    [summary]
+        filter_distance = [0.01, 100]
     '''
     with open(file_path, 'w') as output:
         output.write(toml_data)

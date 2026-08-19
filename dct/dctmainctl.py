@@ -1427,6 +1427,15 @@ class DctMainCtl:
         # Verify toml data and transfer to class
         toml_misc = tc.TomlMisc(**dict_misc)
 
+        # --------------------------
+        # summary configuration
+        # --------------------------
+        summary_toml_file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.summary_configuration_file)
+        summary_toml_loaded, dict_summary_toml = self.load_toml_file(summary_toml_file_path)
+
+        # Verify toml data and transfer to class
+        toml_summary = tc.TomlSummary(**dict_summary_toml)
+
         # -----------------------------------------
         # Introduce study data and filter data DTOs
         # -----------------------------------------
@@ -2149,7 +2158,8 @@ class DctMainCtl:
             df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
                                                                                     toml_misc.control_board_loss)
 
-            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000)
+            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000,
+                                                                  factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
 
             self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
@@ -2278,7 +2288,7 @@ class DctMainCtl:
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
 
         # generate and store pareto front of the final summary
-        self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000)
+        self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000, factor_min_max_losses_list=toml_summary.summary.filter_distance)
 
         # Plot results of all capacitors
         for capacitor_selection_configuration in self._capacitor_selection_configuration_list:

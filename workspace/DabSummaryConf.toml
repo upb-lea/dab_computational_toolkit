@@ -1,0 +1,5 @@
+[pre_summary]
+    filter_distance = [0.01, 100]
+
+[summary]
+    filter_distance = [0.01, 100]

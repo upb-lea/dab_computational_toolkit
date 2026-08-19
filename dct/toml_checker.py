@@ -143,6 +143,7 @@ class ConfigurationDataFiles(BaseModel):
     inductor_configuration_files: list[str]
     transformer_configuration_files: list[str]
     heat_sink_configuration_file: str
+    summary_configuration_file: str
 
 class FlowControl(BaseModel):
     """General flow control class."""
@@ -354,3 +355,18 @@ class TomlMisc(BaseModel):
     min_efficiency_percent: float
     control_board_volume: float
     control_board_loss: float
+
+# ######################################################
+# summary
+# ######################################################
+
+class TomlSummaryDetail(BaseModel):
+    """Toml checker class for SummaryDetail."""
+
+    filter_distance: list[float, float]
+
+class TomlSummary(BaseModel):
+    """Toml checker class for Summary."""
+
+    summary: TomlSummaryDetail
+    pre_summary: TomlSummaryDetail
