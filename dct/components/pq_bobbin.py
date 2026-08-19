@@ -549,7 +549,6 @@ def create_round_bobbin(
         for slot_cutter in slot_cutters:
             bobbin_shape = bobbin_shape.cut(slot_cutter)
 
-    # Remove unnecessary Boolean splitter edges.
     bobbin_shape = bobbin_shape.removeSplitter()
 
     if bobbin_shape.isNull():
