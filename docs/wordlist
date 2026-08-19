@@ -427,3 +427,5 @@ FCStd
 TopoShape
 roundover
 RuntimeError
+SummaryDetail
+DabSummaryConf
