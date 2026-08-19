@@ -39,8 +39,7 @@ from dct.components.component_dtos import (CapacitorRequirements, ComponentRequi
                                            TransformerRequirements, ComponentCooling)
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
-                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, SUMMARY_COMBINATION_PlOTS_FOLDER,
-                               FILTERED_RESULTS_PATH)
+                               CIRCUIT_CAPACITOR_LOSS_FOLDER, SUMMARY_COMBINATION_FOLDER, FILTERED_RESULTS_PATH)
 from dct.constants import FACTOR_SECONDS_TO_NANOSECONDS
 from dct.topology.dab.dab_plot_waveforms import plot_calc_vs_requirements, plot_calc_waveforms, plot_calc_i_hf_waveforms
 
@@ -1537,7 +1536,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             inductor_result_directory = CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER
             transformer_result_directory = CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER
 
-        for _, row in df.iterrows():
+        # note: the index represents the combination_id
+        for combination_id, row in df.iterrows():
             circuit_id = row['circuit_id']
             inductor_id = row['inductor_id_0']
             inductor_study_name = row['inductor_study_name_0']
@@ -1599,76 +1599,22 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             if not os.path.exists(results_folder):
                 os.makedirs(results_folder)
 
-            HandleDabDto.save(circuit_dto,
-                              f"c{circuit_id}_i{inductor_id}_t{transformer_id}_cap1_{capacitor_1_id}_cap2_{capacitor_2_id}",
-                              directory=results_folder, timestamp=False)
+            HandleDabDto.save(circuit_dto, str(combination_id), directory=results_folder, timestamp=False)
 
     @staticmethod
-    def visualize_all_lab_data(filepath: str) -> None:
-        """
-        Generate plots or tables for the practical operation in the lab.
-
-        :param filepath: filepath
-        :type filepath: str
-        """
-        result_dto_path = os.path.join(filepath, SUMMARY_COMBINATION_FOLDER)
-        plot_results_path = os.path.join(filepath, SUMMARY_COMBINATION_PlOTS_FOLDER)
-        _, id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(result_dto_path)
-
-        # generate the empty figures objects for the following loop to avoid high memory consumption
-        single_design_fig, single_design_ax = plt.subplots()
-
-        for combination_id in id_list:
-            # Assemble pkl-filename
-            combination_id_filepath = os.path.join(result_dto_path, f"{combination_id}.pkl")
-
-            # Get circuit results
-            with open(combination_id_filepath, 'rb') as pickle_file_data:
-                combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
-
-            DabCircuitOptimization.plot_single_design_operating_points_from_dto(combination_dto, plot_results_path, combination_id,
-                                                                                single_design_fig, single_design_ax)
-            DabCircuitOptimization.generate_operating_point_table(combination_dto, plot_results_path, combination_id)
-
-    @staticmethod
-    def visualize_single_lab_data(filepath: str, combination_id: str) -> None:
-        """
-        Generate plots or tables for the practical operation in the lab.
-
-        :param filepath: filepath
-        :type filepath: str
-        :param combination_id: combination ID of object to plot
-        :type combination_id: str
-        """
-        result_dto_path = os.path.join(filepath, SUMMARY_COMBINATION_FOLDER)
-        plot_results_path = os.path.join(filepath, SUMMARY_COMBINATION_PlOTS_FOLDER)
-
-        # generate the empty figures objects for the following loop to avoid high memory consumption
-        single_design_fig, single_design_ax = plt.subplots()
-
-        # Assemble pkl-filename
-        combination_id_filepath = os.path.join(result_dto_path, f"{combination_id}.pkl")
-
-        # Get circuit results
-        with open(combination_id_filepath, 'rb') as pickle_file_data:
-            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
-
-        DabCircuitOptimization.plot_single_design_operating_points_from_dto(combination_dto, plot_results_path, combination_id, single_design_fig,
-                                                                            single_design_ax)
-        DabCircuitOptimization.generate_operating_point_table(combination_dto, plot_results_path, combination_id)
-
-    @staticmethod
-    def generate_operating_point_table(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str) -> None:
+    def generate_operating_point_table(circuit_id_filepath: str, results_path: str) -> None:
         """
         Generate operating point table for lab work.
 
-        :param combination_dto: combination DTO
-        :type combination_dto: DabCircuitDTO
-        :param plot_results_path: Path to store the result table
-        :type plot_results_path: str
-        :param combination_id: combination ID
-        :type combination_id: int
+        :param circuit_id_filepath: circuit id filepath
+        :type circuit_id_filepath: str
+        :param results_path: Path to store the result table
+        :type results_path: str
         """
+        # Get circuit results
+        with open(circuit_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
         if combination_dto.calc_dead_time is None:
             raise TypeError("Incomplete DTO, as dead time is missing.")
 
@@ -1684,8 +1630,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         df = pd.DataFrame(data)
 
-        logger.debug(df.head())
-        df.to_csv(f"{plot_results_path}/{combination_id}.csv")
+        df.to_csv(f"{results_path}/control_parameters.csv")
 
         parameters_microcontroller = ""
         for count, row in df.iterrows():
@@ -1693,28 +1638,26 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                           f'{int(row["t_dead_1 / ns"])}, {int(row["t_dead_2 / ns"])}') + "},\n"
             parameters_microcontroller = parameters_microcontroller + line
 
-        with open(f"{plot_results_path}/{combination_id}.txt", "w") as f:
+        with open(f"{results_path}/control_parameters.txt", "w") as f:
             f.write(parameters_microcontroller)
 
     @staticmethod
-    def plot_single_design_operating_points_from_dto(combination_dto: d_dtos.DabCircuitDTO, plot_results_path: str, combination_id: str,
-                                                     fig: plt.Figure, ax: plt.Axes) -> None:
+    def plot_single_design_operating_points(combination_id_filepath: str, results_path: str, combination_id: str) -> None:
         """
         Generate plot outputs to show the operating points and compare the converters.
 
-        :param combination_dto: combination DTO
-        :type combination_dto: DabCircuitDTO
-        :param plot_results_path: Path to store the result table
-        :type plot_results_path: str
+        :param combination_id_filepath: combination id filepath
+        :type combination_id_filepath: str
+        :param results_path: Path to store the result table
+        :type results_path: str
         :param combination_id: combination ID
         :type combination_id: int
-        :param fig: matplotlib figure object
-        :type fig: Figure
-        :param ax: matplotlib axes object
-        :type ax: Axes
         """
-        if not os.path.exists(plot_results_path):
-            os.makedirs(plot_results_path)
+        with open(combination_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+        if not os.path.exists(results_path):
+            os.makedirs(results_path)
 
         if combination_dto.calc_losses is None:
             raise ValueError("Incomplete dataset.")
@@ -1776,6 +1719,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         operating_point_list = np.linspace(1, number_operating_points, number_operating_points).tolist()
 
         # generate bar graph
+        fig, ax = plt.subplots()
         bottom = np.zeros(number_operating_points)
         for label, data_count in data.items():
             ax.bar(operating_point_list, data_count, bottom=bottom, label=label, color=bar_colors[label], hatch=textures[label], edgecolor="black")
@@ -1786,8 +1730,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         ax.grid(axis="y")
         ax.legend()
         fig.tight_layout()
-        fig.savefig(f"{plot_results_path}/{combination_id}.pdf")
-        plt.cla()
+        fig.savefig(f"{results_path}/operating_points_losses.pdf")
+        plt.close()
 
     def add_time_domain_simulations(self) -> None:
         """Add time domain simulations to the existing circuit DTOs."""

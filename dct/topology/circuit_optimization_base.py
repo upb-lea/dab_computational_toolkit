@@ -419,30 +419,6 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         """
         pass
 
-    @staticmethod
-    @abstractmethod
-    def visualize_all_lab_data(filepath: str) -> None:
-        """
-        Generate plots or tables for the practical operation in the lab.
-
-        :param filepath: filepath
-        :type filepath: str
-        """
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def visualize_single_lab_data(filepath: str, combination_id: str) -> None:
-        """
-        Generate plots or tables for a single operation in the lab.
-
-        :param filepath: filepath
-        :type filepath: str
-        :param combination_id: combination ID of object to plot
-        :type combination_id: str
-        """
-        pass
-
     @abstractmethod
     def add_time_domain_simulations(self) -> None:
         """Add time domain simulations to the existing circuit DTOs."""
@@ -456,5 +432,33 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
 
         :param dto_directory: Folder of circuit DTOs to read the values from
         :type dto_directory: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_operating_point_table(circuit_id_filepath: str, results_path: str) -> None:
+        """
+        Generate operating point table for lab work.
+
+        :param circuit_id_filepath: circuit id filepath
+        :type circuit_id_filepath: str
+        :param results_path: Path to store the result table
+        :type results_path: str
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def plot_single_design_operating_points(combination_id_filepath: str, results_path: str, combination_id: str) -> None:
+        """
+        Generate plot outputs to show the operating points and compare the converters.
+
+        :param combination_id_filepath: combination id filepath
+        :type combination_id_filepath: str
+        :param results_path: Path to store the result table
+        :type results_path: str
+        :param combination_id: combination ID
+        :type combination_id: int
         """
         pass

@@ -2288,8 +2288,8 @@ class DctMainCtl:
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
 
         # generate and store pareto front of the final summary
-        self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000, factor_min_max_losses_list=toml_summary.summary.filter_distance)
-
+        df_pareto_front = self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000,
+                                                          factor_min_max_losses_list=toml_summary.summary.filter_distance)
         # Plot results of all capacitors
         for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
             ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
@@ -2317,6 +2317,12 @@ class DctMainCtl:
                                                  is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
+
+        self._circuit_optimization.generate_result_dtos(self._summary_processing._summary_study_data,
+                                                        self._capacitor_selection_configuration_list,
+                                                        self._inductor_study_configuration_list,
+                                                        self._transformer_study_configuration_list,
+                                                        df_pareto_front, is_pre_summary=False)
 
         # --------------------------
         # Data generation

@@ -12,7 +12,7 @@ import femmt as fmt
 # own libraries
 import dct.toml_checker as tc
 from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
-from dct.constant_path import DF_SUMMARY_FINAL_FILTERED
+from dct.constant_path import DF_SUMMARY_FINAL_FILTERED, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
 from dct.constants import FACTOR_M_TO_MM
 
 logger = logging.getLogger(__name__)
@@ -576,6 +576,19 @@ class DataGeneration:
 
             df_circuit = pd.read_csv(circuit_filepath)
             DataGeneration._generate_circuit_data(circuit_id, df_circuit, output_filepath)
+
+            # generate operating point table for microcontroller programming
+            circuit_id_filepath = os.path.join(circuit_configuration.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH, f"{circuit_id}.pkl")
+            circuit_configuration.generate_operating_point_table(circuit_id_filepath, output_filepath)
+
+            # generate plots of operating points
+            result_dto_path = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
+
+            # Assemble pkl-filename
+            combination_id_filepath = os.path.join(result_dto_path, f"{combination_id}.pkl")
+
+            # Get circuit results
+            circuit_configuration.plot_single_design_operating_points(combination_id_filepath, output_filepath, combination_id)
 
             # read capacitor file
             for count, capacitor_id in enumerate(capacitor_id_list):
