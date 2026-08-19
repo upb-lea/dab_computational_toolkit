@@ -11,7 +11,7 @@ import femmt as fmt
 
 # own libraries
 import dct.toml_checker as tc
-from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData
+from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
 from dct.constant_path import DF_SUMMARY_FINAL_FILTERED
 from dct.constants import FACTOR_M_TO_MM
 
@@ -525,7 +525,7 @@ class DataGeneration:
 
     @staticmethod
     def generate_manufacturing_data(debug: tc.Debug,
-                                    circuit_configuration,
+                                    circuit_configuration: CircuitOptimizationBase,
                                     inductor_configuration_list: list[InductorConfiguration],
                                     transformer_configuration_list: list[TransformerConfiguration],
                                     capacitor_configuration_list: list[CapacitorConfiguration],
