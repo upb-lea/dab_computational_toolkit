@@ -822,7 +822,7 @@ class SummaryProcessing:
 
         return act_df
 
-    def filter(self, df: pd.DataFrame, abs_max_losses: float, factor_min_max_losses_list: list[float, float]) -> pd.DataFrame:
+    def filter(self, df: pd.DataFrame, abs_max_losses: float, factor_min_max_losses_list: list[float]) -> pd.DataFrame:
         """
         Pareto front filter.
 

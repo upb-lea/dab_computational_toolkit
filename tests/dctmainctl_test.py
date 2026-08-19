@@ -97,7 +97,8 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
         capacitor_configuration_files=["dummy1", "dummy2"],
         inductor_configuration_files=["dummy", "dummy2"],
         transformer_configuration_files=["dummy", "dummy2"],
-        heat_sink_configuration_file="dummy")
+        heat_sink_configuration_file="dummy",
+        summary_configuration_file="dummy")
 )
 
 #########################################################################################################

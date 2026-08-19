@@ -331,6 +331,7 @@ def test_initialize_heat_sink_optimization(test_type: TestCase, is_error: bool) 
                 inductor_configuration_files=["inductor.toml"],
                 transformer_configuration_files=["transformer.toml"],
                 heat_sink_configuration_file=study_filename,
+                summary_configuration_file="summary.toml"
             ),
         )
 

@@ -363,7 +363,7 @@ class TomlMisc(BaseModel):
 class TomlSummaryDetail(BaseModel):
     """Toml checker class for SummaryDetail."""
 
-    filter_distance: list[float, float]
+    filter_distance: list[float]
 
 class TomlSummary(BaseModel):
     """Toml checker class for Summary."""
