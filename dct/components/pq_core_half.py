@@ -260,7 +260,6 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
         center_leg_shape
     )
 
-    # Remove Boolean splitter edges.
     return final_shape.removeSplitter()
 
 
