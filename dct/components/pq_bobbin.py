@@ -491,7 +491,6 @@ def create_round_bobbin(
                 "wire_slot_height_mm must be greater than 0."
             )
 
-
         # y = flange_outer_radius - wire_slot_depth / 2
         # and has a Y length of wire_slot_depth + 0.4.
         # Therefore, it begins 0.2 mm outside the flange outer radius,
@@ -804,6 +803,6 @@ try:
     )
 
 except Exception as error:
-    logger.exception("Failed to create PQ round bobbin: %s",error)
+    logger.exception("Failed to create PQ round bobbin: %s", error)
     print(f"ERROR while creating PQ40/40 round bobbin: {error}", file=sys.stderr)
     sys.exit(1)

@@ -305,9 +305,6 @@ class DataGeneration:
 
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_bobbin.py")
 
-        print(f"{bobbin_filepath=}")
-        print(f"{output_filepath=}")
-
         # generate inductor bobbin
         success = DataGeneration._run_freecad(
             freecad_script_file=bobbin_filepath,
@@ -315,8 +312,8 @@ class DataGeneration:
 
             variables={
                 "window_h_mm": params_window_h * FACTOR_M_TO_MM,
-                "window_w_mm": core["window_w"] * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_M_TO_MM,
+                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
                 # Bobbin dimensions
                 "flange_thickness_mm": 0.002 * FACTOR_M_TO_MM,
@@ -434,6 +431,59 @@ class DataGeneration:
                 "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                 "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                 "l_air_gap_mm": user_attrs_l_top_air_gap * FACTOR_M_TO_MM * 2,  # upper core half needs the full air gap, not the reduced one
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
+
+        # bobbin generation
+        bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_bobbin.py")
+
+        # generate transformer upper bobbin
+        success = DataGeneration._run_freecad(
+            freecad_script_file=bobbin_filepath,
+            output_file=f"{output_filepath}/transformer_{transformer_number}_bobbin_upper.step",
+
+            variables={
+                "window_h_mm": user_attrs_window_h_top * FACTOR_M_TO_MM,
+                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+
+                # Bobbin dimensions
+                "flange_thickness_mm": 0.002 * FACTOR_M_TO_MM,
+
+                "clearance": 0.3,
+                "inner_edge_radius": 0.6,
+                "outer_edge_radius": 0.6,
+                "enable_wire_slots": True,
+                "wire_slots_position": "both",
+                "wire_slot_width": 4.0
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
+
+        # generate transformer lower bobbin
+        success = DataGeneration._run_freecad(
+            freecad_script_file=bobbin_filepath,
+            output_file=f"{output_filepath}/transformer_{transformer_number}_bobbin_lower.step",
+
+            variables={
+                "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
+                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+
+                # Bobbin dimensions
+                "flange_thickness_mm": 0.002 * FACTOR_M_TO_MM,
+
+                "clearance": 0.3,
+                "inner_edge_radius": 0.6,
+                "outer_edge_radius": 0.6,
+                "enable_wire_slots": True,
+                "wire_slots_position": "both",
+                "wire_slot_width": 4.0
             }
         )
 
