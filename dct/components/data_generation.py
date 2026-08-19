@@ -12,6 +12,7 @@ import femmt as fmt
 # own libraries
 import dct.toml_checker as tc
 from dct.constant_path import DF_SUMMARY_FINAL_FILTERED
+from dct.constants import FACTOR_MM_TO_M
 
 logger = logging.getLogger(__name__)
 
@@ -272,13 +273,13 @@ class DataGeneration:
             freecad_script_file=pq_core_filepath,
             output_file=f"{output_filepath}/inductor_{inductor_number}_core.step",
             variables={
-                "core_h_mm": (core["core_h"] - core_height_difference) * 1000,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * 1000,
-                "window_h_mm": params_window_h * 1000,
-                "window_w_mm": user_attrs_window_w * 1000,
-                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
-                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
-                "l_air_gap_mm": user_attrs_l_air_gap * 1000,
+                "core_h_mm": (core["core_h"] - core_height_difference) * FACTOR_MM_TO_M,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_MM_TO_M,
+                "window_h_mm": params_window_h * FACTOR_MM_TO_M,
+                "window_w_mm": user_attrs_window_w * FACTOR_MM_TO_M,
+                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_MM_TO_M,
+                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_MM_TO_M,
+                "l_air_gap_mm": user_attrs_l_air_gap * FACTOR_MM_TO_M,
             }
         )
 
@@ -289,12 +290,12 @@ class DataGeneration:
             freecad_script_file=pq_core_filepath,
             output_file=f"{output_filepath}/inductor_{inductor_number}_core_original.step",
             variables={
-                "core_h_mm": core["core_h"] * 1000,
-                "core_inner_diameter_mm": core["core_inner_diameter"] * 1000,
-                "window_h_mm": core["window_h"] * 1000,
-                "window_w_mm": core["window_w"] * 1000,
-                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
-                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "core_h_mm": core["core_h"] * FACTOR_MM_TO_M,
+                "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_MM_TO_M,
+                "window_h_mm": core["window_h"] * FACTOR_MM_TO_M,
+                "window_w_mm": core["window_w"] * FACTOR_MM_TO_M,
+                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_MM_TO_M,
+                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_MM_TO_M,
                 "l_air_gap_mm": 0,
             }
         )
@@ -360,13 +361,13 @@ class DataGeneration:
             freecad_script_file=pq_core_filepath,
             output_file=f"{output_filepath}/transformer_{transformer_number}_core_lower.step",
             variables={
-                "core_h_mm": (core["core_h"] - lower_core_height_difference) * 1000,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * 1000,
-                "window_h_mm": params_window_h_bot * 1000,
-                "window_w_mm": user_attrs_window_w * 1000,
-                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
-                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
-                "l_air_gap_mm": user_attrs_l_bot_air_gap * 1000,
+                "core_h_mm": (core["core_h"] - lower_core_height_difference) * FACTOR_MM_TO_M,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_MM_TO_M,
+                "window_h_mm": params_window_h_bot * FACTOR_MM_TO_M,
+                "window_w_mm": user_attrs_window_w * FACTOR_MM_TO_M,
+                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_MM_TO_M,
+                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_MM_TO_M,
+                "l_air_gap_mm": user_attrs_l_bot_air_gap * FACTOR_MM_TO_M,
             }
         )
 
@@ -377,12 +378,12 @@ class DataGeneration:
             freecad_script_file=pq_core_filepath,
             output_file=f"{output_filepath}/transformer_{transformer_number}_core_original.step",
             variables={
-                "core_h_mm": core["core_h"] * 1000,
-                "core_inner_diameter_mm": core["core_inner_diameter"] * 1000,
-                "window_h_mm": core["window_h"] * 1000,
-                "window_w_mm": core["window_w"] * 1000,
-                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
-                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
+                "core_h_mm": core["core_h"] * FACTOR_MM_TO_M,
+                "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_MM_TO_M,
+                "window_h_mm": core["window_h"] * FACTOR_MM_TO_M,
+                "window_w_mm": core["window_w"] * FACTOR_MM_TO_M,
+                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_MM_TO_M,
+                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_MM_TO_M,
                 "l_air_gap_mm": 0,
             }
         )
@@ -396,13 +397,13 @@ class DataGeneration:
             freecad_script_file=pq_core_filepath,
             output_file=f"{output_filepath}/transformer_{transformer_number}_core_upper.step",
             variables={
-                "core_h_mm": (core["core_h"] - upper_core_height_difference) * 1000,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * 1000,
-                "window_h_mm": user_attrs_window_h_top * 2 * 1000,  # upper core half needs twice the window_h
-                "window_w_mm": user_attrs_window_w * 1000,
-                "core_dimension_x_mm": core["core_dimension_x"] * 1000,
-                "core_dimension_y_mm": core["core_dimension_y"] * 1000,
-                "l_air_gap_mm": user_attrs_l_top_air_gap * 1000 * 2,  # upper core half needs the full air gap, not the reduced one
+                "core_h_mm": (core["core_h"] - upper_core_height_difference) * FACTOR_MM_TO_M,
+                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_MM_TO_M,
+                "window_h_mm": user_attrs_window_h_top * 2 * FACTOR_MM_TO_M,  # upper core half needs twice the window_h
+                "window_w_mm": user_attrs_window_w * FACTOR_MM_TO_M,
+                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_MM_TO_M,
+                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_MM_TO_M,
+                "l_air_gap_mm": user_attrs_l_top_air_gap * FACTOR_MM_TO_M * 2,  # upper core half needs the full air gap, not the reduced one
             }
         )
 
