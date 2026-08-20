@@ -151,19 +151,17 @@ class DataGeneration:
 
         circuit_id = df.loc[df['combination_id'] == combination_id, 'circuit_id'].values[0]
 
-        for count in [0, 1, 2, 3, 4, 5]:
-            try:
-                capacitor_id_list.append(df.loc[df['combination_id'] == combination_id, f'capacitor_id_{count}'].values[0])
-            except KeyError:
-                pass
-            try:
-                inductor_id_list.append(df.loc[df['combination_id'] == combination_id, f'inductor_id_{count}'].values[0])
-            except KeyError:
-                pass
-            try:
-                transformer_id_list.append(df.loc[df['combination_id'] == combination_id, f'transformer_id_{count}'].values[0])
-            except KeyError:
-                pass
+        # get the maximum number of capacitors
+        count_capacitors_in_circuit = df.columns.str.fullmatch(r"capacitor_id_\d").sum()
+        count_inductors_in_circuit = df.columns.str.fullmatch(r"inductor_id_\d").sum()
+        count_transformers_in_circuit = df.columns.str.fullmatch(r"transformer_id_\d").sum()
+        
+        for count in list(range(count_capacitors_in_circuit)):
+            capacitor_id_list.append(df.loc[df['combination_id'] == combination_id, f'capacitor_id_{count}'].values[0])
+        for count in list(range(count_inductors_in_circuit)):
+            inductor_id_list.append(df.loc[df['combination_id'] == combination_id, f'inductor_id_{count}'].values[0])
+        for count in list(range(count_transformers_in_circuit)):
+            transformer_id_list.append(df.loc[df['combination_id'] == combination_id, f'transformer_id_{count}'].values[0])
         heat_sink_id = df.loc[df['combination_id'] == combination_id, 'heat_sink_id'].values[0]
 
         return circuit_id, capacitor_id_list, inductor_id_list, transformer_id_list, heat_sink_id
@@ -268,7 +266,7 @@ class DataGeneration:
 
         core_height_difference = core["window_h"] - params_window_h
 
-        pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_core_half.py")
+        pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
 
         success = DataGeneration._run_freecad(
             freecad_script_file=pq_core_filepath,
@@ -304,7 +302,7 @@ class DataGeneration:
         if not success:
             raise RuntimeError("STEP export failed.")
 
-        bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_bobbin.py")
+        bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
 
         # generate inductor bobbin
         success = DataGeneration._run_freecad(
@@ -383,7 +381,7 @@ class DataGeneration:
 
         lower_core_height_difference = core["window_h"] - params_window_h_bot
 
-        pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_core_half.py")
+        pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
 
         success = DataGeneration._run_freecad(
             freecad_script_file=pq_core_filepath,
@@ -439,7 +437,7 @@ class DataGeneration:
             raise RuntimeError("STEP export failed.")
 
         # bobbin generation
-        bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pq_bobbin.py")
+        bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
 
         # generate transformer upper bobbin
         success = DataGeneration._run_freecad(
