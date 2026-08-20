@@ -90,12 +90,15 @@ test_FlowControl_base: tc.FlowControl = tc.FlowControl(
     pre_summary=tc.PreSummary(calculation_mode="new",
                               subdirectory="dummy"),
     summary=tc.Summary(subdirectory="dummy"),
+    data_generation=tc.DataGeneration(calculation_mode="new",
+                                      subdirectory="dummy"),
     configuration_data_files=tc.ConfigurationDataFiles(
         topology_files=["dummy1", "dummy2"],
         capacitor_configuration_files=["dummy1", "dummy2"],
         inductor_configuration_files=["dummy", "dummy2"],
         transformer_configuration_files=["dummy", "dummy2"],
-        heat_sink_configuration_file="dummy")
+        heat_sink_configuration_file="dummy",
+        summary_configuration_file="dummy")
 )
 
 #########################################################################################################

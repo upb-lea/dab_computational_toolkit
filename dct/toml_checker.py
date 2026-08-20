@@ -39,6 +39,11 @@ class DebugTransformer(BaseModel):
     number_reluctance_working_point_max: int
     number_fem_working_point_max: int
 
+class DebugDataGeneration(BaseModel):
+    """Debug information for the data generation."""
+
+    number_combinations_max: int
+
 class Debug(BaseModel):
     """General information in debug configuration."""
 
@@ -47,6 +52,7 @@ class Debug(BaseModel):
     capacitor: DebugCapacitor
     inductor: DebugInductor
     transformer: DebugTransformer
+    data_generation: DebugDataGeneration
 
 # ######################################################
 # flow control
@@ -123,6 +129,12 @@ class Summary(BaseModel):
 
     subdirectory: str
 
+class DataGeneration(BaseModel):
+    """Flow control for the data generation."""
+
+    calculation_mode: Literal['new', 'ignore', 'continue']
+    subdirectory: str
+
 class ConfigurationDataFiles(BaseModel):
     """File paths to the configuration files."""
 
@@ -131,6 +143,7 @@ class ConfigurationDataFiles(BaseModel):
     inductor_configuration_files: list[str]
     transformer_configuration_files: list[str]
     heat_sink_configuration_file: str
+    summary_configuration_file: str
 
 class FlowControl(BaseModel):
     """General flow control class."""
@@ -145,6 +158,7 @@ class FlowControl(BaseModel):
     heat_sink: HeatSink
     pre_summary: PreSummary
     summary: Summary
+    data_generation: DataGeneration
     configuration_data_files: ConfigurationDataFiles
 
 # ######################################################
@@ -341,3 +355,18 @@ class TomlMisc(BaseModel):
     min_efficiency_percent: float
     control_board_volume: float
     control_board_loss: float
+
+# ######################################################
+# summary
+# ######################################################
+
+class TomlSummaryDetail(BaseModel):
+    """Toml checker class for SummaryDetail."""
+
+    filter_distance: list[float]
+
+class TomlSummary(BaseModel):
+    """Toml checker class for Summary."""
+
+    summary: TomlSummaryDetail
+    pre_summary: TomlSummaryDetail

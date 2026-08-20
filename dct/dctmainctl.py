@@ -36,6 +36,7 @@ from dct import HeatSinkOptimization
 from dct.plot_control import ParetoPlots
 from dct import generate_logging_config
 import dct.generate_toml as toml_gen
+from dct.components.data_generation import DataGeneration
 from dct.components.summary_processing import SummaryProcessing
 from dct.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
 from dct.server_ctl import DctServer as ServerCtl
@@ -49,7 +50,7 @@ from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUI
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
                                FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER,
-                               PARETO_PLOT_PKL_FOLDER, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER)
+                               PARETO_PLOT_PKL_FOLDER, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, FILEPATH_CONFIG_JSON)
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +173,7 @@ class DctMainCtl:
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
         pre_summary_path = os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory)
         summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
+        data_generation_path = os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory)
 
         path_dict = {'circuit': circuit_path,
                      'capacitor': capacitor_path,
@@ -179,12 +181,13 @@ class DctMainCtl:
                      'transformer': transformer_path,
                      'heat_sink': heat_sink_path,
                      'pre_summary': pre_summary_path,
-                     'summary': summary_path}
+                     'summary': summary_path,
+                     'data_generation': data_generation_path}
 
         for _, value in path_dict.items():
             os.makedirs(value, exist_ok=True)
 
-        json_filepath = os.path.join(project_directory, "filepath_config.json")
+        json_filepath = os.path.join(project_directory, FILEPATH_CONFIG_JSON)
 
         with open(json_filepath, 'w', encoding='utf8') as json_file:
             json.dump(path_dict, json_file, ensure_ascii=False, indent=4)
@@ -255,7 +258,7 @@ class DctMainCtl:
         number_of_inductors = topology_optimization.get_number_of_required_inductors()
         number_of_transformers = topology_optimization.get_number_of_required_transformers()
 
-        # Check numbers of trails, calculation modes and configuration files
+        # Check numbers of trials, calculation modes and configuration files
         issue_report = issue_report + DctMainCtl._check_list_entries("capacitor", "calculation_modes", number_of_capacitors,
                                                                      len(act_toml_prog_flow.capacitor.calculation_modes))
         issue_report = issue_report + DctMainCtl._check_list_entries(
@@ -1366,7 +1369,8 @@ class DctMainCtl:
                                   inductor=tc.DebugInductor(number_reluctance_working_point_max=1,
                                                             number_fem_working_point_max=1),
                                   transformer=tc.DebugTransformer(number_reluctance_working_point_max=1,
-                                                                  number_fem_working_point_max=1))
+                                                                  number_fem_working_point_max=1),
+                                  data_generation=tc.DebugDataGeneration(number_combinations_max=1))
 
         # --------------------------
         # Flow control
@@ -1423,6 +1427,15 @@ class DctMainCtl:
         # Verify toml data and transfer to class
         toml_misc = tc.TomlMisc(**dict_misc)
 
+        # --------------------------
+        # summary configuration
+        # --------------------------
+        summary_toml_file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.summary_configuration_file)
+        summary_toml_loaded, dict_summary_toml = self.load_toml_file(summary_toml_file_path)
+
+        # Verify toml data and transfer to class
+        toml_summary = tc.TomlSummary(**dict_summary_toml)
+
         # -----------------------------------------
         # Introduce study data and filter data DTOs
         # -----------------------------------------
@@ -1476,6 +1489,11 @@ class DctMainCtl:
         summary_data = StudyData(study_name="summary",
                                  optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory,
                                                                      circuit_configuration_file.replace(".toml", "")))
+
+        data_generation_data = StudyData(study_name="data_generation",
+                                         optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
+                                                                             circuit_configuration_file.replace(".toml", "")),
+                                         calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
@@ -2140,7 +2158,8 @@ class DctMainCtl:
             df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
                                                                                     toml_misc.control_board_loss)
 
-            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000)
+            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000,
+                                                                  factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
 
             self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
@@ -2269,8 +2288,8 @@ class DctMainCtl:
         ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
 
         # generate and store pareto front of the final summary
-        self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000)
-
+        df_pareto_front = self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000,
+                                                          factor_min_max_losses_list=toml_summary.summary.filter_distance)
         # Plot results of all capacitors
         for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
             ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
@@ -2298,6 +2317,28 @@ class DctMainCtl:
                                                  is_summary=True)
         ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
         ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
+
+        self._circuit_optimization.generate_result_dtos(self._summary_processing._summary_study_data,
+                                                        self._capacitor_selection_configuration_list,
+                                                        self._inductor_study_configuration_list,
+                                                        self._transformer_study_configuration_list,
+                                                        df_pareto_front, is_pre_summary=False)
+
+        # --------------------------
+        # Data generation
+        # --------------------------
+
+        # Check, if data generation is to skip
+        if not data_generation_data.calculation_mode == CalcModeEnum.skip_mode:
+            print("Start data generation")
+            DataGeneration.generate_manufacturing_data(debug=toml_debug,
+                                                       circuit_configuration=self._circuit_optimization,
+                                                       heat_sink_configuration=self._heat_sink_study_data,
+                                                       inductor_configuration_list=self._inductor_study_configuration_list,
+                                                       transformer_configuration_list=self._transformer_study_configuration_list,
+                                                       capacitor_configuration_list=self._capacitor_selection_configuration_list,
+                                                       summary_data=summary_data,
+                                                       data_generation_data=data_generation_data)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

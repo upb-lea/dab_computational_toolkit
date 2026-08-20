@@ -321,12 +321,17 @@ def test_initialize_heat_sink_optimization(test_type: TestCase, is_error: bool) 
             summary=tc.Summary(
                 subdirectory="summary",
             ),
+            data_generation=tc.DataGeneration(
+                calculation_mode="new",
+                subdirectory="data_generation"
+            ),
             configuration_data_files=tc.ConfigurationDataFiles(
                 topology_files=["topology.toml"],
                 capacitor_configuration_files=["capacitor.toml"],
                 inductor_configuration_files=["inductor.toml"],
                 transformer_configuration_files=["transformer.toml"],
                 heat_sink_configuration_file=study_filename,
+                summary_configuration_file="summary.toml"
             ),
         )
 
