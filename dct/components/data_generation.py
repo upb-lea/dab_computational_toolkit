@@ -521,6 +521,24 @@ class DataGeneration:
         with open(f"{output_filepath}/heat_sink_data.txt", "w", encoding="utf-8") as f:
             f.write(heat_sink_data)
 
+        heat_sink_model_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/heat_sink.py")
+
+        success = DataGeneration._run_freecad(
+            freecad_script_file=heat_sink_model_filepath,
+            output_file=f"{output_filepath}/heat_sink.step",
+            variables={
+                "height_c_mm": params_height_c * FACTOR_M_TO_MM,
+                "height_d_mm": params_height_d * FACTOR_M_TO_MM,
+                "length_l_mm": params_length_l * FACTOR_M_TO_MM,
+                "number_cooling_channels_n_mm": params_number_cooling_channels_n,
+                "thickness_fin_t_mm": params_thickness_fin_t * FACTOR_M_TO_MM,
+                "width_b_mm": params_width_b * FACTOR_M_TO_MM
+            }
+        )
+
+        if not success:
+            raise RuntimeError("STEP export failed.")
+
     @staticmethod
     def generate_manufacturing_data(debug: tc.Debug,
                                     circuit_configuration: CircuitOptimizationBase,
