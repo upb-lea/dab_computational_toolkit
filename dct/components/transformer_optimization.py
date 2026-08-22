@@ -548,12 +548,6 @@ class TransformerOptimization:
         parameter_set_list = self._generate_optimization_parameter(circuit_study_name, transformer_in_circuit, debug)
 
         with Pool(processes=number_cpus) as pool:
-
-            if debug.general.is_debug:
-                # In debug mode, reduce the number of parameter sets to number of processor cores
-                if len(parameter_set_list) > number_cpus:
-                    parameter_set_list = parameter_set_list[0:(number_cpus-1)]
-
             # Perform parallel calculation
             pool.starmap(func=TransformerOptimization._optimize_reluctance_model, iterable=parameter_set_list)
 
@@ -580,12 +574,6 @@ class TransformerOptimization:
         parameter_set_list = self._generate_optimization_parameter(circuit_study_name, transformer_in_circuit, debug)
 
         with Pool(processes=number_cpus) as pool:
-
-            if debug.general.is_debug:
-                # In debug mode, reduce the number of parameter sets to number of processor cores
-                if len(parameter_set_list) > number_cpus:
-                    parameter_set_list = parameter_set_list[0:(number_cpus - 1)]
-
             # Perform parallel calculation
             pool.starmap(func=TransformerOptimization._fem_simulation, iterable=parameter_set_list)
 
