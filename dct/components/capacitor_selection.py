@@ -256,7 +256,7 @@ class CapacitorSelection:
 
         with Pool(processes=number_cpus) as pool:
             parameters = []
-            for count, act_optimization_configuration in enumerate(self._optimization_config_list[capacitor_in_circuit]):
+            for act_optimization_configuration in self._optimization_config_list[capacitor_in_circuit]:
                 parameters.append((
                     capacitor_in_circuit,
                     act_optimization_configuration,
