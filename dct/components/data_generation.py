@@ -223,7 +223,8 @@ class DataGeneration:
             f.write(capacitor_data)
 
     @staticmethod
-    def _generate_inductor_data(inductor_id: int, df_inductor: pd.DataFrame, output_filepath: str, inductor_number: int) -> None:
+    def _generate_inductor_data(inductor_id: int, df_inductor: pd.DataFrame, output_filepath: str, inductor_number: int,
+                                inductor_insulations: fmt.InductorInsulationDTO) -> None:
         """
         Generate inductor manufacturing data.
 
@@ -303,6 +304,7 @@ class DataGeneration:
             raise RuntimeError("STEP export failed.")
 
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
+        clearance_mm = 0.3
 
         # generate inductor bobbin
         success = DataGeneration._run_freecad(
@@ -315,9 +317,11 @@ class DataGeneration:
                 "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
                 # Bobbin dimensions
-                "flange_thickness_mm": 0.002 * FACTOR_M_TO_MM,
+                "flange_thickness_inner_mm": inductor_insulations.core_left * FACTOR_M_TO_MM - clearance_mm,
+                "flange_thickness_top_mm": inductor_insulations.core_top * FACTOR_M_TO_MM - clearance_mm,
+                "flange_thickness_bot_mm": inductor_insulations.core_bot * FACTOR_M_TO_MM - clearance_mm,
 
-                "clearance": 0.3,
+                "clearance": clearance_mm,
                 "inner_edge_radius": 0.6,
                 "outer_edge_radius": 0.6,
                 "enable_wire_slots": True,
@@ -330,7 +334,8 @@ class DataGeneration:
             raise RuntimeError("STEP export failed.")
 
     @staticmethod
-    def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str, transformer_number: int) -> None:
+    def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str, transformer_number: int,
+                                   transformer_insulations: fmt.StoInsulation) -> None:
         """
         Generate transformer manufacturing data.
 
@@ -438,6 +443,7 @@ class DataGeneration:
 
         # bobbin generation
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
+        clearance_mm = 0.3
 
         # generate transformer upper bobbin
         success = DataGeneration._run_freecad(
@@ -450,7 +456,9 @@ class DataGeneration:
                 "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
                 # Bobbin dimensions
-                "flange_thickness_mm": 0.002 * FACTOR_M_TO_MM,
+                "flange_thickness_inner_mm": transformer_insulations.iso_window_top_core_left * FACTOR_M_TO_MM - clearance_mm,
+                "flange_thickness_top_mm": transformer_insulations.iso_window_top_core_top * FACTOR_M_TO_MM - clearance_mm,
+                "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_right * FACTOR_M_TO_MM - clearance_mm,
 
                 "clearance": 0.3,
                 "inner_edge_radius": 0.6,
@@ -475,9 +483,11 @@ class DataGeneration:
                 "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
                 # Bobbin dimensions
-                "flange_thickness_mm": 0.002 * FACTOR_M_TO_MM,
+                "flange_thickness_inner_mm": transformer_insulations.iso_window_bot_core_left * FACTOR_M_TO_MM - clearance_mm,
+                "flange_thickness_top_mm": transformer_insulations.iso_window_bot_core_top * FACTOR_M_TO_MM - clearance_mm,
+                "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_right * FACTOR_M_TO_MM - clearance_mm,
 
-                "clearance": 0.3,
+                "clearance": clearance_mm,
                 "inner_edge_radius": 0.6,
                 "outer_edge_radius": 0.6,
                 "enable_wire_slots": True,
@@ -619,7 +629,8 @@ class DataGeneration:
                                                  inductor_configuration_list[count].study_data.study_name,
                                                  f"{inductor_configuration_list[count].study_data.study_name}.csv")
                 df_inductor = pd.read_csv(inductor_filepath)
-                DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count)
+                inductor_insulations = inductor_configuration_list[count].inductor_toml_data.insulations  # type: ignore
+                DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count, inductor_insulations)
 
             # read transformer file
             for count, transformer_id in enumerate(transformer_id_list):
@@ -627,7 +638,11 @@ class DataGeneration:
                                                     transformer_configuration_list[count].study_data.study_name,
                                                     f"{transformer_configuration_list[count].study_data.study_name}.csv")
                 df_transformer = pd.read_csv(transformer_filepath)
-                DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count)
+
+                transformer_insulations = transformer_configuration_list[count].transformer_toml_data.insulation  # type: ignore
+                if not isinstance(transformer_insulations, fmt.StoInsulation):
+                    raise TypeError("Transformer insulations missing.")
+                DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
             # read heat sink file
             heat_sink_filepath = os.path.join(heat_sink_configuration.optimization_directory, f"{heat_sink_configuration.study_name}.csv")
