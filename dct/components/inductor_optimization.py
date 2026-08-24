@@ -607,5 +607,5 @@ class InductorOptimization:
                 failed_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}_failed.txt")
                 traceback_text = traceback.format_exc()
                 with open(failed_file, "a") as f:
-                    f.write(f"Error message: {e}")
+                    f.write(f"Error message: {e}\n\n\n\n\n\n")
                     f.write(f"Traceback: {traceback_text}")
