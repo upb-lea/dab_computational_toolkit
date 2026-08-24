@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Generate a round PQ40/40-style bobbin and export it as STEP using FreeCAD.
+Generate a round PQ-style bobbin and export it as STEP using FreeCAD.
 
+All dimensions are in mm.
 The bobbin consists of:
 - round center-leg hole
 - cylindrical winding barrel
@@ -10,14 +11,14 @@ The bobbin consists of:
 - rounded outer top and bottom flange edges
 - optional wire exit slots on the positive Y side
 
-All dimensions are in mm.
-
 Environment variables
 ---------------------
 WINDOW_H_MM
 WINDOW_W_MM
 CORE_INNER_DIAMETER_MM
-FLANGE_THICKNESS_MM
+FLANGE_THICKNESS_INNER_MM
+FLANGE_THICKNESS_TOP_MM
+FLANGE_THICKNESS_BOT_MM
 CLEARANCE
 INNER_EDGE_RADIUS
 OUTER_EDGE_RADIUS
@@ -29,31 +30,27 @@ WIRE_SLOTS_POSITION
 OUTPUT_STEP_FILE
 SAVE_FCSTD_FILE
 
-WIRE_SLOTS_POSITION may be:
-- "both"
-- "top"
-- "bottom"
-- "none"
-
 Example:
 WINDOW_H_MM=17.2 \
 WINDOW_W_MM=7.0 \
 CORE_INNER_DIAMETER_MM=13.45 \
-OUTPUT_STEP_FILE="./pq4040_bobbin.step" \
-FreeCADCmd pq4040_round_bobbin.py
+FLANGE_THICKNESS_INNER_MM=1.0 \
+FLANGE_THICKNESS_TOP_MM=2.5 \
+FLANGE_THICKNESS_BOT_MM=1.5 \
+OUTPUT_STEP_FILE="./pq_bobbin.step" \
+FreeCADCmd pq_bobbin.py
 """
 
-# Python libraries
 import os
 import sys
 import logging
 
-# FreeCAD libraries
 import FreeCAD as App
 import Part
 import Import
 
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -63,14 +60,12 @@ logger = logging.getLogger(__name__)
 
 def read_float_environment_variable(variable_name: str, default_value: float) -> float:
     """
-    Read a floating-point value from an environment variable.
-
-    The default is used when the variable is absent or empty.
+    Read a float from an environment variable.
 
     :param variable_name: variable name
     :type variable_name: str
     :param default_value: default value
-    :type default_value: float
+    :type default_value: str
     """
     value = os.environ.get(variable_name)
 
@@ -88,18 +83,12 @@ def read_float_environment_variable(variable_name: str, default_value: float) ->
 
 def read_bool_environment_variable(variable_name: str, default_value: bool) -> bool:
     """
-    Read a boolean value from an environment variable.
+    Read a boolean from an environment variable.
 
     :param variable_name: variable name
     :type variable_name: str
     :param default_value: default value
-    :type default_value: bool
-
-    Accepted true values:
-        1, true, yes, on
-
-    Accepted false values:
-        0, false, no, off
+    :type default_value: str
     """
     value = os.environ.get(variable_name)
 
@@ -122,7 +111,7 @@ def read_bool_environment_variable(variable_name: str, default_value: bool) -> b
 
 def read_string_environment_variable(variable_name: str, default_value: str) -> str:
     """
-    Read a string environment variable.
+    Read a string from an environment variable.
 
     :param variable_name: variable name
     :type variable_name: str
@@ -139,16 +128,13 @@ def read_string_environment_variable(variable_name: str, default_value: str) -> 
 
 def vector_from_rz(radius_mm: float, z_mm: float) -> App.Vector:
     """
-    Create a point in the radial X/Z profile plane.
+    Create a point in the X/Z profile plane.
 
-    The X coordinate represents the radial distance from the global Z-axis.
-    The Z coordinate represents the axial position. The Y coordinate is zero.
-    The resulting point is intended for a profile revolved around the global
-    Z-axis.
+    X is radial distance from the Z axis, Y is always zero.
 
-    :param radius_mm: Radial distance from the global Z-axis in mm.
+    :param radius_mm: radius in mm
     :type radius_mm: float
-    :param z_mm: Axial Z coordinate in mm.
+    :param z_mm: z coordinate in mm
     :type z_mm: float
     :return: FreeCAD vector in the X/Z profile plane.
     :rtype: App.Vector
@@ -162,19 +148,14 @@ def make_arc_edge(
     end_point: App.Vector
 ) -> Part.TopoShape:
     """
-    Create a circular arc edge through three points.
+    Create a circular arc through three points.
 
-    The arc starts at ``start_point``, passes through ``middle_point``,
-    and ends at ``end_point``.
-
-    :param start_point: Start point of the circular arc.
+    :param start_point: start point
     :type start_point: App.Vector
-    :param middle_point: Point on the circular arc between start and end.
+    :param middle_point: middle point
     :type middle_point: App.Vector
-    :param end_point: End point of the circular arc.
+    :param end_point: end point
     :type end_point: App.Vector
-    :return: FreeCAD shape representing the circular arc edge.
-    :rtype: Part.TopoShape
     """
     return Part.Arc(
         start_point,
@@ -191,7 +172,9 @@ def create_round_bobbin(
     window_h_mm: float,
     window_w_mm: float,
     core_inner_diameter_mm: float,
-    flange_thickness_mm: float,
+    flange_thickness_inner_mm: float,
+    flange_thickness_top_mm: float,
+    flange_thickness_bot_mm: float,
     clearance: float,
     inner_edge_radius_mm: float,
     outer_edge_radius_mm: float,
@@ -202,28 +185,51 @@ def create_round_bobbin(
     wire_slots_position: str
 ) -> Part.TopoShape:
     """
-    Create the complete round bobbin as a Part.Shape.
+    Create the bobbin geometry.
 
-    The bobbin profile is built in the X/Z plane and then revolved around
-    the global Z axis.
+    flange_thickness_inner_mm controls the radial wall thickness of the
+    central tube:
 
-    :param window_h_mm: available core window height
-    :param window_w_mm: radial core window width
-    :param core_inner_diameter_mm: center-leg diameter
-    :param flange_thickness_mm: top and bottom flange thickness
-    :param clearance: bobbin clearance to the core
-    :param inner_edge_radius_mm: rounding radius at center-hole edges
-    :param outer_edge_radius_mm: rounding radius at outer flange edges
-    :param enable_wire_slots: whether wire slots are cut
-    :param wire_slot_width_mm: tangential slot width
-    :param wire_slot_depth_mm: slot depth from the flange exterior
-    :param wire_slot_height_mm: axial slot height
-    :param wire_slots_position: "both", "top", "bottom", or "none"
-    :return: final bobbin solid
+        barrel_outer_radius =
+            center_hole_radius + flange_thickness_inner_mm
+
+    flange_thickness_top_mm and flange_thickness_bot_mm control the
+    respective axial flange thicknesses.
+
+
+    :param window_h_mm: window height in mm
+    :type window_h_mm: float
+    :param window_w_mm: window height in mm
+    :type window_w_mm: float
+    :param core_inner_diameter_mm: core inner diameter in mm
+    :type core_inner_diameter_mm: float
+    :param flange_thickness_inner_mm: inner flange thickness in mm
+    :type flange_thickness_inner_mm: float
+    :param flange_thickness_top_mm: top flange thickness in mm
+    :type flange_thickness_top_mm: float
+    :param flange_thickness_bot_mm: bottom flange thickness in mm
+    :type flange_thickness_bot_mm: float
+    :param clearance: clearance in mm
+    :type clearance: float
+    :param inner_edge_radius_mm: inner edge radius in mm
+    :type inner_edge_radius_mm: float
+    :param outer_edge_radius_mm: outer edge radius in mm
+    :type outer_edge_radius_mm: float
+    :param enable_wire_slots: True to enable wire slots
+    :type enable_wire_slots: bool
+    :param wire_slot_width_mm: wire slot width in mm
+    :type wire_slot_width_mm: float
+    :param wire_slot_depth_mm: wire slot depth in mm
+    :type wire_slot_depth_mm: float
+    :param wire_slot_height_mm: wire slot height in mm
+    :type wire_slot_height_mm: float
+    :param wire_slots_position: wire slot position
+    :type wire_slots_position: str
     """
     # -----------------------------------------------------------------------
     # Input validation
     # -----------------------------------------------------------------------
+
     if window_h_mm <= 0:
         raise ValueError("window_h_mm must be greater than 0.")
 
@@ -235,9 +241,19 @@ def create_round_bobbin(
             "core_inner_diameter_mm must be greater than 0."
         )
 
-    if flange_thickness_mm <= 0:
+    if flange_thickness_inner_mm <= 0:
         raise ValueError(
-            "flange_thickness_mm must be greater than 0."
+            "flange_thickness_inner_mm must be greater than 0."
+        )
+
+    if flange_thickness_top_mm <= 0:
+        raise ValueError(
+            "flange_thickness_top_mm must be greater than 0."
+        )
+
+    if flange_thickness_bot_mm <= 0:
+        raise ValueError(
+            "flange_thickness_bot_mm must be greater than 0."
         )
 
     if clearance < 0:
@@ -264,26 +280,36 @@ def create_round_bobbin(
     # -----------------------------------------------------------------------
     # Derived dimensions
     # -----------------------------------------------------------------------
-    bobbin_height_mm = window_h_mm - 2 * clearance
 
-    winding_height_mm = bobbin_height_mm - 2 * flange_thickness_mm
+    bobbin_height_mm = window_h_mm - 2.0 * clearance
 
-    center_hole_diameter_mm = core_inner_diameter_mm + 2 * clearance
+    center_hole_diameter_mm = (
+        core_inner_diameter_mm + 2.0 * clearance
+    )
+    center_hole_radius_mm = center_hole_diameter_mm / 2.0
 
-    barrel_outer_diameter_mm = core_inner_diameter_mm + 2 * clearance + 2 * flange_thickness_mm
+    # This is the actual material thickness of the central cylindrical tube.
+    barrel_outer_radius_mm = (center_hole_radius_mm + flange_thickness_inner_mm)
 
-    flange_outer_diameter_mm = core_inner_diameter_mm + 2 * window_w_mm - 2 * clearance
+    winding_height_mm = (bobbin_height_mm - flange_thickness_top_mm - flange_thickness_bot_mm)
 
-    center_hole_radius_mm = center_hole_diameter_mm / 2
-    barrel_outer_radius_mm = barrel_outer_diameter_mm / 2
-    flange_outer_radius_mm = flange_outer_diameter_mm / 2
+    flange_outer_diameter_mm = (core_inner_diameter_mm + 2.0 * window_w_mm - 2.0 * clearance)
+    flange_outer_radius_mm = flange_outer_diameter_mm / 2.0
 
-    z_min_mm = -bobbin_height_mm / 2
-    z_max_mm = bobbin_height_mm / 2
+    z_min_mm = -bobbin_height_mm / 2.0
+    z_max_mm = bobbin_height_mm / 2.0
+
+    z_barrel_bottom_mm = (
+        z_min_mm + flange_thickness_bot_mm
+    )
+    z_barrel_top_mm = (
+        z_max_mm - flange_thickness_top_mm
+    )
 
     # -----------------------------------------------------------------------
-    # Derived geometry validation
+    # Geometry validation
     # -----------------------------------------------------------------------
+
     if bobbin_height_mm <= 0:
         raise ValueError(
             "Invalid bobbin height. WINDOW_H_MM must be greater than "
@@ -292,180 +318,199 @@ def create_round_bobbin(
 
     if winding_height_mm <= 0:
         raise ValueError(
-            "Invalid winding height. Reduce FLANGE_THICKNESS_MM or "
-            "increase WINDOW_H_MM."
+            "Invalid winding height. The sum of "
+            "FLANGE_THICKNESS_TOP_MM and FLANGE_THICKNESS_BOT_MM "
+            "must be smaller than the usable bobbin height."
         )
 
     if barrel_outer_radius_mm <= center_hole_radius_mm:
         raise ValueError(
-            "Invalid geometry: barrel outer radius must be larger than "
-            "the center-hole radius."
+            "Invalid geometry: central tube outer radius must be larger "
+            "than the center-hole radius."
         )
 
     if flange_outer_radius_mm <= barrel_outer_radius_mm:
         raise ValueError(
             "Invalid geometry: flange outer radius must be larger than "
-            "the barrel outer radius."
+            "the winding-barrel outer radius."
         )
 
-    # Limit edge radii
-    inner_roundover_radius_mm = min(
-        inner_edge_radius_mm,
-        flange_thickness_mm * 0.95,
-        winding_height_mm / 2.0,
+    radial_tube_wall_mm = (
         barrel_outer_radius_mm - center_hole_radius_mm
     )
 
-    outer_roundover_radius_mm = min(
-        outer_edge_radius_mm,
-        flange_thickness_mm * 0.95,
+    radial_flange_overhang_mm = (
         flange_outer_radius_mm - barrel_outer_radius_mm
     )
 
-    if inner_roundover_radius_mm <= 0:
+    # Each flange has independent rounding radii, since its thickness may
+    # be different from the other flange.
+    inner_roundover_radius_bot_mm = min(
+        inner_edge_radius_mm,
+        flange_thickness_bot_mm * 0.95,
+        radial_tube_wall_mm,
+        winding_height_mm / 2.0
+    )
+
+    inner_roundover_radius_top_mm = min(
+        inner_edge_radius_mm,
+        flange_thickness_top_mm * 0.95,
+        radial_tube_wall_mm,
+        winding_height_mm / 2.0
+    )
+
+    outer_roundover_radius_bot_mm = min(
+        outer_edge_radius_mm,
+        flange_thickness_bot_mm * 0.95,
+        radial_flange_overhang_mm
+    )
+
+    outer_roundover_radius_top_mm = min(
+        outer_edge_radius_mm,
+        flange_thickness_top_mm * 0.95,
+        radial_flange_overhang_mm
+    )
+
+    if inner_roundover_radius_bot_mm <= 0:
         raise ValueError(
-            "Computed inner roundover radius is invalid."
+            "Computed bottom inner roundover radius is invalid."
         )
 
-    if outer_roundover_radius_mm <= 0:
+    if inner_roundover_radius_top_mm <= 0:
         raise ValueError(
-            "Computed outer roundover radius is invalid."
+            "Computed top inner roundover radius is invalid."
+        )
+
+    if outer_roundover_radius_bot_mm <= 0:
+        raise ValueError(
+            "Computed bottom outer roundover radius is invalid."
+        )
+
+    if outer_roundover_radius_top_mm <= 0:
+        raise ValueError(
+            "Computed top outer roundover radius is invalid."
         )
 
     # -----------------------------------------------------------------------
-    # Build radial profile in the X/Z plane
+    # Build radial profile
     # -----------------------------------------------------------------------
-    # Bottom face: center-hole-side to outer-flange-side.
+
+    # Bottom horizontal surface: bore side -> flange exterior.
     p0 = vector_from_rz(
-        center_hole_radius_mm + inner_roundover_radius_mm,
-        z_min_mm
-    )
-    p1 = vector_from_rz(
-        flange_outer_radius_mm - outer_roundover_radius_mm,
+        center_hole_radius_mm + inner_roundover_radius_bot_mm,
         z_min_mm
     )
 
-    # Bottom outer roundover: -90 degrees to 0 degrees.
+    p1 = vector_from_rz(
+        flange_outer_radius_mm - outer_roundover_radius_bot_mm,
+        z_min_mm
+    )
+
+    # Bottom flange outside rounding.
     p2 = vector_from_rz(
         flange_outer_radius_mm,
-        z_min_mm + outer_roundover_radius_mm
-    )
-    p_bottom_outer_mid = vector_from_rz(
-        flange_outer_radius_mm - outer_roundover_radius_mm + outer_roundover_radius_mm * 0.7071067811865476,
-        z_min_mm + outer_roundover_radius_mm - outer_roundover_radius_mm * 0.7071067811865476
+        z_min_mm + outer_roundover_radius_bot_mm
     )
 
-    # Lower outer flange and transition to winding barrel.
+    p_bottom_outer_mid = vector_from_rz(
+        flange_outer_radius_mm - outer_roundover_radius_bot_mm + outer_roundover_radius_bot_mm * 0.7071067811865476,
+        z_min_mm + outer_roundover_radius_bot_mm - outer_roundover_radius_bot_mm * 0.7071067811865476
+    )
+
+    # Outer edge of lower flange.
     p3 = vector_from_rz(
         flange_outer_radius_mm,
-        z_min_mm + flange_thickness_mm
+        z_barrel_bottom_mm
     )
+
+    # Transition from lower flange to central tube.
     p4 = vector_from_rz(
         barrel_outer_radius_mm,
-        z_min_mm + flange_thickness_mm
+        z_barrel_bottom_mm
     )
 
-    # Winding barrel.
+    # Outer surface of the cylindrical central tube / winding barrel.
     p5 = vector_from_rz(
         barrel_outer_radius_mm,
-        z_max_mm - flange_thickness_mm
+        z_barrel_top_mm
     )
 
-    # Upper flange.
+    # Transition from central tube to upper flange.
     p6 = vector_from_rz(
         flange_outer_radius_mm,
-        z_max_mm - flange_thickness_mm
+        z_barrel_top_mm
     )
+
+    # Outer upper-flange edge below roundover.
     p7 = vector_from_rz(
         flange_outer_radius_mm,
-        z_max_mm - outer_roundover_radius_mm
+        z_max_mm - outer_roundover_radius_top_mm
     )
 
-    # Top outer roundover: 0 degrees to 90 degrees.
+    # Upper flange outside rounding.
     p8 = vector_from_rz(
-        flange_outer_radius_mm - outer_roundover_radius_mm,
+        flange_outer_radius_mm - outer_roundover_radius_top_mm,
         z_max_mm
     )
+
     p_top_outer_mid = vector_from_rz(
-        flange_outer_radius_mm - outer_roundover_radius_mm + outer_roundover_radius_mm * 0.7071067811865476,
-        z_max_mm - outer_roundover_radius_mm + outer_roundover_radius_mm * 0.7071067811865476
+        flange_outer_radius_mm - outer_roundover_radius_top_mm + outer_roundover_radius_top_mm * 0.7071067811865476,
+        z_max_mm - outer_roundover_radius_top_mm + outer_roundover_radius_top_mm * 0.7071067811865476
     )
 
-    # Top face: outer flange to center-hole-side.
+    # Top horizontal surface: flange exterior -> bore side.
     p9 = vector_from_rz(
-        center_hole_radius_mm + inner_roundover_radius_mm,
+        center_hole_radius_mm + inner_roundover_radius_top_mm,
         z_max_mm
     )
 
-    # Top inner roundover: 90 degrees to 180 degrees.
+    # Upper edge roundover of the center hole.
     p10 = vector_from_rz(
         center_hole_radius_mm,
-        z_max_mm - inner_roundover_radius_mm
-    )
-    p_top_inner_mid = vector_from_rz(
-        center_hole_radius_mm + inner_roundover_radius_mm - inner_roundover_radius_mm * 0.7071067811865476,
-        z_max_mm - inner_roundover_radius_mm + inner_roundover_radius_mm * 0.7071067811865476
+        z_max_mm - inner_roundover_radius_top_mm
     )
 
-    # Inner center-hole wall.
+    p_top_inner_mid = vector_from_rz(
+        center_hole_radius_mm + inner_roundover_radius_top_mm - inner_roundover_radius_top_mm * 0.7071067811865476,
+        z_max_mm - inner_roundover_radius_top_mm + inner_roundover_radius_top_mm * 0.7071067811865476
+    )
+
+    # Inside wall of the bore.
     p11 = vector_from_rz(
         center_hole_radius_mm,
-        z_min_mm + inner_roundover_radius_mm
+        z_min_mm + inner_roundover_radius_bot_mm
     )
 
-    # Bottom inner roundover: 180 degrees to 270 degrees.
+    # Lower edge roundover of the center hole.
     p_bottom_inner_mid = vector_from_rz(
-        center_hole_radius_mm + inner_roundover_radius_mm - inner_roundover_radius_mm * 0.7071067811865476,
-        z_min_mm + inner_roundover_radius_mm - inner_roundover_radius_mm * 0.7071067811865476
+        center_hole_radius_mm + inner_roundover_radius_bot_mm - inner_roundover_radius_bot_mm * 0.7071067811865476,
+        z_min_mm + inner_roundover_radius_bot_mm - inner_roundover_radius_bot_mm * 0.7071067811865476
     )
 
-    # Create the closed profile wire.
     profile_edges = [
         Part.makeLine(p0, p1),
-
-        make_arc_edge(
-            p1,
-            p_bottom_outer_mid,
-            p2
-        ),
-
+        make_arc_edge(p1, p_bottom_outer_mid, p2),
         Part.makeLine(p2, p3),
         Part.makeLine(p3, p4),
         Part.makeLine(p4, p5),
         Part.makeLine(p5, p6),
         Part.makeLine(p6, p7),
-
-        make_arc_edge(
-            p7,
-            p_top_outer_mid,
-            p8
-        ),
-
+        make_arc_edge(p7, p_top_outer_mid, p8),
         Part.makeLine(p8, p9),
-
-        make_arc_edge(
-            p9,
-            p_top_inner_mid,
-            p10
-        ),
-
+        make_arc_edge(p9, p_top_inner_mid, p10),
         Part.makeLine(p10, p11),
-
-        make_arc_edge(
-            p11,
-            p_bottom_inner_mid,
-            p0
-        )
+        make_arc_edge(p11, p_bottom_inner_mid, p0)
     ]
 
     profile_wire = Part.Wire(profile_edges)
 
     if not profile_wire.isClosed():
-        raise RuntimeError("Internal error: bobbin profile wire is not closed.")
+        raise RuntimeError(
+            "Internal error: bobbin profile wire is not closed."
+        )
 
     profile_face = Part.Face(profile_wire)
 
-    # Revolve the radial profile around the Z axis.
     bobbin_shape = profile_face.revolve(
         App.Vector(0.0, 0.0, 0.0),
         App.Vector(0.0, 0.0, 1.0),
@@ -473,8 +518,9 @@ def create_round_bobbin(
     )
 
     # -----------------------------------------------------------------------
-    # Optional wire exit slots
+    # Optional wire slots
     # -----------------------------------------------------------------------
+
     if enable_wire_slots and wire_slots_position != "none":
         if wire_slot_width_mm <= 0:
             raise ValueError(
@@ -491,31 +537,20 @@ def create_round_bobbin(
                 "wire_slot_height_mm must be greater than 0."
             )
 
-        # y = flange_outer_radius - wire_slot_depth / 2
-        # and has a Y length of wire_slot_depth + 0.4.
-        # Therefore, it begins 0.2 mm outside the flange outer radius,
-        # guaranteeing a clean Boolean cut.
         slot_x_min_mm = -wire_slot_width_mm / 2.0
+
+        # The cutter starts 0.2 mm outside the outer flange perimeter.
         slot_y_min_mm = (flange_outer_radius_mm - wire_slot_depth_mm - 0.2)
         slot_y_length_mm = wire_slot_depth_mm + 0.4
 
         def make_wire_slot(slot_z_center_mm: float) -> Part.TopoShape:
             """
-            Create a rectangular cutting solid for one wire exit slot.
+            Create a rectangular solid for cutting a wire slot.
 
-            The slot is positioned on the positive Y side of the bobbin flange
-            and extends slightly beyond the outer flange edge to ensure a
-            clean Boolean cut.
-
-            :param slot_z_center_mm: Axial Z coordinate of the slot center
-                in mm.
+            :param slot_z_center_mm: z-distance to center in mm
             :type slot_z_center_mm: float
-            :return: Rectangular FreeCAD solid used to cut the wire slot.
-            :rtype: Part.TopoShape
             """
-            slot_z_min_mm = (
-                slot_z_center_mm - wire_slot_height_mm / 2.0
-            )
+            slot_z_min_mm = (slot_z_center_mm - wire_slot_height_mm / 2.0)
 
             return Part.makeBox(
                 wire_slot_width_mm,
@@ -532,7 +567,7 @@ def create_round_bobbin(
 
         if wire_slots_position in ("bottom", "both"):
             bottom_slot_z_center_mm = (
-                z_min_mm + flange_thickness_mm / 2.0
+                z_min_mm + flange_thickness_bot_mm / 2.0
             )
             slot_cutters.append(
                 make_wire_slot(bottom_slot_z_center_mm)
@@ -540,7 +575,7 @@ def create_round_bobbin(
 
         if wire_slots_position in ("top", "both"):
             top_slot_z_center_mm = (
-                z_max_mm - flange_thickness_mm / 2.0
+                z_max_mm - flange_thickness_top_mm / 2.0
             )
             slot_cutters.append(
                 make_wire_slot(top_slot_z_center_mm)
@@ -560,11 +595,17 @@ def create_round_bobbin(
     return bobbin_shape
 
 
+# ---------------------------------------------------------------------------
+# STEP export
+# ---------------------------------------------------------------------------
+
 def export_round_bobbin_step(
     window_h_mm: float,
     window_w_mm: float,
     core_inner_diameter_mm: float,
-    flange_thickness_mm: float,
+    flange_thickness_inner_mm: float,
+    flange_thickness_top_mm: float,
+    flange_thickness_bot_mm: float,
     clearance: float,
     inner_edge_radius_mm: float,
     outer_edge_radius_mm: float,
@@ -577,55 +618,42 @@ def export_round_bobbin_step(
     save_freecad_file: bool = False
 ) -> str:
     """
-    Create a round PQ40/40-style bobbin and export it as a STEP file.
+    Create the bobbin and export it to a STEP file.
 
-    The bobbin includes a round center-leg hole, a cylindrical winding barrel,
-    circular upper and lower flanges, rounded inner and outer flange edges,
-    and optionally one or two wire exit slots.
-
-    :param window_h_mm: Available height of the magnetic-core window in mm.
+    :param window_h_mm: window height in mm
     :type window_h_mm: float
-    :param window_w_mm: Radial width of the magnetic-core window in mm.
+    :param window_w_mm: window height in mm
     :type window_w_mm: float
-    :param core_inner_diameter_mm: Diameter of the magnetic core center leg
-        in mm.
+    :param core_inner_diameter_mm: core inner diameter in mm
     :type core_inner_diameter_mm: float
-    :param flange_thickness_mm: Thickness of both the top and bottom bobbin
-        flanges in mm.
-    :type flange_thickness_mm: float
-    :param clearance: Required clearance between bobbin and magnetic core in
-        mm.
+    :param flange_thickness_inner_mm: inner flange thickness in mm
+    :type flange_thickness_inner_mm: float
+    :param flange_thickness_top_mm: top flange thickness in mm
+    :type flange_thickness_top_mm: float
+    :param flange_thickness_bot_mm: bottom flange thickness in mm
+    :type flange_thickness_bot_mm: float
+    :param clearance: clearance in mm
     :type clearance: float
-    :param inner_edge_radius_mm: Radius of the rounded center-hole edges in
-        mm.
+    :param inner_edge_radius_mm: inner edge radius in mm
     :type inner_edge_radius_mm: float
-    :param outer_edge_radius_mm: Radius of the rounded outer top and bottom
-        flange edges in mm.
+    :param outer_edge_radius_mm: outer edge radius in mm
     :type outer_edge_radius_mm: float
-    :param enable_wire_slots: Whether wire exit slots are cut into the
-        flanges.
+    :param enable_wire_slots: True to enable wire slots
     :type enable_wire_slots: bool
-    :param wire_slot_width_mm: Tangential width of each wire exit slot in mm.
+    :param wire_slot_width_mm: wire slot width in mm
     :type wire_slot_width_mm: float
-    :param wire_slot_depth_mm: Radial depth of each wire exit slot, measured
-        from the outer flange edge towards the bobbin center, in mm.
+    :param wire_slot_depth_mm: wire slot depth in mm
     :type wire_slot_depth_mm: float
-    :param wire_slot_height_mm: Axial height of each wire exit slot in mm.
+    :param wire_slot_height_mm: wire slot height in mm
     :type wire_slot_height_mm: float
-    :param wire_slots_position: Position of wire exit slots. Allowed values
-        are ``"both"``, ``"top"``, ``"bottom"``, and ``"none"``.
+    :param wire_slots_position: wire slot position
     :type wire_slots_position: str
-    :param output_step_file: Destination path of the generated STEP file.
+    :param output_step_file: output step file name
     :type output_step_file: str
-    :param save_freecad_file: True to additionally save an editable FreeCAD
-        FCStd document next to the STEP file.
+    :param save_freecad_file: True to save freecad file
     :type save_freecad_file: bool
-    :return: Absolute path of the generated STEP file.
+    :return: Filepath of output step file
     :rtype: str
-    :raises ValueError: If the output path is empty or parameters result in
-        invalid geometry.
-    :raises RuntimeError: If bobbin creation fails or the STEP file is not
-        created successfully.
     """
     if not output_step_file:
         raise ValueError("output_step_file must not be empty.")
@@ -636,14 +664,16 @@ def export_round_bobbin_step(
     if output_directory:
         os.makedirs(output_directory, exist_ok=True)
 
-    document = App.newDocument("PQ4040_Round_Bobbin")
+    document = App.newDocument("pq_bobbin")
 
     try:
         final_shape = create_round_bobbin(
             window_h_mm=window_h_mm,
             window_w_mm=window_w_mm,
             core_inner_diameter_mm=core_inner_diameter_mm,
-            flange_thickness_mm=flange_thickness_mm,
+            flange_thickness_inner_mm=flange_thickness_inner_mm,
+            flange_thickness_top_mm=flange_thickness_top_mm,
+            flange_thickness_bot_mm=flange_thickness_bot_mm,
             clearance=clearance,
             inner_edge_radius_mm=inner_edge_radius_mm,
             outer_edge_radius_mm=outer_edge_radius_mm,
@@ -654,8 +684,6 @@ def export_round_bobbin_step(
             wire_slots_position=wire_slots_position
         )
 
-        # This is intentionally a Part::Feature, matching the working
-        # PQ-core script and providing robust STEP export behavior.
         bobbin_object = document.addObject(
             "Part::Feature",
             "PQ_Round_Bobbin"
@@ -665,23 +693,29 @@ def export_round_bobbin_step(
 
         document.recompute()
 
-        # Export the document object, consistent with the core generator.
         Import.export([bobbin_object], output_step_file)
 
         if not os.path.isfile(output_step_file):
-            raise RuntimeError(f"FreeCAD did not create the STEP file: {output_step_file}")
+            raise RuntimeError(
+                f"FreeCAD did not create the STEP file: {output_step_file}"
+            )
 
         if os.path.getsize(output_step_file) == 0:
-            raise RuntimeError(f"FreeCAD created an empty STEP file: {output_step_file}")
+            raise RuntimeError(
+                f"FreeCAD created an empty STEP file: {output_step_file}"
+            )
 
         if save_freecad_file:
             output_freecad_file = (
                 os.path.splitext(output_step_file)[0] + ".FCStd"
             )
             document.saveAs(output_freecad_file)
-            logger.info(f"FreeCAD document created: {output_freecad_file}")
+            logger.info(
+                "FreeCAD document created: %s",
+                output_freecad_file
+            )
 
-        logger.info(f"STEP file created: {output_step_file}")
+        logger.info("STEP file created: %s", output_step_file)
 
         return output_step_file
 
@@ -690,7 +724,7 @@ def export_round_bobbin_step(
 
 
 # ---------------------------------------------------------------------------
-# Read parameters from environment variables
+# Read parameters
 # ---------------------------------------------------------------------------
 
 window_h_mm = read_float_environment_variable(
@@ -708,8 +742,21 @@ core_inner_diameter_mm = read_float_environment_variable(
     13.45
 )
 
-flange_thickness_mm = read_float_environment_variable(
-    "FLANGE_THICKNESS_MM",
+# Wall thickness of the central cylindrical tube.
+flange_thickness_inner_mm = read_float_environment_variable(
+    "FLANGE_THICKNESS_INNER_MM",
+    2.0
+)
+
+# Axial material thickness of the upper flange.
+flange_thickness_top_mm = read_float_environment_variable(
+    "FLANGE_THICKNESS_TOP_MM",
+    2.0
+)
+
+# Axial material thickness of the lower flange.
+flange_thickness_bot_mm = read_float_environment_variable(
+    "FLANGE_THICKNESS_BOT_MM",
     2.0
 )
 
@@ -740,12 +787,15 @@ wire_slot_width_mm = read_float_environment_variable(
 
 wire_slot_depth_mm = read_float_environment_variable(
     "WIRE_SLOT_DEPTH",
-    window_w_mm - flange_thickness_mm
+    window_w_mm - flange_thickness_inner_mm
 )
 
 wire_slot_height_mm = read_float_environment_variable(
     "WIRE_SLOT_HEIGHT",
-    flange_thickness_mm + 0.5
+    max(
+        flange_thickness_top_mm,
+        flange_thickness_bot_mm
+    ) + 0.5
 )
 
 wire_slots_position = read_string_environment_variable(
@@ -755,13 +805,13 @@ wire_slots_position = read_string_environment_variable(
 
 output_step_file = os.environ.get(
     "OUTPUT_STEP_FILE",
-    "./pq4040_round_bobbin.step"
+    "./pq_bobbin.step"
 )
 
-save_freecad_file = os.environ.get(
+save_freecad_file = read_bool_environment_variable(
     "SAVE_FCSTD_FILE",
-    "0"
-).strip().lower() not in ("0", "false", "no", "off")
+    False
+)
 
 
 # ---------------------------------------------------------------------------
@@ -770,25 +820,41 @@ save_freecad_file = os.environ.get(
 
 try:
     logger.info("Generating PQ round bobbin with parameters:")
-    logger.info(f"  window_h_mm: {window_h_mm}")
-    logger.info(f"  window_w_mm: {window_w_mm}")
-    logger.info(f"  core_inner_diameter_mm: {core_inner_diameter_mm}")
-    logger.info(f"  flange_thickness_mm: {flange_thickness_mm}")
-    logger.info(f"  clearance: {clearance}")
-    logger.info(f"  inner_edge_radius_mm: {inner_edge_radius_mm}")
-    logger.info(f"  outer_edge_radius_mm: {outer_edge_radius_mm}")
-    logger.info(f"  enable_wire_slots: {enable_wire_slots}")
-    logger.info(f"  wire_slots_position: {wire_slots_position}")
-    logger.info(f"  wire_slot_width_mm: {wire_slot_width_mm}")
-    logger.info(f"  wire_slot_depth_mm: {wire_slot_depth_mm}")
-    logger.info(f"  wire_slot_height_mm: {wire_slot_height_mm}")
-    logger.info(f"  output_step_file: {output_step_file}")
+    logger.info("  window_h_mm: %s", window_h_mm)
+    logger.info("  window_w_mm: %s", window_w_mm)
+    logger.info(
+        "  core_inner_diameter_mm: %s",
+        core_inner_diameter_mm
+    )
+    logger.info(
+        "  flange_thickness_inner_mm: %s",
+        flange_thickness_inner_mm
+    )
+    logger.info(
+        "  flange_thickness_top_mm: %s",
+        flange_thickness_top_mm
+    )
+    logger.info(
+        "  flange_thickness_bot_mm: %s",
+        flange_thickness_bot_mm
+    )
+    logger.info("  clearance: %s", clearance)
+    logger.info("  inner_edge_radius_mm: %s", inner_edge_radius_mm)
+    logger.info("  outer_edge_radius_mm: %s", outer_edge_radius_mm)
+    logger.info("  enable_wire_slots: %s", enable_wire_slots)
+    logger.info("  wire_slots_position: %s", wire_slots_position)
+    logger.info("  wire_slot_width_mm: %s", wire_slot_width_mm)
+    logger.info("  wire_slot_depth_mm: %s", wire_slot_depth_mm)
+    logger.info("  wire_slot_height_mm: %s", wire_slot_height_mm)
+    logger.info("  output_step_file: %s", output_step_file)
 
     export_round_bobbin_step(
         window_h_mm=window_h_mm,
         window_w_mm=window_w_mm,
         core_inner_diameter_mm=core_inner_diameter_mm,
-        flange_thickness_mm=flange_thickness_mm,
+        flange_thickness_inner_mm=flange_thickness_inner_mm,
+        flange_thickness_top_mm=flange_thickness_top_mm,
+        flange_thickness_bot_mm=flange_thickness_bot_mm,
         clearance=clearance,
         inner_edge_radius_mm=inner_edge_radius_mm,
         outer_edge_radius_mm=outer_edge_radius_mm,
@@ -803,5 +869,8 @@ try:
 
 except Exception as error:
     logger.exception("Failed to create PQ round bobbin: %s", error)
-    print(f"ERROR while creating PQ40/40 round bobbin: {error}", file=sys.stderr)
+    print(
+        f"ERROR while creating PQ bobbin: {error}",
+        file=sys.stderr
+    )
     sys.exit(1)

@@ -46,8 +46,8 @@ LENGTH_L_MM=100 \
 NUMBER_COOLING_CHANNELS_N=8 \
 THICKNESS_FIN_T_MM=2 \
 WIDTH_B_MM=80 \
-OUTPUT_STEP_FILE="./heatsink.step" \
-FreeCADCmd heatsink.py
+OUTPUT_STEP_FILE="./heat_sink.step" \
+FreeCADCmd heat_sink.py
 """
 
 # Python libraries
