@@ -3,6 +3,13 @@
 Generate a round PQ-style bobbin and export it as STEP using FreeCAD.
 
 All dimensions are in mm.
+The bobbin consists of:
+- round center-leg hole
+- cylindrical winding barrel
+- circular top and bottom flanges
+- rounded inner hole edges
+- rounded outer top and bottom flange edges
+- optional wire exit slots on the positive Y side
 
 Environment variables
 ---------------------
@@ -129,6 +136,8 @@ def vector_from_rz(radius_mm: float, z_mm: float) -> App.Vector:
     :type radius_mm: float
     :param z_mm: z coordinate in mm
     :type z_mm: float
+    :return: FreeCAD vector in the X/Z profile plane.
+    :rtype: App.Vector
     """
     return App.Vector(radius_mm, 0.0, z_mm)
 
@@ -643,6 +652,8 @@ def export_round_bobbin_step(
     :type output_step_file: str
     :param save_freecad_file: True to save freecad file
     :type save_freecad_file: bool
+    :return: Filepath of output step file
+    :rtype: str
     """
     if not output_step_file:
         raise ValueError("output_step_file must not be empty.")

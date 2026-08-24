@@ -6,6 +6,7 @@ matrix:
   sources:
   - dct/*.py
   - dct/components/*.py
+  - dct/components/freecad_models/*.py
   - dct/topology/*.py
   - dct/topology/dab/*.py
   - dct/topology/sbc/*.py
