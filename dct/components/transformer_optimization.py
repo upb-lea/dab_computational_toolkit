@@ -8,6 +8,7 @@ import os.path
 import pickle
 import threading
 from multiprocessing import Pool, cpu_count, current_process
+import traceback
 
 # 3rd party libraries
 import numpy as np
@@ -693,5 +694,7 @@ class TransformerOptimization:
                 except Exception as e:
                     logger.info(f"FEM-simulation of transformer geometry {transformer_id} not possible due to non-possible geometry.")
                     failed_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}_failed.txt")
+                    traceback_text = traceback.format_exc()
                     with open(failed_file, "a") as f:
                         f.write(f"Error message: {e}")
+                        f.write(f"Traceback: {traceback_text}")

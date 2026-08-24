@@ -6,6 +6,7 @@ import logging
 import copy
 import threading
 from multiprocessing import Pool, cpu_count, current_process
+import traceback
 
 # 3rd party libraries
 import numpy as np
@@ -604,6 +605,7 @@ class InductorOptimization:
             except Exception as e:
                 logger.warning(f"circuit {circuit_id} with inductor {inductor_id}: an operation point exceeds the boundary!")
                 failed_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}_failed.txt")
-                print(f"{failed_file=}")
+                traceback_text = traceback.format_exc()
                 with open(failed_file, "a") as f:
                     f.write(f"Error message: {e}")
+                    f.write(f"Traceback: {traceback_text}")
