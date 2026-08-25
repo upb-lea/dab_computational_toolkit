@@ -12,6 +12,7 @@ dct/topology/__pycache__/
 dct/topology/sbc/__pycache__/
 dct/topology/dab/__pycache__/
 dct/design_check/__pycache__/
+dct/components/freecad_models/__pycache__/
 report.log
 trial.py
 trial*.py
