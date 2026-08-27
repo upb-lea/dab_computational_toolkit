@@ -336,7 +336,7 @@ class DataGeneration:
 
     @staticmethod
     def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str, transformer_number: int,
-                                   transformer_insulations: fmt.StoInsulation) -> None:
+                                   transformer_insulations: toml_checker.TomlTransformerInsulation) -> None:
         """
         Generate transformer manufacturing data.
 
@@ -649,7 +649,7 @@ class DataGeneration:
                 transformer_insulations = transformer_configuration_list[count].transformer_toml_data.insulation  # type: ignore
                 if not isinstance(transformer_insulations, toml_checker.TomlTransformerInsulation):
                     raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, "
-                                    f"but not type dct.toml_cheker.TomlTransformerInsulation.")
+                                    f"but not type dct.toml_checker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
             # read heat sink file
