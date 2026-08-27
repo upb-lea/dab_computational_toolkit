@@ -3,6 +3,7 @@
 # Python libraries
 import os
 import logging
+import shutil
 import subprocess
 
 # 3rd party libraries
@@ -284,7 +285,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Inductor ID {inductor_id} custom core STEP export failed.")
 
         success = DataGeneration._run_freecad(
             freecad_script_file=pq_core_filepath,
@@ -301,7 +302,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Inductor ID {inductor_id} pq core original dimensions STEP export failed.")
 
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
         clearance_mm = 0.3
@@ -331,7 +332,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Inductor ID {inductor_id} bobbin STEP export failed.")
 
     @staticmethod
     def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str, transformer_number: int,
@@ -403,7 +404,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Transformer ID {transformer_id} custom lower core STEP export failed.")
 
         success = DataGeneration._run_freecad(
             freecad_script_file=pq_core_filepath,
@@ -420,7 +421,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Transformer ID {transformer_id} original core STEP export failed.")
 
         upper_core_height_difference = core["window_h"] - 2 * user_attrs_window_h_top
 
@@ -439,7 +440,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Transformer ID {transformer_id} custom upper pq core STEP export failed.")
 
         # bobbin generation
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
@@ -470,7 +471,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Transformer ID {transformer_id} custom upper bobbin STEP export failed.")
 
         # generate transformer lower bobbin
         success = DataGeneration._run_freecad(
@@ -497,7 +498,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Transformer ID {transformer_id} custom lower bobbin STEP export failed.")
 
     @staticmethod
     def _generate_heat_sink_data(heat_sink_id: int, df_heat_sink: pd.DataFrame, output_filepath: str) -> None:
@@ -547,7 +548,7 @@ class DataGeneration:
         )
 
         if not success:
-            raise RuntimeError("STEP export failed.")
+            logger.warning(f"Heat sink ID {heat_sink_id} STEP export failed.")
 
     @staticmethod
     def generate_manufacturing_data(debug: tc.Debug,
@@ -632,6 +633,11 @@ class DataGeneration:
                 inductor_insulations = inductor_configuration_list[count].inductor_toml_data.insulations  # type: ignore
                 DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count, inductor_insulations)
 
+                inductor_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
+                                                 inductor_configuration_list[count].study_data.study_name, "09_fem_inductor_results", f"{inductor_id}.png")
+
+                shutil.copy(inductor_figure_filepath, os.path.join(output_filepath, f"{inductor_id}.png"))
+
             # read transformer file
             for count, transformer_id in enumerate(transformer_id_list):
                 transformer_filepath = os.path.join(transformer_configuration_list[count].study_data.optimization_directory, str(circuit_id),
@@ -641,7 +647,7 @@ class DataGeneration:
 
                 transformer_insulations = transformer_configuration_list[count].transformer_toml_data.insulation  # type: ignore
                 if not isinstance(transformer_insulations, fmt.StoInsulation):
-                    raise TypeError("Transformer insulations missing.")
+                    raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, but not type femmt.StoInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
             # read heat sink file
