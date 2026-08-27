@@ -12,7 +12,7 @@ import femmt as fmt
 
 # own libraries
 import dct.toml_checker as tc
-from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
+from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase, toml_checker
 from dct.constant_path import DF_SUMMARY_FINAL_FILTERED, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
 from dct.constants import FACTOR_M_TO_MM
 
@@ -634,7 +634,8 @@ class DataGeneration:
                 DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count, inductor_insulations)
 
                 inductor_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
-                                                 inductor_configuration_list[count].study_data.study_name, "09_fem_inductor_results", f"{inductor_id}.png")
+                                                        inductor_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
+                                                        f"{inductor_id}.png")
 
                 shutil.copy(inductor_figure_filepath, os.path.join(output_filepath, f"{inductor_id}.png"))
 
@@ -646,8 +647,9 @@ class DataGeneration:
                 df_transformer = pd.read_csv(transformer_filepath)
 
                 transformer_insulations = transformer_configuration_list[count].transformer_toml_data.insulation  # type: ignore
-                if not isinstance(transformer_insulations, fmt.StoInsulation):
-                    raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, but not type femmt.StoInsulation.")
+                if not isinstance(transformer_insulations, toml_checker.TomlTransformerInsulation):
+                    raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, "
+                                    f"but not type dct.toml_cheker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
             # read heat sink file
