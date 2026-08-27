@@ -578,9 +578,10 @@ class InductorOptimization:
                         logger.debug(f"   * Inductor study: {act_io_config.inductor_study_name}")
                         logger.debug(f"   * Inductor ID: {inductor_id}")
 
-                        volume, combined_losses, area_to_heat_sink, winding_loss, core_loss, geometry_figure_path = fmt.InductorOptimization.FemSimulation.full_simulation(
-                            df_geometry_re_simulation_number, current_waveform=current_waveform,
-                            inductor_config_filepath=config_filepath, process_number=process_number, print_derivations=False)
+                        volume, combined_losses, area_to_heat_sink, winding_loss, core_loss, geometry_figure_path = (
+                            fmt.InductorOptimization.FemSimulation.full_simulation(
+                                df_geometry_re_simulation_number, current_waveform=current_waveform,
+                                inductor_config_filepath=config_filepath, process_number=process_number, print_derivations=False))
                         combined_loss_array[vec_vvp] = combined_losses
                         winding_loss_array[vec_vvp] = winding_loss
                         core_loss_array[vec_vvp] = core_loss
