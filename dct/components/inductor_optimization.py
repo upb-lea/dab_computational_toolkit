@@ -4,6 +4,7 @@ import os
 import pickle
 import logging
 import copy
+import shutil
 import threading
 from multiprocessing import Pool, cpu_count, current_process
 import traceback
@@ -598,6 +599,8 @@ class InductorOptimization:
                         inductor_id=inductor_id,
                         inductor_number_in_circuit=inductor_requirements.inductor_number_in_circuit,
                     )
+
+                    shutil.copy(geometry_figure_path, os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.png"))
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(inductor_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
