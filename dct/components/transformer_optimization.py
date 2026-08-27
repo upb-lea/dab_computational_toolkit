@@ -9,6 +9,7 @@ import pickle
 import threading
 from multiprocessing import Pool, cpu_count, current_process
 import traceback
+import shutil
 
 # 3rd party libraries
 import numpy as np
@@ -661,7 +662,7 @@ class TransformerOptimization:
                         logger.debug(f"   * Transformer study: {act_sto_config.stacked_transformer_study_name}")
                         logger.debug(f"   * Transformer ID: {transformer_id}")
 
-                        volume, combined_losses, area_to_heat_sink, winding_1_loss, winding_2_loss, core_loss = (
+                        volume, combined_losses, area_to_heat_sink, winding_1_loss, winding_2_loss, core_loss, geometry_figure_path = (
                             fmt.StackedTransformerOptimization.FemSimulation.full_simulation(
                                 df_geometry_re_simulation_number, current_1_waveform, current_2_waveform, config_filepath, show_visual_outputs=False,
                                 process_number=process_number))
@@ -687,6 +688,8 @@ class TransformerOptimization:
                         transformer_id=transformer_id,
                         transformer_number_in_circuit=transformer_requirements.transformer_number_in_circuit
                     )
+
+                    shutil.copy(geometry_figure_path, os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.png"))
 
                     pickle_file = os.path.join(new_circuit_dto_directory, f"{int(transformer_id)}.pkl")
                     with open(pickle_file, 'wb') as output:
