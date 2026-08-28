@@ -53,7 +53,7 @@
     subdirectory = "07_summary"
 
 [data_generation]
-    calculation_mode = "new" # (new,continue,ignore)
+    calculation_mode = "new" # (new,continue,skip_purge)
     subdirectory = "08_data_generation"
 
 [configuration_data_files]
