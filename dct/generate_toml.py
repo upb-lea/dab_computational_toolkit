@@ -72,7 +72,7 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
     
     [heat_sink]
         number_of_trials = 500
-        calculation_mode = "new" # (new,continue,skip)
+        calculation_mode = "new" # (new,continue,skip,disc)
         subdirectory = "05_heat_sink"
     
     [pre_summary]
@@ -80,10 +80,11 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
         subdirectory = "06_pre_summary"
     
     [summary]
+        calculation_mode = "new" # (new,skip)
         subdirectory = "07_summary"
         
     [data_generation]
-        calculation_mode = "new" # (new,continue,skip)
+        calculation_mode = "new" # (new,continue,skip_purge)
         subdirectory = "08_data_generation"
     
     [configuration_data_files]

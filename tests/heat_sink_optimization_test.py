@@ -319,6 +319,7 @@ def test_initialize_heat_sink_optimization(test_type: TestCase, is_error: bool) 
                 subdirectory="pre_summary",
             ),
             summary=tc.Summary(
+                calculation_mode="new",
                 subdirectory="summary",
             ),
             data_generation=tc.DataGeneration(

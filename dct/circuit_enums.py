@@ -27,5 +27,7 @@ class CalcModeEnum(enum.Enum):
     continue_mode = "continue"
     # skip calculation and use actual data
     skip_mode = "skip"
-    # ignore step
-    ignore = "ignore"
+    # Copy the data from special folder (Only for heat sink)
+    disc_mode = "disc"
+    # Skip the process, but delete the output to keep the data integrity (Only for data generation)
+    skip_purge_mode = "skip_purge"

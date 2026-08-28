@@ -115,7 +115,7 @@ class HeatSink(BaseModel):
     """Flow control for the heat sink."""
 
     number_of_trials: int
-    calculation_mode: Literal['new', 'continue', 'skip']
+    calculation_mode: Literal['new', 'continue', 'skip', 'disc']
     subdirectory: str
 
 class PreSummary(BaseModel):
@@ -127,12 +127,13 @@ class PreSummary(BaseModel):
 class Summary(BaseModel):
     """Flow control for the summary."""
 
+    calculation_mode: Literal['new', 'skip']
     subdirectory: str
 
 class DataGeneration(BaseModel):
     """Flow control for the data generation."""
 
-    calculation_mode: Literal['new', 'ignore', 'continue']
+    calculation_mode: Literal['new', 'continue', 'skip_purge']
     subdirectory: str
 
 class ConfigurationDataFiles(BaseModel):

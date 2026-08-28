@@ -29,6 +29,7 @@ CIRCUIT_WAVEFORMS_FOLDER = "filtered_results_waveforms"
 PARETO_PLOT_PDF_FOLDER = "pareto_plot_pdf"
 PARETO_PLOT_PNG_FOLDER = "pareto_plot_png"
 PARETO_PLOT_PKL_FOLDER = "pareto_plot_pkl"
+HEAT_SINK_DISC_FOLDER = "heat_sink_disc"
 
 # processing status
 RELUCTANCE_COMPLETE_FILE = "reluctance_processing_complete.json"
