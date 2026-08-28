@@ -49,7 +49,7 @@ from dct.circuit_enums import CalcModeEnum, TopologyEnum
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                FILTERED_RESULTS_PATH, RELUCTANCE_COMPLETE_FILE, CIRCUIT_CAPACITOR_LOSS_FOLDER,
-                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER,
+                               FEM_COMPLETE_FILE, PROCESSING_COMPLETE_FILE, SUMMARY_COMBINATION_FOLDER, HEAT_SINK_DISC_FOLDER,
                                PARETO_PLOT_PKL_FOLDER, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, FILEPATH_CONFIG_JSON)
 
 logger = logging.getLogger(__name__)
@@ -171,6 +171,7 @@ class DctMainCtl:
         inductor_path = os.path.join(project_directory, toml_prog_flow.inductor.subdirectory)
         transformer_path = os.path.join(project_directory, toml_prog_flow.transformer.subdirectory)
         heat_sink_path = os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory)
+        heat_sink_disc_path = os.path.join(project_directory, HEAT_SINK_DISC_FOLDER)
         pre_summary_path = os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory)
         summary_path = os.path.join(project_directory, toml_prog_flow.summary.subdirectory)
         data_generation_path = os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory)
@@ -180,6 +181,7 @@ class DctMainCtl:
                      'inductor': inductor_path,
                      'transformer': transformer_path,
                      'heat_sink': heat_sink_path,
+                     'heat_sink_disc': heat_sink_disc_path,
                      'pre_summary': pre_summary_path,
                      'summary': summary_path,
                      'data_generation': data_generation_path}
@@ -594,6 +596,104 @@ class DctMainCtl:
 
         return is_processing_complete, issue_report
 
+    def _use_heat_sink_disc_data(self, act_toml_data: dct.TomlHeatSink, act_heat_sink_disc_path: str) -> tuple[bool, str]:
+        """Verify, if the optimization is skippable.
+
+        The verification bases on the availability of a sqlite database file and
+        the check of optimization complete by usage of a complete_file.
+
+        :param act_study_data: Information about the study name and study path
+        :type  act_study_data: StudyData
+        :param act_toml_data: toml-data class
+        :type  act_toml_data: dct.TomlHeatSink
+        :param act_heat_sink_folder: Folder, where data are stored
+        :type  act_heat_sink_folder: str
+        :param circuit_filtered_index_list: List with the name of filtered results
+        :type  circuit_filtered_index_list: str
+        :return: True, if the file could be created, False if the file could not create, e.g. no pkl-files is found.
+        :rtype: bool
+        """
+        # Variable declaration and initialization
+        is_heat_sink_disc_useable: bool = True
+        issue_report: str = ""
+        file_list: list[str] = []
+        toml_file_name: str = ""
+
+        # Check if path exists
+        # Check path
+        if not (os.path.exists(act_heat_sink_disc_path) or act_heat_sink_disc_path == ""):
+            issue_report = f"file path {act_heat_sink_disc_path} does not exists!"
+            is_heat_sink_disc_useable = False
+        else:
+            # Initialize file check flags
+            _is_pkl_file: bool = False
+            _is_csv_file: bool = False
+            _is_toml_file: bool = False
+            # Check path for needed data (1x csv-file, 1x pkl-file and 1x toml-file with heat sink content)
+            for filename in os.listdir(act_heat_sink_disc_path):
+                # Check for pkl-files
+                if filename.endswith("pkl"):
+                    if _is_pkl_file is True:
+                        issue_report = issue_report + f"A second pkl-file {filename} in {act_heat_sink_disc_path} exists!\n"
+                        is_heat_sink_disc_useable = False
+                        break
+                    else:
+                        # Add file name to list
+                        file_list.append(os.path.join(filename))
+                        _is_pkl_file = True
+                # Check for csv-files
+                if filename.endswith("csv"):
+                    if _is_csv_file is True:
+                        issue_report = issue_report + f"A second csv-file {filename} in {act_heat_sink_disc_path} exists!\n"
+                        is_heat_sink_disc_useable = False
+                        break
+                    else:
+                        # Add file name to list
+                        file_list.append(os.path.join(filename))
+                        _is_csv_file = True
+                # Check for toml-files
+                if filename.endswith("toml"):
+                    if _is_toml_file is True:
+                        issue_report = issue_report + f"A second toml-file {filename} in {act_heat_sink_disc_path} exists!\n"
+                        is_heat_sink_disc_useable = False
+                        break
+                    else:
+                        # Add file name to list
+                        file_list.append(os.path.join(filename))
+                        # Assemble toml file name path
+                        toml_file_name = os.path.join(act_heat_sink_disc_path, filename)
+                        _is_toml_file = True
+
+        # Compare heat sink configuration if no error occurs
+        if is_heat_sink_disc_useable:
+            # Load the file
+            is_heat_sink_loaded, heat_sink_dict_disc = DctMainCtl.load_toml_file(toml_file_name)
+            # Check for success
+            if is_heat_sink_loaded:
+                toml_heat_sink_disc = dct.TomlHeatSink(**heat_sink_dict_disc)
+                # Check, if the data are identical
+                if toml_heat_sink_disc != act_toml_data:
+                    issue_report = (issue_report + f"Heat sink configuration data file {HEAT_SINK_DISC_FOLDER} is not equal\n"
+                                                   "to this one in workspace!")
+                    is_heat_sink_disc_useable = False
+            else:
+                issue_report = issue_report + f"toml-file {act_heat_sink_disc_path} could not be loaded!\n"
+                is_heat_sink_disc_useable = False
+
+        # Perform the usage if no error occurs
+        if is_heat_sink_disc_useable:
+            # Delete current files in heat sink sub folder
+            self.delete_study_content(True, self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name)
+            # Copy data
+            for filename in file_list:
+                # Assemble filepath
+                source_pathfile = os.path.join(act_heat_sink_disc_path, filename)
+                destination_pathfile = os.path.join(self._heat_sink_study_data.optimization_directory, filename)
+                # Perform copy
+                shutil.copy(source_pathfile, destination_pathfile)
+
+        return is_heat_sink_disc_useable, issue_report
+
     @staticmethod
     def _create_pkl_file_completion_list(path_list: list[str], extension: str) -> list[str]:
         """Create the 'processing_complete.json' file to indicate the completion of the calculation.
@@ -847,6 +947,10 @@ class DctMainCtl:
             result_enum = CalcModeEnum.continue_mode
         elif calculation_mode_value == CalcModeEnum.skip_mode.value:
             result_enum = CalcModeEnum.skip_mode
+        elif calculation_mode_value == CalcModeEnum.disc_mode.value:
+            result_enum = CalcModeEnum.disc_mode
+        elif calculation_mode_value == CalcModeEnum.skip_purge_mode.value:
+            result_enum = CalcModeEnum.skip_purge_mode
         else:
             raise ValueError(f"Enum value {calculation_mode_value} is invalid!\n"
                              f"only {CalcModeEnum.new_mode.value}, {CalcModeEnum.continue_mode.value}, "
@@ -1345,16 +1449,16 @@ class DctMainCtl:
         # Create absolute path
         workspace_path = os.path.abspath(workspace_path)
 
-        # --------------------------
+        # -----------------------------
         # Logging
-        # --------------------------
+        # -----------------------------
         # read logging for submodules
         logging_filename = os.path.join(workspace_path, "logging.conf")
         self.load_generate_logging_config(logging_filename)
 
-        # --------------------------
+        # -----------------------------
         # Debug
-        # --------------------------
+        # -----------------------------
         debug_toml_filepath = os.path.join(workspace_path, "debug_config.toml")
         is_debug_loaded, debug_dict = self.load_toml_file(debug_toml_filepath)
 
@@ -1372,9 +1476,9 @@ class DctMainCtl:
                                                                   number_fem_working_point_max=1),
                                   data_generation=tc.DebugDataGeneration(number_combinations_max=1))
 
-        # --------------------------
+        # -----------------------------
         # Flow control
-        # --------------------------
+        # -----------------------------
 
         logger.debug("Read flow control file")
         # Load the configuration for program flow and check the validity
@@ -1427,9 +1531,9 @@ class DctMainCtl:
         # Verify toml data and transfer to class
         toml_misc = tc.TomlMisc(**dict_misc)
 
-        # --------------------------
+        # -----------------------------
         # summary configuration
-        # --------------------------
+        # -----------------------------
         summary_toml_file_path = os.path.join(workspace_path, toml_prog_flow.configuration_data_files.summary_configuration_file)
         summary_toml_loaded, dict_summary_toml = self.load_toml_file(summary_toml_file_path)
 
@@ -1481,27 +1585,29 @@ class DctMainCtl:
             calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.heat_sink.calculation_mode)
         )
 
-        pre_summary_data = StudyData(study_name="pre_summary",
-                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory,
+        _pre_summary_data = StudyData(study_name="pre_summary",
+                                      optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory,
+                                                                          circuit_configuration_file.replace(".toml", "")),
+                                      calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.pre_summary.calculation_mode))
+
+        _summary_data = StudyData(study_name="summary",
+                                  optimization_directory=os.path.join(project_directory,
+                                                                      toml_prog_flow.summary.subdirectory,
+                                                                      circuit_configuration_file.replace(".toml", "")),
+                                  calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.summary.calculation_mode))
+
+        _data_generation = StudyData(study_name="data_generation",
+                                     optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
                                                                          circuit_configuration_file.replace(".toml", "")),
-                                     calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.pre_summary.calculation_mode))
-
-        summary_data = StudyData(study_name="summary",
-                                 optimization_directory=os.path.join(project_directory, toml_prog_flow.summary.subdirectory,
-                                                                     circuit_configuration_file.replace(".toml", "")))
-
-        data_generation_data = StudyData(study_name="data_generation",
-                                         optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
-                                                                             circuit_configuration_file.replace(".toml", "")),
-                                         calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
+                                     calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
          self._transformer_list, self._heat_sink_list, self._summary_list) = self.get_initialization_queue_data(toml_prog_flow)
 
-        # --------------------------
+        # -----------------------------
         # Select topology
-        # --------------------------
+        # -----------------------------
 
         # Allocate and initialize circuit configuration
         if toml_prog_flow.general.topology == TopologyEnum.dab.value:
@@ -1511,9 +1617,9 @@ class DctMainCtl:
         else:
             raise ValueError("Serious programming error in topology selection. Please write an issue!")
 
-        # --------------------------
+        # -----------------------------
         # General toml control
-        # --------------------------
+        # -----------------------------
         logger.debug("Read general toml control")
         # Init general configuration
         is_general_toml_loaded, dict_general_toml = self.load_toml_file(general_configuration_file)
@@ -1530,13 +1636,13 @@ class DctMainCtl:
             raise ValueError("General parameter in file ",
                              f"{general_configuration_file} are inconsistent!\n", general_issue_report)
 
-        # --------------------------
+        # -----------------------------
         # Circuit flow control
-        # --------------------------
+        # -----------------------------
         logger.debug("Read circuit flow control")
 
         # Init flag for dependent optimization calculations
-        is_all_calculation_invalid = True
+        is_component_calculation_invalid = True
 
         # Init study and path information
         self._circuit_optimization.init_study_information(
@@ -1575,7 +1681,7 @@ class DctMainCtl:
                 raise ValueError("Circuit optimization is not skippable:\n" + f"{issue_report}")
             else:
                 # No change in circuit optimization causes, that all dependent optimization calculation results can be reused
-                is_all_calculation_invalid = False
+                is_component_calculation_invalid = False
 
         # In case of CalcModeEnum.new_mode the old study is to delete
         if self._circuit_optimization.circuit_study_data.calculation_mode == CalcModeEnum.new_mode:
@@ -1585,9 +1691,9 @@ class DctMainCtl:
             # Create the deleted filtered result folder
             os.makedirs(self._circuit_optimization.filter_data.filtered_list_pathname, exist_ok=True)
 
-        # --------------------------
+        # -----------------------------
         # Capacitor flow control
-        # --------------------------
+        # -----------------------------
         logger.debug("Read capacitor 1 flow control")
 
         # Check if capacitor components are required
@@ -1628,18 +1734,23 @@ class DctMainCtl:
                 if not is_skippable:
                     logger.warning("Capacitor 1 selection is not skippable:\n" + f"{issue_report}")
                     self._capacitor_selection_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
+                    # Set pre summary calculation mode to new
+                    _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
+            else:
+                # Set pre summary calculation mode to new
+                _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
 
             # In case of CalcModeEnum.new_mode the old study is to delete
             if self._capacitor_selection_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
                 # delete old circuit study data
                 self.delete_study_content(
-                    is_all_calculation_invalid, self._capacitor_selection_configuration_list[index].study_data.optimization_directory,
+                    is_component_calculation_invalid, self._capacitor_selection_configuration_list[index].study_data.optimization_directory,
                     self._capacitor_selection_configuration_list[index].study_data.study_name,
                     self._circuit_optimization.filter_data.filtered_list_files)
 
-        # --------------------------
+        # -----------------------------
         # Inductor flow control
-        # --------------------------
+        # -----------------------------
         logger.debug("Read inductor flow control")
 
         # Add calculation mode list for simulation optimization
@@ -1694,6 +1805,8 @@ class DctMainCtl:
                     self._inductor_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
                     logger.warning("Inductor optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
+                    # Set pre summary calculation mode to new
+                    _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
                 else:
                     # Assemble processing complete file name
                     processing_complete_file = f"ind_{index}_" + FEM_COMPLETE_FILE
@@ -1706,18 +1819,22 @@ class DctMainCtl:
                         logger.warning("Inductor optimization (simulation part) is not skippable:\n"
                                        f"{issue_report}")
                         self._inductor_study_configuration_list[index].simulation_calculation_mode = CalcModeEnum.continue_mode
-
+                        # Set summary calculation mode to new
+                        _summary_data.calculation_mode = CalcModeEnum.new_mode
+            else:
+                # Set pre summary calculation mode to new
+                _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
             # In case of CalcModeEnum.new_mode the old study is to delete
             if self._inductor_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
                 # Delete old inductor study
-                self.delete_study_content(is_all_calculation_invalid, self._inductor_study_configuration_list[index].study_data.optimization_directory,
+                self.delete_study_content(is_component_calculation_invalid, self._inductor_study_configuration_list[index].study_data.optimization_directory,
                                           self._inductor_study_configuration_list[index].study_data.study_name,
                                           self._circuit_optimization.filter_data.filtered_list_files
                                           )
 
-        # --------------------------
+        # -----------------------------
         # Transformer flow control
-        # --------------------------
+        # -----------------------------
         logger.debug("Read transformer flow control")
 
         # Add calculation mode list for simulation optimization
@@ -1772,6 +1889,8 @@ class DctMainCtl:
                     self._transformer_study_configuration_list[index].study_data.calculation_mode = CalcModeEnum.continue_mode
                     logger.warning("transformer optimization (analytic and simulation part) are not skippable:\n"
                                    f"{issue_report}")
+                    # Set pre summary calculation mode to new
+                    _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
                 else:
                     # Assemble processing complete file name
                     processing_complete_file = f"trf_{index}_" + FEM_COMPLETE_FILE
@@ -1784,19 +1903,24 @@ class DctMainCtl:
                         logger.warning("transformer optimization (simulation part) is not skippable:\n"
                                        f"{issue_report}")
                         self._transformer_study_configuration_list[index].simulation_calculation_mode = CalcModeEnum.continue_mode
+                        # Set summary calculation mode to new
+                        _summary_data.calculation_mode = CalcModeEnum.new_mode
+            else:
+                # Set pre summary calculation mode to new
+                _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
 
             # In case of CalcModeEnum.new_mode the old study is to delete
             if self._transformer_study_configuration_list[index].study_data.calculation_mode == CalcModeEnum.new_mode:
                 # Delete old transformer study
-                self.delete_study_content(is_all_calculation_invalid,
+                self.delete_study_content(is_component_calculation_invalid,
                                           self._transformer_study_configuration_list[index].study_data.optimization_directory,
                                           self._transformer_study_configuration_list[index].study_data.study_name,
                                           self._circuit_optimization.filter_data.filtered_list_files
                                           )
 
-        # --------------------------
+        # -----------------------------
         # Heat sink flow control
-        # --------------------------
+        # -----------------------------
 
         heat_sink_toml_filepath = toml_prog_flow.configuration_data_files.heat_sink_configuration_file
         is_heat_sink_loaded, heat_sink_dict = self.load_toml_file(heat_sink_toml_filepath)
@@ -1823,53 +1947,78 @@ class DctMainCtl:
                 self._heat_sink_study_data.calculation_mode = CalcModeEnum.continue_mode
                 logger.warning("heat sink optimization is not skippable:\n"
                                f"{issue_report}")
+                # Set pre summary calculation mode to new
+                _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
+        # Check, if heat sink optimization is read to read from disc-folder
+        elif self._heat_sink_study_data.calculation_mode == CalcModeEnum.disc_mode:
+            # Check if the optimization is skippable
+            is_useable, issue_report = self._use_heat_sink_disc_data(toml_heat_sink, os.path.join(workspace_path, HEAT_SINK_DISC_FOLDER))
+
+            # Evaluate if the disc data can be used
+            if not is_useable:
+                raise ValueError(f"'disc'-mode failed:\n {issue_report}")
+            else:
+                # Change to skip-mode (internally) to skip heat sink calculation
+                self._heat_sink_study_data.calculation_mode = CalcModeEnum.skip_mode
+                # Set pre summary calculation mode to new (ASA- it is not considered, if previous data was changed or not)
+                _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
+        else:
+            # Set pre summary calculation mode to new
+            _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
 
         # In case of CalcModeEnum.new_mode the old study is to delete
         if self._heat_sink_study_data.calculation_mode == CalcModeEnum.new_mode:
             # Delete old heat sink study
             self.delete_study_content(True, self._heat_sink_study_data.optimization_directory, self._heat_sink_study_data.study_name)
 
-        # --------------------------
+        # -----------------------------
         # Pre-summary flow control
-        # --------------------------
+        # -----------------------------
 
         # Check, if pre-summary is to skip
-        if pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
+        if _pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check if pre summary are skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(pre_summary_data,
+            is_skippable, issue_report = DctMainCtl._is_skippable(_pre_summary_data,
                                                                   PROCESSING_COMPLETE_FILE, False, [])
+            # Evaluate if the pre summary is skippable
+            if not is_skippable:
+                _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
+                _summary_data.calculation_mode = CalcModeEnum.new_mode
+        else:
+            _summary_data.calculation_mode = CalcModeEnum.new_mode
 
-            if is_skippable:
-                # Check if all components are skipped
-                # Check for not skip in capacitor configuration list
-                for actual_capacitor_selection_configuration in self._capacitor_selection_configuration_list:
-                    if actual_capacitor_selection_configuration.study_data.calculation_mode != CalcModeEnum.skip_mode:
-                        is_skippable = False
-                        break
-                if is_skippable:
-                    # Check for not skip in inductor configuration list
-                    for actual_inductor_study_configuration in self._inductor_study_configuration_list:
-                        if actual_inductor_study_configuration.study_data.calculation_mode != CalcModeEnum.skip_mode:
-                            is_skippable = False
-                            break
-                if is_skippable:
-                    # Check for not skip in transformer configuration list
-                    for actual_transformer_study_configuration in self._transformer_study_configuration_list:
-                        if actual_transformer_study_configuration.study_data.calculation_mode != CalcModeEnum.skip_mode:
-                            is_skippable = False
-                            break
-                # Check for not skip in heat sink
-                if self._heat_sink_study_data.calculation_mode != CalcModeEnum.skip_mode and is_skippable:
-                    is_skippable = False
+        # In case of CalcModeEnum.new_mode the old study is to delete
+        if _pre_summary_data.calculation_mode == CalcModeEnum.new_mode:
+            # Delete old pre summary
+            self.delete_study_content(True, _pre_summary_data.optimization_directory, _pre_summary_data.study_name)
+
+        # -----------------------------
+        # Summary flow control
+        # -----------------------------
+
+        # Check, if summary is to skip
+        if _summary_data.calculation_mode == CalcModeEnum.skip_mode:
+            # Check if pre summary are skippable
+            is_skippable, issue_report = DctMainCtl._is_skippable(_summary_data,
+                                                                  PROCESSING_COMPLETE_FILE, False, [])
 
             # Evaluate if the pre summary is skippable
             if not is_skippable:
-                pre_summary_data.calculation_mode = CalcModeEnum.new_mode
+                _summary_data.calculation_mode = CalcModeEnum.new_mode
 
         # In case of CalcModeEnum.new_mode the old study is to delete
-        if pre_summary_data.calculation_mode == CalcModeEnum.new_mode:
+        if _summary_data.calculation_mode == CalcModeEnum.new_mode:
             # Delete old pre summary
-            self.delete_study_content(True, pre_summary_data.optimization_directory, pre_summary_data.study_name)
+            self.delete_study_content(True, _summary_data.optimization_directory, _summary_data.study_name)
+
+        # -----------------------------
+        # Data generation flow control
+        # -----------------------------
+
+        # Check, if data generation is new or if it is to skip (Keep data integrity by delete old data)
+        if _data_generation.calculation_mode == CalcModeEnum.new_mode or _data_generation.calculation_mode == CalcModeEnum.skip_purge_mode:
+            # Delete old data
+            self.delete_study_content(True, _data_generation.optimization_directory, _data_generation.study_name)
 
         # -- Start server  --------------------------------------------------------------------------------------------
 
@@ -2127,7 +2276,7 @@ class DctMainCtl:
         logger.info("Start pre-summary.")
 
         # Check, if pre summary is to skip
-        if not pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
+        if not _pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
 
             # Allocate summary data object
             self._summary_pre_processing = SummaryProcessing()
@@ -2141,10 +2290,10 @@ class DctMainCtl:
                 act_capacitor_data_list=self._capacitor_selection_configuration_list,
                 act_inductor_data_list=self._inductor_study_configuration_list,
                 act_transformer_data_list=self._transformer_study_configuration_list,
-                summary_study_data=pre_summary_data, is_pre_summary=True)
+                summary_study_data=_pre_summary_data, is_pre_summary=True)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(pre_summary_data.optimization_directory,
+            DctMainCtl._delete_processing_complete(_pre_summary_data.optimization_directory,
                                                    PROCESSING_COMPLETE_FILE)
 
             # Start summary processing by generating the DataFrame from calculated simulation results
@@ -2167,29 +2316,29 @@ class DctMainCtl:
                                                             self._transformer_study_configuration_list,
                                                             df_pareto_front, is_pre_summary=True)
 
-            ParetoPlots.plot_circuit_results(self._circuit_optimization, pre_summary_data.optimization_directory)
+            ParetoPlots.plot_circuit_results(self._circuit_optimization, _pre_summary_data.optimization_directory)
 
             # Plot results of all capacitors
             for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
                 ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
                                                    self._circuit_optimization.filter_data.filtered_list_files,
-                                                   pre_summary_data.optimization_directory)
+                                                   _pre_summary_data.optimization_directory)
 
             # Plot results of all inductors
             for inductor_study_configuration in self._inductor_study_configuration_list:
                 ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
                                                   self._circuit_optimization.filter_data.filtered_list_files,
-                                                  pre_summary_data.optimization_directory)
+                                                  _pre_summary_data.optimization_directory)
             # Plot results of all transformers
             for transformer_study_configuration in self._transformer_study_configuration_list:
                 ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
                                                      self._circuit_optimization.filter_data.filtered_list_files,
-                                                     pre_summary_data.optimization_directory)
-            ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, pre_summary_data.optimization_directory)
-            ParetoPlots.plot_summary(pre_summary_data, self._circuit_optimization)
+                                                     _pre_summary_data.optimization_directory)
+            ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, _pre_summary_data.optimization_directory)
+            ParetoPlots.plot_summary(_pre_summary_data, self._circuit_optimization)
 
             # Set processing complete indicator
-            DctMainCtl._set_presummary_complete(pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
@@ -2259,86 +2408,96 @@ class DctMainCtl:
         # Allocate summary data object
         self._summary_processing = SummaryProcessing()
 
-        if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
-            raise ValueError("Thermal data configuration not initialized!")
+        # Check, if pre summary is to skip
+        if not _summary_data.calculation_mode == CalcModeEnum.skip_mode:
 
-        # Initialize summary processing by collecting data from circuit and component optimization
-        self._summary_processing.initialize_processing(
-            act_filter_data=self._circuit_optimization.filter_data,
-            act_capacitor_data_list=self._capacitor_selection_configuration_list,
-            act_inductor_data_list=self._inductor_study_configuration_list,
-            act_transformer_data_list=self._transformer_study_configuration_list,
-            summary_study_data=summary_data, is_pre_summary=False)
+            if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
+                raise ValueError("Thermal data configuration not initialized!")
 
-        # Start summary processing by generating the DataFrame from calculated simulation results
-        s_df = self._summary_processing.generate_cooling_requirement_database(
-            heat_sink_boundary_conditions=self._summary_processing.heat_sink_boundary_conditions
-        )
+            # Initialize summary processing by collecting data from circuit and component optimization
+            self._summary_processing.initialize_processing(
+                act_filter_data=self._circuit_optimization.filter_data,
+                act_capacitor_data_list=self._capacitor_selection_configuration_list,
+                act_inductor_data_list=self._inductor_study_configuration_list,
+                act_transformer_data_list=self._transformer_study_configuration_list,
+                summary_study_data=_summary_data, is_pre_summary=False)
 
-        #  Select the needed heat sink configuration
-        df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
-        # ASA: Generally control_board_volume and control_board_loss depends on the topology.
-        # Only for test setups it could be the same
-        df_pareto_plane = self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+            # Start summary processing by generating the DataFrame from calculated simulation results
+            s_df = self._summary_processing.generate_cooling_requirement_database(
+                heat_sink_boundary_conditions=self._summary_processing.heat_sink_boundary_conditions
+            )
+
+            #  Select the needed heat sink configuration
+            df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
+            # ASA: Generally control_board_volume and control_board_loss depends on the topology.
+            # Only for test setups it could be the same
+            df_pareto_plane = self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+
+            # Check breakpoint
+            self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
+            self.generate_zip_archive(toml_prog_flow)
+
+            ParetoPlots.plot_circuit_results(self._circuit_optimization, _summary_data.optimization_directory)
+
+            # generate and store pareto front of the final summary
+            df_pareto_front = self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000,
+                                                              factor_min_max_losses_list=toml_summary.summary.filter_distance)
+            # Plot results of all capacitors
+            for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
+                ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
+                                                   self._circuit_optimization.filter_data.filtered_list_files,
+                                                   _summary_data.optimization_directory)
+
+            # Plot results of all inductors
+            for count, inductor_study_configuration in enumerate(self._inductor_study_configuration_list):
+                inductor_requirement = inductor_requirements_list[count]
+
+                ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
+                                                  self._circuit_optimization.filter_data.filtered_list_files,
+                                                  _summary_data.optimization_directory, vvp_index=inductor_requirement.vvp_index,
+                                                  factor_min_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[0],
+                                                  factor_max_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[1],
+                                                  is_summary=True)
+            # Plot results of all transformers
+            for count, transformer_study_configuration in enumerate(self._transformer_study_configuration_list):
+                transformer_requirement = transformer_requirements_list[count]
+                ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
+                                                     self._circuit_optimization.filter_data.filtered_list_files,
+                                                     _summary_data.optimization_directory, vvp_index=transformer_requirement.vvp_index,
+                                                     factor_min_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[0],
+                                                     factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1],
+                                                     is_summary=True)
+            ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, _summary_data.optimization_directory)
+            ParetoPlots.plot_summary(_summary_data, self._circuit_optimization, is_summary=True)
+
+            self._circuit_optimization.generate_result_dtos(self._summary_processing._summary_study_data,
+                                                            self._capacitor_selection_configuration_list,
+                                                            self._inductor_study_configuration_list,
+                                                            self._transformer_study_configuration_list,
+                                                            df_pareto_front, is_pre_summary=False)
+
+            # Set processing complete indicator
+            DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         # Check breakpoint
-        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
-        self.generate_zip_archive(toml_prog_flow)
-
-        ParetoPlots.plot_circuit_results(self._circuit_optimization, summary_data.optimization_directory)
-
-        # generate and store pareto front of the final summary
-        df_pareto_front = self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000,
-                                                          factor_min_max_losses_list=toml_summary.summary.filter_distance)
-        # Plot results of all capacitors
-        for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
-            ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
-                                               self._circuit_optimization.filter_data.filtered_list_files,
-                                               summary_data.optimization_directory)
-
-        # Plot results of all inductors
-        for count, inductor_study_configuration in enumerate(self._inductor_study_configuration_list):
-            inductor_requirement = inductor_requirements_list[count]
-
-            ParetoPlots.plot_inductor_results(inductor_study_configuration.study_data,
-                                              self._circuit_optimization.filter_data.filtered_list_files,
-                                              summary_data.optimization_directory, vvp_index=inductor_requirement.vvp_index,
-                                              factor_min_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[0],
-                                              factor_max_dc_losses=toml_inductor.filter_distance.factor_dc_losses_min_max_list[1],
-                                              is_summary=True)
-        # Plot results of all transformers
-        for count, transformer_study_configuration in enumerate(self._transformer_study_configuration_list):
-            transformer_requirement = transformer_requirements_list[count]
-            ParetoPlots.plot_transformer_results(transformer_study_configuration.study_data,
-                                                 self._circuit_optimization.filter_data.filtered_list_files,
-                                                 summary_data.optimization_directory, vvp_index=transformer_requirement.vvp_index,
-                                                 factor_min_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[0],
-                                                 factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1],
-                                                 is_summary=True)
-        ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, summary_data.optimization_directory)
-        ParetoPlots.plot_summary(summary_data, self._circuit_optimization, is_summary=True)
-
-        self._circuit_optimization.generate_result_dtos(self._summary_processing._summary_study_data,
-                                                        self._capacitor_selection_configuration_list,
-                                                        self._inductor_study_configuration_list,
-                                                        self._transformer_study_configuration_list,
-                                                        df_pareto_front, is_pre_summary=False)
+        self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Summary is calculated")
 
         # --------------------------
         # Data generation
         # --------------------------
 
         # Check, if data generation is to skip
-        if not data_generation_data.calculation_mode == CalcModeEnum.skip_mode:
+        if not _data_generation.calculation_mode == CalcModeEnum.skip_purge_mode:
             print("Start data generation")
+
             DataGeneration.generate_manufacturing_data(debug=toml_debug,
                                                        circuit_configuration=self._circuit_optimization,
                                                        heat_sink_configuration=self._heat_sink_study_data,
                                                        inductor_configuration_list=self._inductor_study_configuration_list,
                                                        transformer_configuration_list=self._transformer_study_configuration_list,
                                                        capacitor_configuration_list=self._capacitor_selection_configuration_list,
-                                                       summary_data=summary_data,
-                                                       data_generation_data=data_generation_data)
+                                                       summary_data=_summary_data,
+                                                       data_generation_data=_data_generation)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

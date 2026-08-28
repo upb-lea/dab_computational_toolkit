@@ -270,36 +270,48 @@ class DataGeneration:
 
         pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
 
-        success = DataGeneration._run_freecad(
-            freecad_script_file=pq_core_filepath,
-            output_file=f"{output_filepath}/inductor_{inductor_number}_core.step",
-            variables={
-                "core_h_mm": (core["core_h"] - core_height_difference) * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
-                "window_h_mm": params_window_h * FACTOR_M_TO_MM,
-                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
-                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
-                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
-                "l_air_gap_mm": user_attrs_l_air_gap * FACTOR_M_TO_MM,
-            }
-        )
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"inductor_{inductor_number}_core.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            success = DataGeneration._run_freecad(
+                freecad_script_file=pq_core_filepath,
+                output_file=target_file_path,
+                variables={
+                    "core_h_mm": (core["core_h"] - core_height_difference) * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+                    "window_h_mm": params_window_h * FACTOR_M_TO_MM,
+                    "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                    "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
+                    "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
+                    "l_air_gap_mm": user_attrs_l_air_gap * FACTOR_M_TO_MM,
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Inductor ID {inductor_id} custom core STEP export failed.")
 
-        success = DataGeneration._run_freecad(
-            freecad_script_file=pq_core_filepath,
-            output_file=f"{output_filepath}/inductor_{inductor_number}_core_original.step",
-            variables={
-                "core_h_mm": core["core_h"] * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_M_TO_MM,
-                "window_h_mm": core["window_h"] * FACTOR_M_TO_MM,
-                "window_w_mm": core["window_w"] * FACTOR_M_TO_MM,
-                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
-                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
-                "l_air_gap_mm": 0,
-            }
-        )
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"inductor_{inductor_number}_core_original.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            success = DataGeneration._run_freecad(
+                freecad_script_file=pq_core_filepath,
+                output_file=target_file_path,
+                variables={
+                    "core_h_mm": core["core_h"] * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_M_TO_MM,
+                    "window_h_mm": core["window_h"] * FACTOR_M_TO_MM,
+                    "window_w_mm": core["window_w"] * FACTOR_M_TO_MM,
+                    "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
+                    "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
+                    "l_air_gap_mm": 0,
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Inductor ID {inductor_id} pq core original dimensions STEP export failed.")
@@ -307,29 +319,35 @@ class DataGeneration:
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
         clearance_mm = 0.3
 
-        # generate inductor bobbin
-        success = DataGeneration._run_freecad(
-            freecad_script_file=bobbin_filepath,
-            output_file=f"{output_filepath}/inductor_{inductor_number}_bobbin.step",
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"inductor_{inductor_number}_bobbin.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            # generate inductor bobbin
+            success = DataGeneration._run_freecad(
+                freecad_script_file=bobbin_filepath,
+                output_file=target_file_path,
 
-            variables={
-                "window_h_mm": params_window_h * FACTOR_M_TO_MM,
-                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+                variables={
+                    "window_h_mm": params_window_h * FACTOR_M_TO_MM,
+                    "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
-                # Bobbin dimensions
-                "flange_thickness_inner_mm": inductor_insulations.core_left * FACTOR_M_TO_MM - clearance_mm,
-                "flange_thickness_top_mm": inductor_insulations.core_top * FACTOR_M_TO_MM - clearance_mm,
-                "flange_thickness_bot_mm": inductor_insulations.core_bot * FACTOR_M_TO_MM - clearance_mm,
+                    # Bobbin dimensions
+                    "flange_thickness_inner_mm": inductor_insulations.core_left * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_top_mm": inductor_insulations.core_top * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": inductor_insulations.core_bot * FACTOR_M_TO_MM - clearance_mm,
 
-                "clearance": clearance_mm,
-                "inner_edge_radius": 0.6,
-                "outer_edge_radius": 0.6,
-                "enable_wire_slots": True,
-                "wire_slots_position": "both",
-                "wire_slot_width": 4.0
-            }
-        )
+                    "clearance": clearance_mm,
+                    "inner_edge_radius": 0.6,
+                    "outer_edge_radius": 0.6,
+                    "enable_wire_slots": True,
+                    "wire_slots_position": "both",
+                    "wire_slot_width": 4.0
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Inductor ID {inductor_id} bobbin STEP export failed.")
@@ -389,55 +407,73 @@ class DataGeneration:
 
         pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
 
-        success = DataGeneration._run_freecad(
-            freecad_script_file=pq_core_filepath,
-            output_file=f"{output_filepath}/transformer_{transformer_number}_core_lower.step",
-            variables={
-                "core_h_mm": (core["core_h"] - lower_core_height_difference) * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
-                "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
-                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
-                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
-                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
-                "l_air_gap_mm": user_attrs_l_bot_air_gap * FACTOR_M_TO_MM,
-            }
-        )
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_lower.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            success = DataGeneration._run_freecad(
+                freecad_script_file=pq_core_filepath,
+                output_file=target_file_path,
+                variables={
+                    "core_h_mm": (core["core_h"] - lower_core_height_difference) * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+                    "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
+                    "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                    "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
+                    "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
+                    "l_air_gap_mm": user_attrs_l_bot_air_gap * FACTOR_M_TO_MM,
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Transformer ID {transformer_id} custom lower core STEP export failed.")
 
-        success = DataGeneration._run_freecad(
-            freecad_script_file=pq_core_filepath,
-            output_file=f"{output_filepath}/transformer_{transformer_number}_core_original.step",
-            variables={
-                "core_h_mm": core["core_h"] * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_M_TO_MM,
-                "window_h_mm": core["window_h"] * FACTOR_M_TO_MM,
-                "window_w_mm": core["window_w"] * FACTOR_M_TO_MM,
-                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
-                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
-                "l_air_gap_mm": 0,
-            }
-        )
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_lower.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            success = DataGeneration._run_freecad(
+                freecad_script_file=pq_core_filepath,
+                output_file=f"{output_filepath}/transformer_{transformer_number}_core_original.step",
+                variables={
+                    "core_h_mm": core["core_h"] * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": core["core_inner_diameter"] * FACTOR_M_TO_MM,
+                    "window_h_mm": core["window_h"] * FACTOR_M_TO_MM,
+                    "window_w_mm": core["window_w"] * FACTOR_M_TO_MM,
+                    "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
+                    "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
+                    "l_air_gap_mm": 0,
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Transformer ID {transformer_id} original core STEP export failed.")
 
         upper_core_height_difference = core["window_h"] - 2 * user_attrs_window_h_top
 
-        success = DataGeneration._run_freecad(
-            freecad_script_file=pq_core_filepath,
-            output_file=f"{output_filepath}/transformer_{transformer_number}_core_upper.step",
-            variables={
-                "core_h_mm": (core["core_h"] - upper_core_height_difference) * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
-                "window_h_mm": user_attrs_window_h_top * 2 * FACTOR_M_TO_MM,  # upper core half needs twice the window_h
-                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
-                "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
-                "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
-                "l_air_gap_mm": user_attrs_l_top_air_gap * FACTOR_M_TO_MM * 2,  # upper core half needs the full air gap, not the reduced one
-            }
-        )
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_upper.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            success = DataGeneration._run_freecad(
+                freecad_script_file=pq_core_filepath,
+                output_file=target_file_path,
+                variables={
+                    "core_h_mm": (core["core_h"] - upper_core_height_difference) * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+                    "window_h_mm": user_attrs_window_h_top * 2 * FACTOR_M_TO_MM,  # upper core half needs twice the window_h
+                    "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                    "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
+                    "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
+                    "l_air_gap_mm": user_attrs_l_top_air_gap * FACTOR_M_TO_MM * 2,  # upper core half needs the full air gap, not the reduced one
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Transformer ID {transformer_id} custom upper pq core STEP export failed.")
@@ -446,56 +482,68 @@ class DataGeneration:
         bobbin_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_bobbin.py")
         clearance_mm = 0.3
 
-        # generate transformer upper bobbin
-        success = DataGeneration._run_freecad(
-            freecad_script_file=bobbin_filepath,
-            output_file=f"{output_filepath}/transformer_{transformer_number}_bobbin_upper.step",
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_bobbin_upper.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            # generate transformer upper bobbin
+            success = DataGeneration._run_freecad(
+                freecad_script_file=bobbin_filepath,
+                output_file=target_file_path,
 
-            variables={
-                "window_h_mm": user_attrs_window_h_top * FACTOR_M_TO_MM,
-                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+                variables={
+                    "window_h_mm": user_attrs_window_h_top * FACTOR_M_TO_MM,
+                    "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
-                # Bobbin dimensions
-                "flange_thickness_inner_mm": transformer_insulations.iso_window_top_core_left * FACTOR_M_TO_MM - clearance_mm,
-                "flange_thickness_top_mm": transformer_insulations.iso_window_top_core_top * FACTOR_M_TO_MM - clearance_mm,
-                "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_right * FACTOR_M_TO_MM - clearance_mm,
+                    # Bobbin dimensions
+                    "flange_thickness_inner_mm": transformer_insulations.iso_window_top_core_left * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_top_mm": transformer_insulations.iso_window_top_core_top * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_right * FACTOR_M_TO_MM - clearance_mm,
 
-                "clearance": 0.3,
-                "inner_edge_radius": 0.6,
-                "outer_edge_radius": 0.6,
-                "enable_wire_slots": True,
-                "wire_slots_position": "both",
-                "wire_slot_width": 4.0
-            }
-        )
+                    "clearance": 0.3,
+                    "inner_edge_radius": 0.6,
+                    "outer_edge_radius": 0.6,
+                    "enable_wire_slots": True,
+                    "wire_slots_position": "both",
+                    "wire_slot_width": 4.0
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Transformer ID {transformer_id} custom upper bobbin STEP export failed.")
 
-        # generate transformer lower bobbin
-        success = DataGeneration._run_freecad(
-            freecad_script_file=bobbin_filepath,
-            output_file=f"{output_filepath}/transformer_{transformer_number}_bobbin_lower.step",
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_bobbin_lower.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            # generate transformer lower bobbin
+            success = DataGeneration._run_freecad(
+                freecad_script_file=bobbin_filepath,
+                output_file=target_file_path,
 
-            variables={
-                "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
-                "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
-                "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
+                variables={
+                    "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
+                    "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
+                    "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
 
-                # Bobbin dimensions
-                "flange_thickness_inner_mm": transformer_insulations.iso_window_bot_core_left * FACTOR_M_TO_MM - clearance_mm,
-                "flange_thickness_top_mm": transformer_insulations.iso_window_bot_core_top * FACTOR_M_TO_MM - clearance_mm,
-                "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_right * FACTOR_M_TO_MM - clearance_mm,
+                    # Bobbin dimensions
+                    "flange_thickness_inner_mm": transformer_insulations.iso_window_bot_core_left * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_top_mm": transformer_insulations.iso_window_bot_core_top * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_right * FACTOR_M_TO_MM - clearance_mm,
 
-                "clearance": clearance_mm,
-                "inner_edge_radius": 0.6,
-                "outer_edge_radius": 0.6,
-                "enable_wire_slots": True,
-                "wire_slots_position": "both",
-                "wire_slot_width": 4.0
-            }
-        )
+                    "clearance": clearance_mm,
+                    "inner_edge_radius": 0.6,
+                    "outer_edge_radius": 0.6,
+                    "enable_wire_slots": True,
+                    "wire_slots_position": "both",
+                    "wire_slot_width": 4.0
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Transformer ID {transformer_id} custom lower bobbin STEP export failed.")
@@ -534,18 +582,24 @@ class DataGeneration:
 
         heat_sink_model_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/heat_sink.py")
 
-        success = DataGeneration._run_freecad(
-            freecad_script_file=heat_sink_model_filepath,
-            output_file=f"{output_filepath}/heat_sink.step",
-            variables={
-                "height_c_mm": params_height_c * FACTOR_M_TO_MM,
-                "height_d_mm": params_height_d * FACTOR_M_TO_MM,
-                "length_l_mm": params_length_l * FACTOR_M_TO_MM,
-                "number_cooling_channels_n_mm": params_number_cooling_channels_n,
-                "thickness_fin_t_mm": params_thickness_fin_t * FACTOR_M_TO_MM,
-                "width_b_mm": params_width_b * FACTOR_M_TO_MM
-            }
-        )
+        # Assemble file name
+        target_file_path = os.path.join(output_filepath, "heat_sink.step")
+        # Create file, if it does not exist
+        if not os.path.isfile(target_file_path):
+            success = DataGeneration._run_freecad(
+                freecad_script_file=heat_sink_model_filepath,
+                output_file=target_file_path,
+                variables={
+                    "height_c_mm": params_height_c * FACTOR_M_TO_MM,
+                    "height_d_mm": params_height_d * FACTOR_M_TO_MM,
+                    "length_l_mm": params_length_l * FACTOR_M_TO_MM,
+                    "number_cooling_channels_n_mm": params_number_cooling_channels_n,
+                    "thickness_fin_t_mm": params_thickness_fin_t * FACTOR_M_TO_MM,
+                    "width_b_mm": params_width_b * FACTOR_M_TO_MM
+                }
+            )
+        else:
+            success = True
 
         if not success:
             logger.warning(f"Heat sink ID {heat_sink_id} STEP export failed.")
