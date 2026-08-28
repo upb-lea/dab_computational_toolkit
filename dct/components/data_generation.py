@@ -12,7 +12,7 @@ import femmt as fmt
 
 # own libraries
 import dct.toml_checker as tc
-from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase, toml_checker
+from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
 from dct.constant_path import DF_SUMMARY_FINAL_FILTERED, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
 from dct.constants import FACTOR_M_TO_MM
 
@@ -336,7 +336,7 @@ class DataGeneration:
 
     @staticmethod
     def _generate_transformer_data(transformer_id: int, df_transformer: pd.DataFrame, output_filepath: str, transformer_number: int,
-                                   transformer_insulations: toml_checker.TomlTransformerInsulation) -> None:
+                                   transformer_insulations: tc.TomlTransformerInsulation) -> None:
         """
         Generate transformer manufacturing data.
 
@@ -647,7 +647,7 @@ class DataGeneration:
                 df_transformer = pd.read_csv(transformer_filepath)
 
                 transformer_insulations = transformer_configuration_list[count].transformer_toml_data.insulation  # type: ignore
-                if not isinstance(transformer_insulations, toml_checker.TomlTransformerInsulation):
+                if not isinstance(transformer_insulations, tc.TomlTransformerInsulation):
                     raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, "
                                     f"but not type dct.toml_checker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
