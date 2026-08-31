@@ -431,7 +431,7 @@ class DataGeneration:
             logger.warning(f"Transformer ID {transformer_id} custom lower core STEP export failed.")
 
         # Assemble file name
-        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_lower.step")
+        target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_original.step")
         # Create file, if it does not exist
         if not os.path.isfile(target_file_path):
             success = DataGeneration._run_freecad(
