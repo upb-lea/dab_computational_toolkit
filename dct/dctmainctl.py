@@ -2435,7 +2435,6 @@ class DctMainCtl:
 
             # Check breakpoint
             self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")
-            self.generate_zip_archive(toml_prog_flow)
 
             ParetoPlots.plot_circuit_results(self._circuit_optimization, _summary_data.optimization_directory)
 
@@ -2498,6 +2497,11 @@ class DctMainCtl:
                                                        capacitor_configuration_list=self._capacitor_selection_configuration_list,
                                                        summary_data=_summary_data,
                                                        data_generation_data=_data_generation)
+
+        # --------------------------
+        # End of process
+        # --------------------------
+        self.generate_zip_archive(toml_prog_flow)
 
         # Stop runtime measurement for the optimization (never displayed due to stop of the server)
         self._total_time.stop_trigger()

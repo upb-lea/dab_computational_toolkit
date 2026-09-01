@@ -691,7 +691,8 @@ class DataGeneration:
                                                         inductor_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
                                                         f"{inductor_id}.png")
 
-                shutil.copy(inductor_figure_filepath, os.path.join(output_filepath, f"{inductor_id}.png"))
+                if os.path.exists(inductor_figure_filepath):
+                    shutil.copy(inductor_figure_filepath, os.path.join(output_filepath, f"inductor_{inductor_id}.png"))
 
             # read transformer file
             for count, transformer_id in enumerate(transformer_id_list):
@@ -705,6 +706,13 @@ class DataGeneration:
                     raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, "
                                     f"but not type dct.toml_checker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
+
+                transformer_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
+                                                           transformer_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
+                                                           f"{transformer_id}.png")
+
+                if os.path.exists(transformer_figure_filepath):
+                    shutil.copy(transformer_figure_filepath, os.path.join(output_filepath, f"transformer_{transformer_id}.png"))
 
             # read heat sink file
             heat_sink_filepath = os.path.join(heat_sink_configuration.optimization_directory, f"{heat_sink_configuration.study_name}.csv")
