@@ -1,6 +1,6 @@
 # Path configuration
 [general]
-    project_directory = "2026-08-19_summary_filter"
+    project_directory = "2026-09-02_example"
     topology = "dab"  # dab, sbc
 
 [breakpoints]
@@ -10,7 +10,7 @@
     capacitor = "no"   # After capacitor selection result calculation
     inductor = "no"    # After inductor paretofront calculations of for all correspondent electrical points
     transformer = "no" # After transformer paretofront calculations of for all correspondent electrical points
-    heat_sink = "no"    # After heatsink paretofront calculation
+    heat_sink = "no"    # After heat sink paretofront calculation
     pre_summary = "no"    # After pre-summary calculation
     summary = "no"    # After summary calculation
 
@@ -22,7 +22,7 @@
 
 [circuit]
     number_of_trials = 500
-    calculation_mode = "skip" # (new,continue,skip)
+    calculation_mode = "new" # (new,continue,skip)
     subdirectory = "01_circuit"
 
 [capacitor]
@@ -50,6 +50,7 @@
     subdirectory = "06_pre_summary"
 
 [summary]
+    calculation_mode = "new" # (new,skip)
     subdirectory = "07_summary"
 
 [data_generation]
