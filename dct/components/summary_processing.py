@@ -561,7 +561,8 @@ class SummaryProcessing:
 
     @staticmethod
     def _convert_for_csv(act_df: pd.DataFrame, column_name_prefix_list: list[str]) -> None:
-        """Generate a list of tuples consists of column name and the column of the data frame.
+        """
+        Generate a list of tuples consists of column name and the column of the data frame.
 
         This method backs up all columns, which starts with the names in the column_name_prefix_list.
         Each tuple contains the columns name and the correspondent column.
@@ -721,7 +722,6 @@ class SummaryProcessing:
         act_df_for_hs.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET}")
 
         # Update statistical data for summary processing finalized
-        # Update statistical data
         with self._s_lock_stat:
             self._progress_run_time.stop_trigger()
             self._progress_data.run_time = self._progress_run_time.get_runtime()
@@ -812,7 +812,7 @@ class SummaryProcessing:
         # Convert for saving data in CSV-format
         SummaryProcessing._convert_for_csv(
             act_df, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
-                     "inductor_loss_array", "transformer_loss_array""circuit_loss_array"])
+                     "inductor_loss_array", "transformer_loss_array", "circuit_loss_array"])
 
         act_df.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL}")
 

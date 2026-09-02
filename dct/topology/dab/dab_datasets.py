@@ -1298,12 +1298,28 @@ class HandleDabDto:
         circuit_heat_sink_max_1_array = (circuit_dto.input_config.transistor_dto_1.t_j_max_op - circuit_r_th_1_jhs * b1_transistor_loss_matrix)
         circuit_heat_sink_max_2_array = (circuit_dto.input_config.transistor_dto_2.t_j_max_op - circuit_r_th_2_jhs * b2_transistor_loss_matrix)
 
-        circuit_dto.circuit_thermal = CircuitThermal(
-            t_j_max=[circuit_dto.input_config.transistor_dto_1.t_j_max_op, circuit_dto.input_config.transistor_dto_2.t_j_max_op],
-            r_th_jhs=[circuit_r_th_1_jhs, circuit_r_th_2_jhs],
-            area=[4 * copper_coin_area_1, 4 * copper_coin_area_2],
-            loss_array=[b1_transistor_loss_matrix, b2_transistor_loss_matrix],
-            temperature_heat_sink_max_array=[circuit_heat_sink_max_1_array, circuit_heat_sink_max_2_array]
+        circuit_thermal_0 = CircuitThermal(
+            t_j_max=circuit_dto.input_config.transistor_dto_1.t_j_max_op,
+            r_th_jhs=circuit_r_th_1_jhs,
+            area=4 * copper_coin_area_1,
+            loss_array=b1_transistor_loss_matrix,
+            temperature_heat_sink_max_array=circuit_heat_sink_max_1_array
         )
+
+
+        circuit_thermal_1 = CircuitThermal(
+            t_j_max=circuit_dto.input_config.transistor_dto_2.t_j_max_op,
+            r_th_jhs=circuit_r_th_2_jhs,
+            area=4 * copper_coin_area_2,
+            loss_array=b2_transistor_loss_matrix,
+            temperature_heat_sink_max_array=circuit_heat_sink_max_2_array
+        )
+
+        circuit_dto.circuit_thermal =  [circuit_thermal_0, circuit_thermal_1]
+
+
+
+
+
 
         return circuit_dto
