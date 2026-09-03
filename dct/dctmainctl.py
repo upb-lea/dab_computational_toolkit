@@ -2293,8 +2293,7 @@ class DctMainCtl:
                 summary_study_data=_pre_summary_data, is_pre_summary=True)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(_pre_summary_data.optimization_directory,
-                                                   PROCESSING_COMPLETE_FILE)
+            DctMainCtl._delete_processing_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
             # Start summary processing by generating the DataFrame from calculated simulation results
             s_df = self._summary_pre_processing.generate_cooling_requirement_database(

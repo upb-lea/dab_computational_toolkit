@@ -150,7 +150,7 @@ class SummaryProcessing:
         result_summary_configuration_list: list[SummaryConfiguration] = []
 
         for summary_configuration in act_summary_configuration_list:
-            if summary_configuration.circuit_data["circuit_id"] is not missing_component_circuit_index:
+            if summary_configuration.circuit_data_list[0]["circuit_id_0"] is not missing_component_circuit_index:
                 result_summary_configuration_list.append(summary_configuration)
 
         return result_summary_configuration_list
@@ -191,10 +191,12 @@ class SummaryProcessing:
         # Index of designs, which miss a component solution (No pkl-file available for this design)
         missing_component_index_list: list[str] = []
 
+        circuits: list[dict] = []
         # iterate circuit numbers
         for circuit_id in act_filter_data.filtered_list_files:
 
             # Define tuple data
+            circuit_data_list: list[dict] = []
             capacitor_data_list: list[list[dict]] = []
             inductor_data_list: list[list[dict]] = []
             transformer_data_list: list[list[dict]] = []
@@ -205,35 +207,35 @@ class SummaryProcessing:
             # Get circuit results
             with open(circuit_id_filepath, 'rb') as pickle_file_data:
                 circuit_dto = pickle.load(pickle_file_data)
-            # Get the topology independent part from stored circuit dto
-            act_circuit_data = circuit_dto.circuit_thermal
 
-            # Calculate the thermal values
-            if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
-                raise ValueError("Incomplete loss calculation.")
+            for number_in_circuit, act_circuit_data in enumerate(circuit_dto.circuit_thermal):
+                # Calculate the thermal values
+                if not circuit_dto.calc_losses:  # mypy avoid follow-up issues
+                    raise ValueError("Incomplete loss calculation.")
 
-            logger.debug(f"{act_filter_data.circuit_study_name=}")
+                logger.debug(f"{act_filter_data.circuit_study_name=}")
 
-            circuit_data = {
-                "circuit_id": circuit_id,
-                "circuit_t_j_max": act_circuit_data.t_j_max,
-                "circuit_r_th_ib_jhs": act_circuit_data.r_th_jhs,
-                "circuit_area": act_circuit_data.area,
-                "circuit_loss_array": np.squeeze(act_circuit_data.loss_array),
-                "circuit_temperature_heat_sink_max_array": np.squeeze(act_circuit_data.temperature_heat_sink_max_array)
-            }
+                circuit_data = {
+                    f"circuit_id_{number_in_circuit}": circuit_id,
+                    f"circuit_t_j_max_{number_in_circuit}": act_circuit_data.t_j_max,
+                    f"circuit_r_th_ib_jhs_{number_in_circuit}": act_circuit_data.r_th_jhs,
+                    f"circuit_area_{number_in_circuit}": act_circuit_data.area,
+                    f"circuit_loss_array_{number_in_circuit}": np.squeeze(act_circuit_data.loss_array),
+                    f"circuit_temperature_heat_sink_max_array_{number_in_circuit}": np.squeeze(act_circuit_data.temperature_heat_sink_max_array)
+                }
+                # Store capacitor data set
+                circuit_data_list.append(circuit_data)
 
             # iterate capacitor selection
             for act_capacitor_data in act_capacitor_data_list:
-                # Assemble directory name for capacitor 1 results
+                # Assemble directory name for capacitor results
                 capacitor_filepath_results = os.path.join(act_capacitor_data.study_data.optimization_directory,
                                                           circuit_id,
                                                           act_capacitor_data.study_data.study_name,
                                                           CIRCUIT_CAPACITOR_LOSS_FOLDER)
 
                 # Check, if capacitor  number list cannot be generated
-                is_capacitor_list_generated, capacitor_id_list = (
-                    SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_filepath_results))
+                is_capacitor_list_generated, capacitor_id_list = (SummaryProcessing.generate_component_id_list_from_pkl_files(capacitor_filepath_results))
                 if not is_capacitor_list_generated:
                     logger.info(f"Path {capacitor_filepath_results} does not exists or does not contains any pkl-files!\n"
                                 f"circuit design {circuit_id} cannot be realized!")
@@ -248,7 +250,7 @@ class SummaryProcessing:
                 for capacitor_id in capacitor_id_list:
                     capacitor_filepath_number = os.path.join(capacitor_filepath_results, f"{capacitor_id}.pkl")
 
-                    # get capacitor 1 results
+                    # get capacitor results
                     with open(capacitor_filepath_number, 'rb') as pickle_file_data:
                         capacitor_dto: CapacitorResults = pickle.load(pickle_file_data)
 
@@ -392,7 +394,7 @@ class SummaryProcessing:
                 transformer_data_list.append(transformers)
 
             # Assemble design component tuple for actual circuit design requiring a heat sink
-            self._summary_configuration_list.append(SummaryConfiguration(circuit_data=circuit_data,
+            self._summary_configuration_list.append(SummaryConfiguration(circuit_data_list=circuit_data_list,
                                                                          inductor_data_list=inductor_data_list,
                                                                          capacitor_data_list=capacitor_data_list,
                                                                          transformer_data_list=transformer_data_list))
@@ -406,7 +408,7 @@ class SummaryProcessing:
 
     @staticmethod
     def component_to_dataframe(component_data: list[dict]) -> pd.DataFrame:
-        """Generate a pd-dataframe form a list of dictionaries..
+        """Generate a pd-dataframe form a list of dictionaries.
 
         :param component_data: List with component data within a dict
         :type  component_data: list[dict]
@@ -422,7 +424,8 @@ class SummaryProcessing:
 
     @staticmethod
     def _calculate_component_sum(act_df: pd.DataFrame, key_prefix: str) -> pd.Series | int:
-        """Generate a pd-dataframe form a list of dictionaries.
+        """
+        Calculate the sum of pandas dataframe columns starting with key_prefix.
 
         :param act_df: Actual data frame, which shall be filtered for prefix columns
         :type  act_df: pd.DataFrame
@@ -560,7 +563,7 @@ class SummaryProcessing:
         return df_backup_list
 
     @staticmethod
-    def _convert_for_csv(act_df: pd.DataFrame, column_name_prefix_list: list[str]) -> None:
+    def _convert_for_csv(act_df: pd.DataFrame, column_name_prefix_list: list[str]) -> pd.DataFrame:
         """
         Generate a list of tuples consists of column name and the column of the data frame.
 
@@ -580,6 +583,7 @@ class SummaryProcessing:
             for column_name in column_name_list:
                 # Convert the column and overwrite the dataframe
                 act_df[column_name] = act_df[column_name].apply(lambda x: str(x.tolist()))
+        return act_df
 
     def generate_cooling_requirement_database(self, heat_sink_boundary_conditions: HeatSinkBoundaryConditions) -> pd.DataFrame:
         """Generate a database df by summaries the calculation results for all components required a heat sink.
@@ -606,7 +610,15 @@ class SummaryProcessing:
 
         # iterate circuit numbers
         for design in self._summary_configuration_list:
-            df_circuit_local = pd.DataFrame([design.circuit_data])
+
+            # Put all inductors to a pd-design
+            # append two dictionaries
+            circuit_dict: dict = {}
+            for dictionary in design.circuit_data_list:
+                circuit_dict.update(dictionary)
+
+            df_circuit_local = pd.DataFrame([circuit_dict])
+
             # Merge different df by creating a common key
             df_circuit_local['key'] = 0
 
@@ -642,17 +654,22 @@ class SummaryProcessing:
         # and v2 = sum_row [matrix m2[:]]; v3 = sum_row [matrix m3[:]] The number of columns of the matrix corresponds to
         # the number of components of the same type. heat sink area, capacitors do not need heat sink area
         # df["total_area"] = df["circuit_area"].apply(lambda x: np.sum(x)) + df["inductor_area"] + df["transformer_area"]
-        df["total_cooling_array"] = (df["circuit_area"].apply(lambda x: np.sum(x)) +\
-                                     SummaryProcessing._calculate_component_sum(df, "inductor_area") +\
+        df["total_cooling_array"] = (SummaryProcessing._calculate_component_sum(df, "circuit_area") + \
+                                     SummaryProcessing._calculate_component_sum(df, "inductor_area") + \
                                      SummaryProcessing._calculate_component_sum(df, "transformer_area"))
 
         # Calculate the power loss of the design without capacitors loss
-        df["total_loss_wo_capacitors_array"] = (df["circuit_loss_array"] +\
-                                                SummaryProcessing._calculate_component_sum(df, "inductor_loss_array") +\
+        df["total_loss_wo_capacitors_array"] = (SummaryProcessing._calculate_component_sum(df, "circuit_loss_array") + \
+                                                SummaryProcessing._calculate_component_sum(df, "inductor_loss_array") + \
                                                 SummaryProcessing._calculate_component_sum(df, "transformer_loss_array"))
 
         # maximum heat sink temperatures (minimum of all the maximum temperatures of single components)
-        df["t_min_array"] = df["circuit_temperature_heat_sink_max_array"].apply(lambda arr: arr.min())
+        cols = df.columns[df.columns.str.startswith("circuit_temperature_heat_sink_max_array")]
+        numbers = [col.replace("circuit_temperature_heat_sink_max_array_", "") for col in cols]
+        for count, col in enumerate(cols):
+            df[f"t_min_array_{numbers[count]}"] = df[col].apply(lambda arr: arr.min())
+
+        df["t_min_array"] = df[df.columns[df.columns.str.startswith("t_min_array")]].min(axis=1)
         # Calculate the maximal temperature for all inductors
         component_temperature_series = SummaryProcessing._calculate_minimum_component_temperature(df, "inductor")
         if isinstance(component_temperature_series, pd.Series):
@@ -766,14 +783,14 @@ class SummaryProcessing:
                 df_merge_data = df_merge_data.merge(df_component, on='key', how='outer')
 
             # Add circuit id for merge to main dataframe
-            df_merge_data["circuit_id"] = design.circuit_data["circuit_id"]
+            df_merge_data["circuit_id_0"] = design.circuit_data_list[0]["circuit_id_0"]
 
             # Add design to main data frame
             local_df = pd.concat([local_df, df_merge_data], axis=0)
 
         # Merge, if this component is part of the design
         if not local_df.empty:
-            act_df = pd.merge(act_df, local_df, on='circuit_id')
+            act_df = pd.merge(act_df, local_df, on='circuit_id_0')
 
         # Consume  design component data
         self._summary_configuration_list = []
@@ -810,9 +827,9 @@ class SummaryProcessing:
                      "inductor_loss_array", "transformer_loss_array"])
 
         # Convert for saving data in CSV-format
-        SummaryProcessing._convert_for_csv(
+        act_df = SummaryProcessing._convert_for_csv(
             act_df, ["total_loss_array", "circuit_loss_array", "capacitor_loss_array",
-                     "inductor_loss_array", "transformer_loss_array", "circuit_loss_array"])
+                     "inductor_loss_array", "transformer_loss_array""circuit_loss_array"])
 
         act_df.to_csv(f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL}")
 

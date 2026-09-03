@@ -1306,7 +1306,6 @@ class HandleDabDto:
             temperature_heat_sink_max_array=circuit_heat_sink_max_1_array
         )
 
-
         circuit_thermal_1 = CircuitThermal(
             t_j_max=circuit_dto.input_config.transistor_dto_2.t_j_max_op,
             r_th_jhs=circuit_r_th_2_jhs,
@@ -1315,11 +1314,6 @@ class HandleDabDto:
             temperature_heat_sink_max_array=circuit_heat_sink_max_2_array
         )
 
-        circuit_dto.circuit_thermal =  [circuit_thermal_0, circuit_thermal_1]
-
-
-
-
-
+        circuit_dto.circuit_thermal = [circuit_thermal_0, circuit_thermal_1]
 
         return circuit_dto

@@ -132,7 +132,7 @@ class TransformerConfiguration:
 class SummaryConfiguration:
     """Represent the data for performing integration of circuit and component data."""
 
-    circuit_data: dict
+    circuit_data_list: list[dict]
     capacitor_data_list: list[list[dict]]
     inductor_data_list: list[list[dict]]
     transformer_data_list: list[list[dict]]
