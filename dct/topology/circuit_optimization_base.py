@@ -344,6 +344,24 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         """
         pass
 
+    @abstractmethod
+    def get_output_power(self):
+        """Get the sampling data output power.
+
+        :return: Transformer requirements
+        :rtype: TransformerRequirements
+        """
+        pass
+
+    @abstractmethod
+    def get_weights(self):
+        """Get the sampling data weights.
+
+        :return: Transformer requirements
+        :rtype: TransformerRequirements
+        """
+        pass
+
     @staticmethod
     @abstractmethod
     def get_number_of_required_capacitors() -> int:

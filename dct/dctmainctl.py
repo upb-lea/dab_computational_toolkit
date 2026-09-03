@@ -2293,8 +2293,7 @@ class DctMainCtl:
                 summary_study_data=_pre_summary_data, is_pre_summary=True)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(_pre_summary_data.optimization_directory,
-                                                   PROCESSING_COMPLETE_FILE)
+            DctMainCtl._delete_processing_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
             # Start summary processing by generating the DataFrame from calculated simulation results
             s_df = self._summary_pre_processing.generate_cooling_requirement_database(
@@ -2304,8 +2303,10 @@ class DctMainCtl:
             df_w_hs = self._summary_pre_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
             # ASA: Generally control_board_volume and control_board_loss depends on the topology.
             # Only for test setups it could be the same
+            output_power = self._circuit_optimization.get_output_power()
+            weights = self._circuit_optimization.get_weights()
             df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
-                                                                                    toml_misc.control_board_loss)
+                                                                                    toml_misc.control_board_loss, output_power, weights)
 
             df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000,
                                                                   factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
@@ -2431,7 +2432,10 @@ class DctMainCtl:
             df_w_hs = self._summary_processing.select_heat_sink_configuration(self._heat_sink_study_data, s_df)
             # ASA: Generally control_board_volume and control_board_loss depends on the topology.
             # Only for test setups it could be the same
-            df_pareto_plane = self._summary_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss)
+            output_power = self._circuit_optimization.get_output_power()
+            weights = self._circuit_optimization.get_weights()
+            df_pareto_plane = self._summary_processing.generate_result_database(
+                df_w_hs, toml_misc.control_board_volume, toml_misc.control_board_loss, output_power, weights)
 
             # Check breakpoint
             self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Calculation is complete")

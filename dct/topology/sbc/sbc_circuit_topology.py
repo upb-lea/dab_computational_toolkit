@@ -1566,6 +1566,22 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         return circuit_plot_data
 
+    def get_output_power(self):
+        """Get the sampling data output power.
+
+        :return: Transformer requirements
+        :rtype: TransformerRequirements
+        """
+        pass
+
+    def get_weights(self):
+        """Get the sampling data weights.
+
+        :return: Transformer requirements
+        :rtype: TransformerRequirements
+        """
+        pass
+
     @staticmethod
     def get_number_of_required_capacitors() -> int:
         """Get the number of  required capacitors.

@@ -225,7 +225,7 @@ class DataGeneration:
 
     @staticmethod
     def _generate_inductor_data(inductor_id: int, df_inductor: pd.DataFrame, output_filepath: str, inductor_number: int,
-                                inductor_insulations: fmt.InductorInsulationDTO) -> None:
+                                inductor_insulations: tc.TomlInductorInsulation) -> None:
         """
         Generate inductor manufacturing data.
 

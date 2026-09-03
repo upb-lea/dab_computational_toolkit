@@ -322,4 +322,4 @@ class DabCircuitDTO:
     capacitor_2_results: CapacitorResults | None
     inductor_results: InductorResults | None
     stacked_transformer_results: StackedTransformerResults | None
-    circuit_thermal: CircuitThermal | None
+    circuit_thermal: list[CircuitThermal] | None

@@ -1373,6 +1373,38 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         return transformer_requirements_list
 
+    def get_output_power(self) -> np.ndarray:
+        """Get operating point output power."""
+        dto_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+        pkl_file_list = [f for f in os.listdir(dto_directory) if os.path.isfile(os.path.join(dto_directory, f))]
+
+        circuit_id_filepath = os.path.join(dto_directory, pkl_file_list[0])
+        print(f"{circuit_id_filepath=}")
+
+        with open(circuit_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+        if combination_dto.calc_dead_time is None:
+            raise TypeError("Incomplete DTO, as dead time is missing.")
+
+        return np.array(combination_dto.input_config.mesh_p).flatten()
+
+    def get_weights(self) -> np.ndarray:
+        """Get operating point weights."""
+        dto_directory = os.path.join(self.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH)
+        pkl_file_list = [f for f in os.listdir(dto_directory) if os.path.isfile(os.path.join(dto_directory, f))]
+
+        circuit_id_filepath = os.path.join(dto_directory, pkl_file_list[0])
+        print(f"{circuit_id_filepath=}")
+
+        with open(circuit_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
+
+        if combination_dto.calc_dead_time is None:
+            raise TypeError("Incomplete DTO, as dead time is missing.")
+
+        return np.array(combination_dto.input_config.mesh_weights).flatten()
+
     @staticmethod
     def get_circuit_plot_data(act_study_data: StudyData) -> PlotData:
         """Provide the circuit data to plot.
@@ -1538,7 +1570,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         # note: the index represents the combination_id
         for combination_id, row in df.iterrows():
-            circuit_id = row['circuit_id']
+            circuit_id = row['circuit_id_0']
             inductor_id = row['inductor_id_0']
             inductor_study_name = row['inductor_study_name_0']
             transformer_id = row['transformer_id_0']
