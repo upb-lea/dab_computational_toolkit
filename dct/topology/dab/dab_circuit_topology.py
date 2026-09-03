@@ -1570,7 +1570,7 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
 
         # note: the index represents the combination_id
         for combination_id, row in df.iterrows():
-            circuit_id = row['circuit_id_0']
+            circuit_id = row['circuit_id']
             inductor_id = row['inductor_id_0']
             inductor_study_name = row['inductor_study_name_0']
             transformer_id = row['transformer_id_0']
