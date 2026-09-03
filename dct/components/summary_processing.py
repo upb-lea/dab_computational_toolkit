@@ -150,7 +150,7 @@ class SummaryProcessing:
         result_summary_configuration_list: list[SummaryConfiguration] = []
 
         for summary_configuration in act_summary_configuration_list:
-            if summary_configuration.circuit_data_list[0]["circuit_id_0"] is not missing_component_circuit_index:
+            if summary_configuration.circuit_data_list[0]["circuit_id"] is not missing_component_circuit_index:
                 result_summary_configuration_list.append(summary_configuration)
 
         return result_summary_configuration_list
@@ -216,7 +216,7 @@ class SummaryProcessing:
                 logger.debug(f"{act_filter_data.circuit_study_name=}")
 
                 circuit_data = {
-                    f"circuit_id_{number_in_circuit}": circuit_id,
+                    "circuit_id": circuit_id,
                     f"circuit_t_j_max_{number_in_circuit}": act_circuit_data.t_j_max,
                     f"circuit_r_th_ib_jhs_{number_in_circuit}": act_circuit_data.r_th_jhs,
                     f"circuit_area_{number_in_circuit}": act_circuit_data.area,
@@ -615,6 +615,10 @@ class SummaryProcessing:
             # append two dictionaries
             circuit_dict: dict = {}
             for dictionary in design.circuit_data_list:
+                if "circuit_id" in circuit_dict:
+                    if circuit_dict["circuit_id"] != dictionary["circuit_id"]:
+                        raise ValueError("Programming Error: circuit_id's should be equal, but they aren't.")
+
                 circuit_dict.update(dictionary)
 
             df_circuit_local = pd.DataFrame([circuit_dict])
@@ -788,14 +792,14 @@ class SummaryProcessing:
                 df_merge_data = df_merge_data.merge(df_component, on='key', how='outer')
 
             # Add circuit id for merge to main dataframe
-            df_merge_data["circuit_id_0"] = design.circuit_data_list[0]["circuit_id_0"]
+            df_merge_data["circuit_id"] = design.circuit_data_list[0]["circuit_id"]
 
             # Add design to main data frame
             local_df = pd.concat([local_df, df_merge_data], axis=0)
 
         # Merge, if this component is part of the design
         if not local_df.empty:
-            act_df = pd.merge(act_df, local_df, on='circuit_id_0')
+            act_df = pd.merge(act_df, local_df, on='circuit_id')
 
         # Consume  design component data
         self._summary_configuration_list = []
