@@ -746,7 +746,8 @@ class SummaryProcessing:
 
         return act_df_for_hs
 
-    def generate_result_database(self, act_df: pd.DataFrame, control_board_volume: float, control_board_loss: float) -> pd.DataFrame:
+    def generate_result_database(self, act_df: pd.DataFrame, control_board_volume: float, control_board_loss: float,
+                                 output_power: np.ndarray, weights: np.ndarray) -> pd.DataFrame:
         """
         Finalize database by add components without required heat sink and add remaining volumes and losses.
 
@@ -756,6 +757,10 @@ class SummaryProcessing:
         :type control_board_volume: float
         :param control_board_loss: control board loss in W
         :type control_board_loss: float
+        :param output_power: output power per operating point
+        :type output_power: list[float]
+        :param weights: weight power operating point
+        :type weights: list[float]
         :return: pandas dataframe including the offset volume and offset losses
         :rtype: pd.DataFrame
         """
@@ -816,6 +821,10 @@ class SummaryProcessing:
             SummaryProcessing._calculate_component_mean(act_df, "inductor_loss_array") + \
             SummaryProcessing._calculate_component_mean(act_df, "transformer_loss_array") + \
             control_board_loss)
+
+        act_df["efficiency"] = act_df["total_loss_array"].apply(lambda x: (np.abs(output_power) - x) / np.abs(output_power))
+
+        act_df["weighted_efficiency"] = act_df["efficiency"].apply(lambda x: np.sum(x * weights))
 
         # generate a new unique index for the combined dataframe
         # this helps to easily address unique combinations by the index
