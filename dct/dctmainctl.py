@@ -1980,6 +1980,7 @@ class DctMainCtl:
             # Check if pre summary are skippable
             is_skippable, issue_report = DctMainCtl._is_skippable(_pre_summary_data,
                                                                   PROCESSING_COMPLETE_FILE, False, [])
+
             # Evaluate if the pre summary is skippable
             if not is_skippable:
                 _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
@@ -2277,6 +2278,7 @@ class DctMainCtl:
 
         # Check, if pre summary is to skip
         if not _pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
+            logger.info("Generate a new pre-summary.")
 
             # Allocate summary data object
             self._summary_pre_processing = SummaryProcessing()
@@ -2411,7 +2413,7 @@ class DctMainCtl:
 
         # Check, if pre summary is to skip
         if not _summary_data.calculation_mode == CalcModeEnum.skip_mode:
-
+            logger.info("Generate a new summary.")
             if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
                 raise ValueError("Thermal data configuration not initialized!")
 
@@ -2480,7 +2482,7 @@ class DctMainCtl:
                                                             df_pareto_front, is_pre_summary=False)
 
             # Set processing complete indicator
-            DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            DctMainCtl._set_presummary_complete(_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Summary is calculated")
@@ -2491,7 +2493,7 @@ class DctMainCtl:
 
         # Check, if data generation is to skip
         if not _data_generation.calculation_mode == CalcModeEnum.skip_purge_mode:
-            print("Start data generation")
+            logger.info("Start data generation")
 
             DataGeneration.generate_manufacturing_data(debug=toml_debug,
                                                        circuit_configuration=self._circuit_optimization,
