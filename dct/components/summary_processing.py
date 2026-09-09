@@ -25,7 +25,8 @@ from dct.server_ctl_dtos import RunTimeMeasurement as RunTime
 from dct.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER,
                                CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                CIRCUIT_CAPACITOR_LOSS_FOLDER, DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET,
-                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL, DF_SUMMARY_FINAL_FILTERED)
+                               DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET, DF_SUMMARY_FINAL, DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS,
+                               DF_SUMMARY_FINAL_FILTERED_WEIGHTED_EFFICIENCY)
 
 logger = logging.getLogger(__name__)
 
@@ -852,9 +853,9 @@ class SummaryProcessing:
 
         return act_df
 
-    def filter(self, df: pd.DataFrame, abs_max_losses: float, factor_min_max_losses_list: list[float]) -> pd.DataFrame:
+    def filter_losses(self, df: pd.DataFrame, abs_max_losses: float, factor_min_max_losses_list: list[float]) -> pd.DataFrame:
         """
-        Pareto front filter.
+        Pareto front filter for losses vs. volume.
 
         :param df: dataframe
         :type df: pd.DataFrame
@@ -868,7 +869,22 @@ class SummaryProcessing:
                                                                 factor_relative_y_min_offset=factor_min_max_losses_list[0],
                                                                 factor_relative_y_max_offset=factor_min_max_losses_list[1],
                                                                 absolute_max_y=abs_max_losses)
-        filename = f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}"
+        filename = f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS}"
         df_filtered.to_csv(filename)
-        logger.info(f"Save filtered Pareto front to {filename}")
+        logger.info(f"Save filtered Pareto front (regarding losses) to {filename}")
+        return df_filtered
+
+    def filter_efficiency(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Pareto front filter for efficiency vs. volume.
+
+        :param df: dataframe with Pareto plane
+        :type df: pd.DataFrame
+        :return: Filtered Pareto front in a data frame
+        :rtype: pd.DataFrame
+        """
+        df_filtered = CircuitOptimizationBase.filter_df_min_max(df, x="total_volume", y="weighted_efficiency")
+        filename = f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED_WEIGHTED_EFFICIENCY}"
+        df_filtered.to_csv(filename)
+        logger.info(f"Save filtered Pareto front (regarding efficiency) to {filename}")
         return df_filtered

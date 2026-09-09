@@ -13,7 +13,7 @@ import femmt as fmt
 # own libraries
 import dct.toml_checker as tc
 from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
-from dct.constant_path import DF_SUMMARY_FINAL_FILTERED, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
+from dct.constant_path import DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
 from dct.constants import FACTOR_M_TO_MM
 
 logger = logging.getLogger(__name__)
@@ -633,7 +633,7 @@ class DataGeneration:
         :type data_generation_data: StudyData
         """
         # read summary parameters
-        summary_filepath = os.path.join(summary_data.optimization_directory, DF_SUMMARY_FINAL_FILTERED)
+        summary_filepath = os.path.join(summary_data.optimization_directory, DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS)
 
         df_summary = pd.read_csv(summary_filepath)
 

@@ -18,7 +18,9 @@ from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
                                CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED,
-                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
+                               PLOT_SUMMARY_WEIGHTED_EFFICIENCY, PLOT_SUMMARY_MEAN_LOSS, PLOT_CIRCUIT,
+                               PLOT_HEAT_SINK)
 # Debug inductor issue
 
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
@@ -102,7 +104,7 @@ class ParetoPlots:
         :type  summary_directory: str
         """
         # Set the target directory
-        fig_name = os.path.join(summary_directory, "circuit")
+        fig_name = os.path.join(summary_directory, PLOT_CIRCUIT)
 
         # Read data from circuit
         plot_data: PlotData = circuit_optimization.get_circuit_plot_data(circuit_optimization.circuit_study_data)
@@ -413,7 +415,7 @@ class ParetoPlots:
             legend_list.append(f"{int(area_min * FACTOR_M2_TO_CM2)} cm²")
 
         # Set the target directory
-        fig_name = os.path.join(summary_directory, "heat_sink")
+        fig_name = os.path.join(summary_directory, PLOT_HEAT_SINK)
 
         # plot all the different heat sink areas
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha_list=[0.5, 0.5, 0.5],
@@ -461,7 +463,7 @@ class ParetoPlots:
             label_list.append(str(combination_id))
 
         # Set the target directory
-        fig_name = os.path.join(summary_study_data.optimization_directory, "summary")
+        fig_name = os.path.join(summary_study_data.optimization_directory, PLOT_SUMMARY_MEAN_LOSS)
 
         x_scale_min = 0.9 * df_filtered[total_volume_key].min() * FACTOR_M3_TO_CM3
         x_scale_max = 1.1 * df_filtered[total_volume_key].max() * FACTOR_M3_TO_CM3
@@ -519,7 +521,7 @@ class ParetoPlots:
             label_list.append(str(combination_id))
 
         # Set the target directory
-        fig_name = os.path.join(summary_study_data.optimization_directory, "summary_weighted_efficiency")
+        fig_name = os.path.join(summary_study_data.optimization_directory, PLOT_SUMMARY_WEIGHTED_EFFICIENCY)
 
         x_scale_min = 0.9 * df_filtered[total_volume_key].min() * FACTOR_M3_TO_CM3
         x_scale_max = 1.1 * df_filtered[total_volume_key].max() * FACTOR_M3_TO_CM3
@@ -534,5 +536,5 @@ class ParetoPlots:
             color_list = ["black", "green"]
 
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=color_list, alpha_list=[0.5, 0.7],
-                                         x_label=r"$\mathcal{V}_\mathrm{Converter}$ / cm³", y_label=r"$\eta_\mathrm{Converter,weighted}$ / $\%$",
+                                         x_label=r"$\mathcal{V}_\mathrm{Converter}$ / cm³", y_label=r"$\eta_\mathrm{Converter,weighted}$",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])

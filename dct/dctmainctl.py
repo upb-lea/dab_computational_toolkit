@@ -2310,14 +2310,15 @@ class DctMainCtl:
             df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
                                                                                     toml_misc.control_board_loss, output_power, weights)
 
-            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000,
-                                                                  factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
+            df_pareto_front_losses = self._summary_pre_processing.filter_losses(df_pareto_plane, abs_max_losses=100_000,
+                                                                                factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
+            df_pareto_front_efficiency = self._summary_pre_processing.filter_efficiency(df_pareto_plane)
 
             self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
                                                             self._inductor_study_configuration_list,
                                                             self._transformer_study_configuration_list,
-                                                            df_pareto_front, is_pre_summary=True)
+                                                            df_pareto_front_losses, is_pre_summary=True)
 
             ParetoPlots.plot_circuit_results(self._circuit_optimization, _pre_summary_data.optimization_directory)
 
@@ -2446,8 +2447,10 @@ class DctMainCtl:
             ParetoPlots.plot_circuit_results(self._circuit_optimization, _summary_data.optimization_directory)
 
             # generate and store pareto front of the final summary
-            df_pareto_front = self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000,
-                                                              factor_min_max_losses_list=toml_summary.summary.filter_distance)
+            df_pareto_front_losses = self._summary_processing.filter_losses(df_pareto_plane, abs_max_losses=100_000,
+                                                                            factor_min_max_losses_list=toml_summary.summary.filter_distance)
+
+            df_pareto_front_efficiency = self._summary_processing.filter_efficiency(df_pareto_plane)
             # Plot results of all capacitors
             for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
                 ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
@@ -2481,7 +2484,7 @@ class DctMainCtl:
                                                             self._capacitor_selection_configuration_list,
                                                             self._inductor_study_configuration_list,
                                                             self._transformer_study_configuration_list,
-                                                            df_pareto_front, is_pre_summary=False)
+                                                            df_pareto_front_losses, is_pre_summary=False)
 
             # Set processing complete indicator
             DctMainCtl._set_presummary_complete(_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
