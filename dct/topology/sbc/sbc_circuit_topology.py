@@ -1136,7 +1136,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         return df
 
     @staticmethod
-    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
+    def is_pareto_efficient_min_min(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
         """
         Find the pareto-efficient points.
 
@@ -1169,7 +1169,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         return is_efficient_mask
 
     @staticmethod
-    def pareto_front_from_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
+    def pareto_front_from_df_min_min(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
         """
         Calculate the Pareto front from a Pandas DataFrame. Return a Pandas DataFrame.
 
@@ -1185,7 +1185,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         x_vec = df[x][~np.isnan(df[x])]
         y_vec = df[y][~np.isnan(df[x])]
         numpy_zip = np.column_stack((x_vec, y_vec))
-        pareto_tuple_mask_vec = SbcCircuitOptimization.is_pareto_efficient(numpy_zip)
+        pareto_tuple_mask_vec = SbcCircuitOptimization.is_pareto_efficient_min_min(numpy_zip)
         pareto_tuple_mask_vec = pareto_tuple_mask_vec.astype(bool)
         pareto_df = df[pareto_tuple_mask_vec]
 
@@ -1414,7 +1414,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         self._study_in_storage.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._sbc_config.circuit_study_name}.csv')
 
-        df_pareto_front = SbcCircuitOptimization.pareto_front_from_df(self._study_in_storage)
+        df_pareto_front = SbcCircuitOptimization.pareto_front_from_df_min_min(self._study_in_storage)
 
         # Filter Pseudo Pareto front
         filtered_points: np.ndarray = SbcCircuitOptimization.filter_equidistant_sampling(

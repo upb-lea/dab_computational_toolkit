@@ -864,10 +864,10 @@ class SummaryProcessing:
         :type factor_min_max_losses_list: list[float, float]
         :return:
         """
-        df_filtered = CircuitOptimizationBase.filter_df(df, x="total_volume", y="total_mean_loss",
-                                                        factor_min_dc_losses=factor_min_max_losses_list[0],
-                                                        factor_max_dc_losses=factor_min_max_losses_list[1],
-                                                        abs_max_losses=abs_max_losses)
+        df_filtered = CircuitOptimizationBase.filter_df_min_min(df, x="total_volume", y="total_mean_loss",
+                                                                factor_relative_y_min_offset=factor_min_max_losses_list[0],
+                                                                factor_relative_y_max_offset=factor_min_max_losses_list[1],
+                                                                absolute_max_y=abs_max_losses)
         filename = f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED}"
         df_filtered.to_csv(filename)
         logger.info(f"Save filtered Pareto front to {filename}")

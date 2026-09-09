@@ -96,10 +96,10 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         return is_skipable, issue_report
 
     @staticmethod
-    def filter_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1", factor_min_dc_losses: float = 1.2,
-                  factor_max_dc_losses: float = 10, abs_max_losses: float = 100_000) -> pd.DataFrame:
+    def filter_df_min_min(df: pd.DataFrame, x: str = "values_0", y: str = "values_1", factor_relative_y_min_offset: float = 1.2,
+                          factor_relative_y_max_offset: float = 10, absolute_max_y: float = 100_000) -> pd.DataFrame:
         """
-        Remove designs with too high losses compared to the minimum losses.
+        Remove designs with too high y-values (e.g. losses) compared to the minimum y-value (e.g. minimum loss).
 
         :param df: pandas DataFrame with study results
         :type df: pd.DataFrame
@@ -107,19 +107,19 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         :type x: str
         :param y: y-value name for Pareto plot filtering
         :type y: str
-        :param factor_min_dc_losses: filter factor for the minimum dc losses
-        :type factor_min_dc_losses: float
-        :param factor_max_dc_losses: dc_max_loss = factor_max_dc_losses * min_available_dc_losses_in_pareto_front
-        :type factor_max_dc_losses: float
-        :param abs_max_losses: Absolute maximum losses (clip above this value)
-        :type abs_max_losses: float
+        :param factor_relative_y_min_offset: filter factor for the relative y minimum offset
+        :type factor_relative_y_min_offset: float
+        :param factor_relative_y_max_offset:
+        :type factor_relative_y_max_offset: float
+        :param absolute_max_y: Absolute maximum y-vales (e.g. maximum losses) (clip above this value)
+        :type absolute_max_y: float
         :returns: pandas DataFrame with Pareto front near points
         :rtype: pd.DataFrame
         """
         # figure out pareto front
         # pareto_volume_list, pareto_core_hyst_list, pareto_dto_list = self.pareto_front(volume_list, core_hyst_loss_list, valid_design_list)
 
-        pareto_df: pd.DataFrame = CircuitOptimizationBase.pareto_front_from_df(df, x, y)
+        pareto_df: pd.DataFrame = CircuitOptimizationBase.pareto_front_from_df_min_min(df, x, y)
 
         vector_to_sort = np.array([pareto_df[x], pareto_df[y]])
 
@@ -132,22 +132,67 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         total_losses_list = df[y][~np.isnan(df[y])].to_numpy()
 
         min_total_dc_losses = total_losses_list[np.argmin(total_losses_list)]
-        loss_offset = factor_min_dc_losses * min_total_dc_losses
+        loss_offset = factor_relative_y_min_offset * min_total_dc_losses
 
         ref_loss_max = np.interp(df[x], x_pareto_vec, y_pareto_vec) + loss_offset
         # clip losses to a maximum of the minimum losses
-        ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_max_dc_losses * min_total_dc_losses)
+        ref_loss_max = np.clip(ref_loss_max, a_min=-1, a_max=factor_relative_y_max_offset * min_total_dc_losses)
 
         # clip point of the relative maximum losses given by the factor
         pareto_df_offset: pd.DataFrame = df[df[y] < ref_loss_max]
 
         # clip point to the absolute maximum losses
-        pareto_df_offset = pareto_df_offset[pareto_df_offset[y] < abs_max_losses]
+        pareto_df_offset = pareto_df_offset[pareto_df_offset[y] < absolute_max_y]
 
         return pareto_df_offset
 
     @staticmethod
-    def pareto_front_from_df(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
+    def filter_df_min_max(
+            df: pd.DataFrame,
+            x: str = "values_0",
+            y: str = "values_1",
+            relative_y_offset: float = 0.02,
+            absolute_min_y: float | None = None,
+    ) -> pd.DataFrame:
+        """
+        Remove designs with too low y-values (e.g. efficiency) compared to the maximum y-value (e.g. efficiency).
+
+        :param df: pandas DataFrame with study results
+        :type df: pd.DataFrame
+        :param x: x-value name for Pareto plot filtering
+        :type x: str
+        :param y: y-value name for Pareto plot filtering
+        :type y: str
+        :param relative_y_offset: relative y offset (efficiency offset)
+        :type relative_y_offset: float
+        :param absolute_min_y: absolute minimum y value (e.g. minimum required efficiency)
+        :type absolute_min_y: float
+        :returns: pandas DataFrame with Pareto front near points
+        :rtype: pd.DataFrame
+        """
+        pareto_df = CircuitOptimizationBase.pareto_front_from_df_min_max(df, x, y)
+        pareto_df = pareto_df.sort_values(x)
+
+        y_pareto_at_x = np.interp(
+            df[x],
+            pareto_df[x],
+            pareto_df[y],
+        )
+
+        max_y = df[y].max()
+        y_offset = relative_y_offset * max_y
+
+        min_y_at_x = y_pareto_at_x - y_offset
+
+        filtered_df: pd.DataFrame = df[df[y] >= min_y_at_x]
+
+        if absolute_min_y is not None:
+            filtered_df = filtered_df[filtered_df[y] >= absolute_min_y]
+
+        return filtered_df
+
+    @staticmethod
+    def pareto_front_from_df_min_min(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
         """
         Calculate the Pareto front from a Pandas DataFrame. Return a Pandas DataFrame.
 
@@ -163,12 +208,38 @@ class CircuitOptimizationBase(Generic[T_G_D, T_C_D], ABC):
         x_vec = df[x][~np.isnan(df[x])]
         y_vec = df[y][~np.isnan(df[x])]
         numpy_zip = np.column_stack((x_vec, y_vec))
-        pareto_tuple_mask_vec = CircuitOptimizationBase.is_pareto_efficient(numpy_zip)
+        pareto_tuple_mask_vec = CircuitOptimizationBase.is_pareto_efficient_min_min(numpy_zip)
         pareto_df: pd.DataFrame = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
         return pareto_df
 
     @staticmethod
-    def is_pareto_efficient(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
+    def pareto_front_from_df_min_max(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
+        """
+        Calculate the Pareto front from a Pandas DataFrame. Return a Pandas DataFrame.
+
+        :param df: Pandas DataFrame
+        :type df: pd.DataFrame
+        :param x: Name of x-parameter from df to show in Pareto plane
+        :type x: str
+        :param y: Name of y-parameter from df to show in Pareto plane
+        :type y: str
+        :return: Pandas DataFrame with pareto efficient points
+        :rtype: pd.DataFrame
+        """
+        x_vec = df[x][~np.isnan(df[x])]
+        y_vec = df[y][~np.isnan(df[x])]
+        numpy_zip = np.column_stack((x_vec, y_vec))
+
+        # prepare y-values to use is_pareto_efficient_min_min as _min_max
+        numpy_zip = numpy_zip.copy()
+        numpy_zip[:, 1] *= -1
+
+        pareto_tuple_mask_vec = CircuitOptimizationBase.is_pareto_efficient_min_min(numpy_zip)
+        pareto_df: pd.DataFrame = df[~np.isnan(df[x])][pareto_tuple_mask_vec]
+        return pareto_df
+
+    @staticmethod
+    def is_pareto_efficient_min_min(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
         """
         Find the pareto-efficient points.
 
