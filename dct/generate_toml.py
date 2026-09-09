@@ -273,10 +273,12 @@ def generate_default_summary_toml(file_path: str) -> None:
     toml_data = '''
     [default_data] # After update this configuration file according your project delete this line to validate it
     [pre_summary]
-        filter_distance = [0.01, 100]
+        filter_distance_losses = [0.01, 100]
+        filter_distance_efficiency = [0.03, 0.9]
 
     [summary]
-        filter_distance = [0.01, 100]
+        filter_distance_losses = [0.01, 100]
+        filter_distance_efficiency = [0.03, 0.9]
     '''
     with open(file_path, 'w') as output:
         output.write(toml_data)

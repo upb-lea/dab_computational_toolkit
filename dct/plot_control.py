@@ -424,8 +424,8 @@ class ParetoPlots:
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary_losses(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0,
-                            is_summary: bool = False) -> None:
+    def plot_summary_losses(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, filter_distance: list[float] = [0.001, 100],
+                            combination_id: int = 0, is_summary: bool = False) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
@@ -437,6 +437,8 @@ class ParetoPlots:
         :type combination_id: int
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
+        :param filter_distance: [relative offset value from pareto front, minimum required efficiency]
+        :type filter_distance: list[float]
         """
         total_volume_key = "total_volume"
         total_mean_loss_key = "total_mean_loss"
@@ -447,7 +449,8 @@ class ParetoPlots:
         df = pd.read_csv(summary_data_csv_file)
 
         df_filtered = circuit_optimization.filter_df_min_min(df, x=total_volume_key, y=total_mean_loss_key,
-                                                             factor_relative_y_min_offset=0.001, factor_relative_y_max_offset=10)
+                                                             factor_relative_y_min_offset=filter_distance[0],
+                                                             factor_relative_y_max_offset=filter_distance[1])
 
         gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
@@ -482,8 +485,8 @@ class ParetoPlots:
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
 
     @staticmethod
-    def plot_summary_weighted_efficiency(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0,
-                                         is_summary: bool = False) -> None:
+    def plot_summary_weighted_efficiency(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, filter_distance: list[float],
+                                         combination_id: int = 0, is_summary: bool = False) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
@@ -495,6 +498,8 @@ class ParetoPlots:
         :type combination_id: int
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
+        :param filter_distance: [relative offset value from pareto front, minimum required efficiency]
+        :type filter_distance: list[float]
         """
         total_volume_key = "total_volume"
         total_mean_loss_key = "weighted_efficiency"
@@ -504,8 +509,8 @@ class ParetoPlots:
         # Load data frame from csv-file
         df = pd.read_csv(summary_data_csv_file)
 
-        df_filtered = circuit_optimization.filter_df_min_max(df, x=total_volume_key, y=total_mean_loss_key,
-                                                             relative_y_offset=0.05, absolute_min_y=None)
+        df_filtered = circuit_optimization.filter_df_min_max(
+            df, x=total_volume_key, y=total_mean_loss_key, relative_y_offset=filter_distance[0], absolute_min_y=filter_distance[1])
 
         gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)

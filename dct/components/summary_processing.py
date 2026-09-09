@@ -874,7 +874,7 @@ class SummaryProcessing:
         logger.info(f"Save filtered Pareto front (regarding losses) to {filename}")
         return df_filtered
 
-    def filter_efficiency(self, df: pd.DataFrame) -> pd.DataFrame:
+    def filter_efficiency(self, df: pd.DataFrame, filter_distance: list[float]) -> pd.DataFrame:
         """
         Pareto front filter for efficiency vs. volume.
 
@@ -883,7 +883,8 @@ class SummaryProcessing:
         :return: Filtered Pareto front in a data frame
         :rtype: pd.DataFrame
         """
-        df_filtered = CircuitOptimizationBase.filter_df_min_max(df, x="total_volume", y="weighted_efficiency")
+        df_filtered = CircuitOptimizationBase.filter_df_min_max(df, x="total_volume", y="weighted_efficiency",
+                                                                relative_y_offset=filter_distance[0], absolute_min_y=filter_distance[1])
         filename = f"{self._summary_study_data.optimization_directory}/{DF_SUMMARY_FINAL_FILTERED_WEIGHTED_EFFICIENCY}"
         df_filtered.to_csv(filename)
         logger.info(f"Save filtered Pareto front (regarding efficiency) to {filename}")

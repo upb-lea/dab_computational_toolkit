@@ -2311,8 +2311,9 @@ class DctMainCtl:
                                                                                     toml_misc.control_board_loss, output_power, weights)
 
             df_pareto_front_losses = self._summary_pre_processing.filter_losses(df_pareto_plane, abs_max_losses=100_000,
-                                                                                factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
-            df_pareto_front_efficiency = self._summary_pre_processing.filter_efficiency(df_pareto_plane)
+                                                                                factor_min_max_losses_list=toml_summary.pre_summary.filter_distance_losses)
+            df_pareto_front_efficiency = self._summary_pre_processing.filter_efficiency(df_pareto_plane,
+                                                                                        filter_distance=toml_summary.pre_summary.filter_distance_efficiency)
 
             self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
@@ -2339,8 +2340,8 @@ class DctMainCtl:
                                                      self._circuit_optimization.filter_data.filtered_list_files,
                                                      _pre_summary_data.optimization_directory)
             ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, _pre_summary_data.optimization_directory)
-            ParetoPlots.plot_summary_losses(_pre_summary_data, self._circuit_optimization)
-            ParetoPlots.plot_summary_weighted_efficiency(_pre_summary_data, self._circuit_optimization)
+            ParetoPlots.plot_summary_losses(_pre_summary_data, self._circuit_optimization, toml_summary.pre_summary.filter_distance_losses)
+            ParetoPlots.plot_summary_weighted_efficiency(_pre_summary_data, self._circuit_optimization, toml_summary.pre_summary.filter_distance_efficiency)
 
             # Set processing complete indicator
             DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
@@ -2448,9 +2449,10 @@ class DctMainCtl:
 
             # generate and store pareto front of the final summary
             df_pareto_front_losses = self._summary_processing.filter_losses(df_pareto_plane, abs_max_losses=100_000,
-                                                                            factor_min_max_losses_list=toml_summary.summary.filter_distance)
+                                                                            factor_min_max_losses_list=toml_summary.summary.filter_distance_losses)
 
-            df_pareto_front_efficiency = self._summary_processing.filter_efficiency(df_pareto_plane)
+            df_pareto_front_efficiency = self._summary_processing.filter_efficiency(df_pareto_plane,
+                                                                                    filter_distance=toml_summary.summary.filter_distance_efficiency)
             # Plot results of all capacitors
             for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
                 ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
@@ -2477,8 +2479,10 @@ class DctMainCtl:
                                                      factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1],
                                                      is_summary=True)
             ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, _summary_data.optimization_directory)
-            ParetoPlots.plot_summary_losses(_summary_data, self._circuit_optimization, is_summary=True)
-            ParetoPlots.plot_summary_weighted_efficiency(_summary_data, self._circuit_optimization, is_summary=True)
+            ParetoPlots.plot_summary_losses(_summary_data, self._circuit_optimization, is_summary=True,
+                                            filter_distance=toml_summary.summary.filter_distance_losses)
+            ParetoPlots.plot_summary_weighted_efficiency(_summary_data, self._circuit_optimization, is_summary=True,
+                                                         filter_distance=toml_summary.summary.filter_distance_efficiency)
 
             self._circuit_optimization.generate_result_dtos(self._summary_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
