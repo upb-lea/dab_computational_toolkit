@@ -124,7 +124,7 @@ class SummaryProcessing:
                     if file_extension == '.pkl':
                         component_id_list.append(component_id)
                     else:
-                        logger.info(f"File {component_id}{file_extension} has no extension '.pkl'!")
+                        logger.debug(f"File {component_id}{file_extension} has no extension '.pkl'!")
                 else:
                     logger.info(f"File'{file_path}' does not exists!")
         else:
