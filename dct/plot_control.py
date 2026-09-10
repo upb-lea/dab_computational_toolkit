@@ -532,7 +532,7 @@ class ParetoPlots:
         x_scale_max = 1.1 * df_filtered[total_volume_key].max() * FACTOR_M3_TO_CM3
 
         y_scale_min = 0.95 * df_filtered[total_mean_loss_key].min()
-        y_scale_max = 1.05 * df_filtered[total_mean_loss_key].max()
+        y_scale_max = np.clip(1.05 * df_filtered[total_mean_loss_key].max(), y_scale_min, 1)
 
         # add Color list
         if not is_summary:
