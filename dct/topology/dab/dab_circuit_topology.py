@@ -1480,10 +1480,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             v2_additional_user_point_list=[]
             p_additional_user_point_list=[]
             additional_user_weighting_point_list=[]
-
-        [misc]
-            min_efficiency_percent=80
-            control_board_volume=10e-6
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
@@ -1508,6 +1504,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J']
             c_par_1=16e-12
             c_par_2=16e-12
+            t_dead_1_max = 500e-9
+            t_dead_2_max = 500e-9
 
         [output_range]
             v1_min_max_list=[690, 710]
