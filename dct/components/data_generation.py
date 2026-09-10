@@ -79,9 +79,6 @@ class DataGeneration:
             "freecad.cmd",
             freecad_script_file
         ]
-
-
-
         if variables:
             logger.info(
                 "FreeCAD parameters: %s",
@@ -119,7 +116,7 @@ class DataGeneration:
             return True
 
         except FileNotFoundError:
-            logger.info(f"{cmd_1} did not work.")
+            logger.info(f"{cmd_1[0]} does not work on this system, try {cmd_2[0]} instead.")
             logger.info("Running: %s", " ".join(cmd_2))
             try:
                 result = subprocess.run(

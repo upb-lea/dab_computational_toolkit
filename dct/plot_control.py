@@ -424,7 +424,7 @@ class ParetoPlots:
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary_losses(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, filter_distance: list[float] = [0.001, 100],
+    def plot_summary_losses(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, filter_distance: list[float],
                             combination_id: int = 0, is_summary: bool = False) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.

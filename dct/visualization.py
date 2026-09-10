@@ -80,7 +80,7 @@ def visualize_waveform_verification(working_directory: str) -> None:
                                                                      circuit_configuration_file.replace(".toml", "")),
                                  calculation_mode=CalcModeEnum("new"))
 
-    ParetoPlots.plot_summary_losses(pre_summary_data, circuit_optimization, combination_id=34286)
+    ParetoPlots.plot_summary_losses(pre_summary_data, circuit_optimization, combination_id=34286, filter_distance=[0.01, 0.8])
 
 
 if __name__ == "__main__":

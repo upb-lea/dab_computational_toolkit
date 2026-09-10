@@ -880,6 +880,8 @@ class SummaryProcessing:
 
         :param df: dataframe with Pareto plane
         :type df: pd.DataFrame
+        :param filter_distance: [relative y offset (efficiency offset), absolute minimum efficiency]
+        :type filter_distance: list[float]
         :return: Filtered Pareto front in a data frame
         :rtype: pd.DataFrame
         """
