@@ -68,13 +68,19 @@ class DataGeneration:
             for key, value in variables.items():
                 environment[key.upper()] = str(value)
 
-        # Adjust this if FreeCADCmd is not available in the system PATH.
-        cmd = [
+        # command option 1: FreeCADCmd (official command line interface)
+        # command option 2: freecad.cmd (e.g. used in snap packages)
+        # note: freecad -c ends in the freecad command line
+        cmd_1 = [
             "FreeCADCmd",
             freecad_script_file
         ]
+        cmd_2 = [
+            "freecad.cmd",
+            freecad_script_file
+        ]
 
-        logger.info("Running: %s", " ".join(cmd))
+
 
         if variables:
             logger.info(
@@ -86,8 +92,9 @@ class DataGeneration:
             )
 
         try:
+            logger.info("Running: %s", " ".join(cmd_1))
             result = subprocess.run(
-                cmd,
+                cmd_1,
                 check=True,
                 capture_output=True,
                 text=True,
@@ -112,11 +119,58 @@ class DataGeneration:
             return True
 
         except FileNotFoundError:
-            logger.error(
-                "Error: 'FreeCADCmd' command not found. "
-                "Install FreeCAD or add FreeCADCmd to your PATH."
-            )
-            return False
+            logger.info(f"{cmd_1} did not work.")
+            logger.info("Running: %s", " ".join(cmd_2))
+            try:
+                result = subprocess.run(
+                    cmd_2,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    env=environment
+                )
+
+                if result.stdout:
+                    logger.debug("FreeCAD output:\n%s", result.stdout)
+
+                if result.stderr:
+                    # FreeCAD can write non-fatal messages to stderr.
+                    logger.warning("FreeCAD messages:\n%s", result.stderr)
+
+                if not os.path.isfile(output_file):
+                    logger.error(
+                        "FreeCAD completed without error, but no STEP file was found: %s",
+                        output_file
+                    )
+                    return False
+
+                logger.info("Success! STEP file saved to: %s", output_file)
+                return True
+
+            except FileNotFoundError:
+                logger.error(
+                    "Error: 'FreeCADCmd' command not found. "
+                    "Install FreeCAD or add FreeCADCmd to your PATH."
+                )
+                return False
+
+            except subprocess.CalledProcessError as error:
+                logger.error(
+                    "FreeCAD exited with return code %s.",
+                    error.returncode
+                )
+
+                if error.stdout:
+                    logger.error("FreeCAD stdout:\n%s", error.stdout)
+
+                if error.stderr:
+                    logger.error("FreeCAD stderr:\n%s", error.stderr)
+
+                return False
+
+            except Exception:
+                logger.exception("Unexpected error while running FreeCAD.")
+                return False
 
         except subprocess.CalledProcessError as error:
             logger.error(
