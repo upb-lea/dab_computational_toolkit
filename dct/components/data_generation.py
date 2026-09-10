@@ -14,7 +14,7 @@ import femmt as fmt
 import dct.toml_checker as tc
 from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER,
-                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER, CAPACITOR_RESULTS)
 from dct.constants import FACTOR_M_TO_MM
 
 logger = logging.getLogger(__name__)
@@ -726,7 +726,7 @@ class DataGeneration:
             # read capacitor file
             for count, capacitor_id in enumerate(capacitor_id_list):
                 capacitor_filepath = os.path.join(capacitor_configuration_list[count].study_data.optimization_directory,
-                                                  str(circuit_id), capacitor_configuration_list[count].study_data.study_name, "results.csv")
+                                                  str(circuit_id), capacitor_configuration_list[count].study_data.study_name, CAPACITOR_RESULTS)
                 df_capacitor = pd.read_csv(capacitor_filepath)
                 DataGeneration._generate_capacitor_data(capacitor_id, df_capacitor, output_filepath, count)
 
