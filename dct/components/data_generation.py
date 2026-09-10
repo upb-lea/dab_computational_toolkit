@@ -13,7 +13,8 @@ import femmt as fmt
 # own libraries
 import dct.toml_checker as tc
 from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
-from dct.constant_path import DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
+from dct.constant_path import (DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER,
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
 from dct.constants import FACTOR_M_TO_MM
 
 logger = logging.getLogger(__name__)
@@ -739,7 +740,7 @@ class DataGeneration:
                 DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count, inductor_insulations)
 
                 inductor_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
-                                                        inductor_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
+                                                        inductor_configuration_list[count].study_data.study_name, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                                         f"{inductor_id}.png")
 
                 if os.path.exists(inductor_figure_filepath):
@@ -758,8 +759,8 @@ class DataGeneration:
                                     f"but not type dct.toml_checker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
-                transformer_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
-                                                           transformer_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
+                transformer_figure_filepath = os.path.join(transformer_configuration_list[count].study_data.optimization_directory, str(circuit_id),
+                                                           transformer_configuration_list[count].study_data.study_name, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                                            f"{transformer_id}.png")
 
                 if os.path.exists(transformer_figure_filepath):
