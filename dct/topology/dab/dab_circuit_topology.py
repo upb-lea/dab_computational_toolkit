@@ -678,8 +678,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # consider weighting
         i_cost_matrix_weighted = i_cost_matrix * fixed_parameters.mesh_weights
 
-        # Mean for not-NaN values, as there will be too many NaN results.
-        i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
+        # Sum for not-NaN values, as there will be too many NaN results.
+        i_cost = np.sum(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
         trial.set_user_attr('dead_time_zvs_coverage', dab_calc.calc_dead_time.zvs_coverage * 100)
         trial.set_user_attr('zvs_coverage', dab_calc.calc_modulation.zvs_coverage * 100)
