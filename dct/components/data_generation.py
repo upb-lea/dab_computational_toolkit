@@ -551,9 +551,9 @@ class DataGeneration:
                     # Bobbin dimensions
                     "flange_thickness_inner_mm": transformer_insulations.iso_window_top_core_left * FACTOR_M_TO_MM - clearance_mm,
                     "flange_thickness_top_mm": transformer_insulations.iso_window_top_core_top * FACTOR_M_TO_MM - clearance_mm,
-                    "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_right * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_bot * FACTOR_M_TO_MM - clearance_mm,
 
-                    "clearance": 0.3,
+                    "clearance": clearance_mm,
                     "inner_edge_radius": 0.6,
                     "outer_edge_radius": 0.6,
                     "enable_wire_slots": True,
@@ -584,7 +584,7 @@ class DataGeneration:
                     # Bobbin dimensions
                     "flange_thickness_inner_mm": transformer_insulations.iso_window_bot_core_left * FACTOR_M_TO_MM - clearance_mm,
                     "flange_thickness_top_mm": transformer_insulations.iso_window_bot_core_top * FACTOR_M_TO_MM - clearance_mm,
-                    "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_right * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_bot * FACTOR_M_TO_MM - clearance_mm,
 
                     "clearance": clearance_mm,
                     "inner_edge_radius": 0.6,
