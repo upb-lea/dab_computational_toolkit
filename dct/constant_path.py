@@ -30,6 +30,7 @@ PARETO_PLOT_PDF_FOLDER = "pareto_plot_pdf"
 PARETO_PLOT_PNG_FOLDER = "pareto_plot_png"
 PARETO_PLOT_PKL_FOLDER = "pareto_plot_pkl"
 HEAT_SINK_DISC_FOLDER = "heat_sink_disc"
+DATA_GENERATION_WAVEFORM_FOLDER = "waveforms"
 
 # processing status
 RELUCTANCE_COMPLETE_FILE = "reluctance_processing_complete.json"
@@ -44,7 +45,12 @@ CAPACITOR_RESULTS_FILTERED = "results_filtered.csv"
 DF_SUMMARY_WITHOUT_HEAT_SINK_WITHOUT_OFFSET = "df_wo_hs_wo_offset.csv"
 DF_SUMMARY_WITH_HEAT_SINK_WITHOUT_OFFSET = "df_w_hs_wo_offset.csv"
 DF_SUMMARY_FINAL = "df_final.csv"
-DF_SUMMARY_FINAL_FILTERED = "df_final_filtered.csv"
+DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS = "df_final_filtered_mean_loss.csv"
+DF_SUMMARY_FINAL_FILTERED_WEIGHTED_EFFICIENCY = "df_final_filtered_weighted_efficiency.csv"
+PLOT_CIRCUIT = "circuit"
+PLOT_HEAT_SINK = "heat_sink"
+PLOT_SUMMARY_WEIGHTED_EFFICIENCY = "summary_weighted_efficiency"
+PLOT_SUMMARY_MEAN_LOSS = "summary_mean_loss"
 
 # FEMMT fixed folder names, do not change!
 FEMMT_FEM_RESULTS_FOLDER = "02_fem_simulation_results"

@@ -678,8 +678,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
         # consider weighting
         i_cost_matrix_weighted = i_cost_matrix * fixed_parameters.mesh_weights
 
-        # Mean for not-NaN values, as there will be too many NaN results.
-        i_cost = np.mean(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
+        # Sum for not-NaN values, as there will be too many NaN results.
+        i_cost = np.sum(i_cost_matrix_weighted[~np.isnan(i_cost_matrix_weighted)])
 
         trial.set_user_attr('dead_time_zvs_coverage', dab_calc.calc_dead_time.zvs_coverage * 100)
         trial.set_user_attr('zvs_coverage', dab_calc.calc_modulation.zvs_coverage * 100)
@@ -1480,10 +1480,6 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             v2_additional_user_point_list=[]
             p_additional_user_point_list=[]
             additional_user_weighting_point_list=[]
-
-        [misc]
-            min_efficiency_percent=80
-            control_board_volume=10e-6
         '''
         with open(file_path, 'w') as output:
             output.write(toml_data)
@@ -1508,6 +1504,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
             transistor_2_name_list=['CREE_C3M0060065J', 'CREE_C3M0120065J']
             c_par_1=16e-12
             c_par_2=16e-12
+            t_dead_1_max = 500e-9
+            t_dead_2_max = 500e-9
 
         [output_range]
             v1_min_max_list=[690, 710]
@@ -1790,23 +1788,19 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 pickle.dump(combination_dto, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def plot_compare_waveforms(dto_directory: str) -> None:
+    def plot_compare_waveforms(circuit_id_filepath: str, output_filepath: str) -> None:
         """
         Compare calculated waveforms with simulated waveforms (GeckoCIRCUITS).
 
-        :param dto_directory: Folder of circuit DTOs to read the values from
-        :type dto_directory: str
+        :param circuit_id_filepath: Folder of circuit DTOs to read the values from
+        :type circuit_id_filepath: str
+        :param output_filepath: filepath of output plot
+        :type output_filepath: str
         """
-        _, circuit_id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(dto_directory)
+        # Get circuit results
+        with open(circuit_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
-        for circuit_id in circuit_id_list:
-            # Assemble pkl-filename
-            combination_id_filepath = os.path.join(dto_directory, f"{circuit_id}.pkl")
-
-            # Get circuit results
-            with open(combination_id_filepath, 'rb') as pickle_file_data:
-                combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
-
-            plot_calc_waveforms(combination_dto, compare_gecko_waveforms=True)
-            plot_calc_i_hf_waveforms(combination_dto, compare_gecko_waveforms=True)
-            plot_calc_vs_requirements(combination_dto)
+        plot_calc_waveforms(combination_dto, output_filepath, compare_gecko_waveforms=False)
+        plot_calc_i_hf_waveforms(combination_dto, output_filepath, compare_gecko_waveforms=False)
+        plot_calc_vs_requirements(combination_dto, output_filepath)

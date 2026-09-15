@@ -18,6 +18,8 @@ def generate_missing_toml_files(working_directory: str) -> None:
         generate_default_heat_sink_toml(working_directory)
     if not os.path.isfile(os.path.join(working_directory, "DabSummaryConf.toml")):
         generate_default_summary_toml(working_directory)
+    if not os.path.isfile(os.path.join(working_directory, "Misc.toml")):
+        generate_default_misc_toml(working_directory)
 
 def generate_default_flow_control_toml(working_directory: str) -> None:
     """
@@ -97,6 +99,7 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
         # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
         transformer_configuration_files = ["DabTransformerConf.toml"]
         heat_sink_configuration_file = "DabHeatSinkConf.toml"
+        summary_configuration_file = "DabSummaryConf.toml"
         #    # General configuration file followed by circuit configuration file
         #    topology_files =  ["SbcGeneralConf.toml","SbcCircuitConf.toml"]
         #    # Number of capacitor configuration files corresponds to the required number of capacitors of the topology
@@ -108,6 +111,22 @@ def generate_default_flow_control_toml(working_directory: str) -> None:
         #    heat_sink_configuration_file = "SbcHeatSinkConf.toml"
     '''
     with open(f"{working_directory}/progFlow.toml", 'w') as output:
+        output.write(toml_data)
+
+def generate_default_misc_toml(file_path: str) -> None:
+    """
+    Generate the default misc toml file.
+
+    :param file_path: filename including absolute path
+    :type file_path: str
+    """
+    toml_data = '''
+    [default_data] # After update this configuration file according your project delete this line to validate it
+    min_efficiency_percent=80
+    control_board_volume=10e-6
+    control_board_loss=1
+    '''
+    with open(file_path, 'w') as output:
         output.write(toml_data)
 
 def generate_default_capacitor_toml(file_path: str) -> None:
@@ -273,10 +292,12 @@ def generate_default_summary_toml(file_path: str) -> None:
     toml_data = '''
     [default_data] # After update this configuration file according your project delete this line to validate it
     [pre_summary]
-        filter_distance = [0.01, 100]
+        filter_distance_losses = [0.01, 100]
+        filter_distance_efficiency = [0.03, 0.9]
 
     [summary]
-        filter_distance = [0.01, 100]
+        filter_distance_losses = [0.01, 100]
+        filter_distance_efficiency = [0.03, 0.9]
     '''
     with open(file_path, 'w') as output:
         output.write(toml_data)
