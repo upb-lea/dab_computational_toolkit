@@ -100,7 +100,7 @@ def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_
     :type l_air_gap_mm: float
     """
     # Small overlap avoids coincident Boolean faces.
-    overlap_mm = 0.01
+    overlap_mm = 0.1
 
     # -----------------------------------------------------------------------
     # Input validation
@@ -148,7 +148,7 @@ def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_
     half_core_h_mm = core_h_mm / 2.0
 
     # Each of two identical halves contributes half of the total air gap.
-    half_air_gap_mm = l_air_gap_mm / 2.0 - overlap_mm
+    half_air_gap_mm = l_air_gap_mm / 2.0
 
     # The center leg has its final height directly.
     center_leg_h_mm = half_core_h_mm - half_air_gap_mm
@@ -172,16 +172,13 @@ def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_
     # This radius covers the whole final rectangular X/Y clipping area.
     outer_blank_radius_mm = np.sqrt((core_dimension_x_mm / 2.0) ** 2 + (core_dimension_y_mm / 2.0) ** 2)
 
-
-
     # -----------------------------------------------------------------------
-    # Common X/Y clipping solid
+    # Common X/Y clipping solid (total core dimensions)
     # -----------------------------------------------------------------------
-
     outer_xy_clipping_box = Part.makeBox(
         core_dimension_x_mm,
         core_dimension_y_mm,
-        half_core_h_mm + overlap_mm,
+        half_core_h_mm,
         App.Vector(
             -core_dimension_x_mm / 2.0,
             -core_dimension_y_mm / 2.0,
@@ -195,7 +192,7 @@ def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_
     # Solid round blank, clipped to the required outer X/Y dimensions.
     lower_yoke_cylinder = Part.makeCylinder(
         outer_blank_radius_mm,
-        yoke_thickness_mm + overlap_mm,
+        yoke_thickness_mm,
         App.Vector(0, 0, 0)
     )
 
@@ -211,17 +208,13 @@ def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_
     outer_leg_outer_cylinder = Part.makeCylinder(
         outer_blank_radius_mm,
         outer_leg_h_mm,
-        App.Vector(0, 0, yoke_thickness_mm)
+        App.Vector(0, 0, yoke_thickness_mm - overlap_mm)
     )
 
     outer_leg_inner_cylinder = Part.makeCylinder(
         outer_leg_inner_radius_mm,
         outer_leg_h_mm + 2.0 * overlap_mm,
-        App.Vector(
-            0,
-            0,
-            yoke_thickness_mm - overlap_mm
-        )
+        App.Vector(0, 0, yoke_thickness_mm - overlap_mm)
     )
 
     outer_ring_shape = outer_leg_outer_cylinder.cut(
@@ -306,7 +299,7 @@ def export_pq_core_half_step(
             "PQ_Core_Half"
         )
 
-        core_object.Label = "PQ Core Lower Half"
+        core_object.Label = "PQ Core Half"
         core_object.Shape = final_shape
 
         document.recompute()
@@ -334,37 +327,37 @@ def export_pq_core_half_step(
 
 core_h_mm = read_float_environment_variable(
     "CORE_H_MM",
-    39.8
+    40
 )
 
 core_inner_diameter_mm = read_float_environment_variable(
     "CORE_INNER_DIAMETER_MM",
-    14.9
+    15
 )
 
 window_h_mm = read_float_environment_variable(
     "WINDOW_H_MM",
-    29.5
+    30
 )
 
 window_w_mm = read_float_environment_variable(
     "WINDOW_W_MM",
-    (37.0 - 14.9) / 2.0
+    (37.0 - 15) / 2.0
 )
 
 core_dimension_x_mm = read_float_environment_variable(
     "CORE_DIMENSION_X_MM",
-    40.5
+    40
 )
 
 core_dimension_y_mm = read_float_environment_variable(
     "CORE_DIMENSION_Y_MM",
-    28.0
+    30.0
 )
 
 l_air_gap_mm = read_float_environment_variable(
     "L_AIR_GAP_MM",
-    0.5
+    1
 )
 
 output_step_file = os.environ.get(
