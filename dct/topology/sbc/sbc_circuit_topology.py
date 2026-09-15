@@ -1792,14 +1792,17 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         pass
 
     @staticmethod
-    def plot_compare_waveforms(dto_directory: str) -> None:
+    def plot_compare_waveforms(dto_directory: str, output_filepath: str) -> None:
         """
         Compare calculated waveforms with simulated waveforms (GeckoCIRCUITS).
 
         :param dto_directory: Folder of circuit DTOs to read the values from
         :type dto_directory: str
+        :param output_filepath: filepath of output plot
+        :type output_filepath: str
         """
         print(dto_directory)
+        print(output_filepath)
 
     @staticmethod
     def generate_operating_point_table(circuit_id_filepath: str, results_path: str) -> None:

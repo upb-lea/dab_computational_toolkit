@@ -14,7 +14,8 @@ import femmt as fmt
 import dct.toml_checker as tc
 from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER,
-                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER, CAPACITOR_RESULTS)
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER, CAPACITOR_RESULTS,
+                               DATA_GENERATION_WAVEFORM_FOLDER)
 from dct.constants import FACTOR_M_TO_MM
 
 logger = logging.getLogger(__name__)
@@ -704,6 +705,9 @@ class DataGeneration:
             output_filepath = os.path.join(data_generation_data.optimization_directory, str(combination_id))
             if not os.path.exists(output_filepath):
                 os.makedirs(output_filepath)
+            waveform_filepath = os.path.join(output_filepath, DATA_GENERATION_WAVEFORM_FOLDER)
+            if not os.path.exists(waveform_filepath):
+                os.makedirs(waveform_filepath)
 
             df_circuit = pd.read_csv(circuit_filepath)
             DataGeneration._generate_circuit_data(circuit_id, df_circuit, output_filepath)
@@ -711,6 +715,7 @@ class DataGeneration:
             # generate operating point table for microcontroller programming
             circuit_id_filepath = os.path.join(circuit_configuration.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH, f"{circuit_id}.pkl")
             circuit_configuration.generate_operating_point_table(circuit_id_filepath, output_filepath)
+            circuit_configuration.plot_compare_waveforms(circuit_id_filepath, waveform_filepath)
 
             # generate plots of operating points
             result_dto_path = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)

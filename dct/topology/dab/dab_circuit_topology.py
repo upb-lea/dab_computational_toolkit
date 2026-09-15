@@ -1788,23 +1788,19 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 pickle.dump(combination_dto, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def plot_compare_waveforms(dto_directory: str) -> None:
+    def plot_compare_waveforms(circuit_id_filepath: str, output_filepath: str) -> None:
         """
         Compare calculated waveforms with simulated waveforms (GeckoCIRCUITS).
 
-        :param dto_directory: Folder of circuit DTOs to read the values from
-        :type dto_directory: str
+        :param circuit_id_filepath: Folder of circuit DTOs to read the values from
+        :type circuit_id_filepath: str
+        :param output_filepath: filepath of output plot
+        :type output_filepath: str
         """
-        _, circuit_id_list = SummaryProcessing.generate_component_id_list_from_pkl_files(dto_directory)
+        # Get circuit results
+        with open(circuit_id_filepath, 'rb') as pickle_file_data:
+            combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
 
-        for circuit_id in circuit_id_list:
-            # Assemble pkl-filename
-            combination_id_filepath = os.path.join(dto_directory, f"{circuit_id}.pkl")
-
-            # Get circuit results
-            with open(combination_id_filepath, 'rb') as pickle_file_data:
-                combination_dto: d_dtos.DabCircuitDTO = pickle.load(pickle_file_data)
-
-            plot_calc_waveforms(combination_dto, compare_gecko_waveforms=True)
-            plot_calc_i_hf_waveforms(combination_dto, compare_gecko_waveforms=True)
-            plot_calc_vs_requirements(combination_dto)
+        plot_calc_waveforms(combination_dto, output_filepath, compare_gecko_waveforms=False)
+        plot_calc_i_hf_waveforms(combination_dto, output_filepath, compare_gecko_waveforms=False)
+        plot_calc_vs_requirements(combination_dto, output_filepath)
