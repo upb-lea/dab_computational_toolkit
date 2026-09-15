@@ -22,7 +22,7 @@ Example command-line call:
 
 CORE_INNER_DIAMETER_MM=16.0 \
 L_AIR_GAP_MM=0.8 \
-OUTPUT_STEP_FILE="./PQ40_40_custom.step" \
+OUTPUT_STEP_FILE="./pq_core_half.step" \
 FreeCADCmd pq_core_half.py
 """
 # python libraries
@@ -69,9 +69,9 @@ def read_float_environment_variable(variable_name: str, default_value: float) ->
         ) from error
 
 
-def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, window_h_mm: float,
-                              window_w_mm: float, core_dimension_x_mm: float, core_dimension_y_mm: float,
-                              l_air_gap_mm: float) -> Part.makeCylinder:
+def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_h_mm: float,
+                        window_w_mm: float, core_dimension_x_mm: float, core_dimension_y_mm: float,
+                        l_air_gap_mm: float) -> Part.makeCylinder:
     """
     Create the shape of a lower PQ core half.
 
@@ -99,10 +99,12 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
     :param l_air_gap_mm: air gap in mm
     :type l_air_gap_mm: float
     """
+    # Small overlap avoids coincident Boolean faces.
+    overlap_mm = 0.01
+
     # -----------------------------------------------------------------------
     # Input validation
     # -----------------------------------------------------------------------
-
     if core_h_mm <= 0:
         raise ValueError("core_h_mm must be greater than 0.")
 
@@ -137,20 +139,16 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
 
     # Inner radius of the outer ring / outer legs.
     # The radial gap between this radius and the center leg is window_w_mm.
-    outer_leg_inner_radius_mm = (
-        center_leg_radius_mm + window_w_mm
-    )
+    outer_leg_inner_radius_mm = (center_leg_radius_mm + window_w_mm)
 
     # Thickness of the bottom yoke.
-    yoke_thickness_mm = (
-        core_h_mm - window_h_mm
-    ) / 2.0
+    yoke_thickness_mm = (core_h_mm - window_h_mm) / 2.0
 
     # Nominal height of one complete core half.
     half_core_h_mm = core_h_mm / 2.0
 
     # Each of two identical halves contributes half of the total air gap.
-    half_air_gap_mm = l_air_gap_mm / 2.0
+    half_air_gap_mm = l_air_gap_mm / 2.0 - overlap_mm
 
     # The center leg has its final height directly.
     center_leg_h_mm = half_core_h_mm - half_air_gap_mm
@@ -174,8 +172,7 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
     # This radius covers the whole final rectangular X/Y clipping area.
     outer_blank_radius_mm = np.sqrt((core_dimension_x_mm / 2.0) ** 2 + (core_dimension_y_mm / 2.0) ** 2)
 
-    # Small overlap avoids coincident Boolean faces.
-    overlap_mm = 0.01
+
 
     # -----------------------------------------------------------------------
     # Common X/Y clipping solid
@@ -196,26 +193,20 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
     # Lower yoke
     # -----------------------------------------------------------------------
     # Solid round blank, clipped to the required outer X/Y dimensions.
-
     lower_yoke_cylinder = Part.makeCylinder(
         outer_blank_radius_mm,
         yoke_thickness_mm + overlap_mm,
         App.Vector(0, 0, 0)
     )
 
-    lower_yoke_shape = lower_yoke_cylinder.common(
-        outer_xy_clipping_box
-    )
+    lower_yoke_shape = lower_yoke_cylinder.common(outer_xy_clipping_box)
 
     # -----------------------------------------------------------------------
     # Outer ring / outer legs
     # -----------------------------------------------------------------------
     # This annular region begins at the top of the lower yoke and extends
     # to the nominal mating plane at Z = half_core_h_mm.
-
-    outer_leg_h_mm = (
-        half_core_h_mm - yoke_thickness_mm + overlap_mm
-    )
+    outer_leg_h_mm = half_core_h_mm - yoke_thickness_mm + overlap_mm
 
     outer_leg_outer_cylinder = Part.makeCylinder(
         outer_blank_radius_mm,
@@ -234,16 +225,12 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
     )
 
     outer_ring_shape = outer_leg_outer_cylinder.cut(
-        outer_leg_inner_cylinder
-    ).common(
-        outer_xy_clipping_box
-    )
+        outer_leg_inner_cylinder).common(outer_xy_clipping_box)
 
     # -----------------------------------------------------------------------
     # Center leg
     # -----------------------------------------------------------------------
     # The final center-leg height already includes the air-gap reduction.
-
     center_leg_shape = Part.makeCylinder(
         center_leg_radius_mm,
         center_leg_h_mm,
@@ -253,12 +240,7 @@ def create_pq_core_lower_half(core_h_mm: float, core_inner_diameter_mm: float, w
     # -----------------------------------------------------------------------
     # Combine all solid regions
     # -----------------------------------------------------------------------
-
-    final_shape = lower_yoke_shape.fuse(
-        outer_ring_shape
-    ).fuse(
-        center_leg_shape
-    )
+    final_shape = lower_yoke_shape.fuse(outer_ring_shape).fuse(center_leg_shape)
 
     return final_shape.removeSplitter()
 
@@ -306,10 +288,10 @@ def export_pq_core_half_step(
         os.makedirs(output_directory, exist_ok=True)
 
     # Use a unique document name when the function is called repeatedly.
-    document = App.newDocument("PQ_Core_Lower_Half")
+    document = App.newDocument("PQ_Core_Half")
 
     try:
-        final_shape = create_pq_core_lower_half(
+        final_shape = create_pq_core_half(
             core_h_mm=core_h_mm,
             core_inner_diameter_mm=core_inner_diameter_mm,
             window_h_mm=window_h_mm,
@@ -321,7 +303,7 @@ def export_pq_core_half_step(
 
         core_object = document.addObject(
             "Part::Feature",
-            "PQ_Core_Lower_Half"
+            "PQ_Core_Half"
         )
 
         core_object.Label = "PQ Core Lower Half"
@@ -387,7 +369,7 @@ l_air_gap_mm = read_float_environment_variable(
 
 output_step_file = os.environ.get(
     "OUTPUT_STEP_FILE",
-    "./PQ40_40_lower_half.step"
+    "./pq_core_half.step"
 )
 
 save_fcstd_file = os.environ.get(
