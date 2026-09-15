@@ -318,9 +318,9 @@ class DataGeneration:
         # PQ core step file generation
         core = fmt.core_database()[params_core_name]
 
-        core_height_difference = core["window_h"] - params_window_h
-
         pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
+
+        top_bottom_yoke_height = (core["core_h"] - core["window_h"]) / 2
 
         # Assemble file name
         target_file_path = os.path.join(output_filepath, f"inductor_{inductor_number}_core.step")
@@ -330,7 +330,7 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (core["core_h"] - core_height_difference) * FACTOR_M_TO_MM,
+                    "core_h_mm": (params_window_h + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": params_window_h * FACTOR_M_TO_MM,
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
@@ -455,7 +455,7 @@ class DataGeneration:
 
         core = fmt.core_database()[params_core_name]
 
-        lower_core_height_difference = core["window_h"] - params_window_h_bot
+        top_bottom_yoke_height = (core["core_h"] - core["window_h"]) / 2
 
         pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
 
@@ -467,7 +467,7 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (core["core_h"] - lower_core_height_difference) * FACTOR_M_TO_MM,
+                    "core_h_mm": (user_attrs_window_h_bot + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
@@ -505,8 +505,6 @@ class DataGeneration:
         if not success:
             logger.warning(f"Transformer ID {transformer_id} original core STEP export failed.")
 
-        upper_core_height_difference = core["window_h"] - 2 * user_attrs_window_h_top
-
         # Assemble file name
         target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_upper.step")
         # Create file, if it does not exist
@@ -515,7 +513,7 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (core["core_h"] - upper_core_height_difference) * FACTOR_M_TO_MM,
+                    "core_h_mm": (user_attrs_window_h_top + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": user_attrs_window_h_top * 2 * FACTOR_M_TO_MM,  # upper core half needs twice the window_h
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
