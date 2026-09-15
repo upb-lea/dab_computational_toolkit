@@ -513,7 +513,7 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (user_attrs_window_h_top + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
+                    "core_h_mm": (2 * user_attrs_window_h_top + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": user_attrs_window_h_top * 2 * FACTOR_M_TO_MM,  # upper core half needs twice the window_h
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
