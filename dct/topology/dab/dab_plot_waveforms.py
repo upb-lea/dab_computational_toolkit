@@ -275,13 +275,13 @@ def plot_calc_vs_requirements(dab_dto: d_dtos.DabCircuitDTO, output_filepath: st
             axs[1].plot(sorted_total_angles, sorted_i_l_s_total, label="Calculation i1", linestyle="--")
             axs[1].legend()
             axs[1].grid()
-            axs[1].set_ylabel("r$i_\mathrm{L,s}$ / A")
+            axs[1].set_ylabel(r"$i_\mathrm{L,s}$ / A")
 
             axs[2].plot(i_l_hf2_requirement_time_vec, i_l_hf2_requirement_current_vec, label="Transformer i2 requirement")
             axs[2].plot(sorted_total_angles, sorted_i_hf_2_total, label="Calculation i2", linestyle="--")
             axs[2].legend()
             axs[2].grid()
-            axs[2].set_ylabel("r$i_\mathrm{HF,2}$ / A")
+            axs[2].set_ylabel(r"$i_\mathrm{HF,2}$ / A")
             axs[2].set_xlabel("Time / rad")
 
             plt.savefig(f"{output_filepath}/requirements_{count}.pdf")
