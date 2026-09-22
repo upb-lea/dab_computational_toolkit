@@ -1136,62 +1136,6 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
         return df
 
     @staticmethod
-    def is_pareto_efficient_min_min(costs: np.ndarray, return_mask: bool = True) -> np.ndarray:
-        """
-        Find the pareto-efficient points.
-
-        :param costs: An (n_points, n_costs) array
-        :type costs: np.array
-        :param return_mask: True to return a mask
-        :type return_mask: bool
-        :return: An array of indices of pareto-efficient points.
-            If return_mask is True, this will be an (n_points, ) boolean array
-            Otherwise it will be a (n_efficient_points, ) integer array of indices.
-        :rtype: np.array
-        """
-        is_efficient = np.arange(costs.shape[0])
-        n_points = costs.shape[0]
-        next_point_index = 0
-
-        while next_point_index < len(costs):
-            # points, which are dominated
-            dominated = np.all(costs[next_point_index] <= costs, axis=1)
-
-            # Remove dominating points
-            dominated[next_point_index] = False
-            is_efficient = is_efficient[~dominated]
-            costs = costs[~dominated]
-
-            next_point_index += 1
-
-        is_efficient_mask = np.zeros(n_points, dtype=bool)
-        is_efficient_mask[is_efficient] = True
-        return is_efficient_mask
-
-    @staticmethod
-    def pareto_front_from_df_min_min(df: pd.DataFrame, x: str = "values_0", y: str = "values_1") -> pd.DataFrame:
-        """
-        Calculate the Pareto front from a Pandas DataFrame. Return a Pandas DataFrame.
-
-        :param df: Pandas DataFrame
-        :type df: pd.DataFrame
-        :param x: Name of x-parameter from df to show in Pareto plane
-        :type x: str
-        :param y: Name of y-parameter from df to show in Pareto plane
-        :type y: str
-        :return: Pandas DataFrame with pareto efficient points
-        :rtype: pd.DataFrame
-        """
-        x_vec = df[x][~np.isnan(df[x])]
-        y_vec = df[y][~np.isnan(df[x])]
-        numpy_zip = np.column_stack((x_vec, y_vec))
-        pareto_tuple_mask_vec = SbcCircuitOptimization.is_pareto_efficient_min_min(numpy_zip)
-        pareto_tuple_mask_vec = pareto_tuple_mask_vec.astype(bool)
-        pareto_df = df[pareto_tuple_mask_vec]
-
-        return pareto_df
-
-    @staticmethod
     def hybrid_pareto_sampling(pareto_matrix: np.ndarray, n_points: int = 8) -> np.ndarray:
         """
         Filter points from pareto front by hybrid-strategy: Extremes + Knees + Density.
@@ -1414,7 +1358,7 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
 
         self._study_in_storage.to_csv(f'{self.circuit_study_data.optimization_directory}/{self._sbc_config.circuit_study_name}.csv')
 
-        df_pareto_front = SbcCircuitOptimization.pareto_front_from_df_min_min(self._study_in_storage)
+        df_pareto_front = CircuitOptimizationBase.pareto_front_from_df_min_min(self._study_in_storage)
 
         # Filter Pseudo Pareto front
         filtered_points: np.ndarray = SbcCircuitOptimization.filter_equidistant_sampling(
