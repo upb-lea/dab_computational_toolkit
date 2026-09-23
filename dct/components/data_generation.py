@@ -338,6 +338,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": user_attrs_l_air_gap * FACTOR_M_TO_MM,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -361,6 +362,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": 0,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -475,6 +477,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": user_attrs_l_bot_air_gap * FACTOR_M_TO_MM,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -498,6 +501,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": 0,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -521,6 +525,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": user_attrs_l_top_air_gap * FACTOR_M_TO_MM * 2,  # upper core half needs the full air gap, not the reduced one
+                    "save_fcstd_file": "0"
                 }
             )
         else:

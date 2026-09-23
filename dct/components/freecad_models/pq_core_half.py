@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def read_float_environment_variable(variable_name: str, default_value: float) -> float:
+def read_float_environment_variable(variable_name: str) -> float:
     """
     Read a floating-point value from an environment variable.
 
@@ -52,13 +52,11 @@ def read_float_environment_variable(variable_name: str, default_value: float) ->
 
     :param variable_name: variable name
     :type variable_name: str
-    :param default_value: default value
-    :type default_value: float
     """
     value = os.environ.get(variable_name)
 
     if value is None or value == "":
-        return default_value
+        raise ValueError(f"Environment variable {variable_name} does not exist.")
 
     try:
         return float(value)
@@ -75,7 +73,7 @@ def create_pq_core_half(core_h_mm: float, core_inner_diameter_mm: float, window_
     """
     Create the shape of a lower PQ core half.
 
-    The model consists of:
+    The model consists of:  
     - A lower yoke
     - An outer ring / outer legs
     - A round center leg
@@ -325,50 +323,23 @@ def export_pq_core_half_step(
 # Read input values from environment variables
 # ---------------------------------------------------------------------------
 
-core_h_mm = read_float_environment_variable(
-    "CORE_H_MM",
-    40
-)
+core_h_mm = read_float_environment_variable("CORE_H_MM")
 
-core_inner_diameter_mm = read_float_environment_variable(
-    "CORE_INNER_DIAMETER_MM",
-    15
-)
+core_inner_diameter_mm = read_float_environment_variable("CORE_INNER_DIAMETER_MM")
 
-window_h_mm = read_float_environment_variable(
-    "WINDOW_H_MM",
-    30
-)
+window_h_mm = read_float_environment_variable("WINDOW_H_MM")
 
-window_w_mm = read_float_environment_variable(
-    "WINDOW_W_MM",
-    (37.0 - 15) / 2.0
-)
+window_w_mm = read_float_environment_variable("WINDOW_W_MM")
 
-core_dimension_x_mm = read_float_environment_variable(
-    "CORE_DIMENSION_X_MM",
-    40
-)
+core_dimension_x_mm = read_float_environment_variable("CORE_DIMENSION_X_MM")
 
-core_dimension_y_mm = read_float_environment_variable(
-    "CORE_DIMENSION_Y_MM",
-    30.0
-)
+core_dimension_y_mm = read_float_environment_variable("CORE_DIMENSION_Y_MM")
 
-l_air_gap_mm = read_float_environment_variable(
-    "L_AIR_GAP_MM",
-    1
-)
+l_air_gap_mm = read_float_environment_variable("L_AIR_GAP_MM")
 
-output_step_file = os.environ.get(
-    "OUTPUT_STEP_FILE",
-    "./pq_core_half.step"
-)
+output_step_file = os.environ.get("OUTPUT_STEP_FILE", "./pq_core_half.step")
 
-save_fcstd_file = os.environ.get(
-    "SAVE_FCSTD_FILE",
-    "0"
-).strip().lower() not in ("0", "false", "no", "off")
+save_fcstd_file = os.environ.get("SAVE_FCSTD_FILE", "0").strip().lower() not in ("0", "false", "no", "off")
 
 
 # ---------------------------------------------------------------------------
