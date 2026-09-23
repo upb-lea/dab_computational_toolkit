@@ -40,7 +40,7 @@ class HeatSinkOptimization:
         """Verify the input parameter ranges.
 
         :param toml_heat_sink: toml inductor configuration
-        :type toml_heat_sink: dct.TomlInductor
+        :type toml_heat_sink: pcdt.TomlInductor
         :return: True, if the configuration was consistent
         :rtype: bool
         """
@@ -146,9 +146,9 @@ class HeatSinkOptimization:
         Initialize the configuration.
 
         :param toml_heat_sink: toml heat sink class
-        :type toml_heat_sink: dct.TomlHeatSink
+        :type toml_heat_sink: pcdt.TomlHeatSink
         :param toml_prog_flow: toml program flow class
-        :type toml_prog_flow: dct.FlowControl
+        :type toml_prog_flow: pcdt.FlowControl
         :return: True, if the configuration was successful initialized
         :rtype: bool
         """

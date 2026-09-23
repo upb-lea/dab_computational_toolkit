@@ -9,7 +9,7 @@ from pcdt.topology.dab import DabCircuitOptimization
 from pcdt.topology.sbc import SbcCircuitOptimization
 from pcdt.circuit_enums import TopologyEnum
 import pcdt.toml_checker as tc
-from pcdt.mainctl import DctMainCtl
+from pcdt.mainctl import MainCtl
 from pcdt.constant_path import CIRCUIT_WAVEFORMS_FOLDER
 from pcdt.topology.circuit_optimization_base import CircuitOptimizationBase
 from pcdt.plot_control import ParetoPlots
@@ -43,7 +43,7 @@ def visualize_waveform_verification(working_directory: str) -> None:
     working_directory = os.path.abspath(working_directory)
 
     file_path = os.path.join(working_directory, "progFlow.toml")
-    flow_control_loaded, dict_prog_flow = DctMainCtl.load_toml_file(file_path)
+    flow_control_loaded, dict_prog_flow = MainCtl.load_toml_file(file_path)
 
     if not flow_control_loaded:
         raise ValueError("No data available")

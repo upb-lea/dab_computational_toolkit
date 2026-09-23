@@ -29,7 +29,7 @@ from pcdt.components.summary_processing import SummaryProcessing
 import pcdt.toml_checker as tc
 from pcdt import server_ctl_dtos as srv_ctl_dtos
 from pcdt.server_ctl_dtos import RunTimeMeasurement as RunTime
-from pcdt.mainctl import DctMainCtl
+from pcdt.mainctl import MainCtl
 import pcdt.datasets_dtos as d_dtos
 from pcdt.circuit_enums import CalcModeEnum
 
@@ -159,7 +159,7 @@ def test_load_toml_file(caplog: LogCaptureFixture, test_toml_data: str, is_path_
     """
     # Variable declaration
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
     invalid_path_name = ""
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -302,7 +302,7 @@ def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data:
     """
     # Variable declaration
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
 
     # Prepare the setup
     # Create path
@@ -385,7 +385,7 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
     """
     # Variable declaration
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
 
     # Initialize sub folder list
     sub_folder_list = ["sub_folder1", "sub_folder2", "sub_folder3"]
@@ -575,7 +575,7 @@ def test_get_number_of_pkl_files(caplog: LogCaptureFixture, is_path_existing: bo
     """
     # Variable declaration
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
     target_study_name = "study_data"
 
     # Prepare the setup
@@ -664,7 +664,7 @@ def test_check_breakpoint(capsys: CaptureFixture[str], keyword: str, message: st
     exit_code: int = -1
 
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
 
     def test_thread_container():
         nonlocal is_exit
@@ -735,7 +735,7 @@ def test_generate_zip_archive(caplog: LogCaptureFixture, is_path_existing: bool,
     # Folder to exclude from zip
     exclude_level: str = "00_femmt_simulation"
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
 
     # Constant values of FlowControl
     test_parameter_2: tc.FlowControl = copy.deepcopy(test_FlowControl_base)
@@ -1001,14 +1001,14 @@ def test__is_skippable(is_sqlite_check_enabled: bool, is_sqlite_stored: bool,
             if not is_sqlite_stored:
                 # Perform the test
                 with pytest.raises(ValueError) as error_message:
-                    is_skippable, issue_report = DctMainCtl._is_skippable(test_study_data, processing_complete_test_file,
-                                                                          is_sqlite_check_enabled, index_list)
+                    is_skippable, issue_report = MainCtl._is_skippable(test_study_data, processing_complete_test_file,
+                                                                       is_sqlite_check_enabled, index_list)
                 assert expected_message[exp_message_id] in str(error_message.value)
             else:
                 # Perform the test
-                is_skippable, issue_report = DctMainCtl._is_skippable(test_study_data,
-                                                                      processing_complete_test_file,
-                                                                      is_sqlite_check_enabled, index_list)
+                is_skippable, issue_report = MainCtl._is_skippable(test_study_data,
+                                                                   processing_complete_test_file,
+                                                                   is_sqlite_check_enabled, index_list)
                 # Verify the result
                 assert is_skippable == is_processing_complete
                 assert issue_report == expected_message[exp_message_id]
@@ -1124,11 +1124,11 @@ def test__set_processing_complete(is_json_path_existing: bool, is_pkl_path_exist
         if not is_json_path_existing or not is_pkl_path_existing:
             # Perform the test
             with pytest.raises(ValueError) as error_message:
-                DctMainCtl._set_processing_complete(json_path, subdirectory, processing_complete_test_file, index_list)
+                MainCtl._set_processing_complete(json_path, subdirectory, processing_complete_test_file, index_list)
             assert expected_message[exp_message_id] in str(error_message.value)
         else:
             # Perform the test
-            DctMainCtl._set_processing_complete(json_path, subdirectory, processing_complete_test_file, index_list)
+            MainCtl._set_processing_complete(json_path, subdirectory, processing_complete_test_file, index_list)
             # Load the pkl_file_list from file
             json_path = os.path.join(tmpdir, json_path_name, processing_complete_test_file)
             with open(json_path, "r", encoding="utf-8") as file_handle:
@@ -1257,8 +1257,8 @@ def test__is_processing_complete(is_path_existing: bool, is_file_existing: bool,
             # Check for condition 'is empty file'
             if is_file_empty:
                 # Create an empty processing complete file
-                DctMainCtl._set_processing_complete(test_study_data.optimization_directory, "",
-                                                    processing_complete_test_file)
+                MainCtl._set_processing_complete(test_study_data.optimization_directory, "",
+                                                 processing_complete_test_file)
 
         else:
             # Generate a non existing path
@@ -1275,13 +1275,13 @@ def test__is_processing_complete(is_path_existing: bool, is_file_existing: bool,
         if not is_path_existing:
             # Perform the test
             with pytest.raises(ValueError) as error_message:
-                is_complete_result, issue_report = DctMainCtl._is_processing_complete(test_study_data.optimization_directory,
-                                                                                      processing_complete_test_file)
+                is_complete_result, issue_report = MainCtl._is_processing_complete(test_study_data.optimization_directory,
+                                                                                   processing_complete_test_file)
             assert expected_message[exp_message_id] in str(error_message.value)
         else:
             # Perform the test
-            is_complete_result, issue_report = (DctMainCtl._is_processing_complete(test_study_data.optimization_directory,
-                                                                                   processing_complete_test_file))
+            is_complete_result, issue_report = (MainCtl._is_processing_complete(test_study_data.optimization_directory,
+                                                                                processing_complete_test_file))
             # Verify the result
             assert is_complete_result == is_processing_complete
             assert issue_report == expected_message[exp_message_id]
@@ -1359,11 +1359,11 @@ def test__delete_processing_complete(caplog: LogCaptureFixture, test_id: int, is
             if not is_path_existing:
                 # Perform the test
                 with pytest.raises(ValueError) as error_message:
-                    DctMainCtl._delete_processing_complete(test_path, test_file_name)
+                    MainCtl._delete_processing_complete(test_path, test_file_name)
                 assert expected_message[exp_message_id] in str(error_message.value)
             else:
                 # Perform the test
-                is_deleted = DctMainCtl._delete_processing_complete(test_path, test_file_name)
+                is_deleted = MainCtl._delete_processing_complete(test_path, test_file_name)
 
                 # Check write protection
                 if is_file_protected:
@@ -1438,17 +1438,17 @@ def test__get_calculation_mode_and_update_calculation_mode(mode_value: str, stud
         # Check for valid result
         if is_no_error_raise:
             # Perform the test of _get_calculation_mode
-            test_result_get = DctMainCtl._get_calculation_mode(mode_value)
+            test_result_get = MainCtl._get_calculation_mode(mode_value)
             # Verify the result
             assert test_result_get == expected_result_get
             # Perform the test of _update_calculation_mode
-            DctMainCtl._update_calculation_mode(test_result_get, test_study_data)
+            MainCtl._update_calculation_mode(test_result_get, test_study_data)
             assert test_study_data.calculation_mode == exp_result_update
 
         else:
             # Perform the test
             with pytest.raises(ValueError) as error_message:
-                test_result_get = DctMainCtl._get_calculation_mode(mode_value)
+                test_result_get = MainCtl._get_calculation_mode(mode_value)
             assert exp_error_message in str(error_message.value)
 
 #########################################################################################################
@@ -1621,7 +1621,7 @@ def test__get_page_main_data(test_index: int) -> None:
     exp_result_queue_detail_data.summary_data.progress_data = copy.deepcopy(progress_data_summary)
 
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
     # Allocate pcdt timer members
     test_dct._total_time = RunTime()
     test_dct._total_time.reset_start_trigger()
@@ -1694,11 +1694,11 @@ def test_runtime_class(timer_id_list: list[int]) -> None:
     :type  timer_id_list: list[int]
     """
     # Variable declaration
-    # List of timer objects of type pcdt.DctMainCtl.RunTime
+    # List of timer objects of type pcdt.MainCtl.RunTime
     test_timer_list: list[RunTime] = []
 
     # Create the instance
-    test_dct: DctMainCtl = DctMainCtl()
+    test_dct: MainCtl = MainCtl()
 
     # Allocate pcdt timer members
     for test_timer_id in range(len(timer_id_list)):

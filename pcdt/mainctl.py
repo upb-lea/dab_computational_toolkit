@@ -39,7 +39,7 @@ import pcdt.generate_toml as toml_gen
 from pcdt.components.data_generation import DataGeneration
 from pcdt.components.summary_processing import SummaryProcessing
 from pcdt.server_ctl_dtos import ConfigurationDataEntryDto, SummaryDataEntryDto
-from pcdt.server_ctl import DctServer as ServerCtl
+from pcdt.server_ctl import PcdtServer as ServerCtl
 from pcdt.server_ctl import ServerRequestData
 from pcdt.server_ctl import RequestCmd
 from pcdt.server_ctl import ParetoFrontSource
@@ -54,7 +54,7 @@ from pcdt.constant_path import (CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER, CIRCU
 
 logger = logging.getLogger(__name__)
 
-class DctMainCtl:
+class MainCtl:
     """Main class for control dab-optimization."""
 
     # Processing time data (Prepared for future implementation with  multiple configurations)
@@ -92,7 +92,7 @@ class DctMainCtl:
     _break_point_message: str
 
     def __init__(self) -> None:
-        """Initialize the member variable of the DctMainCtl-class."""
+        """Initialize the member variable of the MainCtl-class."""
         # List data for server communication
         self._circuit_list: list[srv_ctl_dtos.ConfigurationDataEntryDto]
         self._inductor_main_list: list[srv_ctl_dtos.MagneticDataEntryDto]
@@ -252,8 +252,8 @@ class DctMainCtl:
             raise ValueError("Serious programming error in topology selection in verification. Please write an issue!")
 
         # Check the number of entries within parameter topology files: 2 entries are expected (general and circuit)
-        issue_report = DctMainCtl._check_list_entries("configuration_data_files", "topology_files", 2,
-                                                      len(act_toml_prog_flow.configuration_data_files.topology_files))
+        issue_report = MainCtl._check_list_entries("configuration_data_files", "topology_files", 2,
+                                                   len(act_toml_prog_flow.configuration_data_files.topology_files))
 
         # Read the number of required components
         number_of_capacitors = topology_optimization.get_number_of_required_capacitors()
@@ -261,23 +261,23 @@ class DctMainCtl:
         number_of_transformers = topology_optimization.get_number_of_required_transformers()
 
         # Check numbers of trials, calculation modes and configuration files
-        issue_report = issue_report + DctMainCtl._check_list_entries("capacitor", "calculation_modes", number_of_capacitors,
-                                                                     len(act_toml_prog_flow.capacitor.calculation_modes))
-        issue_report = issue_report + DctMainCtl._check_list_entries(
+        issue_report = issue_report + MainCtl._check_list_entries("capacitor", "calculation_modes", number_of_capacitors,
+                                                                  len(act_toml_prog_flow.capacitor.calculation_modes))
+        issue_report = issue_report + MainCtl._check_list_entries(
             "configuration_data_files", "capacitor_configuration_files", number_of_capacitors,
             len(act_toml_prog_flow.configuration_data_files.capacitor_configuration_files))
-        issue_report = issue_report + DctMainCtl._check_list_entries(
+        issue_report = issue_report + MainCtl._check_list_entries(
             "inductor", "numbers_of_trials", number_of_inductors, len(act_toml_prog_flow.inductor.numbers_of_trials))
-        issue_report = issue_report + DctMainCtl._check_list_entries(
+        issue_report = issue_report + MainCtl._check_list_entries(
             "inductor", "calculation_modes", number_of_inductors, len(act_toml_prog_flow.inductor.calculation_modes))
-        issue_report = issue_report + DctMainCtl._check_list_entries(
+        issue_report = issue_report + MainCtl._check_list_entries(
             "configuration_data_files", "inductor_configuration_files",
             number_of_inductors, len(act_toml_prog_flow.configuration_data_files.inductor_configuration_files))
-        issue_report = issue_report + DctMainCtl._check_list_entries("transformer", "numbers_of_trials", number_of_transformers,
-                                                                     len(act_toml_prog_flow.transformer.numbers_of_trials))
-        issue_report = issue_report + DctMainCtl._check_list_entries("transformer", "calculation_modes", number_of_transformers,
-                                                                     len(act_toml_prog_flow.transformer.calculation_modes))
-        issue_report = issue_report + DctMainCtl._check_list_entries(
+        issue_report = issue_report + MainCtl._check_list_entries("transformer", "numbers_of_trials", number_of_transformers,
+                                                                  len(act_toml_prog_flow.transformer.numbers_of_trials))
+        issue_report = issue_report + MainCtl._check_list_entries("transformer", "calculation_modes", number_of_transformers,
+                                                                  len(act_toml_prog_flow.transformer.calculation_modes))
+        issue_report = issue_report + MainCtl._check_list_entries(
             "configuration_data_files", "transformer_configuration_files",
             number_of_transformers, len(act_toml_prog_flow.configuration_data_files.transformer_configuration_files))
 
@@ -591,8 +591,8 @@ class DctMainCtl:
                                      "does not exist or file path is wrong. No sqlite3-database found!")
 
         # Check if the processing is completed for all designs
-        is_processing_complete, issue_report = DctMainCtl._is_processing_complete(act_study_data.optimization_directory,
-                                                                                  complete_file_name)
+        is_processing_complete, issue_report = MainCtl._is_processing_complete(act_study_data.optimization_directory,
+                                                                               complete_file_name)
 
         return is_processing_complete, issue_report
 
@@ -605,7 +605,7 @@ class DctMainCtl:
         :param act_study_data: Information about the study name and study path
         :type  act_study_data: StudyData
         :param act_toml_data: toml-data class
-        :type  act_toml_data: dct.TomlHeatSink
+        :type  act_toml_data: pcdt.TomlHeatSink
         :param act_heat_sink_folder: Folder, where data are stored
         :type  act_heat_sink_folder: str
         :param circuit_filtered_index_list: List with the name of filtered results
@@ -667,7 +667,7 @@ class DctMainCtl:
         # Compare heat sink configuration if no error occurs
         if is_heat_sink_disc_useable:
             # Load the file
-            is_heat_sink_loaded, heat_sink_dict_disc = DctMainCtl.load_toml_file(toml_file_name)
+            is_heat_sink_loaded, heat_sink_dict_disc = MainCtl.load_toml_file(toml_file_name)
             # Check for success
             if is_heat_sink_loaded:
                 toml_heat_sink_disc = pcdt.TomlHeatSink(**heat_sink_dict_disc)
@@ -767,7 +767,7 @@ class DctMainCtl:
             path_list.append(os.path.join(base_directory, subdirectory))
 
         # Create pkl-file completion list
-        pkl_file_list = DctMainCtl._create_pkl_file_completion_list(path_list, ".pkl")
+        pkl_file_list = MainCtl._create_pkl_file_completion_list(path_list, ".pkl")
 
         # Store processing_complete_file
         with open(processing_complete_file, "w", encoding="utf-8") as file_handle:
@@ -804,21 +804,21 @@ class DctMainCtl:
         path_list.append(base_directory)
 
         # Create csv-file completion list of csv-files
-        pkl_file_list = DctMainCtl._create_pkl_file_completion_list(path_list, ".csv")
+        pkl_file_list = MainCtl._create_pkl_file_completion_list(path_list, ".csv")
         # Create path list with pkl-file folders SUMMARY_COMBINATION_FOLDER and PARETO_PLOT_PKL_FOLDER
         path_list = [os.path.join(base_directory, SUMMARY_COMBINATION_FOLDER), os.path.join(base_directory, PARETO_PLOT_PKL_FOLDER)]
         # Append pre summary completion list with pkl-file entries
-        pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".pkl")
+        pkl_file_list = pkl_file_list + MainCtl._create_pkl_file_completion_list(path_list, ".pkl")
 
         # Create path list with pdf-file folder PARETO_PLOT_PDF_FOLDER
         path_list = [os.path.join(base_directory, PARETO_PLOT_PDF_FOLDER)]
         # Append pre summary completion list with pkl-file entries
-        pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".pdf")
+        pkl_file_list = pkl_file_list + MainCtl._create_pkl_file_completion_list(path_list, ".pdf")
 
         # Create path list with pdf-file folder PARETO_PLOT_PDF_FOLDER
         path_list = [os.path.join(base_directory, PARETO_PLOT_PNG_FOLDER)]
         # Append pre summary completion list with pkl-file entries
-        pkl_file_list = pkl_file_list + DctMainCtl._create_pkl_file_completion_list(path_list, ".png")
+        pkl_file_list = pkl_file_list + MainCtl._create_pkl_file_completion_list(path_list, ".png")
 
         # Store processing_complete_file
         with open(processing_complete_file, "w", encoding="utf-8") as file_handle:
@@ -1514,7 +1514,7 @@ class DctMainCtl:
 
         self.set_up_folder_structure(toml_prog_flow)
 
-        DctMainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "software_versions.txt"))
+        MainCtl.log_software_versions(os.path.join(os.path.abspath(toml_prog_flow.general.project_directory), "software_versions.txt"))
 
         # Extract topology dependent configuration files (0 = general file, 1 = circuit file)
         general_configuration_file: str = toml_prog_flow.configuration_data_files.topology_files[0]
@@ -1551,7 +1551,7 @@ class DctMainCtl:
                 study_name=f"cap_{index}_" + capacitor_entry.replace(".toml", ""),
                 optimization_directory=os.path.join(project_directory, toml_prog_flow.capacitor.subdirectory,
                                                     circuit_configuration_file.replace(".toml", "")),
-                calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.capacitor.calculation_modes[index]))
+                calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.capacitor.calculation_modes[index]))
             # Add component to list
             self._capacitor_selection_configuration_list.append(CapacitorConfiguration(study_data=capacitor_selection_study_data))
 
@@ -1561,7 +1561,7 @@ class DctMainCtl:
                 optimization_directory=os.path.join(project_directory, toml_prog_flow.inductor.subdirectory,
                                                     circuit_configuration_file.replace(".toml", "")),
                 number_of_trials=toml_prog_flow.inductor.numbers_of_trials[index],
-                calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.inductor.calculation_modes[index]))
+                calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.inductor.calculation_modes[index]))
             # Add component to list
             self._inductor_study_configuration_list.append(InductorConfiguration(
                 study_data=inductor_study_data, simulation_calculation_mode=inductor_study_data.calculation_mode))
@@ -1572,7 +1572,7 @@ class DctMainCtl:
                 optimization_directory=os.path.join(project_directory, toml_prog_flow.transformer.subdirectory,
                                                     circuit_configuration_file.replace(".toml", "")),
                 number_of_trials=toml_prog_flow.transformer.numbers_of_trials[index],
-                calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.transformer.calculation_modes[index]))
+                calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.transformer.calculation_modes[index]))
             # Add component to list
             self._transformer_study_configuration_list.append(TransformerConfiguration(
                 study_data=transformer_study_data, simulation_calculation_mode=transformer_study_data.calculation_mode))
@@ -1582,24 +1582,24 @@ class DctMainCtl:
             optimization_directory=os.path.join(project_directory, toml_prog_flow.heat_sink.subdirectory,
                                                 toml_prog_flow.configuration_data_files.heat_sink_configuration_file.replace(".toml", "")),
             number_of_trials=toml_prog_flow.heat_sink.number_of_trials,
-            calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.heat_sink.calculation_mode)
+            calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.heat_sink.calculation_mode)
         )
 
         _pre_summary_data = StudyData(study_name="pre_summary",
                                       optimization_directory=os.path.join(project_directory, toml_prog_flow.pre_summary.subdirectory,
                                                                           circuit_configuration_file.replace(".toml", "")),
-                                      calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.pre_summary.calculation_mode))
+                                      calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.pre_summary.calculation_mode))
 
         _summary_data = StudyData(study_name="summary",
                                   optimization_directory=os.path.join(project_directory,
                                                                       toml_prog_flow.summary.subdirectory,
                                                                       circuit_configuration_file.replace(".toml", "")),
-                                  calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.summary.calculation_mode))
+                                  calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.summary.calculation_mode))
 
         _data_generation = StudyData(study_name="data_generation",
                                      optimization_directory=os.path.join(project_directory, toml_prog_flow.data_generation.subdirectory,
                                                                          circuit_configuration_file.replace(".toml", "")),
-                                     calculation_mode=DctMainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
+                                     calculation_mode=MainCtl._get_calculation_mode(toml_prog_flow.data_generation.calculation_mode))
 
         # Initialize the data for server monitoring (Only 1 circuit configuration is used, later to change)
         (self._circuit_list, self._inductor_main_list, self._inductor_list, self._transformer_main_list,
@@ -1648,10 +1648,10 @@ class DctMainCtl:
         self._circuit_optimization.init_study_information(
             circuit_configuration_file.replace(".toml", ""),
             project_directory, toml_prog_flow.circuit.subdirectory,
-            DctMainCtl._get_calculation_mode(toml_prog_flow.circuit.calculation_mode))
+            MainCtl._get_calculation_mode(toml_prog_flow.circuit.calculation_mode))
 
         # Init circuit configuration
-        is_circuit_loaded, dict_circuit = DctMainCtl.load_toml_file(circuit_configuration_file)
+        is_circuit_loaded, dict_circuit = MainCtl.load_toml_file(circuit_configuration_file)
 
         if not is_circuit_loaded:
             file_path = os.path.join(workspace_path, circuit_configuration_file)
@@ -1669,8 +1669,8 @@ class DctMainCtl:
         # Check, if electrical optimization is to skip
         if self._circuit_optimization.circuit_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check completion of process
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._circuit_optimization.circuit_study_data,
-                                                                  PROCESSING_COMPLETE_FILE, True, [])
+            is_skippable, issue_report = MainCtl._is_skippable(self._circuit_optimization.circuit_study_data,
+                                                               PROCESSING_COMPLETE_FILE, True, [])
             # Evaluate the result of completion check
             if is_skippable:
                 # Check topology dependent skip reason
@@ -1720,15 +1720,15 @@ class DctMainCtl:
             self._capacitor_selection_configuration_list[index].capacitor_toml_data = toml_capacitor
 
             # If circuit calculation mode is not skipped, all further calculation modes are impacted
-            DctMainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
-                                                self._capacitor_selection_configuration_list[index].study_data)
+            MainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
+                                             self._capacitor_selection_configuration_list[index].study_data)
 
             # Create processing complete indicator file name
             processing_complete_file_name = f"cap_{index}_" + PROCESSING_COMPLETE_FILE
             # Check, if capacitor selection is to skip
             if self._capacitor_selection_configuration_list[index].study_data.calculation_mode == CalcModeEnum.skip_mode:
                 # Check if capacitor selection is skippable
-                is_skippable, issue_report = DctMainCtl._is_skippable(
+                is_skippable, issue_report = MainCtl._is_skippable(
                     self._capacitor_selection_configuration_list[index].study_data, processing_complete_file_name)
                 # Evaluate the result of circuit check
                 if not is_skippable:
@@ -1781,8 +1781,8 @@ class DctMainCtl:
             self._inductor_study_configuration_list[index].inductor_toml_data = toml_inductor
 
             # If circuit calculation mode is not skipped, all further calculation modes are impacted
-            DctMainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
-                                                self._inductor_study_configuration_list[index].study_data)
+            MainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
+                                             self._inductor_study_configuration_list[index].study_data)
 
             # Create processing complete indicator file name
             processing_complete_file_name = f"ind_{index}_" + PROCESSING_COMPLETE_FILE
@@ -1796,7 +1796,7 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"ind_{index}_" + RELUCTANCE_COMPLETE_FILE
                 # Check if the optimization is skippable for analytic calculation
-                is_skippable, issue_report = DctMainCtl._is_skippable(
+                is_skippable, issue_report = MainCtl._is_skippable(
                     self._inductor_study_configuration_list[index].study_data, processing_complete_file, True,
                     self._circuit_optimization.filter_data.filtered_list_files)
                 # Evaluate if the optimization is skippable for analytic calculation
@@ -1811,7 +1811,7 @@ class DctMainCtl:
                     # Assemble processing complete file name
                     processing_complete_file = f"ind_{index}_" + FEM_COMPLETE_FILE
                     # Check if the optimization is skippable for simulation calculation
-                    is_skippable, issue_report = DctMainCtl._is_skippable(
+                    is_skippable, issue_report = MainCtl._is_skippable(
                         self._inductor_study_configuration_list[index].study_data, processing_complete_file, True,
                         self._circuit_optimization.filter_data.filtered_list_files)
                     # Evaluate if the optimization is skippable for simulation calculation
@@ -1865,8 +1865,8 @@ class DctMainCtl:
             self._transformer_study_configuration_list[index].transformer_toml_data = toml_transformer
 
             # If circuit calculation mode is not skipped, all further calculation modes are impacted
-            DctMainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
-                                                self._transformer_study_configuration_list[index].study_data)
+            MainCtl._update_calculation_mode(self._circuit_optimization.circuit_study_data.calculation_mode,
+                                             self._transformer_study_configuration_list[index].study_data)
 
             # Create processing complete indicator file name
             processing_complete_file_name = f"trf_{index}_" + PROCESSING_COMPLETE_FILE
@@ -1880,7 +1880,7 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"trf_{index}_" + RELUCTANCE_COMPLETE_FILE
                 # Check if the optimization is skippable for analytic calculation
-                is_skippable, issue_report = DctMainCtl._is_skippable(
+                is_skippable, issue_report = MainCtl._is_skippable(
                     self._transformer_study_configuration_list[index].study_data, processing_complete_file, True,
                     self._circuit_optimization.filter_data.filtered_list_files)
                 # Evaluate if the optimization is skippable for analytic calculation
@@ -1895,7 +1895,7 @@ class DctMainCtl:
                     # Assemble processing complete file name
                     processing_complete_file = f"trf_{index}_" + FEM_COMPLETE_FILE
                     # Check if the optimization is skippable for simulation calculation
-                    is_skippable, issue_report = DctMainCtl._is_skippable(
+                    is_skippable, issue_report = MainCtl._is_skippable(
                         self._transformer_study_configuration_list[index].study_data, processing_complete_file, True,
                         self._circuit_optimization.filter_data.filtered_list_files)
                     # Evaluate if the optimization is skippable for simulation calculation
@@ -1939,8 +1939,8 @@ class DctMainCtl:
         # Check, if heat sink optimization is to skip
         if self._heat_sink_study_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check if the optimization is skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(self._heat_sink_study_data,
-                                                                  PROCESSING_COMPLETE_FILE, True, [])
+            is_skippable, issue_report = MainCtl._is_skippable(self._heat_sink_study_data,
+                                                               PROCESSING_COMPLETE_FILE, True, [])
 
             # Evaluate if the optimization is skippable
             if not is_skippable:
@@ -1978,8 +1978,8 @@ class DctMainCtl:
         # Check, if pre-summary is to skip
         if _pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check if pre summary are skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(_pre_summary_data,
-                                                                  PROCESSING_COMPLETE_FILE, False, [])
+            is_skippable, issue_report = MainCtl._is_skippable(_pre_summary_data,
+                                                               PROCESSING_COMPLETE_FILE, False, [])
 
             # Evaluate if the pre summary is skippable
             if not is_skippable:
@@ -2000,8 +2000,8 @@ class DctMainCtl:
         # Check, if summary is to skip
         if _summary_data.calculation_mode == CalcModeEnum.skip_mode:
             # Check if pre summary are skippable
-            is_skippable, issue_report = DctMainCtl._is_skippable(_summary_data,
-                                                                  PROCESSING_COMPLETE_FILE, False, [])
+            is_skippable, issue_report = MainCtl._is_skippable(_summary_data,
+                                                               PROCESSING_COMPLETE_FILE, False, [])
 
             # Evaluate if the pre summary is skippable
             if not is_skippable:
@@ -2041,7 +2041,7 @@ class DctMainCtl:
         # _srv_response_handler.start()
 
         # Start the server
-        # srv_ctl.start_dct_server(srv_request_queue, srv_response_queue, True)
+        # srv_ctl.start_pcdt_server(srv_request_queue, srv_response_queue, True)
 
         # Initialize key input handler
         # self._key_input_handler = threading.Thread(target=self._key_input,
@@ -2063,8 +2063,8 @@ class DctMainCtl:
             self._circuit_optimization.initialize_circuit_optimization()
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
-                                                   PROCESSING_COMPLETE_FILE)
+            MainCtl._delete_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                                PROCESSING_COMPLETE_FILE)
             # Perform circuit optimization
             self._circuit_optimization.start_proceed_study(number_trials=toml_prog_flow.circuit.number_of_trials)
 
@@ -2086,8 +2086,8 @@ class DctMainCtl:
                 raise ValueError("Filtered data error:"+issue_report)
 
             # Set processing complete indicator ASA: Later to do within optimization handler by lambda function
-            DctMainCtl._set_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
-                                                FILTERED_RESULTS_PATH, PROCESSING_COMPLETE_FILE)
+            MainCtl._set_processing_complete(self._circuit_optimization.circuit_study_data.optimization_directory,
+                                             FILTERED_RESULTS_PATH, PROCESSING_COMPLETE_FILE)
 
             # Workaround: Set filtered result id list here, later to handle in circuit_optimization
             self._filtered_list_files = self._circuit_optimization.filter_data.filtered_list_files
@@ -2134,8 +2134,8 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"cap_{index}_" + PROCESSING_COMPLETE_FILE
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._capacitor_selection_configuration_list[index].study_data.optimization_directory,
-                                                       processing_complete_file)
+                MainCtl._delete_processing_complete(self._capacitor_selection_configuration_list[index].study_data.optimization_directory,
+                                                    processing_complete_file)
                 # Perform capacitor optimization
                 self._capacitor_selection.optimization_handler(filter_data=self._circuit_optimization.filter_data,
                                                                capacitor_in_circuit=index,
@@ -2143,9 +2143,9 @@ class DctMainCtl:
                 # Set processing complete indicator
                 design_directory = os.path.join(self._capacitor_selection_configuration_list[index].study_data.study_name,
                                                 CIRCUIT_CAPACITOR_LOSS_FOLDER)
-                DctMainCtl._set_processing_complete(self._capacitor_selection_configuration_list[index].study_data.optimization_directory,
-                                                    design_directory, processing_complete_file,
-                                                    self._circuit_optimization.filter_data.filtered_list_files)
+                MainCtl._set_processing_complete(self._capacitor_selection_configuration_list[index].study_data.optimization_directory,
+                                                 design_directory, processing_complete_file,
+                                                 self._circuit_optimization.filter_data.filtered_list_files)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.capacitor, "Capacitor 1 Pareto front calculated")
@@ -2179,17 +2179,17 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"ind_{index}_" + RELUCTANCE_COMPLETE_FILE
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
-                                                       processing_complete_file)
+                MainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
+                                                    processing_complete_file)
                 # Perform inductor optimization
                 self._inductor_optimization.optimization_handler_reluctance_model(
                     self._circuit_optimization.circuit_study_data.study_name, index, debug=toml_debug)
                 # Set processing complete indicator
                 design_directory = os.path.join(self._inductor_study_configuration_list[index].study_data.study_name,
                                                 CIRCUIT_INDUCTOR_RELUCTANCE_LOSSES_FOLDER)
-                DctMainCtl._set_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
-                                                    design_directory, processing_complete_file,
-                                                    self._circuit_optimization.filter_data.filtered_list_files)
+                MainCtl._set_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
+                                                 design_directory, processing_complete_file,
+                                                 self._circuit_optimization.filter_data.filtered_list_files)
 
             # Set the status to Done
             self._inductor_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -2229,17 +2229,17 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"trf_{index}_" + RELUCTANCE_COMPLETE_FILE
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
-                                                       processing_complete_file)
+                MainCtl._delete_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
+                                                    processing_complete_file)
                 # Perform transformer optimization
                 self._transformer_optimization.optimization_handler_reluctance_model(
                     self._circuit_optimization.circuit_study_data.study_name, index, debug=toml_debug)
                 # Set processing complete indicator
                 design_directory = os.path.join(self._transformer_study_configuration_list[index].study_data.study_name,
                                                 CIRCUIT_TRANSFORMER_RELUCTANCE_LOSSES_FOLDER)
-                DctMainCtl._set_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
-                                                    design_directory, processing_complete_file,
-                                                    self._circuit_optimization.filter_data.filtered_list_files)
+                MainCtl._set_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
+                                                 design_directory, processing_complete_file,
+                                                 self._circuit_optimization.filter_data.filtered_list_files)
 
             # Set the status to Done
             self._transformer_main_list[0].progress_data.progress_status = ProgressStatus.Done
@@ -2262,12 +2262,11 @@ class DctMainCtl:
             self._heat_sink_optimization.initialize_heat_sink_optimization(toml_heat_sink, toml_prog_flow)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(self._heat_sink_study_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            MainCtl._delete_processing_complete(self._heat_sink_study_data.optimization_directory, PROCESSING_COMPLETE_FILE)
             # Perform heat sink optimization
             self._heat_sink_optimization.optimization_handler(toml_prog_flow.heat_sink.number_of_trials)
             # Set processing complete indicator
-            DctMainCtl._set_processing_complete(self._heat_sink_study_data.optimization_directory,
-                                                "", PROCESSING_COMPLETE_FILE)
+            MainCtl._set_processing_complete(self._heat_sink_study_data.optimization_directory, "", PROCESSING_COMPLETE_FILE)
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.heat_sink, "Heat sink Pareto front calculated")
 
@@ -2295,7 +2294,7 @@ class DctMainCtl:
                 summary_study_data=_pre_summary_data, is_pre_summary=True)
 
             # Delete processing complete indicator
-            DctMainCtl._delete_processing_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            MainCtl._delete_processing_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
             # Start summary processing by generating the DataFrame from calculated simulation results
             s_df = self._summary_pre_processing.generate_cooling_requirement_database(
@@ -2344,7 +2343,7 @@ class DctMainCtl:
             ParetoPlots.plot_summary_weighted_efficiency(_pre_summary_data, self._circuit_optimization, toml_summary.pre_summary.filter_distance_efficiency)
 
             # Set processing complete indicator
-            DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            MainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.pre_summary, "Pre-summary is calculated")
@@ -2366,17 +2365,17 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"ind_{index}_" + FEM_COMPLETE_FILE
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
-                                                       processing_complete_file)
+                MainCtl._delete_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
+                                                    processing_complete_file)
                 # Perform inductor optimization
                 self._inductor_optimization.fem_simulation_handler(
                     self._circuit_optimization.circuit_study_data.study_name, index, debug=toml_debug)
                 # Set processing complete indicator
                 design_directory = os.path.join(self._inductor_study_configuration_list[index].study_data.study_name,
                                                 CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER)
-                DctMainCtl._set_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
-                                                    design_directory, processing_complete_file,
-                                                    self._circuit_optimization.filter_data.filtered_list_files)
+                MainCtl._set_processing_complete(self._inductor_study_configuration_list[index].study_data.optimization_directory,
+                                                 design_directory, processing_complete_file,
+                                                 self._circuit_optimization.filter_data.filtered_list_files)
 
         # --------------------------
         # Transformer FEM simulation
@@ -2394,17 +2393,17 @@ class DctMainCtl:
                 # Assemble processing complete file name
                 processing_complete_file = f"trf_{index}_" + FEM_COMPLETE_FILE
                 # Delete processing complete indicator
-                DctMainCtl._delete_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
-                                                       processing_complete_file)
+                MainCtl._delete_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
+                                                    processing_complete_file)
                 # Perform transformer optimization
                 self._transformer_optimization.fem_simulation_handler(
                     self._circuit_optimization.circuit_study_data.study_name, index, debug=toml_debug)
                 # Set processing complete indicator
                 design_directory = os.path.join(self._transformer_study_configuration_list[index].study_data.study_name,
                                                 CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
-                DctMainCtl._set_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
-                                                    design_directory, processing_complete_file,
-                                                    self._circuit_optimization.filter_data.filtered_list_files)
+                MainCtl._set_processing_complete(self._transformer_study_configuration_list[index].study_data.optimization_directory,
+                                                 design_directory, processing_complete_file,
+                                                 self._circuit_optimization.filter_data.filtered_list_files)
 
         # --------------------------
         # Final summary calculation
@@ -2491,7 +2490,7 @@ class DctMainCtl:
                                                             df_pareto_front_losses, is_pre_summary=False)
 
             # Set processing complete indicator
-            DctMainCtl._set_presummary_complete(_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            MainCtl._set_presummary_complete(_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Summary is calculated")
@@ -2522,7 +2521,7 @@ class DctMainCtl:
         self._total_time.stop_trigger()
 
         # Stop server
-        srv_ctl.stop_dct_server()
+        srv_ctl.stop_pcdt_server()
         # Stop svr_response_thread
         srv_response_stop_flag = True
 
@@ -2533,7 +2532,7 @@ if __name__ == "__main__":
     arg1 = ""
 
     # Create a main control instance
-    dct_mctl = DctMainCtl()
+    mctl = MainCtl()
 
     # Read the command line
     arguments = sys.argv
@@ -2559,4 +2558,4 @@ if __name__ == "__main__":
         # Convert it to the absolute path
         arg1 = os.path.abspath(arg1)
     # Execute program
-    dct_mctl.run_optimization_from_toml_configurations(arg1)
+    mctl.run_optimization_from_toml_configurations(arg1)

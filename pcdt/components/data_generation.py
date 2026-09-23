@@ -764,7 +764,7 @@ class DataGeneration:
                 transformer_insulations = transformer_configuration_list[count].transformer_toml_data.insulation  # type: ignore
                 if not isinstance(transformer_insulations, tc.TomlTransformerInsulation):
                     raise TypeError(f"Transformer insulations missing (Type {type(transformer_insulations)}, "
-                                    f"but not type dct.toml_checker.TomlTransformerInsulation.")
+                                    f"but not type pcdt.toml_checker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
                 transformer_figure_filepath = os.path.join(transformer_configuration_list[count].study_data.optimization_directory, str(circuit_id),

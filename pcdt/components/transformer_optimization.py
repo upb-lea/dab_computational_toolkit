@@ -50,7 +50,7 @@ class TransformerOptimization:
         """Verify the input parameter ranges.
 
         :param toml_transformer: toml transformer configuration
-        :type toml_transformer: dct.TomlTransformer
+        :type toml_transformer: pcdt.TomlTransformer
         :return: True, if the configuration was consistent
         :rtype: bool
         """
@@ -401,7 +401,7 @@ class TransformerOptimization:
         :param factor_dc_losses_min_max_list: Pareto filter, tolerance band = Multiplication of minimum/maximum losses
         :type factor_dc_losses_min_max_list: float
         :param debug: Debug DTO
-        :type debug: dct.Debug
+        :type debug: pcdt.Debug
         """
         # Number of filtered operating points
         quantity_transformer_id_pareto = 0
@@ -562,7 +562,7 @@ class TransformerOptimization:
         :param transformer_in_circuit: Number of transformer component in circuit
         :type  transformer_in_circuit: int
         :param debug: Debug DTO
-        :type debug: dct.Debug
+        :type debug: pcdt.Debug
         """
         # Check if class is initialized and transformer_in_circuit is valid
         if len(self._optimization_config_list) == 0:
@@ -601,7 +601,7 @@ class TransformerOptimization:
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
-        :type debug: dct.Debug
+        :type debug: pcdt.Debug
         """
         # Number of filtered operating points
         number_of_filtered_points = 0

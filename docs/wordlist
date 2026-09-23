@@ -248,7 +248,7 @@ Andi
 CircuitConfigurationDataDto
 ConfigurationDataEntryDto
 ctl
-DctMainCtl
+MainCtl
 Enum
 FastAPI
 filt
@@ -317,7 +317,7 @@ backend
 getenv
 os
 pageID
-DctServer
+Server
 xfmr
 filepaths
 basename
@@ -346,7 +346,7 @@ LogCaptureFixture
 CaptureFixture
 caplog
 capsys
-dctmainctl
+mainctl
 ascii
 RunTime
 CheckCondition

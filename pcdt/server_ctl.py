@@ -57,7 +57,7 @@ class ServerRequestData:
     # Index of circuit filtered point
     c_filtered_point_index: int
 
-class DctServer:
+class PcdtServer:
     """Server to visualize the actual progress and calculated Pareto-fronts."""
 
     # Method declaration
@@ -134,7 +134,7 @@ class DctServer:
         return request.session.get("user")
 
     @staticmethod
-    def start_dct_server(act_server_request_queue: Queue, act_server_response_queue: Queue, program_exit_flag: bool) -> None:
+    def start_pcdt_server(act_server_request_queue: Queue, act_server_response_queue: Queue, program_exit_flag: bool) -> None:
         """Start the server to control and supervise simulation.
 
         :param act_server_request_queue: Queue object to request data from main process
@@ -144,33 +144,33 @@ class DctServer:
         :param program_exit_flag: Flag, which indicates to terminate the program on request
         :type  program_exit_flag: boolean
         """
-        DctServer._prog_exit_flag = program_exit_flag
+        PcdtServer._prog_exit_flag = program_exit_flag
 
         # Start the server process
-        DctServer._server_process = multiprocessing.Process(target=DctServer._run_server,
-                                                            args=(act_server_request_queue, act_server_response_queue,))
-        DctServer._server_process.start()
+        PcdtServer._server_process = multiprocessing.Process(target=PcdtServer._run_server,
+                                                             args=(act_server_request_queue, act_server_response_queue,))
+        PcdtServer._server_process.start()
 
         # Check if server process supervision is to start due to program exit requested by server
-        if DctServer._prog_exit_flag:
+        if PcdtServer._prog_exit_flag:
             # Create thread for the server supervision and start it
-            DctServer._server_supervision = threading.Thread(target=DctServer._supervise_server_stop, daemon=True)
-            DctServer._server_supervision.start()
+            PcdtServer._server_supervision = threading.Thread(target=PcdtServer._supervise_server_stop, daemon=True)
+            PcdtServer._server_supervision.start()
 
     @staticmethod
-    def stop_dct_server() -> None:
+    def stop_pcdt_server() -> None:
         """Stop the server for the control and supervision of the simulation."""
         # Set program exit flag to false because program will be exit by themselves
-        DctServer._prog_exit_flag = False
+        PcdtServer._prog_exit_flag = False
 
         # Request server to stop
-        DctServer.req_stop.value = 1
+        PcdtServer.req_stop.value = 1
         # Stop the server  process (if started)
-        if DctServer._server_process is not None:
-            DctServer._server_process.join(5)
+        if PcdtServer._server_process is not None:
+            PcdtServer._server_process.join(5)
         # Stop server supervision if started
-        if DctServer._server_supervision is not None:
-            DctServer._server_supervision.join(5)
+        if PcdtServer._server_supervision is not None:
+            PcdtServer._server_supervision.join(5)
 
     @staticmethod
     def _supervise_server_stop() -> None:
@@ -180,9 +180,9 @@ class DctServer:
             # Reduce CPU-supervise load by toggle each second
             time.sleep(1)
             # Check if server is stopped
-            if DctServer.stop_flag.value == 1:
+            if PcdtServer.stop_flag.value == 1:
                 # Requested to stop if the program needs to stop too
-                if DctServer._prog_exit_flag:
+                if PcdtServer._prog_exit_flag:
                     # Check if the program needs to stop too
                     print("Program stop is requested")
                     # Hard kill of process
@@ -199,36 +199,36 @@ class DctServer:
         :type  act_server_response_queue: Queue
         """
         # Overtake the shared memory variable
-        DctServer.server_request_queue = act_server_request_queue
-        DctServer.server_response_queue = act_server_response_queue
+        PcdtServer.server_request_queue = act_server_request_queue
+        PcdtServer.server_response_queue = act_server_response_queue
         # Start the server (blocking call)
-        config = uvicorn.Config(DctServer.app, host="127.0.0.1", port=8008,
-                                ssl_keyfile=DctServer._ssl_key, ssl_certfile=DctServer._ssl_cert, log_config=None)
+        config = uvicorn.Config(PcdtServer.app, host="127.0.0.1", port=8008,
+                                ssl_keyfile=PcdtServer._ssl_key, ssl_certfile=PcdtServer._ssl_cert, log_config=None)
 
-        DctServer.server_object = uvicorn.Server(config)
+        PcdtServer.server_object = uvicorn.Server(config)
         # Create thread for the server and start it
-        DctServer.server_thread = threading.Thread(target=DctServer.dct_server_thread, daemon=True)
-        DctServer.server_thread.start()
+        PcdtServer.server_thread = threading.Thread(target=PcdtServer.pcdt_server_thread, daemon=True)
+        PcdtServer.server_thread.start()
         # Supervise if the server is stopped by main
         while True:
             # Reduce CPU-supervise load by toggle each second
             time.sleep(1)
             # Check if server is requested to stop
-            if DctServer.req_stop.value == 1:
+            if PcdtServer.req_stop.value == 1:
                 break
 
         # Stop the server
-        DctServer.server_object.should_exit = True
+        PcdtServer.server_object.should_exit = True
         # Wait for thread stop
-        DctServer.server_thread.join()
+        PcdtServer.server_thread.join()
         # Set server stop flag to 0
-        DctServer.stop_flag.value = 1
+        PcdtServer.stop_flag.value = 1
 
     @staticmethod
-    def dct_server_thread() -> None:
+    def pcdt_server_thread() -> None:
         """Start the FastAPI-server."""
         # Start the server in a blocking call
-        DctServer.server_object.run()
+        PcdtServer.server_object.run()
 
     @staticmethod
     def get_table_data(component_data_list: list[server_ctl_dtos.ConfigurationDataEntryDto]) -> list[dict]:
@@ -249,8 +249,8 @@ class DctServer:
         for entry in component_data_list:
             table_data.append({"conf_name": entry.configuration_name, "nb_trails": entry.number_of_trials,
                                "nb_filt_pts": entry.progress_data.number_of_filtered_points,
-                               "process_time": DctServer.get_format_time(entry.progress_data.run_time),
-                               "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                               "process_time": PcdtServer.get_format_time(entry.progress_data.run_time),
+                               "image_link": PcdtServer.icon[entry.progress_data.progress_status.value],
                                "status": entry.progress_data.progress_status.name,
                                "index": index})
             # Increment index
@@ -276,8 +276,8 @@ class DctServer:
             magnetic_table_data_list.append({"conf_name": entry.magnetic_configuration_name,
                                              "number_performed_calculations": entry.number_performed_calculations,
                                              "number_calculations": entry.number_calculations,
-                                             "progress_time": DctServer.get_format_time(entry.progress_data.run_time),
-                                             "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                                             "progress_time": PcdtServer.get_format_time(entry.progress_data.run_time),
+                                             "image_link": PcdtServer.icon[entry.progress_data.progress_status.value],
                                              "status": entry.progress_data.progress_status.name, "index": 0})
 
         return magnetic_table_data_list
@@ -296,8 +296,8 @@ class DctServer:
         circuit_table_data: dict = {"conf_name": circuit_data.configuration_name,
                                     "nb_trails": circuit_data.number_of_trials,
                                     "c_filtered_points_name_list": circuit_data.filtered_points_name_list,
-                                    "process_time": DctServer.get_format_time(circuit_data.progress_data.run_time),
-                                    "image_link": DctServer.icon[circuit_data.progress_data.progress_status.value],
+                                    "process_time": PcdtServer.get_format_time(circuit_data.progress_data.run_time),
+                                    "image_link": PcdtServer.icon[circuit_data.progress_data.progress_status.value],
                                     "status": circuit_data.progress_data.progress_status.name, "index": 0}
 
         return circuit_table_data
@@ -322,8 +322,8 @@ class DctServer:
         for entry in act_heat_sink_data_list:
             # Enter the table data
             heat_sink_table_data_list.append({"conf_name": entry.configuration_name, "nb_trails": entry.number_of_trials,
-                                              "process_time": DctServer.get_format_time(entry.progress_data.run_time),
-                                              "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                                              "process_time": PcdtServer.get_format_time(entry.progress_data.run_time),
+                                              "image_link": PcdtServer.icon[entry.progress_data.progress_status.value],
                                               "status": entry.progress_data.progress_status.name, "index": entry_index})
             # Increment index
             entry_index = entry_index + 1
@@ -349,9 +349,9 @@ class DctServer:
         # Loop over the configurations
         for entry in act_summary_data_list:
             # Enter the table data
-            summary_table_data_list.append({"conf_name": entry.configuration_name, "process_time": DctServer.get_format_time(entry.progress_data.run_time),
+            summary_table_data_list.append({"conf_name": entry.configuration_name, "process_time": PcdtServer.get_format_time(entry.progress_data.run_time),
                                             "nb_of_combinations": entry.number_of_combinations,
-                                            "image_link": DctServer.icon[entry.progress_data.progress_status.value],
+                                            "image_link": PcdtServer.icon[entry.progress_data.progress_status.value],
                                             "status": entry.progress_data.progress_status.name, "index": entry_index})
             # Increment index
             entry_index = entry_index + 1
@@ -478,29 +478,28 @@ class DctServer:
         if action == "logout":
             request.session.clear()
             user = ""
-            DctServer.status_message = "User is logged off"
+            PcdtServer.status_message = "User is logged off"
         elif action == "pareto_circuit":
             # Display Pareto front
-            return DctServer.get_pareto_front(request, button_index, table_index, "/html_homepage1")
+            return PcdtServer.get_pareto_front(request, button_index, table_index, "/html_homepage1")
         elif action == "details" and table_index == 1:
             # Check if button_index is valid
             if button_index is not None:
-                DctServer._c_config_index = button_index
+                PcdtServer._c_config_index = button_index
             else:
-                DctServer._c_config_index = 0
-            return await DctServer.main_page2(request, "", 0, user)
+                PcdtServer._c_config_index = 0
+            return await PcdtServer.main_page2(request, "", 0, user)
         elif action == "control_sheet":
             # Check if user is authorized
             if user is not None:
-                if DctServer.break_status == 1:
-                    DctServer.break_status = 0
+                if PcdtServer.break_status == 1:
+                    PcdtServer.break_status = 0
                 else:
-                    DctServer.break_status = 1
+                    PcdtServer.break_status = 1
                 # Display the control page
-                break_status = DctServer.break_status
-                return DctServer.templates.TemplateResponse("control_page.html",
-                                                            {"request": request, "url_back": "/html_homepage1",
-                                                             "break_status": break_status})
+                break_status = PcdtServer.break_status
+                return PcdtServer.templates.TemplateResponse("control_page.html",
+                                                             {"request": request, "url_back": "/html_homepage1", "break_status": break_status})
 
         # Init request for main process
         request_data = ServerRequestData()
@@ -509,42 +508,42 @@ class DctServer:
         request_data.c_configuration_index = 0
 
         # Request data from main process
-        DctServer.server_request_queue.put(request_data)
+        PcdtServer.server_request_queue.put(request_data)
         # Wait for response
-        data: server_ctl_dtos.QueueMainData = DctServer.server_response_queue.get()
+        data: server_ctl_dtos.QueueMainData = PcdtServer.server_response_queue.get()
 
         # Add content circuit config
         # Create list (in future it is a list of configurations)
         circuit_conf_list: list[server_ctl_dtos.ConfigurationDataEntryDto] = data.circuit_list
-        table_data_circuit = DctServer.get_table_data(circuit_conf_list)
+        table_data_circuit = PcdtServer.get_table_data(circuit_conf_list)
 
-        table_main_data_inductor = DctServer.get_magnetic_table_data(data.inductor_main_list)
-        table_main_data_transformer = DctServer.get_magnetic_table_data(data.transformer_main_list)
+        table_main_data_inductor = PcdtServer.get_magnetic_table_data(data.inductor_main_list)
+        table_main_data_transformer = PcdtServer.get_magnetic_table_data(data.transformer_main_list)
 
         # Add content heat sink config
-        table_data_heat_sink = DctServer.get_heat_sink_table_data(data.heat_sink_list)
-        # table_data_heat_sink = DctServer.get_table_data(data.heat_sink_list)
+        table_data_heat_sink = PcdtServer.get_heat_sink_table_data(data.heat_sink_list)
+        # table_data_heat_sink = PcdtServer.get_table_data(data.heat_sink_list)
 
         # Add content summary
-        table_data_summary = DctServer.get_summary_table_data(data.summary_list)
+        table_data_summary = PcdtServer.get_summary_table_data(data.summary_list)
 
         # Add breakpoint notification text and evaluate breakpoint status
         breakpoint_message = data.break_point_notification
         if len(breakpoint_message) > 0:
-            DctServer._breakpoint_flag = True
+            PcdtServer._breakpoint_flag = True
         else:
-            DctServer._breakpoint_flag = False
+            PcdtServer._breakpoint_flag = False
 
-        return DctServer.templates.TemplateResponse("main_page1.html",
-                                                    {"request": request, "c_table_data": table_data_circuit,
-                                                     "i_table_main_data": table_main_data_inductor,
-                                                     "t_table_main_data": table_main_data_transformer,
-                                                     "h_table_data": table_data_heat_sink,
-                                                     "s_table_data": table_data_summary,
-                                                     "total_process_time": DctServer.get_format_time(data.total_process_time),
-                                                     "text_message": DctServer.status_message,
-                                                     "break_pt_text": breakpoint_message,
-                                                     "user": user})
+        return PcdtServer.templates.TemplateResponse("main_page1.html",
+                                                     {"request": request, "c_table_data": table_data_circuit,
+                                                      "i_table_main_data": table_main_data_inductor,
+                                                      "t_table_main_data": table_main_data_transformer,
+                                                      "h_table_data": table_data_heat_sink,
+                                                      "s_table_data": table_data_summary,
+                                                      "total_process_time": PcdtServer.get_format_time(data.total_process_time),
+                                                      "text_message": PcdtServer.status_message,
+                                                      "break_pt_text": breakpoint_message,
+                                                      "user": user})
 
     @staticmethod
     @app.get("/html_homepage2", response_class=HTMLResponse, response_model=None)
@@ -573,20 +572,19 @@ class DctServer:
         if action == "logout":
             request.session.clear()
             user = None
-            DctServer.status_message = "User is logged out"
+            PcdtServer.status_message = "User is logged out"
         # User request: Button press to display Pareto-front
         elif action == "pareto_circuit":
             # Display the Pareto-front
-            return DctServer.get_pareto_front(request, button_index, table_index, "/html_homepage2")
+            return PcdtServer.get_pareto_front(request, button_index, table_index, "/html_homepage2")
         # User request: Button press to change to control sheet
         elif action == "control_sheet":
             # Check if user is authorized
             if user is not None:
                 # Set the break status
-                break_status = DctServer._breakpoint_flag
-                return DctServer.templates.TemplateResponse("control_page.html",
-                                                            {"request": request, "url_back": "/html_homepage2",
-                                                             "break_status": break_status})
+                break_status = PcdtServer._breakpoint_flag
+                return PcdtServer.templates.TemplateResponse("control_page.html",
+                                                             {"request": request, "url_back": "/html_homepage2", "break_status": break_status})
 
         # Init request for main process
         request_data = ServerRequestData()
@@ -596,51 +594,51 @@ class DctServer:
         # Check selected filtered point index
         if not c_selected_filtered_point_index == -1:
             # Save the selected filtered point index
-            DctServer._c_filtered_point_index = c_selected_filtered_point_index
+            PcdtServer._c_filtered_point_index = c_selected_filtered_point_index
         else:
-            c_selected_filtered_point_index = DctServer._c_filtered_point_index
+            c_selected_filtered_point_index = PcdtServer._c_filtered_point_index
 
         request_data.c_filtered_point_index = c_selected_filtered_point_index
 
         # Request data from main process
-        DctServer.server_request_queue.put(request_data)
+        PcdtServer.server_request_queue.put(request_data)
         # Wait for response
-        data: server_ctl_dtos.QueueDetailData = DctServer.server_response_queue.get()
+        data: server_ctl_dtos.QueueDetailData = PcdtServer.server_response_queue.get()
 
         # Add content circuit config
-        table_data_circuit = DctServer.get_circuit_table_data(data.circuit_data)
+        table_data_circuit = PcdtServer.get_circuit_table_data(data.circuit_data)
 
         # Add content inductor config
-        table_data_inductor = DctServer.get_table_data(data.inductor_list)
+        table_data_inductor = PcdtServer.get_table_data(data.inductor_list)
 
         # Add content transformer config
-        table_data_transformer = DctServer.get_table_data(data.transformer_list)
+        table_data_transformer = PcdtServer.get_table_data(data.transformer_list)
 
         # Add content heat_sink config
-        table_data_heat_sink = DctServer.get_heat_sink_table_data(data.heat_sink_list)
-        # table_data_heat_sink = DctServer.get_table_data(data.heat_sink_list)
+        table_data_heat_sink = PcdtServer.get_heat_sink_table_data(data.heat_sink_list)
+        # table_data_heat_sink = PcdtServer.get_table_data(data.heat_sink_list)
 
         # Add content summary
-        table_data_summary = DctServer.get_summary_table_data([data.summary_data])
+        table_data_summary = PcdtServer.get_summary_table_data([data.summary_data])
 
         # Add breakpoint notification text and evaluate breakpoint status
         breakpoint_message = data.break_point_notification
         if len(breakpoint_message) > 0:
-            DctServer._breakpoint_flag = True
+            PcdtServer._breakpoint_flag = True
         else:
-            DctServer._breakpoint_flag = False
+            PcdtServer._breakpoint_flag = False
 
-        return DctServer.templates.TemplateResponse("main_page2.html", {"request": request,
-                                                                        "c_table_data": table_data_circuit,
-                                                                        "i_table_data": table_data_inductor,
-                                                                        "t_table_data": table_data_transformer,
-                                                                        "h_table_data": table_data_heat_sink,
-                                                                        "s_table_data": table_data_summary,
-                                                                        "configuration_process_time": DctServer.get_format_time(data.conf_process_time),
-                                                                        "c_selected_filtered_point_index": c_selected_filtered_point_index,
-                                                                        "text_message": DctServer.status_message,
-                                                                        "break_pt_text": breakpoint_message,
-                                                                        "user": user})
+        return PcdtServer.templates.TemplateResponse("main_page2.html", {"request": request,
+                                                                         "c_table_data": table_data_circuit,
+                                                                         "i_table_data": table_data_inductor,
+                                                                         "t_table_data": table_data_transformer,
+                                                                         "h_table_data": table_data_heat_sink,
+                                                                         "s_table_data": table_data_summary,
+                                                                         "configuration_process_time": PcdtServer.get_format_time(data.conf_process_time),
+                                                                         "c_selected_filtered_point_index": c_selected_filtered_point_index,
+                                                                         "text_message": PcdtServer.status_message,
+                                                                         "break_pt_text": breakpoint_message,
+                                                                         "user": user})
 
     @staticmethod
     @app.get("/control_page", response_class=HTMLResponse, response_model=None)
@@ -657,7 +655,7 @@ class DctServer:
         :rtype:  _TemplateResponse
         """
         if action == "continue":
-            DctServer.status_message = "Continue is active"
+            PcdtServer.status_message = "Continue is active"
 
             request_data: ServerRequestData = ServerRequestData()
 
@@ -668,20 +666,19 @@ class DctServer:
             # Index of circuit filtered point (will be ignored)
             request_data.c_filtered_point_index = 0
             # Request continue
-            DctServer.server_request_queue.put(request_data)
+            PcdtServer.server_request_queue.put(request_data)
             # Wait for response
-            data: bool = DctServer.server_response_queue.get()
+            data: bool = PcdtServer.server_response_queue.get()
             # Go back to main page
             return RedirectResponse(url="/html_homepage1", status_code=303)
         elif action == "pause":
-            DctServer.status_message = "Pause is active"
+            PcdtServer.status_message = "Pause is active"
         elif action == "stop":
-            DctServer.status_message = "Stops the server and the optimization (if prog_exit_flag==true)"
-            DctServer.req_stop.value = 1
+            PcdtServer.status_message = "Stops the server and the optimization (if prog_exit_flag==true)"
+            PcdtServer.req_stop.value = 1
 
-        return DctServer.templates.TemplateResponse("control_page.html",
-                                                    {"request": request, "url_back": url_back,
-                                                     "break_status": DctServer._breakpoint_flag})
+        return PcdtServer.templates.TemplateResponse("control_page.html",
+                                                     {"request": request, "url_back": url_back, "break_status": PcdtServer._breakpoint_flag})
 
     @staticmethod
     @app.get("/login", response_class=HTMLResponse, response_model=None)
@@ -693,7 +690,7 @@ class DctServer:
         :return: html-page
         :rtype:  _TemplateResponse
         """
-        return DctServer.templates.TemplateResponse("login.html", {"request": request})
+        return PcdtServer.templates.TemplateResponse("login.html", {"request": request})
 
     @staticmethod
     @app.post("/login", response_model=None)
@@ -711,11 +708,11 @@ class DctServer:
         :return: html-page
         :rtype:  _TemplateResponse | RedirectResponse
         """
-        if DctServer.users.get(username) == password:
+        if PcdtServer.users.get(username) == password:
             request.session["user"] = username
             # Send back success and request client to request base url '/' with GET-Method (303)
             return RedirectResponse(url="/", status_code=303)
-        return DctServer.templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+        return PcdtServer.templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
     @staticmethod
     @app.get("/admin", response_class=HTMLResponse, response_model=None)
@@ -733,7 +730,7 @@ class DctServer:
         """
         if not username:
             return RedirectResponse(url="/login")
-        return DctServer.templates.TemplateResponse("admin.html", {"request": request, "user": username})
+        return PcdtServer.templates.TemplateResponse("admin.html", {"request": request, "user": username})
 
     @staticmethod
     @app.get("/pareto_front", response_class=HTMLResponse, response_model=None)
@@ -754,10 +751,10 @@ class DctServer:
         """
         # Check for valid parameters
         if button_index is not None and table_index is not None:
-            pareto_front_source, item_configuration_index = DctServer._calculate_key_parameter(button_index, table_index,
-                                                                                               DctServer._c_filtered_point_index, 1)
+            pareto_front_source, item_configuration_index = PcdtServer._calculate_key_parameter(button_index, table_index,
+                                                                                                PcdtServer._c_filtered_point_index, 1)
         else:
-            pareto_front_source, item_configuration_index = DctServer._calculate_key_parameter(-1, -1, 0, 0)
+            pareto_front_source, item_configuration_index = PcdtServer._calculate_key_parameter(-1, -1, 0, 0)
 
         # Init request for main process
         request_data = ServerRequestData()
@@ -768,24 +765,24 @@ class DctServer:
         request_data.item_configuration_index = item_configuration_index
         request_data.pareto_source = pareto_front_source
         # Index of circuit filtered point
-        request_data.c_filtered_point_index = DctServer._c_filtered_point_index
+        request_data.c_filtered_point_index = PcdtServer._c_filtered_point_index
         # Request continue
-        DctServer.server_request_queue.put(request_data)
+        PcdtServer.server_request_queue.put(request_data)
         # Wait for response
-        html_data: server_ctl_dtos.QueueParetoFrontData = DctServer.server_response_queue.get()
+        html_data: server_ctl_dtos.QueueParetoFrontData = PcdtServer.server_response_queue.get()
 
         # Check if result is not valid
         if not html_data.validity:
-            # Invalid result page                                                                  })
-            return DctServer.templates.TemplateResponse("pareto_front.html",
-                                                        {"request": request,
-                                                         "info_string": html_data.evaluation_info,
-                                                         "pareto_front": "No data available",
-                                                         "url_back": url_back})
+            # Invalid result page
+            return PcdtServer.templates.TemplateResponse("pareto_front.html",
+                                                         {"request": request,
+                                                          "info_string": html_data.evaluation_info,
+                                                          "pareto_front": "No data available",
+                                                          "url_back": url_back})
         else:
             # Add information and back-button
-            return DctServer.templates.TemplateResponse("pareto_front.html",
-                                                        {"request": request,
-                                                         "info_string": html_data.evaluation_info,
-                                                         "pareto_front": html_data.pareto_front_optuna,
-                                                         "url_back": url_back})
+            return PcdtServer.templates.TemplateResponse("pareto_front.html",
+                                                         {"request": request,
+                                                          "info_string": html_data.evaluation_info,
+                                                          "pareto_front": html_data.pareto_front_optuna,
+                                                          "url_back": url_back})

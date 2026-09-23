@@ -239,7 +239,7 @@ class CapacitorSelection:
         Control the multi simulation processes.
 
         :param filter_data: Information about the filtered designs
-        :type  filter_data: dct.FilterData
+        :type  filter_data: pcdt.FilterData
         :param capacitor_in_circuit: Number of capacitor within topology
         :type  capacitor_in_circuit: int
         :param debug: True to use debug mode which stops earlier

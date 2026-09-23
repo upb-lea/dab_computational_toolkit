@@ -49,7 +49,7 @@ class InductorOptimization:
         """Verify the input parameter ranges from the inductor toml configuration file.
 
         :param toml_inductor: toml inductor configuration
-        :type toml_inductor: dct.TomlInductor
+        :type toml_inductor: pcdt.TomlInductor
         :return: True, if the configuration was consistent
         :rtype: bool
         """
@@ -525,7 +525,7 @@ class InductorOptimization:
         :param factor_dc_losses_min_max_list: Filter factor to use filter the results min and max values
         :type  factor_dc_losses_min_max_list: list[float]
         :param debug: Debug DTO
-        :type debug: dct.Debug
+        :type debug: pcdt.Debug
         """
         process_number = current_process().name
 
