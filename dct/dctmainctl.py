@@ -1980,6 +1980,7 @@ class DctMainCtl:
             # Check if pre summary are skippable
             is_skippable, issue_report = DctMainCtl._is_skippable(_pre_summary_data,
                                                                   PROCESSING_COMPLETE_FILE, False, [])
+
             # Evaluate if the pre summary is skippable
             if not is_skippable:
                 _pre_summary_data.calculation_mode = CalcModeEnum.new_mode
@@ -2277,6 +2278,7 @@ class DctMainCtl:
 
         # Check, if pre summary is to skip
         if not _pre_summary_data.calculation_mode == CalcModeEnum.skip_mode:
+            logger.info("Generate a new pre-summary.")
 
             # Allocate summary data object
             self._summary_pre_processing = SummaryProcessing()
@@ -2308,14 +2310,16 @@ class DctMainCtl:
             df_pareto_plane = self._summary_pre_processing.generate_result_database(df_w_hs, toml_misc.control_board_volume,
                                                                                     toml_misc.control_board_loss, output_power, weights)
 
-            df_pareto_front = self._summary_pre_processing.filter(df_pareto_plane, abs_max_losses=100_000,
-                                                                  factor_min_max_losses_list=toml_summary.pre_summary.filter_distance)
+            df_pareto_front_losses = self._summary_pre_processing.filter_losses(df_pareto_plane, abs_max_losses=100_000,
+                                                                                factor_min_max_losses_list=toml_summary.pre_summary.filter_distance_losses)
+            df_pareto_front_efficiency = self._summary_pre_processing.filter_efficiency(df_pareto_plane,
+                                                                                        filter_distance=toml_summary.pre_summary.filter_distance_efficiency)
 
             self._circuit_optimization.generate_result_dtos(self._summary_pre_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
                                                             self._inductor_study_configuration_list,
                                                             self._transformer_study_configuration_list,
-                                                            df_pareto_front, is_pre_summary=True)
+                                                            df_pareto_front_losses, is_pre_summary=True)
 
             ParetoPlots.plot_circuit_results(self._circuit_optimization, _pre_summary_data.optimization_directory)
 
@@ -2336,7 +2340,8 @@ class DctMainCtl:
                                                      self._circuit_optimization.filter_data.filtered_list_files,
                                                      _pre_summary_data.optimization_directory)
             ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, _pre_summary_data.optimization_directory)
-            ParetoPlots.plot_summary(_pre_summary_data, self._circuit_optimization)
+            ParetoPlots.plot_summary_losses(_pre_summary_data, self._circuit_optimization, toml_summary.pre_summary.filter_distance_losses)
+            ParetoPlots.plot_summary_weighted_efficiency(_pre_summary_data, self._circuit_optimization, toml_summary.pre_summary.filter_distance_efficiency)
 
             # Set processing complete indicator
             DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
@@ -2411,7 +2416,7 @@ class DctMainCtl:
 
         # Check, if pre summary is to skip
         if not _summary_data.calculation_mode == CalcModeEnum.skip_mode:
-
+            logger.info("Generate a new summary.")
             if not self._summary_processing.init_thermal_configuration(toml_heat_sink):
                 raise ValueError("Thermal data configuration not initialized!")
 
@@ -2443,8 +2448,11 @@ class DctMainCtl:
             ParetoPlots.plot_circuit_results(self._circuit_optimization, _summary_data.optimization_directory)
 
             # generate and store pareto front of the final summary
-            df_pareto_front = self._summary_processing.filter(df_pareto_plane, abs_max_losses=100_000,
-                                                              factor_min_max_losses_list=toml_summary.summary.filter_distance)
+            df_pareto_front_losses = self._summary_processing.filter_losses(df_pareto_plane, abs_max_losses=100_000,
+                                                                            factor_min_max_losses_list=toml_summary.summary.filter_distance_losses)
+
+            df_pareto_front_efficiency = self._summary_processing.filter_efficiency(df_pareto_plane,
+                                                                                    filter_distance=toml_summary.summary.filter_distance_efficiency)
             # Plot results of all capacitors
             for capacitor_selection_configuration in self._capacitor_selection_configuration_list:
                 ParetoPlots.plot_capacitor_results(capacitor_selection_configuration.study_data,
@@ -2471,16 +2479,19 @@ class DctMainCtl:
                                                      factor_max_dc_losses=toml_transformer.filter_distance.factor_dc_losses_min_max_list[1],
                                                      is_summary=True)
             ParetoPlots.plot_heat_sink_results(self._heat_sink_study_data, _summary_data.optimization_directory)
-            ParetoPlots.plot_summary(_summary_data, self._circuit_optimization, is_summary=True)
+            ParetoPlots.plot_summary_losses(_summary_data, self._circuit_optimization, is_summary=True,
+                                            filter_distance=toml_summary.summary.filter_distance_losses)
+            ParetoPlots.plot_summary_weighted_efficiency(_summary_data, self._circuit_optimization, is_summary=True,
+                                                         filter_distance=toml_summary.summary.filter_distance_efficiency)
 
             self._circuit_optimization.generate_result_dtos(self._summary_processing._summary_study_data,
                                                             self._capacitor_selection_configuration_list,
                                                             self._inductor_study_configuration_list,
                                                             self._transformer_study_configuration_list,
-                                                            df_pareto_front, is_pre_summary=False)
+                                                            df_pareto_front_losses, is_pre_summary=False)
 
             # Set processing complete indicator
-            DctMainCtl._set_presummary_complete(_pre_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
+            DctMainCtl._set_presummary_complete(_summary_data.optimization_directory, PROCESSING_COMPLETE_FILE)
 
         # Check breakpoint
         self.check_breakpoint(toml_prog_flow.breakpoints.summary, "Summary is calculated")
@@ -2491,7 +2502,7 @@ class DctMainCtl:
 
         # Check, if data generation is to skip
         if not _data_generation.calculation_mode == CalcModeEnum.skip_purge_mode:
-            print("Start data generation")
+            logger.info("Start data generation")
 
             DataGeneration.generate_manufacturing_data(debug=toml_debug,
                                                        circuit_configuration=self._circuit_optimization,

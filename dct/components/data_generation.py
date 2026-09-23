@@ -13,7 +13,9 @@ import femmt as fmt
 # own libraries
 import dct.toml_checker as tc
 from dct import CapacitorConfiguration, InductorConfiguration, TransformerConfiguration, StudyData, CircuitOptimizationBase
-from dct.constant_path import DF_SUMMARY_FINAL_FILTERED, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER
+from dct.constant_path import (DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS, FILTERED_RESULTS_PATH, SUMMARY_COMBINATION_FOLDER,
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER, CAPACITOR_RESULTS,
+                               DATA_GENERATION_WAVEFORM_FOLDER)
 from dct.constants import FACTOR_M_TO_MM
 
 logger = logging.getLogger(__name__)
@@ -68,14 +70,17 @@ class DataGeneration:
             for key, value in variables.items():
                 environment[key.upper()] = str(value)
 
-        # Adjust this if FreeCADCmd is not available in the system PATH.
-        cmd = [
+        # command option 1: FreeCADCmd (official command line interface)
+        # command option 2: freecad.cmd (e.g. used in snap packages)
+        # note: freecad -c ends in the freecad command line
+        cmd_1 = [
             "FreeCADCmd",
             freecad_script_file
         ]
-
-        logger.info("Running: %s", " ".join(cmd))
-
+        cmd_2 = [
+            "freecad.cmd",
+            freecad_script_file
+        ]
         if variables:
             logger.info(
                 "FreeCAD parameters: %s",
@@ -86,8 +91,9 @@ class DataGeneration:
             )
 
         try:
+            logger.info("Running: %s", " ".join(cmd_1))
             result = subprocess.run(
-                cmd,
+                cmd_1,
                 check=True,
                 capture_output=True,
                 text=True,
@@ -112,11 +118,58 @@ class DataGeneration:
             return True
 
         except FileNotFoundError:
-            logger.error(
-                "Error: 'FreeCADCmd' command not found. "
-                "Install FreeCAD or add FreeCADCmd to your PATH."
-            )
-            return False
+            logger.info(f"{cmd_1[0]} does not work on this system, try {cmd_2[0]} instead.")
+            logger.info("Running: %s", " ".join(cmd_2))
+            try:
+                result = subprocess.run(
+                    cmd_2,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    env=environment
+                )
+
+                if result.stdout:
+                    logger.debug("FreeCAD output:\n%s", result.stdout)
+
+                if result.stderr:
+                    # FreeCAD can write non-fatal messages to stderr.
+                    logger.warning("FreeCAD messages:\n%s", result.stderr)
+
+                if not os.path.isfile(output_file):
+                    logger.error(
+                        "FreeCAD completed without error, but no STEP file was found: %s",
+                        output_file
+                    )
+                    return False
+
+                logger.info("Success! STEP file saved to: %s", output_file)
+                return True
+
+            except FileNotFoundError:
+                logger.error(
+                    "Error: 'FreeCADCmd' command not found. "
+                    "Install FreeCAD or add FreeCADCmd to your PATH."
+                )
+                return False
+
+            except subprocess.CalledProcessError as error:
+                logger.error(
+                    "FreeCAD exited with return code %s.",
+                    error.returncode
+                )
+
+                if error.stdout:
+                    logger.error("FreeCAD stdout:\n%s", error.stdout)
+
+                if error.stderr:
+                    logger.error("FreeCAD stderr:\n%s", error.stderr)
+
+                return False
+
+            except Exception:
+                logger.exception("Unexpected error while running FreeCAD.")
+                return False
 
         except subprocess.CalledProcessError as error:
             logger.error(
@@ -266,9 +319,9 @@ class DataGeneration:
         # PQ core step file generation
         core = fmt.core_database()[params_core_name]
 
-        core_height_difference = core["window_h"] - params_window_h
-
         pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
+
+        top_bottom_yoke_height = (core["core_h"] - core["window_h"]) / 2
 
         # Assemble file name
         target_file_path = os.path.join(output_filepath, f"inductor_{inductor_number}_core.step")
@@ -278,13 +331,14 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (core["core_h"] - core_height_difference) * FACTOR_M_TO_MM,
+                    "core_h_mm": (params_window_h + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": params_window_h * FACTOR_M_TO_MM,
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": user_attrs_l_air_gap * FACTOR_M_TO_MM,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -308,6 +362,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": 0,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -403,7 +458,7 @@ class DataGeneration:
 
         core = fmt.core_database()[params_core_name]
 
-        lower_core_height_difference = core["window_h"] - params_window_h_bot
+        top_bottom_yoke_height = (core["core_h"] - core["window_h"]) / 2
 
         pq_core_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "freecad_models/pq_core_half.py")
 
@@ -415,13 +470,14 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (core["core_h"] - lower_core_height_difference) * FACTOR_M_TO_MM,
+                    "core_h_mm": (user_attrs_window_h_bot + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": params_window_h_bot * FACTOR_M_TO_MM,
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": user_attrs_l_bot_air_gap * FACTOR_M_TO_MM,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -445,6 +501,7 @@ class DataGeneration:
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": 0,
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -452,8 +509,6 @@ class DataGeneration:
 
         if not success:
             logger.warning(f"Transformer ID {transformer_id} original core STEP export failed.")
-
-        upper_core_height_difference = core["window_h"] - 2 * user_attrs_window_h_top
 
         # Assemble file name
         target_file_path = os.path.join(output_filepath, f"transformer_{transformer_number}_core_upper.step")
@@ -463,13 +518,14 @@ class DataGeneration:
                 freecad_script_file=pq_core_filepath,
                 output_file=target_file_path,
                 variables={
-                    "core_h_mm": (core["core_h"] - upper_core_height_difference) * FACTOR_M_TO_MM,
+                    "core_h_mm": (2 * user_attrs_window_h_top + 2 * top_bottom_yoke_height) * FACTOR_M_TO_MM,
                     "core_inner_diameter_mm": user_attrs_core_inner_diameter * FACTOR_M_TO_MM,
                     "window_h_mm": user_attrs_window_h_top * 2 * FACTOR_M_TO_MM,  # upper core half needs twice the window_h
                     "window_w_mm": user_attrs_window_w * FACTOR_M_TO_MM,
                     "core_dimension_x_mm": core["core_dimension_x"] * FACTOR_M_TO_MM,
                     "core_dimension_y_mm": core["core_dimension_y"] * FACTOR_M_TO_MM,
                     "l_air_gap_mm": user_attrs_l_top_air_gap * FACTOR_M_TO_MM * 2,  # upper core half needs the full air gap, not the reduced one
+                    "save_fcstd_file": "0"
                 }
             )
         else:
@@ -499,9 +555,9 @@ class DataGeneration:
                     # Bobbin dimensions
                     "flange_thickness_inner_mm": transformer_insulations.iso_window_top_core_left * FACTOR_M_TO_MM - clearance_mm,
                     "flange_thickness_top_mm": transformer_insulations.iso_window_top_core_top * FACTOR_M_TO_MM - clearance_mm,
-                    "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_right * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": transformer_insulations.iso_window_top_core_bot * FACTOR_M_TO_MM - clearance_mm,
 
-                    "clearance": 0.3,
+                    "clearance": clearance_mm,
                     "inner_edge_radius": 0.6,
                     "outer_edge_radius": 0.6,
                     "enable_wire_slots": True,
@@ -532,7 +588,7 @@ class DataGeneration:
                     # Bobbin dimensions
                     "flange_thickness_inner_mm": transformer_insulations.iso_window_bot_core_left * FACTOR_M_TO_MM - clearance_mm,
                     "flange_thickness_top_mm": transformer_insulations.iso_window_bot_core_top * FACTOR_M_TO_MM - clearance_mm,
-                    "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_right * FACTOR_M_TO_MM - clearance_mm,
+                    "flange_thickness_bot_mm": transformer_insulations.iso_window_bot_core_bot * FACTOR_M_TO_MM - clearance_mm,
 
                     "clearance": clearance_mm,
                     "inner_edge_radius": 0.6,
@@ -633,7 +689,7 @@ class DataGeneration:
         :type data_generation_data: StudyData
         """
         # read summary parameters
-        summary_filepath = os.path.join(summary_data.optimization_directory, DF_SUMMARY_FINAL_FILTERED)
+        summary_filepath = os.path.join(summary_data.optimization_directory, DF_SUMMARY_FINAL_FILTERED_MEAN_LOSS)
 
         df_summary = pd.read_csv(summary_filepath)
 
@@ -654,6 +710,9 @@ class DataGeneration:
             output_filepath = os.path.join(data_generation_data.optimization_directory, str(combination_id))
             if not os.path.exists(output_filepath):
                 os.makedirs(output_filepath)
+            waveform_filepath = os.path.join(output_filepath, DATA_GENERATION_WAVEFORM_FOLDER)
+            if not os.path.exists(waveform_filepath):
+                os.makedirs(waveform_filepath)
 
             df_circuit = pd.read_csv(circuit_filepath)
             DataGeneration._generate_circuit_data(circuit_id, df_circuit, output_filepath)
@@ -661,6 +720,7 @@ class DataGeneration:
             # generate operating point table for microcontroller programming
             circuit_id_filepath = os.path.join(circuit_configuration.circuit_study_data.optimization_directory, FILTERED_RESULTS_PATH, f"{circuit_id}.pkl")
             circuit_configuration.generate_operating_point_table(circuit_id_filepath, output_filepath)
+            circuit_configuration.plot_compare_waveforms(circuit_id_filepath, waveform_filepath)
 
             # generate plots of operating points
             result_dto_path = os.path.join(summary_data.optimization_directory, SUMMARY_COMBINATION_FOLDER)
@@ -674,7 +734,7 @@ class DataGeneration:
             # read capacitor file
             for count, capacitor_id in enumerate(capacitor_id_list):
                 capacitor_filepath = os.path.join(capacitor_configuration_list[count].study_data.optimization_directory,
-                                                  str(circuit_id), capacitor_configuration_list[count].study_data.study_name, "results.csv")
+                                                  str(circuit_id), capacitor_configuration_list[count].study_data.study_name, CAPACITOR_RESULTS)
                 df_capacitor = pd.read_csv(capacitor_filepath)
                 DataGeneration._generate_capacitor_data(capacitor_id, df_capacitor, output_filepath, count)
 
@@ -688,7 +748,7 @@ class DataGeneration:
                 DataGeneration._generate_inductor_data(inductor_id, df_inductor, output_filepath, count, inductor_insulations)
 
                 inductor_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
-                                                        inductor_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
+                                                        inductor_configuration_list[count].study_data.study_name, CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER,
                                                         f"{inductor_id}.png")
 
                 if os.path.exists(inductor_figure_filepath):
@@ -707,8 +767,8 @@ class DataGeneration:
                                     f"but not type dct.toml_checker.TomlTransformerInsulation.")
                 DataGeneration._generate_transformer_data(transformer_id, df_transformer, output_filepath, count, transformer_insulations)
 
-                transformer_figure_filepath = os.path.join(inductor_configuration_list[count].study_data.optimization_directory, str(circuit_id),
-                                                           transformer_configuration_list[count].study_data.study_name, "09_fem_inductor_results",
+                transformer_figure_filepath = os.path.join(transformer_configuration_list[count].study_data.optimization_directory, str(circuit_id),
+                                                           transformer_configuration_list[count].study_data.study_name, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
                                                            f"{transformer_id}.png")
 
                 if os.path.exists(transformer_figure_filepath):

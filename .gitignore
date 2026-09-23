@@ -26,3 +26,4 @@ examples/
 workspace/
 logging.conf
 log_file.log
+*.step

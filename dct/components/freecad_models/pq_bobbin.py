@@ -50,9 +50,7 @@ import Part
 import Import
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 # ---------------------------------------------------------------------------
 # Helper functions
@@ -146,7 +144,7 @@ def make_arc_edge(
     start_point: App.Vector,
     middle_point: App.Vector,
     end_point: App.Vector
-) -> Part.TopoShape:
+) -> object:
     """
     Create a circular arc through three points.
 
@@ -183,7 +181,7 @@ def create_round_bobbin(
     wire_slot_depth_mm: float,
     wire_slot_height_mm: float,
     wire_slots_position: str
-) -> Part.TopoShape:
+) -> object:
     """
     Create the bobbin geometry.
 
@@ -543,7 +541,7 @@ def create_round_bobbin(
         slot_y_min_mm = (flange_outer_radius_mm - wire_slot_depth_mm - 0.2)
         slot_y_length_mm = wire_slot_depth_mm + 0.4
 
-        def make_wire_slot(slot_z_center_mm: float) -> Part.TopoShape:
+        def make_wire_slot(slot_z_center_mm: float) -> object:
             """
             Create a rectangular solid for cutting a wire slot.
 

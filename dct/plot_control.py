@@ -18,7 +18,9 @@ from dct.datasets_dtos import PlotData
 from dct.topology.circuit_optimization_base import CircuitOptimizationBase
 from dct.constant_path import (DF_SUMMARY_FINAL, PARETO_PLOT_PDF_FOLDER, PARETO_PLOT_PNG_FOLDER, PARETO_PLOT_PKL_FOLDER,
                                CAPACITOR_RESULTS, CAPACITOR_RESULTS_FILTERED,
-                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER)
+                               CIRCUIT_INDUCTOR_FEM_LOSSES_FOLDER, CIRCUIT_TRANSFORMER_FEM_LOSSES_FOLDER,
+                               PLOT_SUMMARY_WEIGHTED_EFFICIENCY, PLOT_SUMMARY_MEAN_LOSS, PLOT_CIRCUIT,
+                               PLOT_HEAT_SINK)
 # Debug inductor issue
 
 from dct.constants import FACTOR_M3_TO_CM3, FACTOR_M2_TO_CM2
@@ -102,7 +104,7 @@ class ParetoPlots:
         :type  summary_directory: str
         """
         # Set the target directory
-        fig_name = os.path.join(summary_directory, "circuit")
+        fig_name = os.path.join(summary_directory, PLOT_CIRCUIT)
 
         # Read data from circuit
         plot_data: PlotData = circuit_optimization.get_circuit_plot_data(circuit_optimization.circuit_study_data)
@@ -413,7 +415,7 @@ class ParetoPlots:
             legend_list.append(f"{int(area_min * FACTOR_M2_TO_CM2)} cm²")
 
         # Set the target directory
-        fig_name = os.path.join(summary_directory, "heat_sink")
+        fig_name = os.path.join(summary_directory, PLOT_HEAT_SINK)
 
         # plot all the different heat sink areas
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, color_list, alpha_list=[0.5, 0.5, 0.5],
@@ -422,7 +424,8 @@ class ParetoPlots:
                                          fig_name_path=fig_name)
 
     @staticmethod
-    def plot_summary(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, combination_id: int = 0, is_summary: bool = False) -> None:
+    def plot_summary_losses(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, filter_distance: list[float],
+                            combination_id: int = 0, is_summary: bool = False) -> None:
         """
         Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
 
@@ -434,6 +437,8 @@ class ParetoPlots:
         :type combination_id: int
         :param is_summary: Flag to distinguish between pre summary and summary plot
         :type  is_summary: bool
+        :param filter_distance: [relative offset value from pareto front, minimum required efficiency]
+        :type filter_distance: list[float]
         """
         total_volume_key = "total_volume"
         total_mean_loss_key = "total_mean_loss"
@@ -443,8 +448,9 @@ class ParetoPlots:
         # Load data frame from csv-file
         df = pd.read_csv(summary_data_csv_file)
 
-        df_filtered = circuit_optimization.filter_df(df, x=total_volume_key, y=total_mean_loss_key,
-                                                     factor_min_dc_losses=0.001, factor_max_dc_losses=10)
+        df_filtered = circuit_optimization.filter_df_min_min(df, x=total_volume_key, y=total_mean_loss_key,
+                                                             factor_relative_y_min_offset=filter_distance[0],
+                                                             factor_relative_y_max_offset=filter_distance[1])
 
         gps.global_plot_settings_font_latex()
         fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
@@ -460,7 +466,7 @@ class ParetoPlots:
             label_list.append(str(combination_id))
 
         # Set the target directory
-        fig_name = os.path.join(summary_study_data.optimization_directory, "summary")
+        fig_name = os.path.join(summary_study_data.optimization_directory, PLOT_SUMMARY_MEAN_LOSS)
 
         x_scale_min = 0.9 * df_filtered[total_volume_key].min() * FACTOR_M3_TO_CM3
         x_scale_max = 1.1 * df_filtered[total_volume_key].max() * FACTOR_M3_TO_CM3
@@ -476,4 +482,64 @@ class ParetoPlots:
 
         ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=color_list, alpha_list=[0.5, 0.7],
                                          x_label=r"$\mathcal{V}_\mathrm{Converter}$ / cm³", y_label=r"$P_\mathrm{Converter,avg}$ / W",
+                                         fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
+
+    @staticmethod
+    def plot_summary_weighted_efficiency(summary_study_data: StudyData, circuit_optimization: CircuitOptimizationBase, filter_distance: list[float],
+                                         combination_id: int = 0, is_summary: bool = False) -> None:
+        """
+        Plot the combined results of circuit, inductor, transformer and heat sink in the Pareto plane.
+
+        :param summary_study_data: Information about the summary study name and study path
+        :type  summary_study_data: StudyData
+        :param circuit_optimization: circuit optimization class
+        :type  circuit_optimization: CircuitOptimizationBase
+        :param combination_id: combination ID to highlight in the Pareto plane
+        :type combination_id: int
+        :param is_summary: Flag to distinguish between pre summary and summary plot
+        :type  is_summary: bool
+        :param filter_distance: [relative offset value from pareto front, minimum required efficiency]
+        :type filter_distance: list[float]
+        """
+        total_volume_key = "total_volume"
+        total_mean_loss_key = "weighted_efficiency"
+
+        # Assemble summary data csv-file name
+        summary_data_csv_file = os.path.join(summary_study_data.optimization_directory, DF_SUMMARY_FINAL)
+        # Load data frame from csv-file
+        df = pd.read_csv(summary_data_csv_file)
+
+        df_filtered = circuit_optimization.filter_df_min_max(
+            df, x=total_volume_key, y=total_mean_loss_key, relative_y_offset=filter_distance[0], absolute_min_y=filter_distance[1])
+
+        gps.global_plot_settings_font_latex()
+        fig = plt.figure(figsize=(80/25.4, 60/25.4), dpi=1000)
+        x_values_list = [df[total_volume_key] * FACTOR_M3_TO_CM3, df_filtered[total_volume_key] * FACTOR_M3_TO_CM3]
+        y_values_list = [df[total_mean_loss_key], df_filtered[total_mean_loss_key]]
+        label_list: list[str | None] = ["Design", "Best designs"]
+
+        if combination_id != 0:
+            volume = df.loc[df["combination_id"] == combination_id][total_volume_key].values[0] * FACTOR_M3_TO_CM3
+            loss = df.loc[df["combination_id"] == combination_id][total_mean_loss_key].values[0]
+            x_values_list.append(volume)
+            y_values_list.append(loss)
+            label_list.append(str(combination_id))
+
+        # Set the target directory
+        fig_name = os.path.join(summary_study_data.optimization_directory, PLOT_SUMMARY_WEIGHTED_EFFICIENCY)
+
+        x_scale_min = 0.9 * df_filtered[total_volume_key].min() * FACTOR_M3_TO_CM3
+        x_scale_max = 1.1 * df_filtered[total_volume_key].max() * FACTOR_M3_TO_CM3
+
+        y_scale_min = 0.95 * df_filtered[total_mean_loss_key].min()
+        y_scale_max = np.clip(1.05 * df_filtered[total_mean_loss_key].max(), y_scale_min, 1)
+
+        # add Color list
+        if not is_summary:
+            color_list = ["black", "red"]
+        else:
+            color_list = ["black", "green"]
+
+        ParetoPlots.generate_pareto_plot(x_values_list, y_values_list, label_list=label_list, color_list=color_list, alpha_list=[0.5, 0.7],
+                                         x_label=r"$\mathcal{V}_\mathrm{Converter}$ / cm³", y_label=r"$\eta_\mathrm{Converter,weighted}$",
                                          fig_name_path=fig_name, xlim=[x_scale_min, x_scale_max], ylim=[y_scale_min, y_scale_max])
