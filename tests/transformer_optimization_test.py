@@ -11,16 +11,16 @@ import tempfile
 import pytest
 
 # own libraries
-import dct.components.transformer_optimization as test_circuit
-import dct.toml_checker as tc
-import dct.server_ctl_dtos
+import pcdt.components.transformer_optimization as test_circuit
+import pcdt.toml_checker as tc
+import pcdt.server_ctl_dtos
 import femmt as fmt
-from dct.circuit_enums import CalcModeEnum
-from dct.components.transformer_optimization_dtos import TransformerOptimizationDto
-from dct.server_ctl_dtos import ProgressStatus
-from dct.datasets_dtos import TransformerConfiguration
-from dct.components.component_dtos import TransformerRequirements
-from dct.components.transformer_optimization import TransformerOptimization
+from pcdt.circuit_enums import CalcModeEnum
+from pcdt.components.transformer_optimization_dtos import TransformerOptimizationDto
+from pcdt.server_ctl_dtos import ProgressStatus
+from pcdt.datasets_dtos import TransformerConfiguration
+from pcdt.components.component_dtos import TransformerRequirements
+from pcdt.components.transformer_optimization import TransformerOptimization
 
 
 # Enable logger
@@ -256,9 +256,9 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
             max_transformer_total_height=float_value_gt0_lt5[test_index],
             max_core_volume=float_value_gt0_lt5[test_index],
             temperature=float_value_gem40_le175[test_index]),
-        filter_distance=dct.TomlTransformerFilterDistance(
+        filter_distance=pcdt.TomlTransformerFilterDistance(
             factor_dc_losses_min_max_list=float_min_max_list_configuration_ge0_le100[test_index]),
-        settings=dct.TomlTransformerSettings(
+        settings=pcdt.TomlTransformerSettings(
             fft_filter_value_factor=float_value_list_configuration_ge0_le1[test_index],
             mesh_accuracy=float_value_list_configuration_gt0_lt1[test_index]),
         material_data_sources=tc.TomlMaterialDataSources(
@@ -420,7 +420,7 @@ def test_initialize_transformer_optimization_list(test_type: TestCase, calc_mode
                 max_core_volume=5e-5,
                 temperature=175.0,
             ),
-            filter_distance=dct.TomlTransformerFilterDistance(
+            filter_distance=pcdt.TomlTransformerFilterDistance(
                 factor_dc_losses_min_max_list=[34.0, 77.0],
             ),
             material_data_sources=tc.TomlMaterialDataSources(
@@ -439,7 +439,7 @@ def test_initialize_transformer_optimization_list(test_type: TestCase, calc_mode
 
         config_list: list[TransformerConfiguration] = [
             TransformerConfiguration(
-                study_data=dct.StudyData(
+                study_data=pcdt.StudyData(
                     study_name=f"study_{test_type.name}_{i}",
                     optimization_directory=tmpdir,
                     number_of_trials=500,

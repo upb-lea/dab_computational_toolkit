@@ -1,7 +1,7 @@
 .. sectnum::
 
-Welcome to the Pareto DAB (Dual Active Bridge) Tool
-===================================================
+Welcome to the Power Converter Design Toolbox (PCDT)
+====================================================
 
 
 Installation
@@ -12,11 +12,11 @@ Install the Toolbox as a developer
 
     pip install -e .
 
-DAB Computational Toolbox (DCT) documentation
+Power Converter Design Toolbox (PCDT) documentation
 ===========================================================
 
 
-.. automodule:: dct
+.. automodule:: pcdt
    :members:
    :exclude-members: BaseModel, NavigationToolbar, QApplication, QMainWindow, QTabWidget, QVBoxLayout, QWidget, FigureCanvas, defaultdict, wraps
    :imported-members:

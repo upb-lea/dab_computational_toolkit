@@ -13,13 +13,13 @@ from _pytest.logging import LogCaptureFixture
 from numpy.testing import assert_array_equal
 
 # own libraries
-from dct.topology.dab.dab_circuit_topology import DabCircuitOptimization as ClassUnderTest
-import dct.topology.dab.dab_circuit_topology_dtos as d_dtos
-import dct.topology.dab.dab_datasets as d_set
-import dct.topology.dab.dab_toml_checker as dab_tc
+from pcdt.topology.dab.dab_circuit_topology import DabCircuitOptimization as ClassUnderTest
+import pcdt.topology.dab.dab_circuit_topology_dtos as d_dtos
+import pcdt.topology.dab.dab_datasets as d_set
+import pcdt.topology.dab.dab_toml_checker as dab_tc
 import transistordatabase as tdb
-from dct.circuit_enums import SamplingEnum
-from dct.circuit_enums import CalcModeEnum
+from pcdt.circuit_enums import SamplingEnum
+from pcdt.circuit_enums import CalcModeEnum
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)

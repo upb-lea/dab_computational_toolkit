@@ -10,10 +10,10 @@ import tempfile
 import pytest
 
 # own libraries
-import dct.components.heat_sink_optimization as test_circuit
-import dct.toml_checker as tc
-import dct.server_ctl_dtos
-from dct.components.heat_sink_optimization import HeatSinkOptimization
+import pcdt.components.heat_sink_optimization as test_circuit
+import pcdt.toml_checker as tc
+import pcdt.server_ctl_dtos
+from pcdt.components.heat_sink_optimization import HeatSinkOptimization
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -120,19 +120,19 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
 
     # Initialize the transformer parameters
     test_heat_sink_parameter: tc.TomlHeatSink = tc.TomlHeatSink(
-        design_space=dct.TomlHeatSinkDesignSpace(
+        design_space=pcdt.TomlHeatSinkDesignSpace(
             height_c_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
             width_b_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
             length_l_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
             height_d_min_max_list=float_min_max_list_configuration_gt0_lt5[test_index],
             number_cooling_channels_n_min_max_list=int_min_max_list_configuration_ge3_lt100[test_index],
             thickness_fin_t_min_max_list=float_min_max_list_configuration_gt0_lt1em1[test_index]),
-        settings=dct.TomlHeatSinkSettings(
+        settings=pcdt.TomlHeatSinkSettings(
             number_directions=int_value_list_configuration_ge2_le3[test_index],
             factor_pcb_area_copper_coin=float_value_list_configuration_gt0_lt10[test_index],
             factor_bottom_area_copper_coin=float_value_list_configuration_gt0_lt10[test_index],
             thermal_conductivity_copper=float_value_list_configuration_ge80_le200[test_index]),
-        boundary_conditions=dct.TomlHeatSinkBoundaryConditions(
+        boundary_conditions=pcdt.TomlHeatSinkBoundaryConditions(
             t_ambient=float_value_list_configuration_gem40_le125[test_index],
             t_hs_max=float_value_list_configuration_gem40_le125[test_index],
             area_min=float_value_list_configuration_gt0_lt25[test_index]),
@@ -217,7 +217,7 @@ def test_verify_optimization_parameter(test_index: int, test_type: TestCase) -> 
 # test of initialize_heat_sink_optimization
 #########################################################################################################
 
-# def initialize_heat_sink_optimization(self, toml_heat_sink: dct.TomlHeatSink, toml_prog_flow: dct.FlowControl) -> bool:
+# def initialize_heat_sink_optimization(self, toml_heat_sink: pcdt.TomlHeatSink, toml_prog_flow: pcdt.FlowControl) -> bool:
 # test parameter list (counter)
 @pytest.mark.parametrize("test_type, is_error", [
     # Test when the valid parameters loaded

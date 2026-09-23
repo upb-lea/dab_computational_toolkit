@@ -14,12 +14,12 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 # own libraries
-from dct.topology.sbc.sbc_circuit_topology import SbcCircuitOptimization as ClassUnderTest
-import dct.topology.sbc.sbc_circuit_topology_dtos as d_dtos
-import dct.topology.sbc.sbc_toml_checker as sbc_tc
+from pcdt.topology.sbc.sbc_circuit_topology import SbcCircuitOptimization as ClassUnderTest
+import pcdt.topology.sbc.sbc_circuit_topology_dtos as d_dtos
+import pcdt.topology.sbc.sbc_toml_checker as sbc_tc
 import transistordatabase as tdb
-from dct.circuit_enums import SamplingEnum
-from dct.circuit_enums import CalcModeEnum
+from pcdt.circuit_enums import SamplingEnum
+from pcdt.circuit_enums import CalcModeEnum
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)

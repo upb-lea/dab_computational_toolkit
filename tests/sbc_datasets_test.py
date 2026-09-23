@@ -9,8 +9,8 @@ import pytest
 import numpy as np
 
 # own libraries
-from dct.topology.sbc.sbc_datasets import HandleTransistorDto
-import dct.topology.sbc.sbc_datasets_dtos as d_dtos
+from pcdt.topology.sbc.sbc_datasets import HandleTransistorDto
+import pcdt.topology.sbc.sbc_datasets_dtos as d_dtos
 import transistordatabase as tdb
 
 # Enable logger

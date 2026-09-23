@@ -11,16 +11,16 @@ import tempfile
 import pytest
 
 # own libraries
-import dct.components.inductor_optimization as test_circuit
-import dct.toml_checker as tc
-import dct.server_ctl_dtos
+import pcdt.components.inductor_optimization as test_circuit
+import pcdt.toml_checker as tc
+import pcdt.server_ctl_dtos
 import femmt as fmt
-from dct.circuit_enums import CalcModeEnum
-from dct.components.inductor_optimization_dtos import InductorOptimizationDto
-from dct.server_ctl_dtos import ProgressStatus
-from dct.datasets_dtos import InductorConfiguration
-from dct.components.component_dtos import InductorRequirements
-from dct.components.inductor_optimization import InductorOptimization
+from pcdt.circuit_enums import CalcModeEnum
+from pcdt.components.inductor_optimization_dtos import InductorOptimizationDto
+from pcdt.server_ctl_dtos import ProgressStatus
+from pcdt.datasets_dtos import InductorConfiguration
+from pcdt.components.component_dtos import InductorRequirements
+from pcdt.components.inductor_optimization import InductorOptimization
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)
@@ -235,7 +235,7 @@ def test_verify_optimization_parameter(get_name_lists: tuple[list[str], list[str
         thermal_data=tc.TomlThermalData(thermal_cooling=float_value_list_configuration_gt0_le1em2xgt1_le100[test_index]),
         boundary_conditions=tc.TomlInductorBoundaryConditions(
             temperature=float_value_gem40_le175[test_index]),
-        filter_distance=dct.TomlFilterDistance(
+        filter_distance=pcdt.TomlFilterDistance(
             factor_dc_losses_min_max_list=float_min_max_list_configuration_gt0_le100[test_index]),
         material_data_sources=tc.TomlMaterialDataSources(
             permeability_datasource="LEA_MTB",
@@ -383,7 +383,7 @@ def test_initialize_inductor_optimization_list(test_type: TestCase, calc_mode: C
             boundary_conditions=tc.TomlInductorBoundaryConditions(
                 temperature=80.0,
             ),
-            filter_distance=dct.TomlFilterDistance(
+            filter_distance=pcdt.TomlFilterDistance(
                 factor_dc_losses_min_max_list=[34.0, 77.0],
             ),
             material_data_sources=tc.TomlMaterialDataSources(
@@ -402,7 +402,7 @@ def test_initialize_inductor_optimization_list(test_type: TestCase, calc_mode: C
 
         config_list: list[InductorConfiguration] = [
             InductorConfiguration(
-                study_data=dct.StudyData(
+                study_data=pcdt.StudyData(
                     study_name=f"study_{test_type.name}_{i}",
                     optimization_directory=tmpdir,
                     number_of_trials=500,

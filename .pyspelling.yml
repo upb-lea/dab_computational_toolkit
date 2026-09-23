@@ -4,12 +4,12 @@ matrix:
     lang: en
     d: en_US
   sources:
-  - dct/*.py
-  - dct/components/*.py
-  - dct/components/freecad_models/*.py
-  - dct/topology/*.py
-  - dct/topology/dab/*.py
-  - dct/topology/sbc/*.py
+  - pcdt/*.py
+  - pcdt/components/*.py
+  - pcdt/components/freecad_models/*.py
+  - pcdt/topology/*.py
+  - pcdt/topology/dab/*.py
+  - pcdt/topology/sbc/*.py
   - tests/*.py
   dictionary:
     wordlists:
