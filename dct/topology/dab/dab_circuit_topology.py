@@ -744,7 +744,8 @@ class DabCircuitOptimization(CircuitOptimizationBase[dab_tc.TomlDabGeneral, dab_
                 total_number_points=act_dab_config.sampling.sampling_points,
                 dim_1_user_given_points_list=act_dab_config.sampling.v1_additional_user_point_list,
                 dim_2_user_given_points_list=act_dab_config.sampling.v2_additional_user_point_list,
-                dim_3_user_given_points_list=act_dab_config.sampling.p_additional_user_point_list)
+                dim_3_user_given_points_list=act_dab_config.sampling.p_additional_user_point_list,
+                sampling_random_seed=act_dab_config.sampling.sampling_random_seed)
 
         else:
             raise ValueError(f"sampling_method '{act_dab_config.sampling.sampling_method}' not available.")

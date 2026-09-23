@@ -669,7 +669,8 @@ class SbcCircuitOptimization(CircuitOptimizationBase[sbc_tc.TomlSbcGeneral, sbc_
                 total_number_points=act_sbc_config.sampling.sampling_points,
                 dim_1_user_given_points_list=act_sbc_config.sampling.v1_additional_user_point_list,
                 dim_2_user_given_points_list=act_sbc_config.sampling.duty_cycle_additional_user_point_list,
-                dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list)
+                dim_3_user_given_points_list=act_sbc_config.sampling.i2_additional_user_point_list,
+                sampling_random_seed=act_sbc_config.sampling.sampling_random_seed)
         else:
             raise ValueError(f"sampling_method '{act_sbc_config.sampling.sampling_method}' not available.")
 
