@@ -1,4 +1,4 @@
-dct/results/
+pcdt/results/
 .idea/
 docs/build/
 results/
@@ -6,13 +6,13 @@ dab_modulation_output*
 *.nlc
 *.npz
 */__pycache__/
-dct/__pycache__/
-dct/components/__pycache__/
-dct/topology/__pycache__/
-dct/topology/sbc/__pycache__/
-dct/topology/dab/__pycache__/
-dct/design_check/__pycache__/
-dct/components/freecad_models/__pycache__/
+pcdt/__pycache__/
+pcdt/components/__pycache__/
+pcdt/topology/__pycache__/
+pcdt/topology/sbc/__pycache__/
+pcdt/topology/dab/__pycache__/
+pcdt/design_check/__pycache__/
+pcdt/components/freecad_models/__pycache__/
 report.log
 trial.py
 trial*.py

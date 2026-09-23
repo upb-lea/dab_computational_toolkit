@@ -11,7 +11,7 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 
 # own libraries
-import dct.boundary_check as test_module
+import pcdt.boundary_check as test_module
 
 # Enable logger
 pytestlogger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 .. sectnum::
 
-Welcome to the Dual-Active Bridge (DAB) Computational Toolkit
+Welcome to the Power Converter Design Toolkit
 =============================================================
 
 Optimize a DAB converter:
