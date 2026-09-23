@@ -324,7 +324,7 @@ level=INFO
 handlers=console
 qualname=
 
-[logger_dct]
+[logger_pcdt]
 level=INFO
 handlers=console
 qualname=pcdt

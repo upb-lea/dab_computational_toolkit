@@ -1,4 +1,4 @@
-"""Unit tests for class dctmainctl."""
+"""Unit tests for class mainctl."""
 
 # python libraries
 import os
@@ -159,7 +159,7 @@ def test_load_toml_file(caplog: LogCaptureFixture, test_toml_data: str, is_path_
     """
     # Variable declaration
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
     invalid_path_name = ""
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -180,7 +180,7 @@ def test_load_toml_file(caplog: LogCaptureFixture, test_toml_data: str, is_path_
 
         # Perform the test
         with caplog.at_level(logging.INFO):
-            is_result_valid, toml_object = test_dct.load_toml_file(filepath)
+            is_result_valid, toml_object = test_pcdt.load_toml_file(filepath)
 
             # Expected messages
             expected_message = ["",
@@ -218,7 +218,7 @@ level=INFO
 handlers=console
 qualname=
 
-[logger_dct]
+[logger_pcdt]
 level=INFO
 handlers=console
 qualname=pcdt
@@ -302,7 +302,7 @@ def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data:
     """
     # Variable declaration
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
 
     # Prepare the setup
     # Create path
@@ -323,10 +323,10 @@ def test_load_generate_logging_config(caplog: LogCaptureFixture, test_toml_data:
         # Perform the test
         with caplog.at_level(logging.INFO):
             if is_logger_to_restore:
-                test_dct.load_generate_logging_config(filepath)
+                test_pcdt.load_generate_logging_config(filepath)
                 caplog.set_level(logging.INFO)
             else:
-                test_dct.load_generate_logging_config(filepath)
+                test_pcdt.load_generate_logging_config(filepath)
 
             # Create wrong path string
             wrong_path = os.path.join(tmpdir, "not_existing_folder")
@@ -385,7 +385,7 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
     """
     # Variable declaration
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
 
     # Initialize sub folder list
     sub_folder_list = ["sub_folder1", "sub_folder2", "sub_folder3"]
@@ -437,7 +437,7 @@ def test_delete_study_content(caplog: LogCaptureFixture, is_path_existing: bool,
 
         # Perform the test
         with caplog.at_level(logging.INFO):
-            test_dct.delete_study_content(is_delete_all_flag, path_name, "level1", used_sub_folder_list)
+            test_pcdt.delete_study_content(is_delete_all_flag, path_name, "level1", used_sub_folder_list)
             # Expected messages
             expected_message = ["",
                                 f"Path {path_name} does not exists!",
@@ -575,7 +575,7 @@ def test_get_number_of_pkl_files(caplog: LogCaptureFixture, is_path_existing: bo
     """
     # Variable declaration
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
     target_study_name = "study_data"
 
     # Prepare the setup
@@ -597,7 +597,7 @@ def test_get_number_of_pkl_files(caplog: LogCaptureFixture, is_path_existing: bo
 
         # Perform the test
         with caplog.at_level(logging.INFO):
-            test_result = test_dct.get_number_of_pkl_files(path_name)
+            test_result = test_pcdt.get_number_of_pkl_files(path_name)
             # Expected messages
             expected_message = ["",
                                 f"Path {path_name} does not exists!"]
@@ -664,13 +664,13 @@ def test_check_breakpoint(capsys: CaptureFixture[str], keyword: str, message: st
     exit_code: int = -1
 
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
 
     def test_thread_container():
         nonlocal is_exit
         nonlocal exit_code
         try:
-            test_dct.check_breakpoint(keyword, message)
+            test_pcdt.check_breakpoint(keyword, message)
         except SystemExit as e:
             is_exit = True
             exit_code = e.code
@@ -686,7 +686,7 @@ def test_check_breakpoint(capsys: CaptureFixture[str], keyword: str, message: st
     # Check if the method waits for input
     if is_wait_for_input:
         assert test_thread.is_alive()
-        test_dct._key_input_string = keyboard_input
+        test_pcdt._key_input_string = keyboard_input
         test_thread.join(timeout=2)
 
     # Read out the print log
@@ -735,7 +735,7 @@ def test_generate_zip_archive(caplog: LogCaptureFixture, is_path_existing: bool,
     # Folder to exclude from zip
     exclude_level: str = "00_femmt_simulation"
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
 
     # Constant values of FlowControl
     test_parameter_2: tc.FlowControl = copy.deepcopy(test_FlowControl_base)
@@ -793,7 +793,7 @@ def test_generate_zip_archive(caplog: LogCaptureFixture, is_path_existing: bool,
             # Create approximated file name before test
             zip_file_name_before = f'{path_name}_archived_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")}.zip'
             # Perform the test
-            test_dct.generate_zip_archive(test_flow_control)
+            test_pcdt.generate_zip_archive(test_flow_control)
             # Create approximated file name after test
             zip_file_name_after = f'{path_name}_archived_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")}.zip'
             # Get common string part
@@ -1621,47 +1621,47 @@ def test__get_page_main_data(test_index: int) -> None:
     exp_result_queue_detail_data.summary_data.progress_data = copy.deepcopy(progress_data_summary)
 
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
     # Allocate pcdt timer members
-    test_dct._total_time = RunTime()
-    test_dct._total_time.reset_start_trigger()
+    test_pcdt._total_time = RunTime()
+    test_pcdt._total_time.reset_start_trigger()
     # Breakpoint notification
-    test_dct._break_point_message = string_test_values[(test_index + 4) % str_test_len]
+    test_pcdt._break_point_message = string_test_values[(test_index + 4) % str_test_len]
     # Filtered point name list
-    test_dct._filtered_list_files = string_test_arrays[test_index % str_list_len]
+    test_pcdt._filtered_list_files = string_test_arrays[test_index % str_list_len]
     # Allocate pcdt optimization objects
-    test_dct._heat_sink_optimization = pcdt.HeatSinkOptimization()
-    test_dct._circuit_optimization = CircuitOptimization()
-    test_dct._summary_processing = SummaryProcessing()
+    test_pcdt._heat_sink_optimization = pcdt.HeatSinkOptimization()
+    test_pcdt._circuit_optimization = CircuitOptimization()
+    test_pcdt._summary_processing = SummaryProcessing()
     # Perform the test of get_initialization_queue_data
-    (test_dct._circuit_list, test_dct._inductor_main_list, test_dct._inductor_list, test_dct._transformer_main_list,
-     test_dct._transformer_list, test_dct._heat_sink_list, test_dct._summary_list) = test_dct.get_initialization_queue_data(test_parameter_1)
+    (test_pcdt._circuit_list, test_pcdt._inductor_main_list, test_pcdt._inductor_list, test_pcdt._transformer_main_list,
+     test_pcdt._transformer_list, test_pcdt._heat_sink_list, test_pcdt._summary_list) = test_pcdt.get_initialization_queue_data(test_parameter_1)
 
     # Set circuit- and heat sink optimization progress data and summary progress data
-    test_dct._circuit_optimization._progress_data = progress_data_circuit
-    test_dct._heat_sink_optimization._progress_data = progress_data_heat_sink
-    test_dct._summary_processing._progress_data = progress_data_summary
+    test_pcdt._circuit_optimization._progress_data = progress_data_circuit
+    test_pcdt._heat_sink_optimization._progress_data = progress_data_heat_sink
+    test_pcdt._summary_processing._progress_data = progress_data_summary
     # Stop timers
-    test_dct._total_time.stop_trigger()
+    test_pcdt._total_time.stop_trigger()
 
     # Overtake the result to expected time data
-    exp_result_queue_main_data.total_process_time = test_dct._total_time.get_runtime()
-    exp_result_queue_detail_data.conf_process_time = test_dct._total_time.get_runtime()
+    exp_result_queue_main_data.total_process_time = test_pcdt._total_time.get_runtime()
+    exp_result_queue_detail_data.conf_process_time = test_pcdt._total_time.get_runtime()
 
     # Check results of get_initialization_queue_data
-    assert test_dct._circuit_list == exp_result_circuit
-    assert test_dct._inductor_main_list == exp_result_inductor_main
-    assert test_dct._inductor_list == exp_result_inductor
-    assert test_dct._transformer_main_list == exp_result_transformer_main
-    assert test_dct._transformer_list == exp_result_transformer
-    assert test_dct._heat_sink_list == exp_result_heat_sink
-    assert test_dct._summary_list == exp_result_summary
+    assert test_pcdt._circuit_list == exp_result_circuit
+    assert test_pcdt._inductor_main_list == exp_result_inductor_main
+    assert test_pcdt._inductor_list == exp_result_inductor
+    assert test_pcdt._transformer_main_list == exp_result_transformer_main
+    assert test_pcdt._transformer_list == exp_result_transformer
+    assert test_pcdt._heat_sink_list == exp_result_heat_sink
+    assert test_pcdt._summary_list == exp_result_summary
 
     # Perform the test of _get_page_main_data
-    result_main_data: srv_ctl_dtos.QueueMainData = test_dct._get_page_main_data()
+    result_main_data: srv_ctl_dtos.QueueMainData = test_pcdt._get_page_main_data()
 
     # Perform the test of _get_page_detailed_data
-    result_detail_data: srv_ctl_dtos.QueueDetailData = test_dct._get_page_detail_data(0)
+    result_detail_data: srv_ctl_dtos.QueueDetailData = test_pcdt._get_page_detail_data(0)
 
     # Check results of _get_page_main_data
     assert result_main_data == exp_result_queue_main_data
@@ -1698,7 +1698,7 @@ def test_runtime_class(timer_id_list: list[int]) -> None:
     test_timer_list: list[RunTime] = []
 
     # Create the instance
-    test_dct: MainCtl = MainCtl()
+    test_pcdt: MainCtl = MainCtl()
 
     # Allocate pcdt timer members
     for test_timer_id in range(len(timer_id_list)):

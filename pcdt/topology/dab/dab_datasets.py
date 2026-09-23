@@ -17,9 +17,9 @@ from pcdt.constant_path import GECKO_PATH
 from pcdt.topology.dab import dab_datasets_dtos as d_dtos
 from pcdt.topology.dab import dab_functions_waveforms as d_waveforms
 from pcdt.topology.dab import dab_mod_zvs as mod
-from pcdt.topology.dab import dab_currents as dct_currents
-from pcdt.topology.dab import dab_geckosimulation as dct_gecko
-from pcdt.topology.dab import dab_losses as dct_loss
+from pcdt.topology.dab import dab_currents as pcdt_currents
+from pcdt.topology.dab import dab_geckosimulation as pcdt_gecko
+from pcdt.topology.dab import dab_losses as pcdt_loss
 from pcdt.topology.dab.dab_circuit_topology_dtos import CircuitSampling
 from pcdt.topology.dab.dab_functions_waveforms import (full_current_waveform_from_currents, full_angle_waveform_from_angles,
                                                        full_time_waveforms_from_angles_currents, double_waveform)
@@ -131,21 +131,21 @@ class HandleDabDto:
         calc_config = HandleDabDto.calculate_from_configuration(config=input_configuration)
         modulation_parameters = HandleDabDto.calculate_modulation(input_configuration, calc_config)
 
-        i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = dct_currents.calc_rms_currents(
+        i_l_s_rms, i_l_1_rms, i_l_2_rms, angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, angles_rad_unsorted = pcdt_currents.calc_rms_currents(
             input_configuration, modulation_parameters)
 
-        i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted = dct_currents.calc_hf_currents(
+        i_hf_1_rms, i_hf_2_rms, i_hf_1_sorted, i_hf_2_sorted = pcdt_currents.calc_hf_currents(
             angles_rad_sorted, i_l_s_sorted, i_l_1_sorted, i_l_2_sorted, input_configuration.n)
 
-        i_m1_rms = dct_currents.calc_transistor_rms_currents(i_hf_1_rms)
-        i_m2_rms = dct_currents.calc_transistor_rms_currents(i_hf_2_rms)
+        i_m1_rms = pcdt_currents.calc_transistor_rms_currents(i_hf_1_rms)
+        i_m2_rms = pcdt_currents.calc_transistor_rms_currents(i_hf_2_rms)
 
         calc_currents = d_dtos.CalcCurrents(**{'i_l_s_rms': i_l_s_rms, 'i_l_1_rms': i_l_1_rms, 'i_l_2_rms': i_l_2_rms, 'angles_rad_sorted': angles_rad_sorted,
                                                'angles_rad_unsorted': angles_rad_unsorted, 'i_l_s_sorted': i_l_s_sorted, 'i_l_1_sorted': i_l_1_sorted,
                                                'i_l_2_sorted': i_l_2_sorted, 'i_hf_1_rms': i_hf_1_rms, 'i_hf_2_rms': i_hf_2_rms,
                                                'i_m1_rms': i_m1_rms, 'i_m2_rms': i_m2_rms, 'i_hf_1_sorted': i_hf_1_sorted, 'i_hf_2_sorted': i_hf_2_sorted})
-        p_m1_cond = dct_loss.transistor_conduction_loss(i_m1_rms, transistor_dto_1)
-        p_m2_cond = dct_loss.transistor_conduction_loss(i_m2_rms, transistor_dto_2)
+        p_m1_cond = pcdt_loss.transistor_conduction_loss(i_m1_rms, transistor_dto_1)
+        p_m2_cond = pcdt_loss.transistor_conduction_loss(i_m2_rms, transistor_dto_2)
 
         calc_losses = d_dtos.CalcLosses(**{'p_m1_conduction': p_m1_cond,
                                            'p_m2_conduction': p_m2_cond,
@@ -211,7 +211,7 @@ class HandleDabDto:
         if dab_dto.calc_dead_time is None:
             raise ValueError("Incomplete calculation as dead time is missing.")
 
-        gecko_results, gecko_waveforms = dct_gecko.start_gecko_simulation(
+        gecko_results, gecko_waveforms = pcdt_gecko.start_gecko_simulation(
             mesh_v1=dab_dto.input_config.mesh_v1, mesh_v2=dab_dto.input_config.mesh_v2,
             mesh_p=dab_dto.input_config.mesh_p, mod_phi=dab_dto.calc_modulation.phi,
             mod_tau1=dab_dto.calc_modulation.tau1, mod_tau2=dab_dto.calc_modulation.tau2,

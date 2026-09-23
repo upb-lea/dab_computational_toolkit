@@ -19,7 +19,7 @@ from scipy.interpolate import RegularGridInterpolator as RGI
 import pcdt.topology.sbc.sbc_datasets_dtos as s_dtos
 import pcdt.components.component_dtos as c_dtos
 from pcdt.components.heat_sink_optimization import ThermalCalcSupport
-import pcdt.topology.sbc.sbc_currents as dct_currents
+import pcdt.topology.sbc.sbc_currents as sbc_currents
 from pcdt.topology.sbc.sbc_circuit_topology_dtos import CircuitSampling
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class HandleSbcDto:
         # P_switch= 0.5⋅V_in⋅I_pk⋅(t_raise+t_fall)⋅f (First assumption for the simulation, later calculation over switch energy)
 
         # Calculate the ripple current and rms current
-        i_ripple, i_ms, i_rms = dct_currents.calc_rms_currents(input_configuration)
+        i_ripple, i_ms, i_rms = sbc_currents.calc_rms_currents(input_configuration)
 
         calc_currents = s_dtos.CalcCurrents(i_rms=i_rms, i_ms=i_ms, i_ripple=i_ripple)
 
