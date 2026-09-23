@@ -582,20 +582,24 @@
 </li>
       <li><a href="intro.html#dct.StaticFiles.file_response">file_response() (dct.StaticFiles method)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitOptimizationBase.filter_df">filter_df() (dct.CircuitOptimizationBase static method)</a>
+      <li><a href="intro.html#dct.CircuitOptimizationBase.filter_df_min_max">filter_df_min_max() (dct.CircuitOptimizationBase static method)</a>
+</li>
+      <li><a href="intro.html#dct.CircuitOptimizationBase.filter_df_min_min">filter_df_min_min() (dct.CircuitOptimizationBase static method)</a>
 </li>
       <li><a href="intro.html#dct.TomlCapacitorSelection.filter_distance">filter_distance (dct.TomlCapacitorSelection attribute)</a>
 
       <ul>
         <li><a href="intro.html#dct.TomlInductor.filter_distance">(dct.TomlInductor attribute)</a>
 </li>
-        <li><a href="intro.html#dct.TomlSummaryDetail.filter_distance">(dct.TomlSummaryDetail attribute)</a>
-</li>
         <li><a href="intro.html#dct.TomlTransformer.filter_distance">(dct.TomlTransformer attribute)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="intro.html#dct.TomlSummaryDetail.filter_distance_efficiency">filter_distance_efficiency (dct.TomlSummaryDetail attribute)</a>
+</li>
+      <li><a href="intro.html#dct.TomlSummaryDetail.filter_distance_losses">filter_distance_losses (dct.TomlSummaryDetail attribute)</a>
+</li>
       <li><a href="intro.html#dct.SbcCircuitOptimization.filter_equidistant_sampling">filter_equidistant_sampling() (dct.SbcCircuitOptimization static method)</a>
 </li>
       <li><a href="intro.html#dct.CircuitOptimizationBase.filter_study_results">filter_study_results() (dct.CircuitOptimizationBase method)</a>
@@ -657,6 +661,8 @@
       <li><a href="intro.html#dct.generate_default_heat_sink_toml">generate_default_heat_sink_toml() (in module dct)</a>
 </li>
       <li><a href="intro.html#dct.generate_default_inductor_toml">generate_default_inductor_toml() (in module dct)</a>
+</li>
+      <li><a href="intro.html#dct.generate_default_misc_toml">generate_default_misc_toml() (in module dct)</a>
 </li>
       <li><a href="intro.html#dct.generate_default_summary_toml">generate_default_summary_toml() (in module dct)</a>
 </li>
@@ -978,12 +984,8 @@
 </li>
       <li><a href="intro.html#dct.StaticFiles.is_not_modified">is_not_modified() (dct.StaticFiles method)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitOptimizationBase.is_pareto_efficient">is_pareto_efficient() (dct.CircuitOptimizationBase static method)</a>
-
-      <ul>
-        <li><a href="intro.html#dct.SbcCircuitOptimization.is_pareto_efficient">(dct.SbcCircuitOptimization static method)</a>
+      <li><a href="intro.html#dct.CircuitOptimizationBase.is_pareto_efficient_min_min">is_pareto_efficient_min_min() (dct.CircuitOptimizationBase static method)</a>
 </li>
-      </ul></li>
       <li><a href="intro.html#dct.RunTimeMeasurement.is_timer_active">is_timer_active() (dct.RunTimeMeasurement method)</a>
 </li>
       <li><a href="intro.html#dct.DebugCircuit.is_waveform_validation">is_waveform_validation (dct.DebugCircuit attribute)</a>
@@ -1377,12 +1379,10 @@
 </li>
       <li><a href="intro.html#dct.RequestCmd.pareto_front">pareto_front (dct.RequestCmd attribute)</a>
 </li>
-      <li><a href="intro.html#dct.CircuitOptimizationBase.pareto_front_from_df">pareto_front_from_df() (dct.CircuitOptimizationBase static method)</a>
-
-      <ul>
-        <li><a href="intro.html#dct.SbcCircuitOptimization.pareto_front_from_df">(dct.SbcCircuitOptimization static method)</a>
+      <li><a href="intro.html#dct.CircuitOptimizationBase.pareto_front_from_df_min_max">pareto_front_from_df_min_max() (dct.CircuitOptimizationBase static method)</a>
 </li>
-      </ul></li>
+      <li><a href="intro.html#dct.CircuitOptimizationBase.pareto_front_from_df_min_min">pareto_front_from_df_min_min() (dct.CircuitOptimizationBase static method)</a>
+</li>
       <li><a href="intro.html#dct.QueueParetoFrontData.pareto_front_optuna">pareto_front_optuna (dct.QueueParetoFrontData attribute)</a>
 </li>
       <li><a href="intro.html#dct.ParetoFrontSource.pareto_heat_sink">pareto_heat_sink (dct.ParetoFrontSource attribute)</a>
@@ -1439,7 +1439,9 @@
         <li><a href="intro.html#dct.SbcCircuitOptimization.plot_single_design_operating_points">(dct.SbcCircuitOptimization static method)</a>
 </li>
       </ul></li>
-      <li><a href="intro.html#dct.ParetoPlots.plot_summary">plot_summary() (dct.ParetoPlots static method)</a>
+      <li><a href="intro.html#dct.ParetoPlots.plot_summary_losses">plot_summary_losses() (dct.ParetoPlots static method)</a>
+</li>
+      <li><a href="intro.html#dct.ParetoPlots.plot_summary_weighted_efficiency">plot_summary_weighted_efficiency() (dct.ParetoPlots static method)</a>
 </li>
       <li><a href="intro.html#dct.ParetoPlots.plot_transformer_results">plot_transformer_results() (dct.ParetoPlots static method)</a>
 </li>
