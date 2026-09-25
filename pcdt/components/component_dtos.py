@@ -188,6 +188,9 @@ class StackedTransformerResults:
     volume: float
     area_to_heat_sink: float
     r_th_xfmr_heat_sink: float
+    l_s: float
+    l_h: float
+    n: float
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])

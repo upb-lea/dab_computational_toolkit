@@ -580,8 +580,8 @@ class InductorOptimization:
                         logger.debug(f"   * Inductor ID: {inductor_id}")
 
                         fem_output, p_total, area_to_heat_sink = fmt.InductorOptimization.FemSimulation.full_simulation(
-                                df_geometry_re_simulation_number, current_waveform=current_waveform,
-                                inductor_config_filepath=config_filepath, process_number=process_number)
+                            df_geometry_re_simulation_number, current_waveform=current_waveform,
+                            inductor_config_filepath=config_filepath, process_number=process_number)
                         combined_loss_array[vec_vvp] = p_total
                         winding_loss_array[vec_vvp] = fem_output.p_loss_winding
                         core_loss_array[vec_vvp] = fem_output.p_core_magnet
