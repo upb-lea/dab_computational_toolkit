@@ -163,6 +163,7 @@ class InductorResults:
     volume: float
     area_to_heat_sink: float
     r_th_ind_heat_sink: float
+    inductance: float
 
     def __init__(self, **kwargs):
         names = set([f.name for f in dataclasses.fields(self)])
